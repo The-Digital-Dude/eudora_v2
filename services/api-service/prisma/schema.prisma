@@ -1,0 +1,362 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  password        String
+  firstName       String
+  lastName        String
+  isActive        Boolean          @default(true)
+  deletedAt       DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  roles           UserRole[]
+  studentProfile  StudentProfile?
+  guardianProfile GuardianProfile?
+
+  @@map("users")
+}
+
+model Role {
+  id          String    @id @default(uuid())
+  name        String    @unique       // e.g. SUPER_ADMIN, ADMIN, USER
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String    @id @default(uuid())
+  action      String                   // e.g. "create", "read", "update", "delete"
+  subject     String                   // e.g. "User", "Role", "Permission"
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  roles       RolePermission[]
+
+  @@unique([action, subject])
+  @@map("permissions")
+}
+
+model UserRole {
+  userId      String
+  roleId      String
+  assignedAt  DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  assignedAt   DateTime  @default(now())
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+enum EducationalInstitutionStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ClassStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CourseTermStatus {
+  ACTIVE
+  INACTIVE
+  COMPLETED
+}
+
+enum CourseClassStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  GRADUATED
+}
+
+enum PlacementStatus {
+  PLACED
+  PENDING
+  WITHDRAWN
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  COMPLETED
+  DROPPED
+}
+
+enum GuardianStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum RelationshipType {
+  FATHER
+  MOTHER
+  GUARDIAN
+  SPONSOR
+  OTHER
+}
+
+enum FamilyStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Campus {
+  id             String                       @id @default(uuid())
+  name           String                       @unique
+  status         EducationalInstitutionStatus @default(ACTIVE)
+  representative String?
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+
+  programs       Program[]
+
+  @@map("campuses")
+}
+
+model Program {
+  id             String                       @id @default(uuid())
+  campusId       String
+  name           String
+  code           String                       @unique
+  status         EducationalInstitutionStatus @default(ACTIVE)
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+
+  campus         Campus                       @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  classSections  ClassSection[]
+
+  @@map("programs")
+}
+
+model AcademicYear {
+  id                String                       @id @default(uuid())
+  name              String                       @unique
+  startDate         DateTime
+  endDate           DateTime
+  status            EducationalInstitutionStatus @default(ACTIVE)
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+
+  classSections     ClassSection[]
+  terms             Term[]
+  studentPlacements StudentClassPlacement[]
+
+  @@map("academic_years")
+}
+
+model ClassSection {
+  id             String                  @id @default(uuid())
+  programId      String
+  academicYearId String
+  name           String
+  code           String                  @unique
+  class          String?
+  classroom      String?
+  status         ClassStatus             @default(ACTIVE)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  program        Program                 @relation(fields: [programId], references: [id], onDelete: Cascade)
+  academicYear   AcademicYear            @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  placements     StudentClassPlacement[]
+
+  @@map("class_sections")
+}
+
+model Term {
+  id             String           @id @default(uuid())
+  academicYearId String
+  name           String
+  startDate      DateTime
+  endDate        DateTime
+  status         CourseTermStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  academicYear   AcademicYear     @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  courseClasses  CourseClass[]
+
+  @@map("terms")
+}
+
+model CourseClass {
+  id          String                    @id @default(uuid())
+  termId      String
+  name        String
+  code        String                    @unique
+  status      CourseClassStatus         @default(ACTIVE)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  term        Term                      @relation(fields: [termId], references: [id], onDelete: Cascade)
+  enrollments StudentCourseEnrollment[]
+
+  @@map("course_classes")
+}
+
+model StudentProfile {
+  id          String                        @id @default(uuid())
+  userId      String                        @unique
+  fullName    String
+  birthDate   DateTime
+  gender      Gender
+  status      StudentStatus                 @default(ACTIVE)
+  createdAt   DateTime                      @default(now())
+  updatedAt   DateTime                      @updatedAt
+
+  user        User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  placements  StudentClassPlacement[]
+  enrollments StudentCourseEnrollment[]
+  guardians   GuardianStudentRelationship[]
+  families    FamilyStudent[]
+
+  @@map("student_profiles")
+}
+
+model StudentClassPlacement {
+  studentProfileId String
+  classSectionId   String
+  academicYearId   String
+  status           PlacementStatus @default(PENDING)
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  studentProfile   StudentProfile  @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  classSection     ClassSection    @relation(fields: [classSectionId], references: [id], onDelete: Cascade)
+  academicYear     AcademicYear    @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@id([studentProfileId, classSectionId])
+  @@map("student_class_placements")
+}
+
+model StudentCourseEnrollment {
+  id               String           @id @default(uuid())
+  studentProfileId String
+  courseClassId    String
+  enrollmentDate   DateTime         @default(now())
+  status           EnrollmentStatus @default(ENROLLED)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  studentProfile   StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  courseClass      CourseClass      @relation(fields: [courseClassId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, courseClassId])
+  @@map("student_course_enrollments")
+}
+
+model GuardianProfile {
+  id        String                        @id @default(uuid())
+  userId    String                        @unique
+  fullName  String
+  email     String?
+  phone     String?
+  status    GuardianStatus                @default(ACTIVE)
+  createdAt DateTime                      @default(now())
+  updatedAt DateTime                      @updatedAt
+
+  user      User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  students  GuardianStudentRelationship[]
+  families  FamilyGuardian[]
+
+  @@map("guardian_profiles")
+}
+
+model GuardianStudentRelationship {
+  id                         String           @id @default(uuid())
+  guardianProfileId          String
+  studentProfileId           String
+  relationshipType           RelationshipType
+  isPrimary                  Boolean          @default(false)
+  hasFinancialResponsibility Boolean          @default(false)
+  hasAcademicAccess          Boolean          @default(true)
+  hasEmergencyContact        Boolean          @default(false)
+  createdAt                  DateTime         @default(now())
+  updatedAt                  DateTime         @updatedAt
+
+  guardianProfile            GuardianProfile  @relation(fields: [guardianProfileId], references: [id], onDelete: Cascade)
+  studentProfile             StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([guardianProfileId, studentProfileId])
+  @@map("guardian_student_relationships")
+}
+
+model Family {
+  id            String          @id @default(uuid())
+  householdName String
+  status        FamilyStatus    @default(ACTIVE)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  students      FamilyStudent[]
+  guardians     FamilyGuardian[]
+
+  @@map("families")
+}
+
+model FamilyStudent {
+  familyId         String
+  studentProfileId String
+  createdAt        DateTime       @default(now())
+
+  family           Family         @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@id([familyId, studentProfileId])
+  @@map("family_students")
+}
+
+model FamilyGuardian {
+  familyId          String
+  guardianProfileId String
+  createdAt         DateTime        @default(now())
+
+  family            Family          @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  guardianProfile   GuardianProfile @relation(fields: [guardianProfileId], references: [id], onDelete: Cascade)
+
+  @@id([familyId, guardianProfileId])
+  @@map("family_guardians")
+}

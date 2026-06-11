@@ -1,0 +1,431 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import request from 'supertest';
+import { App } from 'supertest/types';
+import { AppModule } from './../src/app.module';
+import { PrismaService } from '../src/prisma/prisma.service';
+
+describe('Education OS Administrative Modules (e2e)', () => {
+  let app: INestApplication<App>;
+  let prisma: PrismaService;
+  
+  let superAdminToken: string;
+  
+  // Regular User details
+  let regularUserToken: string;
+  let regularUserId: string;
+
+  // Academic/Institution ID trackers
+  let campusId: string;
+  let programId: string;
+  let academicYearId: string;
+  let termId: string;
+  let classSectionId: string;
+  let courseClassId: string;
+
+  // Profiles and relationship trackers
+  let studentUserId: string;
+  let studentProfileId: string;
+  let guardianUserId: string;
+  let guardianProfileId: string;
+  let familyId: string;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api');
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+      }),
+    );
+    await app.init();
+
+    prisma = app.get(PrismaService);
+
+    // Login as Super Admin to perform administrative actions
+    const loginRes = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        email: 'admin@eudora.app',
+        password: 'Admin@123',
+      })
+      .expect(201);
+    
+    superAdminToken = loginRes.body.access_token;
+    expect(superAdminToken).toBeDefined();
+
+    // Create a regular user for RBAC verification
+    const uniqueEmail = `regular-user-${Date.now()}@example.com`;
+    const registerRes = await request(app.getHttpServer())
+      .post('/api/auth/register')
+      .send({
+        email: uniqueEmail,
+        password: 'Password@123',
+        firstName: 'Regular',
+        lastName: 'User',
+      })
+      .expect(201);
+
+    regularUserToken = registerRes.body.access_token;
+    const dbRegularUser = await prisma.user.findUnique({ where: { email: uniqueEmail } });
+    regularUserId = dbRegularUser!.id;
+  });
+
+  afterAll(async () => {
+    // Cascade onDelete in prisma schema will clean up related records when we delete parent rows.
+    // Clean up created entities to leave DB clean
+    if (familyId) {
+      await prisma.family.delete({ where: { id: familyId } }).catch(() => {});
+    }
+    if (studentProfileId) {
+      await prisma.studentProfile.delete({ where: { id: studentProfileId } }).catch(() => {});
+    }
+    if (guardianProfileId) {
+      await prisma.guardianProfile.delete({ where: { id: guardianProfileId } }).catch(() => {});
+    }
+    if (studentUserId) {
+      await prisma.userRole.deleteMany({ where: { userId: studentUserId } }).catch(() => {});
+      await prisma.user.delete({ where: { id: studentUserId } }).catch(() => {});
+    }
+    if (guardianUserId) {
+      await prisma.userRole.deleteMany({ where: { userId: guardianUserId } }).catch(() => {});
+      await prisma.user.delete({ where: { id: guardianUserId } }).catch(() => {});
+    }
+    if (courseClassId) {
+      await prisma.courseClass.delete({ where: { id: courseClassId } }).catch(() => {});
+    }
+    if (classSectionId) {
+      await prisma.classSection.delete({ where: { id: classSectionId } }).catch(() => {});
+    }
+    if (termId) {
+      await prisma.term.delete({ where: { id: termId } }).catch(() => {});
+    }
+    if (academicYearId) {
+      await prisma.academicYear.delete({ where: { id: academicYearId } }).catch(() => {});
+    }
+    if (programId) {
+      await prisma.program.delete({ where: { id: programId } }).catch(() => {});
+    }
+    if (campusId) {
+      await prisma.campus.delete({ where: { id: campusId } }).catch(() => {});
+    }
+    if (regularUserId) {
+      await prisma.userRole.deleteMany({ where: { userId: regularUserId } }).catch(() => {});
+      await prisma.user.delete({ where: { id: regularUserId } }).catch(() => {});
+    }
+
+    await app.close();
+  });
+
+  describe('Institution Module & RBAC', () => {
+    it('should deny a regular user from creating a campus', async () => {
+      await request(app.getHttpServer())
+        .post('/api/campuses')
+        .set('Authorization', `Bearer ${regularUserToken}`)
+        .send({
+          name: 'Regular Denied Campus',
+        })
+        .expect(403);
+    });
+
+    it('should allow super admin to create a campus', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/campuses')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          name: 'Greenwood Campus',
+          representative: 'Dr. Jane Smith',
+        })
+        .expect(201);
+
+      expect(res.body).toHaveProperty('id');
+      expect(res.body.name).toBe('Greenwood Campus');
+      campusId = res.body.id;
+    });
+
+    it('should allow all authenticated users to read campuses', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/campuses')
+        .set('Authorization', `Bearer ${regularUserToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('data');
+      expect(res.body.data.length).toBeGreaterThan(0);
+    });
+
+    it('should deny a regular user from creating a program', async () => {
+      await request(app.getHttpServer())
+        .post('/api/programs')
+        .set('Authorization', `Bearer ${regularUserToken}`)
+        .send({
+          campusId,
+          name: 'Computer Science',
+          code: 'CS101',
+        })
+        .expect(403);
+    });
+
+    it('should allow super admin to create a program', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/programs')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          campusId,
+          name: 'Software Engineering',
+          code: 'SE-BSC',
+        })
+        .expect(201);
+
+      expect(res.body).toHaveProperty('id');
+      expect(res.body.code).toBe('SE-BSC');
+      programId = res.body.id;
+    });
+  });
+
+  describe('Academic Module', () => {
+    it('should allow admin to create an academic year', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/academic-years')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          name: 'Academic Year 2026-2027',
+          startDate: '2026-09-01T00:00:00.000Z',
+          endDate: '2027-06-30T00:00:00.000Z',
+        })
+        .expect(201);
+
+      academicYearId = res.body.id;
+      expect(academicYearId).toBeDefined();
+    });
+
+    it('should throw bad request when creating a term outside the academic year dates', async () => {
+      await request(app.getHttpServer())
+        .post('/api/terms')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          academicYearId,
+          name: 'Term 1 Out of Bounds',
+          startDate: '2026-08-15T00:00:00.000Z', // Starts before AY
+          endDate: '2026-12-15T00:00:00.000Z',
+        })
+        .expect(400);
+    });
+
+    it('should allow admin to create a term within academic year dates', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/terms')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          academicYearId,
+          name: 'Fall Term 2026',
+          startDate: '2026-09-10T00:00:00.000Z',
+          endDate: '2026-12-20T00:00:00.000Z',
+        })
+        .expect(201);
+
+      termId = res.body.id;
+      expect(termId).toBeDefined();
+    });
+
+    it('should allow admin to create a class section under a program and academic year', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/class-sections')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          programId,
+          academicYearId,
+          name: 'SE Section A',
+          code: 'SE-2026-A',
+          class: 'Grade 10',
+          classroom: 'Room 302',
+        })
+        .expect(201);
+
+      classSectionId = res.body.id;
+      expect(classSectionId).toBeDefined();
+    });
+
+    it('should allow admin to create a course class under a term', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/course-classes')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          termId,
+          name: 'Algorithms & Data Structures',
+          code: 'CS-DSA-2026',
+        })
+        .expect(201);
+
+      courseClassId = res.body.id;
+      expect(courseClassId).toBeDefined();
+    });
+  });
+
+  describe('Student Module', () => {
+    beforeAll(async () => {
+      // Create a user account to link to the student profile
+      const uniqueStudentEmail = `student-${Date.now()}@example.com`;
+      const registerRes = await request(app.getHttpServer())
+        .post('/api/auth/register')
+        .send({
+          email: uniqueStudentEmail,
+          password: 'Student@123',
+          firstName: 'John',
+          lastName: 'Doe',
+        })
+        .expect(201);
+      
+      const dbStudent = await prisma.user.findUnique({ where: { email: uniqueStudentEmail } });
+      studentUserId = dbStudent!.id;
+    });
+
+    it('should allow creating a student profile for an existing user', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/student-profiles')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          userId: studentUserId,
+          fullName: 'John Doe Jr.',
+          birthDate: '2010-05-15T00:00:00.000Z',
+          gender: 'MALE',
+        })
+        .expect(201);
+
+      studentProfileId = res.body.id;
+      expect(studentProfileId).toBeDefined();
+    });
+
+    it('should allow placing a student into a class section', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/student-placements')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          studentProfileId,
+          classSectionId,
+          academicYearId,
+          status: 'PLACED',
+        })
+        .expect(201);
+
+      expect(res.body.studentProfileId).toBe(studentProfileId);
+      expect(res.body.classSectionId).toBe(classSectionId);
+    });
+
+    it('should allow enrolling a student in a course class', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/student-enrollments')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          studentProfileId,
+          courseClassId,
+          status: 'ENROLLED',
+        })
+        .expect(201);
+
+      expect(res.body.studentProfileId).toBe(studentProfileId);
+      expect(res.body.courseClassId).toBe(courseClassId);
+    });
+  });
+
+  describe('Family & Guardian Module', () => {
+    beforeAll(async () => {
+      // Create a user account to link to the guardian profile
+      const uniqueGuardianEmail = `guardian-${Date.now()}@example.com`;
+      const registerRes = await request(app.getHttpServer())
+        .post('/api/auth/register')
+        .send({
+          email: uniqueGuardianEmail,
+          password: 'Guardian@123',
+          firstName: 'Robert',
+          lastName: 'Doe',
+        })
+        .expect(201);
+      
+      const dbGuardian = await prisma.user.findUnique({ where: { email: uniqueGuardianEmail } });
+      guardianUserId = dbGuardian!.id;
+    });
+
+    it('should allow creating a guardian profile', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/guardian-profiles')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          userId: guardianUserId,
+          fullName: 'Robert Doe',
+          phone: '+15550199',
+          email: 'robert@doe-family.com',
+        })
+        .expect(201);
+
+      guardianProfileId = res.body.id;
+      expect(guardianProfileId).toBeDefined();
+    });
+
+    it('should allow defining a relationship between guardian and student', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/guardian-relationships')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          guardianProfileId,
+          studentProfileId,
+          relationshipType: 'FATHER',
+          isPrimary: true,
+          hasFinancialResponsibility: true,
+          hasAcademicAccess: true,
+        })
+        .expect(201);
+
+      expect(res.body.relationshipType).toBe('FATHER');
+      expect(res.body.guardianProfileId).toBe(guardianProfileId);
+    });
+
+    it('should allow creating a family household', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/families')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          householdName: 'The Doe Family Household',
+        })
+        .expect(201);
+
+      familyId = res.body.id;
+      expect(familyId).toBeDefined();
+    });
+
+    it('should allow adding the student and guardian to the family', async () => {
+      // Add student
+      await request(app.getHttpServer())
+        .post(`/api/families/${familyId}/members`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          studentProfileId,
+        })
+        .expect(201);
+
+      // Add guardian
+      await request(app.getHttpServer())
+        .post(`/api/families/${familyId}/members`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          guardianProfileId,
+        })
+        .expect(201);
+
+      // Fetch family to verify membership
+      const res = await request(app.getHttpServer())
+        .get(`/api/families/${familyId}`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .expect(200);
+
+      expect(res.body.students.length).toBe(1);
+      expect(res.body.guardians.length).toBe(1);
+      expect(res.body.students[0].studentProfileId).toBe(studentProfileId);
+      expect(res.body.guardians[0].guardianProfileId).toBe(guardianProfileId);
+    });
+  });
+});

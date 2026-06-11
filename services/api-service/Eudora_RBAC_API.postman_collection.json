@@ -1,0 +1,1020 @@
+{
+	"info": {
+		"_postman_id": "8f869150-1365-4f4d-9477-9df03bf57442",
+		"name": "Eudora RBAC API",
+		"description": "API collection for Eudora Role-Based Access Control system, featuring authentication, profile retrieval, user management, and roles/permissions management.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Get Database & Service Health Check",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Checks the health status of the API service and its database connection."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "User Register",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@eudora.app\",\n  \"password\": \"User@123\",\n  \"firstName\": \"Regular\",\n  \"lastName\": \"User\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Registers a new user and automatically assigns the default 'USER' role."
+					},
+					"response": []
+				},
+				{
+					"name": "User Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"if (response.access_token) {",
+									"    pm.collectionVariables.set(\"token\", response.access_token);",
+									"    console.log(\"Access token saved to collection variable 'token'\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@eudora.app\",\n  \"password\": \"Admin@123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticates the user and sets the 'token' collection variable dynamically."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User Profile (Me)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "Returns details of the currently logged-in user profile, including roles and flat permissions list."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "List Users (Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Lists all active users (excludes soft-deleted users). Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "ccd902d6-0387-45f9-9783-2b60d0394292"
+								}
+							]
+						},
+						"description": "Gets a user with all roles and permissions. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Regular Updated\",\n  \"lastName\": \"User Updated\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "ccd902d6-0387-45f9-9783-2b60d0394292"
+								}
+							]
+						},
+						"description": "Updates a user's details. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Soft Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "ccd902d6-0387-45f9-9783-2b60d0394292"
+								}
+							]
+						},
+						"description": "Soft deletes a user by setting the 'deletedAt' timestamp. Requires SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Role to User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roleId\": \"fa8c1dac-68f1-4c29-9d81-39fe2738d7e2\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/:id/roles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":id",
+								"roles"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "ccd902d6-0387-45f9-9783-2b60d0394292"
+								}
+							]
+						},
+						"description": "Assigns a role to a user. Requires SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Role from User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/:id/roles/:roleId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":id",
+								"roles",
+								":roleId"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "ccd902d6-0387-45f9-9783-2b60d0394292"
+								},
+								{
+									"key": "roleId",
+									"value": "fa8c1dac-68f1-4c29-9d81-39fe2738d7e2"
+								}
+							]
+						},
+						"description": "Removes a role from a user. Requires SUPER_ADMIN role."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Roles",
+			"item": [
+				{
+					"name": "List Roles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/roles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles"
+							]
+						},
+						"description": "Retrieves all configured roles and their permission listings. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Role",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"MANAGER\",\n  \"description\": \"Team Manager role with subset admin abilities\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/roles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles"
+							]
+						},
+						"description": "Creates a new role. Requires SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Role By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/roles/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "fa8c1dac-68f1-4c29-9d81-39fe2738d7e2"
+								}
+							]
+						},
+						"description": "Gets details of a role by ID. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Role",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"MANAGER_UPDATED\",\n  \"description\": \"Updated manager role description\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/roles/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "some-role-id"
+								}
+							]
+						},
+						"description": "Updates role details. Requires SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Role",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/roles/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "some-role-id"
+								}
+							]
+						},
+						"description": "Deletes a role from the system. Requires SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Permission to Role",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permissionId\": \"some-permission-id\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/roles/:id/permissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles",
+								":id",
+								"permissions"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "some-role-id"
+								}
+							]
+						},
+						"description": "Assigns a specific permission to a role. Requires SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Permission from Role",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/roles/:id/permissions/:permissionId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles",
+								":id",
+								"permissions",
+								":permissionId"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "some-role-id"
+								},
+								{
+									"key": "permissionId",
+									"value": "some-permission-id"
+								}
+							]
+						},
+						"description": "Removes a permission from a role. Requires SUPER_ADMIN role."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Permissions",
+			"item": [
+				{
+					"name": "List All Permissions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/permissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"permissions"
+							]
+						},
+						"description": "Lists all available system permissions (action/subject pairs). Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Institution",
+			"item": [
+				{
+					"name": "Create Campus",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Main Campus\",\n  \"representative\": \"Dr. Alan Smith\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/campuses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"campuses"
+							]
+						},
+						"description": "Creates a new institution campus. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "List Campuses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/campuses?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"campuses"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Lists campuses with pagination."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Program",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"campusId\": \"YOUR_CAMPUS_ID\",\n  \"name\": \"Bachelor of Science in Computer Science\",\n  \"code\": \"BSC-CS\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/programs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"programs"
+							]
+						},
+						"description": "Creates a new academic program under a campus. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "List Programs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/programs?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"programs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Lists all academic programs."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Academic",
+			"item": [
+				{
+					"name": "Create Academic Year",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"2026-2027\",\n  \"startDate\": \"2026-09-01T00:00:00.000Z\",\n  \"endDate\": \"2027-06-30T00:00:00.000Z\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/academic-years",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"academic-years"
+							]
+						},
+						"description": "Creates a new academic year. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Term",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"academicYearId\": \"YOUR_ACADEMIC_YEAR_ID\",\n  \"name\": \"Semester 1\",\n  \"startDate\": \"2026-09-10T00:00:00.000Z\",\n  \"endDate\": \"2027-01-20T00:00:00.000Z\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/terms",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"terms"
+							]
+						},
+						"description": "Creates a term within an academic year. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Class Section",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"programId\": \"YOUR_PROGRAM_ID\",\n  \"academicYearId\": \"YOUR_ACADEMIC_YEAR_ID\",\n  \"name\": \"Class 10-A\",\n  \"code\": \"C10A-2026\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/class-sections",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"class-sections"
+							]
+						},
+						"description": "Creates a class section under a program and academic year. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Course Class",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"termId\": \"YOUR_TERM_ID\",\n  \"name\": \"Intro to CS\",\n  \"code\": \"CS-101-2026\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/course-classes",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"course-classes"
+							]
+						},
+						"description": "Creates a course class under a term. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Student",
+			"item": [
+				{
+					"name": "Create Student Profile",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"YOUR_USER_ID\",\n  \"fullName\": \"Johnny Doe\",\n  \"birthDate\": \"2012-04-12T00:00:00.000Z\",\n  \"gender\": \"MALE\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student-profiles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student-profiles"
+							]
+						},
+						"description": "Creates a student profile linked to a user. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Place Student in Section",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"studentProfileId\": \"YOUR_STUDENT_PROFILE_ID\",\n  \"classSectionId\": \"YOUR_CLASS_SECTION_ID\",\n  \"academicYearId\": \"YOUR_ACADEMIC_YEAR_ID\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student-placements",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student-placements"
+							]
+						},
+						"description": "Places a student in a class section. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Enroll Student in Course Class",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"studentProfileId\": \"YOUR_STUDENT_PROFILE_ID\",\n  \"courseClassId\": \"YOUR_COURSE_CLASS_ID\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student-enrollments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student-enrollments"
+							]
+						},
+						"description": "Enrolls a student in a course class. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Family & Guardian",
+			"item": [
+				{
+					"name": "Create Guardian Profile",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"YOUR_USER_ID\",\n  \"fullName\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"phone\": \"+15550144\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/guardian-profiles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"guardian-profiles"
+							]
+						},
+						"description": "Creates a guardian profile linked to a user. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Family",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"householdName\": \"Doe Household\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/families",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"families"
+							]
+						},
+						"description": "Creates a new family household unit. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Member to Family",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"studentProfileId\": \"YOUR_STUDENT_PROFILE_ID\",\n  \"guardianProfileId\": \"YOUR_GUARDIAN_PROFILE_ID\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/families/:id/members",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"families",
+								":id",
+								"members"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_FAMILY_ID"
+								}
+							]
+						},
+						"description": "Adds a student or guardian profile to a family unit. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Guardian Student Relationship",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"guardianProfileId\": \"YOUR_GUARDIAN_PROFILE_ID\",\n  \"studentProfileId\": \"YOUR_STUDENT_PROFILE_ID\",\n  \"relationshipType\": \"MOTHER\",\n  \"isPrimary\": true,\n  \"hasFinancialResponsibility\": true,\n  \"hasAcademicAccess\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/guardian-relationships",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"guardian-relationships"
+							]
+						},
+						"description": "Defines relationship details between a guardian and student profile. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

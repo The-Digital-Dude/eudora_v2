@@ -973,6 +973,797 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Billing",
+			"item": [
+				{
+					"name": "Get Public Active Plans",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/plans/public",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"plans",
+								"public"
+							]
+						},
+						"description": "Lists all active, public plans. Accessible publicly."
+					},
+					"response": []
+				},
+				{
+					"name": "List All Plans (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/plans",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"plans"
+							]
+						},
+						"description": "Lists all plans including inactive and private ones. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Plan By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/plans/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"plans",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "PLAN_ID"
+								}
+							]
+						},
+						"description": "Gets details of a single plan by ID. Accessible publicly."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Plan",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Premium Plan\",\n  \"description\": \"Tier with higher students and programs limits\",\n  \"priceMonthly\": 49.00,\n  \"priceAnnual\": 490.00,\n  \"currency\": \"USD\",\n  \"maxStudents\": 500,\n  \"maxCampuses\": 3,\n  \"maxPrograms\": 10,\n  \"features\": [\"analytics\", \"homework_tracking\"],\n  \"isPublic\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/billing/plans",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"plans"
+							]
+						},
+						"description": "Creates a new billing plan. Requires SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Plan",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"priceMonthly\": 59.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/billing/plans/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"plans",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "PLAN_ID"
+								}
+							]
+						},
+						"description": "Updates details of a billing plan. Requires SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Plan",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/plans/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"plans",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "PLAN_ID"
+								}
+							]
+						},
+						"description": "Deletes a billing plan. Requires SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Subscription",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"campusId\": \"YOUR_CAMPUS_ID\",\n  \"planId\": \"YOUR_PLAN_ID\",\n  \"interval\": \"MONTHLY\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/billing/subscriptions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"subscriptions"
+							]
+						},
+						"description": "Subscribes a campus to a billing plan. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Subscription by Campus",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/subscriptions/campus/:campusId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"subscriptions",
+								"campus",
+								":campusId"
+							],
+							"variable": [
+								{
+									"key": "campusId",
+									"value": "YOUR_CAMPUS_ID"
+								}
+							]
+						},
+						"description": "Gets subscription details for a campus. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Subscription by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/subscriptions/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"subscriptions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_SUBSCRIPTION_ID"
+								}
+							]
+						},
+						"description": "Gets subscription details by subscription ID. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Change Subscription Plan",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"planId\": \"NEW_PLAN_ID\",\n  \"interval\": \"ANNUAL\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/billing/subscriptions/:id/change-plan",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"subscriptions",
+								":id",
+								"change-plan"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_SUBSCRIPTION_ID"
+								}
+							]
+						},
+						"description": "Upgrades/downgrades campus subscription to a different plan. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Subscription",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/subscriptions/:id/cancel",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"subscriptions",
+								":id",
+								"cancel"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_SUBSCRIPTION_ID"
+								}
+							]
+						},
+						"description": "Cancels a subscription at the end of the billing period. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Campus Usage Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/subscriptions/campus/:campusId/usage",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"subscriptions",
+								"campus",
+								":campusId",
+								"usage"
+							],
+							"variable": [
+								{
+									"key": "campusId",
+									"value": "YOUR_CAMPUS_ID"
+								}
+							]
+						},
+						"description": "Enforces plan features and checks current usage vs. active limits. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Stripe Webhook Listener",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "stripe-signature",
+								"value": "SIGNATURE_HERE",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"evt_123\",\n  \"object\": \"event\",\n  \"type\": \"invoice.payment_succeeded\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/billing/webhooks/stripe",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"billing",
+								"webhooks",
+								"stripe"
+							]
+						},
+						"description": "Receives Stripe events (invoice, payment, subscription updates). Public access."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Attendance",
+			"item": [
+				{
+					"name": "Record Daily Attendance (Bulk)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"classSectionId\": \"YOUR_CLASS_SECTION_ID\",\n  \"date\": \"2026-06-12\",\n  \"records\": [\n    {\n      \"studentProfileId\": \"STUDENT_PROFILE_ID_1\",\n      \"status\": \"PRESENT\",\n      \"remarks\": \"Arrived early\"\n    },\n    {\n      \"studentProfileId\": \"STUDENT_PROFILE_ID_2\",\n      \"status\": \"LATE\",\n      \"remarks\": \"Delayed by traffic\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/attendance/daily",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"attendance",
+								"daily"
+							]
+						},
+						"description": "Records or updates daily attendance for a homeroom / class section. Requires SUPER_ADMIN, ADMIN, or TEACHER role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Daily Attendance Records",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/attendance/daily/class-section/:classSectionId?date=2026-06-12",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"attendance",
+								"daily",
+								"class-section",
+								":classSectionId"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2026-06-12"
+								}
+							],
+							"variable": [
+								{
+									"key": "classSectionId",
+									"value": "YOUR_CLASS_SECTION_ID"
+								}
+							]
+						},
+						"description": "Gets homeroom attendance sheet for a class section on a specific date."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Lecture Session",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseClassId\": \"YOUR_COURSE_CLASS_ID\",\n  \"date\": \"2026-06-12\",\n  \"startTime\": \"09:00T09:00:00.000Z\",\n  \"endTime\": \"10:30T10:30:00.000Z\",\n  \"topic\": \"Prisma ORM and Database migrations\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/attendance/sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"attendance",
+								"sessions"
+							]
+						},
+						"description": "Schedules a subject-specific lecture session slot. Requires SUPER_ADMIN, ADMIN, or TEACHER role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Lecture Sessions by Course Class",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/attendance/sessions/course-class/:courseClassId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"attendance",
+								"sessions",
+								"course-class",
+								":courseClassId"
+							],
+							"variable": [
+								{
+									"key": "courseClassId",
+									"value": "YOUR_COURSE_CLASS_ID"
+								}
+							]
+						},
+						"description": "Lists all lecture session slots created for a course class."
+					},
+					"response": []
+				},
+				{
+					"name": "Record Session Attendance (Bulk)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sessionId\": \"YOUR_SESSION_ID\",\n  \"records\": [\n    {\n      \"studentProfileId\": \"STUDENT_PROFILE_ID_1\",\n      \"status\": \"PRESENT\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/attendance/session-attendance",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"attendance",
+								"session-attendance"
+							]
+						},
+						"description": "Records subject session attendance for enrolled students. Requires SUPER_ADMIN, ADMIN, or TEACHER role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Session Attendance Sheet",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/attendance/session-attendance/session/:sessionId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"attendance",
+								"session-attendance",
+								"session",
+								":sessionId"
+							],
+							"variable": [
+								{
+									"key": "sessionId",
+									"value": "YOUR_SESSION_ID"
+								}
+							]
+						},
+						"description": "Retrieves the full attendance sheet for a lecture session."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Student Attendance Summary (Analytics)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/attendance/student/:studentProfileId/summary?startDate=2026-06-01&endDate=2026-06-30",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"attendance",
+								"student",
+								":studentProfileId",
+								"summary"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2026-06-30"
+								}
+							],
+							"variable": [
+								{
+									"key": "studentProfileId",
+									"value": "YOUR_STUDENT_PROFILE_ID"
+								}
+							]
+						},
+						"description": "Dynamically calculates metrics (attendance rate, present/absent counts) for a student profile."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Homework",
+			"item": [
+				{
+					"name": "Create Homework Assignment",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseClassId\": \"YOUR_COURSE_CLASS_ID\",\n  \"title\": \"NestJS REST API Homework\",\n  \"description\": \"Build a REST API module with controller and service.\",\n  \"dueDate\": \"2026-06-25T23:59:00.000Z\",\n  \"maxPoints\": 100,\n  \"attachmentUrl\": \"https://eudora.app/homeworks/nestjs-lab.pdf\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/homework",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"homework"
+							]
+						},
+						"description": "Creates a homework assignment for a subject class. Requires SUPER_ADMIN, ADMIN, or TEACHER role."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Homework Assignment",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"NestJS REST API & Unit Testing Homework\",\n  \"maxPoints\": 150\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/homework/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"homework",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_HOMEWORK_ID"
+								}
+							]
+						},
+						"description": "Modifies homework assignment details. Requires SUPER_ADMIN, ADMIN, or TEACHER role."
+					},
+					"response": []
+				},
+				{
+					"name": "List Homework for Course Class",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/homework/course-class/:courseClassId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"homework",
+								"course-class",
+								":courseClassId"
+							],
+							"variable": [
+								{
+									"key": "courseClassId",
+									"value": "YOUR_COURSE_CLASS_ID"
+								}
+							]
+						},
+						"description": "Lists all homework assignments defined for a specific subject class."
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Homework Solution",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"homeworkId\": \"YOUR_HOMEWORK_ID\",\n  \"content\": \"Check my submission at https://github.com/my-student-id/lab-repo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/homework/submit",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"homework",
+								"submit"
+							]
+						},
+						"description": "Allows students to submit/resubmit solutions. Resolves student ID automatically from JWT. Evaluates late status."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Submissions for Homework",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/homework/submissions/homework/:homeworkId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"homework",
+								"submissions",
+								"homework",
+								":homeworkId"
+							],
+							"variable": [
+								{
+									"key": "homeworkId",
+									"value": "YOUR_HOMEWORK_ID"
+								}
+							]
+						},
+						"description": "Lists all submissions for a homework assignment. Requires SUPER_ADMIN, ADMIN, or TEACHER role."
+					},
+					"response": []
+				},
+				{
+					"name": "Grade Submission",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pointsEarned\": 95,\n  \"feedback\": \"Excellent explanation of controllers and dependency injection!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/homework/submissions/:id/grade",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"homework",
+								"submissions",
+								":id",
+								"grade"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_SUBMISSION_ID"
+								}
+							]
+						},
+						"description": "Saves grades and feedback for a student submission. Requires SUPER_ADMIN, ADMIN, or TEACHER role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Student Submission History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/homework/student/:studentProfileId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"homework",
+								"student",
+								":studentProfileId"
+							],
+							"variable": [
+								{
+									"key": "studentProfileId",
+									"value": "YOUR_STUDENT_PROFILE_ID"
+								}
+							]
+						},
+						"description": "Lists all homework submissions and grades for a specific student."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {

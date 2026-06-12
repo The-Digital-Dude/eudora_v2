@@ -230,6 +230,116 @@ async function main() {
   });
   console.log('✅ Seeded institution & academic structures');
 
+  console.log('🌱 Seeding billing plans...');
+  const plansData = [
+    {
+      name: 'Free',
+      description: 'Free tier for small campuses',
+      priceMonthly: 0.00,
+      priceAnnual: 0.00,
+      currency: 'USD',
+      stripePriceIdMonthly: null,
+      stripePriceIdAnnual: null,
+      maxStudents: 50,
+      maxCampuses: 1,
+      maxPrograms: 5,
+      features: [],
+      isActive: true,
+      isPublic: true,
+    },
+    {
+      name: 'Starter',
+      description: 'Starter tier for growing educational institutions',
+      priceMonthly: 29.00,
+      priceAnnual: 290.00,
+      currency: 'USD',
+      stripePriceIdMonthly: 'price_starter_monthly_placeholder',
+      stripePriceIdAnnual: 'price_starter_annual_placeholder',
+      maxStudents: 200,
+      maxCampuses: 2,
+      maxPrograms: 15,
+      features: ['basic_analytics'],
+      isActive: true,
+      isPublic: true,
+    },
+    {
+      name: 'Pro',
+      description: 'Advanced features for established schools',
+      priceMonthly: 79.00,
+      priceAnnual: 790.00,
+      currency: 'USD',
+      stripePriceIdMonthly: 'price_pro_monthly_placeholder',
+      stripePriceIdAnnual: 'price_pro_annual_placeholder',
+      maxStudents: 1000,
+      maxCampuses: 10,
+      maxPrograms: 50,
+      features: ['basic_analytics', 'advanced_reports', 'api_access'],
+      isActive: true,
+      isPublic: true,
+    },
+    {
+      name: 'Enterprise',
+      description: 'Custom limits and dedicated support for large networks',
+      priceMonthly: 299.00,
+      priceAnnual: 2990.00,
+      currency: 'USD',
+      stripePriceIdMonthly: 'price_enterprise_monthly_placeholder',
+      stripePriceIdAnnual: 'price_enterprise_annual_placeholder',
+      maxStudents: null,
+      maxCampuses: null,
+      maxPrograms: null,
+      features: ['basic_analytics', 'advanced_reports', 'api_access', 'dedicated_support'],
+      isActive: true,
+      isPublic: true,
+    },
+  ];
+
+  const plans: Record<string, any> = {};
+  for (const planData of plansData) {
+    const seededPlan = await prisma.plan.upsert({
+      where: { name: planData.name },
+      update: {
+        description: planData.description,
+        priceMonthly: planData.priceMonthly,
+        priceAnnual: planData.priceAnnual,
+        stripePriceIdMonthly: planData.stripePriceIdMonthly,
+        stripePriceIdAnnual: planData.stripePriceIdAnnual,
+        maxStudents: planData.maxStudents,
+        maxCampuses: planData.maxCampuses,
+        maxPrograms: planData.maxPrograms,
+        features: planData.features,
+        isActive: planData.isActive,
+        isPublic: planData.isPublic,
+      },
+      create: planData,
+    });
+    plans[planData.name] = seededPlan;
+  }
+  console.log('✅ Seeded billing plans');
+
+  // Subscribe Main Campus to Free plan if it doesn't have a subscription
+  const existingSub = await prisma.subscription.findUnique({
+    where: { campusId: campus.id },
+  });
+
+  if (!existingSub) {
+    const freePlan = plans['Free'];
+    const currentPeriodEnd = new Date();
+    currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 100);
+
+    await prisma.subscription.create({
+      data: {
+        campusId: campus.id,
+        planId: freePlan.id,
+        status: 'ACTIVE',
+        interval: 'MONTHLY',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd,
+      },
+    });
+    console.log('✅ Subscribed Main Campus to Free plan');
+  }
+
   console.log('🎉 Seeding completed successfully!');
 }
 

@@ -142,6 +142,34 @@ enum Gender {
   OTHER
 }
 
+enum PlanInterval {
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
 model Campus {
   id             String                       @id @default(uuid())
   name           String                       @unique
@@ -151,6 +179,7 @@ model Campus {
   updatedAt      DateTime                     @updatedAt
 
   programs       Program[]
+  subscription   Subscription?
 
   @@map("campuses")
 }
@@ -201,6 +230,7 @@ model ClassSection {
   program        Program                 @relation(fields: [programId], references: [id], onDelete: Cascade)
   academicYear   AcademicYear            @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   placements     StudentClassPlacement[]
+  dailyAttendance DailyAttendance[]
 
   @@map("class_sections")
 }
@@ -232,6 +262,8 @@ model CourseClass {
 
   term        Term                      @relation(fields: [termId], references: [id], onDelete: Cascade)
   enrollments StudentCourseEnrollment[]
+  sessions    CourseClassSession[]
+  homeworks   Homework[]
 
   @@map("course_classes")
 }
@@ -246,11 +278,14 @@ model StudentProfile {
   createdAt   DateTime                      @default(now())
   updatedAt   DateTime                      @updatedAt
 
-  user        User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  placements  StudentClassPlacement[]
-  enrollments StudentCourseEnrollment[]
-  guardians   GuardianStudentRelationship[]
-  families    FamilyStudent[]
+  user                User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  placements          StudentClassPlacement[]
+  enrollments         StudentCourseEnrollment[]
+  guardians           GuardianStudentRelationship[]
+  families            FamilyStudent[]
+  dailyAttendance     DailyAttendance[]
+  courseAttendance    CourseClassAttendance[]
+  homeworkSubmissions HomeworkSubmission[]
 
   @@map("student_profiles")
 }
@@ -359,4 +394,194 @@ model FamilyGuardian {
 
   @@id([familyId, guardianProfileId])
   @@map("family_guardians")
+}
+
+// ─── Billing ─────────────────────────────────────────────────────────────────
+
+model Plan {
+  id                    String         @id @default(uuid())
+  name                  String         @unique
+  description           String?
+  priceMonthly          Decimal        @db.Decimal(10, 2)
+  priceAnnual           Decimal        @db.Decimal(10, 2)
+  currency              String         @default("USD")
+  stripePriceIdMonthly  String?
+  stripePriceIdAnnual   String?
+  maxStudents           Int?           // null = unlimited
+  maxCampuses           Int?
+  maxPrograms           Int?
+  features              String[]       // e.g. ["analytics", "api_access"]
+  isActive              Boolean        @default(true)
+  isPublic              Boolean        @default(true)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  subscriptions         Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                     String             @id @default(uuid())
+  campusId               String             @unique
+  planId                 String
+  stripeCustomerId       String?
+  stripeSubscriptionId   String?            @unique
+  status                 SubscriptionStatus @default(TRIALING)
+  interval               PlanInterval       @default(MONTHLY)
+  currentPeriodStart     DateTime           @default(now())
+  currentPeriodEnd       DateTime
+  trialEndsAt            DateTime?
+  canceledAt             DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  campus                 Campus             @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  plan                   Plan               @relation(fields: [planId], references: [id])
+  invoices               Invoice[]
+
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id                 String        @id @default(uuid())
+  subscriptionId     String
+  stripeInvoiceId    String?       @unique
+  amount             Decimal       @db.Decimal(10, 2)
+  currency           String        @default("USD")
+  status             InvoiceStatus @default(DRAFT)
+  dueDate            DateTime?
+  paidAt             DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  subscription       Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  payments           Payment[]
+
+  @@map("invoices")
+}
+
+model Payment {
+  id                     String        @id @default(uuid())
+  invoiceId              String
+  stripePaymentIntentId  String?       @unique
+  amount                 Decimal       @db.Decimal(10, 2)
+  currency               String        @default("USD")
+  status                 PaymentStatus @default(PENDING)
+  paymentMethod          String?       // e.g. "card", "bank_transfer"
+  metadata               Json?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  invoice                Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ─── Attendance ──────────────────────────────────────────────────────────────
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model DailyAttendance {
+  id               String           @id @default(uuid())
+  studentProfileId String
+  classSectionId   String
+  date             DateTime         @db.Date
+  status           AttendanceStatus
+  remarks          String?
+  recordedById     String?          // User ID of teacher who recorded it
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  studentProfile   StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  classSection     ClassSection     @relation(fields: [classSectionId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, classSectionId, date])
+  @@map("daily_attendance")
+}
+
+model CourseClassSession {
+  id            String                  @id @default(uuid())
+  courseClassId String
+  date          DateTime                @db.Date
+  startTime     DateTime?
+  endTime       DateTime?
+  topic         String?                 // e.g. "Intro to Trees"
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  courseClass   CourseClass             @relation(fields: [courseClassId], references: [id], onDelete: Cascade)
+  attendance    CourseClassAttendance[]
+
+  @@map("course_class_sessions")
+}
+
+model CourseClassAttendance {
+  id               String             @id @default(uuid())
+  studentProfileId String
+  sessionId        String
+  status           AttendanceStatus
+  remarks          String?
+  recordedById     String?            // User ID of teacher who recorded it
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  studentProfile   StudentProfile     @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  session          CourseClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, sessionId])
+  @@map("course_class_attendance")
+}
+
+// ─── Homework ───────────────────────────────────────────────────────────────
+
+enum SubmissionStatus {
+  PENDING
+  SUBMITTED
+  GRADED
+  LATE
+}
+
+model Homework {
+  id            String               @id @default(uuid())
+  courseClassId String
+  title         String
+  description   String?
+  dueDate       DateTime
+  maxPoints     Int
+  attachmentUrl String?              // Optional reference link for documents
+  recordedById  String?              // User ID of teacher who created it
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  courseClass   CourseClass          @relation(fields: [courseClassId], references: [id], onDelete: Cascade)
+  submissions   HomeworkSubmission[]
+
+  @@map("homeworks")
+}
+
+model HomeworkSubmission {
+  id               String           @id @default(uuid())
+  homeworkId       String
+  studentProfileId String
+  submissionDate   DateTime         @default(now())
+  content          String?          // Submitted text or solution links
+  status           SubmissionStatus @default(SUBMITTED)
+  pointsEarned     Int?
+  feedback         String?
+  gradedById       String?          // User ID of teacher who graded it
+  gradedAt         DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  homework         Homework         @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  studentProfile   StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([homeworkId, studentProfileId])
+  @@map("homework_submissions")
 }

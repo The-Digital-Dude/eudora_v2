@@ -1764,6 +1764,307 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Evaluation",
+			"item": [
+				{
+					"name": "Create Concept",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Fractions\",\n  \"description\": \"Understanding fractions operations\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/evaluation/concepts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"evaluation",
+								"concepts"
+							]
+						},
+						"description": "Creates a learning concept. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "List Concepts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/evaluation/concepts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"evaluation",
+								"concepts"
+							]
+						},
+						"description": "Lists all concepts."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Competency",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"conceptId\": \"YOUR_CONCEPT_ID\",\n  \"name\": \"Compare Fractions\",\n  \"description\": \"Compare fractions with common and unlike denominators\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/evaluation/competencies",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"evaluation",
+								"competencies"
+							]
+						},
+						"description": "Creates a competency under a concept. Requires ADMIN or SUPER_ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "List Competencies",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/evaluation/competencies?conceptId=YOUR_CONCEPT_ID",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"evaluation",
+								"competencies"
+							],
+							"query": [
+								{
+									"key": "conceptId",
+									"value": "YOUR_CONCEPT_ID"
+								}
+							]
+						},
+						"description": "Lists all competencies, filterable by concept ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Competency Rubric",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"competencyId\": \"YOUR_COMPETENCY_ID\",\n  \"name\": \"Fractions Comparison Rubric\",\n  \"description\": \"Evaluates fractions comparison mastery\",\n  \"criteria\": [\n    {\n      \"title\": \"Correctness\",\n      \"weight\": 2,\n      \"levels\": [\n        { \"level\": 0, \"title\": \"Not Demonstrated\", \"description\": \"Cannot compare\", \"score\": 0 },\n        { \"level\": 1, \"title\": \"Emerging\", \"description\": \"Needs support\", \"score\": 1 },\n        { \"level\": 2, \"title\": \"Developing\", \"description\": \"Compares simple ones\", \"score\": 2 },\n        { \"level\": 3, \"title\": \"Proficient\", \"description\": \"Compares independently\", \"score\": 3 },\n        { \"level\": 4, \"title\": \"Advanced\", \"description\": \"Exemplary comparing skill\", \"score\": 4 }\n      ]\n    },\n    {\n      \"title\": \"Reasoning\",\n      \"weight\": 1,\n      \"levels\": [\n        { \"level\": 0, \"title\": \"Not Demonstrated\", \"description\": \"No logic\", \"score\": 0 },\n        { \"level\": 1, \"title\": \"Emerging\", \"description\": \"Steps listed without logic\", \"score\": 1 },\n        { \"level\": 2, \"title\": \"Developing\", \"description\": \"Explains basic steps\", \"score\": 2 },\n        { \"level\": 3, \"title\": \"Proficient\", \"description\": \"Justifies step logic\", \"score\": 3 },\n        { \"level\": 4, \"title\": \"Advanced\", \"description\": \"Perfect mathematical reasoning\", \"score\": 4 }\n      ]\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/evaluation/rubrics",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"evaluation",
+								"rubrics"
+							]
+						},
+						"description": "Creates a Rubric for a Competency. Requires SUPER_ADMIN, ADMIN, or TEACHER role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Rubric by Competency",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/evaluation/rubrics/competency/:competencyId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"evaluation",
+								"rubrics",
+								"competency",
+								":competencyId"
+							],
+							"variable": [
+								{
+									"key": "competencyId",
+									"value": "YOUR_COMPETENCY_ID"
+								}
+							]
+						},
+						"description": "Retrieves the rubric details configured for a competency."
+					},
+					"response": []
+				},
+				{
+					"name": "Record Student Evidence",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"studentProfileId\": \"YOUR_STUDENT_PROFILE_ID\",\n  \"competencyId\": \"YOUR_COMPETENCY_ID\",\n  \"sourceType\": \"HOMEWORK\",\n  \"homeworkSubmissionId\": \"YOUR_SUBMISSION_ID\",\n  \"metadata\": {\n    \"notes\": \"Recorded from Math Homework 1\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/evaluation/evidence",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"evaluation",
+								"evidence"
+							]
+						},
+						"description": "Records student assessment evidence. Requires SUPER_ADMIN, ADMIN, or TEACHER role."
+					},
+					"response": []
+				},
+				{
+					"name": "List Evaluation Evidence",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/evaluation/evidence?studentProfileId=YOUR_STUDENT_PROFILE_ID",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"evaluation",
+								"evidence"
+							],
+							"query": [
+								{
+									"key": "studentProfileId",
+									"value": "YOUR_STUDENT_PROFILE_ID"
+								}
+							]
+						},
+						"description": "Lists recorded student evidence. Requires SUPER_ADMIN, ADMIN, or TEACHER role."
+					},
+					"response": []
+				},
+				{
+					"name": "Evaluate Evidence against Rubric",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rubricId\": \"YOUR_RUBRIC_ID\",\n  \"evidenceId\": \"YOUR_EVIDENCE_ID\",\n  \"feedback\": \"Completed with excellent mathematical logic!\",\n  \"ratings\": [\n    {\n      \"criterionId\": \"YOUR_CRITERION_1_ID\",\n      \"selectedLevel\": 3,\n      \"comments\": \"Independent execution\"\n    },\n    {\n      \"criterionId\": \"YOUR_CRITERION_2_ID\",\n      \"selectedLevel\": 4,\n      \"comments\": \"Exemplary reasoning with visual sketch\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/evaluation/assessments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"evaluation",
+								"assessments"
+							]
+						},
+						"description": "Evaluates student evidence using a rubric. Triggers Mastery Engine update. Requires SUPER_ADMIN, ADMIN, or TEACHER role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Student Competency Mastery Portfolio",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/evaluation/mastery/student/:studentProfileId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"evaluation",
+								"mastery",
+								"student",
+								":studentProfileId"
+							],
+							"variable": [
+								{
+									"key": "studentProfileId",
+									"value": "YOUR_STUDENT_PROFILE_ID"
+								}
+							]
+						},
+						"description": "Gets student competency masteries and confidence metrics."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Student Mastery Progress History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/evaluation/mastery/student/:studentProfileId/competency/:competencyId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"evaluation",
+								"mastery",
+								"student",
+								":studentProfileId",
+								"competency",
+								":competencyId"
+							],
+							"variable": [
+								{
+									"key": "studentProfileId",
+									"value": "YOUR_STUDENT_PROFILE_ID"
+								},
+								{
+									"key": "competencyId",
+									"value": "YOUR_COMPETENCY_ID"
+								}
+							]
+						},
+						"description": "Lists chronological assessment ratings to draw a student progress chart."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {

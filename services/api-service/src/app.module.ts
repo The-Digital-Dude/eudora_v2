@@ -17,6 +17,7 @@ import { FamilyModule } from './family/family.module';
 import { BillingModule } from './billing/billing.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { HomeworkModule } from './homework/homework.module';
+import { EvaluationModule } from './evaluation/evaluation.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { HomeworkModule } from './homework/homework.module';
     BillingModule,
     AttendanceModule,
     HomeworkModule,
+    EvaluationModule,
   ],
   controllers: [AppController],
   providers: [

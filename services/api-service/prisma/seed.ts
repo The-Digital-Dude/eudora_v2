@@ -340,6 +340,112 @@ async function main() {
     console.log('✅ Subscribed Main Campus to Free plan');
   }
 
+  console.log('🌱 Seeding concept mastery curriculum structures...');
+  const concept = await prisma.concept.upsert({
+    where: { name: 'Fractions' },
+    update: {},
+    create: {
+      name: 'Fractions',
+      description: 'Understanding fraction concepts, operations, and applications',
+    },
+  });
+
+  let competency = await prisma.competency.findFirst({
+    where: { name: 'Compare Fractions', conceptId: concept.id },
+  });
+  if (!competency) {
+    competency = await prisma.competency.create({
+      data: {
+        conceptId: concept.id,
+        name: 'Compare Fractions',
+        description: 'Ability to compare and order fractions with like and unlike denominators',
+      },
+    });
+  }
+
+  let rubric = await prisma.rubric.findFirst({
+    where: { competencyId: competency.id },
+  });
+  if (!rubric) {
+    rubric = await prisma.rubric.create({
+      data: {
+        competencyId: competency.id,
+        name: 'Comparing Fractions Rubric',
+        description: 'Evaluates correctness and mathematical reasoning when comparing fractions',
+      },
+    });
+  }
+
+  let criterionCorrectness = await prisma.rubricCriterion.findFirst({
+    where: { rubricId: rubric.id, title: 'Correctness' },
+  });
+  if (!criterionCorrectness) {
+    criterionCorrectness = await prisma.rubricCriterion.create({
+      data: {
+        rubricId: rubric.id,
+        title: 'Correctness',
+        description: 'Accuracy of the comparison results',
+        weight: 2.0,
+      },
+    });
+
+    const correctnessLevels = [
+      { level: 0, title: 'Not Demonstrated', score: 0.0, description: 'Cannot compare fractions' },
+      { level: 1, title: 'Emerging', score: 1.0, description: 'Needs substantial support' },
+      { level: 2, title: 'Developing', score: 2.0, description: 'Can compare simple fractions with common denominators' },
+      { level: 3, title: 'Proficient', score: 3.0, description: 'Can compare fractions with different denominators' },
+      { level: 4, title: 'Advanced', score: 4.0, description: 'Can compare and simplify complex fractions' },
+    ];
+
+    for (const lvl of correctnessLevels) {
+      await prisma.rubricLevel.create({
+        data: {
+          criterionId: criterionCorrectness.id,
+          level: lvl.level,
+          title: lvl.title,
+          description: lvl.description,
+          score: lvl.score,
+        },
+      });
+    }
+  }
+
+  let criterionReasoning = await prisma.rubricCriterion.findFirst({
+    where: { rubricId: rubric.id, title: 'Reasoning' },
+  });
+  if (!criterionReasoning) {
+    criterionReasoning = await prisma.rubricCriterion.create({
+      data: {
+        rubricId: rubric.id,
+        title: 'Reasoning',
+        description: 'Justification of the comparison steps',
+        weight: 1.0,
+      },
+    });
+
+    const reasoningLevels = [
+      { level: 0, title: 'Not Demonstrated', score: 0.0, description: 'No reasoning provided' },
+      { level: 1, title: 'Emerging', score: 1.0, description: 'Lists steps without explanation' },
+      { level: 2, title: 'Developing', score: 2.0, description: 'Explains steps but lacks deep justification' },
+      { level: 3, title: 'Proficient', score: 3.0, description: 'Explains and justifies comparison logic clearly' },
+      { level: 4, title: 'Advanced', score: 4.0, description: 'Exemplary explanation with visual/algebraic proof' },
+    ];
+
+    for (const lvl of reasoningLevels) {
+      await prisma.rubricLevel.create({
+        data: {
+          criterionId: criterionReasoning.id,
+          level: lvl.level,
+          title: lvl.title,
+          description: lvl.description,
+          score: lvl.score,
+        },
+      });
+    }
+  }
+
+  console.log('✅ Seeded concept mastery curriculum');
+
   console.log('🎉 Seeding completed successfully!');
 }
 

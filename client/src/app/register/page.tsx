@@ -9,33 +9,50 @@ import {
   Lock, 
   Eye, 
   EyeOff, 
-  ArrowRight
+  ArrowRight,
+  User
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function LoginPage() {
+export default function RegisterPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (!agree) {
+      setError("You must agree to the Terms of Service.");
+      return;
+    }
 
     try {
       setLoading(true);
-      // Simulate authentication latency
-      await new Promise((res) => setTimeout(res, 1200));
-      console.log("Authenticated:", { email });
-      router.push("/dashboard");
+      // Simulate registration latency
+      await new Promise((res) => setTimeout(res, 1500));
+      console.log("Account created:", { name, email });
+      router.push("/login");
     } catch (err) {
       console.error(err);
+      setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -44,33 +61,33 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 py-12 dot-grid relative select-none font-sans bg-neutral-50 text-neutral-900">
       
-      {/* Centered card container with slide-up fade-in animation */}
+      {/* Slide-up entrance animated container */}
       <div className="w-full max-w-[440px] space-y-8 animate-fade-in-up">
         
-        {/* Brand Logo and Name */}
+        {/* Brand Logo and Title */}
         <div className="flex flex-col items-center space-y-3">
-          <div className="p-2.5 bg-neutral-900 text-white rounded-xl shadow-sm">
+          <Link href="/" className="p-2.5 bg-neutral-900 text-white rounded-xl shadow-sm hover:scale-105 transition-transform">
             <Sparkles className="w-5 h-5" />
-          </div>
+          </Link>
           <span className="text-xl font-bold tracking-tight text-neutral-900 font-display">
             Eudora
           </span>
         </div>
 
-        {/* Clean Login Card */}
+        {/* Clean Cupertino Card */}
         <div className="bg-white border border-neutral-200/80 rounded-[24px] p-8 md:p-10 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)]">
           
           {/* Header */}
-          <div className="text-center space-y-2 mb-8">
+          <div className="text-center space-y-2 mb-6">
             <h1 className="text-2xl font-bold tracking-tight text-neutral-900 font-display">
-              Sign in to your account
+              Create your account
             </h1>
             <p className="text-xs text-neutral-400 max-w-[280px] mx-auto leading-normal">
-              Enter your email and password below to access your classrooms and learning paths.
+              Sign up to start designing student learning paths and curriculums.
             </p>
           </div>
 
-          {/* Social Logins */}
+          {/* Social Registrations */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button
               type="button"
@@ -115,13 +132,40 @@ export default function LoginPage() {
               <div className="w-full border-t border-neutral-100"></div>
             </div>
             <span className="relative px-3 text-[10px] text-neutral-400 uppercase tracking-widest bg-white font-semibold">
-              Or continue with
+              Or sign up with
             </span>
           </div>
 
-          {/* Form */}
-          <form className="space-y-5" onSubmit={handleLogin}>
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 text-xs font-semibold text-rose-500 bg-rose-50 border border-rose-100 p-3 rounded-xl">
+              {error}
+            </div>
+          )}
+
+          {/* Registration Form */}
+          <form className="space-y-4" onSubmit={handleRegister}>
             
+            {/* Full Name */}
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Full Name</Label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
+                  <User className="w-4 h-4" />
+                </span>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  className="pl-10 h-11 border-neutral-200 bg-neutral-50/50 text-neutral-900 rounded-xl focus:border-neutral-900 placeholder:text-neutral-300 cupertino-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
             {/* Email Address */}
             <div className="space-y-1.5">
               <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Email Address</Label>
@@ -132,7 +176,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="name@company.com"
+                  placeholder="name@school.edu"
                   className="pl-10 h-11 border-neutral-200 bg-neutral-50/50 text-neutral-900 rounded-xl focus:border-neutral-900 placeholder:text-neutral-300 cupertino-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -144,12 +188,7 @@ export default function LoginPage() {
 
             {/* Password */}
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Password</Label>
-                <a className="text-[11px] text-neutral-500 hover:text-neutral-900 font-semibold cursor-pointer transition-colors hover:underline">
-                  Forgot?
-                </a>
-              </div>
+              <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Password</Label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
                   <Lock className="w-4 h-4" />
@@ -174,14 +213,48 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Remember Me Option */}
-            <div className="flex items-center">
-              <label className="flex items-center gap-2.5 cursor-pointer group text-xs text-neutral-500 hover:text-neutral-800 select-none">
+            {/* Confirm Password */}
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Confirm Password</Label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
+                  <Lock className="w-4 h-4" />
+                </span>
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="pl-10 pr-10 h-11 border-neutral-200 bg-neutral-50/50 text-neutral-900 rounded-xl focus:border-neutral-900 placeholder:text-neutral-300 cupertino-input"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 hover:text-neutral-600 transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Terms and Conditions Option */}
+            <div className="flex items-start py-1">
+              <label className="flex items-start gap-2.5 cursor-pointer group text-xs text-neutral-500 hover:text-neutral-800 select-none">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded border-neutral-200 bg-white text-neutral-900 focus:ring-neutral-900/20 transition-all cursor-pointer"
+                  checked={agree}
+                  onChange={(e) => setAgree(e.target.checked)}
+                  className="w-4 h-4 rounded border-neutral-200 bg-white text-neutral-900 focus:ring-neutral-900/20 transition-all cursor-pointer mt-0.5"
                 />
-                Keep me signed in
+                <span className="leading-normal">
+                  I agree to the{" "}
+                  <a className="underline hover:text-neutral-900">Terms of Service</a>{" "}
+                  and{" "}
+                  <a className="underline hover:text-neutral-900">Privacy Policy</a>.
+                </span>
               </label>
             </div>
 
@@ -197,11 +270,11 @@ export default function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Connecting...
+                  Creating Account...
                 </>
               ) : (
                 <>
-                  Continue
+                  Create Account
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -210,11 +283,11 @@ export default function LoginPage() {
 
         </div>
 
-        {/* Footer Registration Link */}
+        {/* Footer Sign-In Link */}
         <div className="text-center text-xs text-neutral-400">
-          Don’t have an account?{" "}
-          <Link href="/register" className="text-neutral-900 hover:underline font-semibold transition-colors">
-            Create an account
+          Already have an account?{" "}
+          <Link href="/login" className="text-neutral-900 hover:underline font-semibold transition-colors">
+            Sign in
           </Link>
         </div>
 

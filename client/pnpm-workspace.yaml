@@ -1,3 +1,4 @@
 allowBuilds:
   sharp: false
+  stall: true
   unrs-resolver: false

@@ -126,6 +126,12 @@ export class AcademicController {
     return this.academicService.findClassSectionById(id);
   }
 
+  @Get('class-sections/:id/roster')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  async getClassSectionRoster(@Param('id') id: string) {
+    return this.academicService.getClassSectionRoster(id);
+  }
+
   @Patch('class-sections/:id')
   @Roles('ADMIN', 'SUPER_ADMIN')
   async updateClassSection(

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -18,6 +18,9 @@ import { BillingModule } from './billing/billing.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { HomeworkModule } from './homework/homework.module';
 import { EvaluationModule } from './evaluation/evaluation.module';
+import { AssessmentsModule } from './assessments/assessments.module';
+import { ApiEnvelopeInterceptor } from './common/http/api-envelope.interceptor';
+import { ApiExceptionFilter } from './common/http/api-exception.filter';
 
 @Module({
   imports: [
@@ -39,6 +42,7 @@ import { EvaluationModule } from './evaluation/evaluation.module';
     AttendanceModule,
     HomeworkModule,
     EvaluationModule,
+    AssessmentsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -46,6 +50,14 @@ import { EvaluationModule } from './evaluation/evaluation.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ApiEnvelopeInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: ApiExceptionFilter,
     },
   ],
 })

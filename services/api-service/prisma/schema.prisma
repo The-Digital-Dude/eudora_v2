@@ -10,20 +10,26 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(uuid())
-  email           String           @unique
-  password        String
-  firstName       String
-  lastName        String
-  isActive        Boolean          @default(true)
-  deletedAt       DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id                 String             @id @default(uuid())
+  email              String             @unique
+  password           String
+  firstName          String
+  lastName           String
+  isActive           Boolean            @default(true)
+  failedLoginCount   Int                @default(0)
+  lockedUntil        DateTime?
+  mustChangePassword Boolean            @default(false)
+  deletedAt          DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
-  roles           UserRole[]
-  studentProfile  StudentProfile?
-  guardianProfile GuardianProfile?
-  rubricAssessments RubricAssessment[]
+  roles               UserRole[]
+  studentProfile      StudentProfile?
+  guardianProfile     GuardianProfile?
+  rubricAssessments   RubricAssessment[]
+  authSessions        AuthSession[]
+  assignedAssignments AssessmentAssignment[] @relation("AssignedAssignments")
+  markedAttempts      AssessmentAttempt[]    @relation("MarkedAttempts")
 
   @@map("users")
 }
@@ -228,10 +234,11 @@ model ClassSection {
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt
 
-  program        Program                 @relation(fields: [programId], references: [id], onDelete: Cascade)
-  academicYear   AcademicYear            @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  placements     StudentClassPlacement[]
-  dailyAttendance DailyAttendance[]
+  program               Program                 @relation(fields: [programId], references: [id], onDelete: Cascade)
+  academicYear          AcademicYear            @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  placements            StudentClassPlacement[]
+  dailyAttendance       DailyAttendance[]
+  assessmentAssignments AssessmentAssignment[]
 
   @@map("class_sections")
 }
@@ -248,6 +255,7 @@ model Term {
 
   academicYear   AcademicYear     @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   courseClasses  CourseClass[]
+  assessments    Assessment[]
 
   @@map("terms")
 }
@@ -279,16 +287,18 @@ model StudentProfile {
   createdAt   DateTime                      @default(now())
   updatedAt   DateTime                      @updatedAt
 
-  user                User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  placements          StudentClassPlacement[]
-  enrollments         StudentCourseEnrollment[]
-  guardians           GuardianStudentRelationship[]
-  families            FamilyStudent[]
-  dailyAttendance     DailyAttendance[]
-  courseAttendance    CourseClassAttendance[]
-  homeworkSubmissions HomeworkSubmission[]
-  assessmentEvidences AssessmentEvidence[]
-  competencyMasteries CompetencyMastery[]
+  user                  User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  placements            StudentClassPlacement[]
+  enrollments           StudentCourseEnrollment[]
+  guardians             GuardianStudentRelationship[]
+  families              FamilyStudent[]
+  dailyAttendance       DailyAttendance[]
+  courseAttendance      CourseClassAttendance[]
+  homeworkSubmissions   HomeworkSubmission[]
+  assessmentEvidences   AssessmentEvidence[]
+  competencyMasteries   CompetencyMastery[]
+  assessmentAssignments AssessmentAssignment[]
+  assessmentAttempts    AssessmentAttempt[]
 
   @@map("student_profiles")
 }
@@ -742,4 +752,246 @@ model CompetencyMastery {
 
   @@id([studentProfileId, competencyId])
   @@map("competency_masteries")
+}
+
+model AuthSession {
+  id               String    @id @default(uuid())
+  userId           String
+  refreshTokenHash String    @unique
+  userAgent        String?
+  ipAddress        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  revokedReason    String?
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auth_sessions")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorUserId String?
+  event       String
+  targetType  String?
+  targetId    String?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model Subject {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  name        String
+  status      String       @default("active") // active, inactive
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  assessments Assessment[]
+  questions   Question[]
+
+  @@map("subjects")
+}
+
+model Level {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  name        String
+  sortOrder   Int          @default(0)
+  status      String       @default("active")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  assessments Assessment[]
+  questions   Question[]
+
+  @@map("levels")
+}
+
+model AssessmentType {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  name        String
+  status      String       @default("active")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  assessments Assessment[]
+
+  @@map("assessment_types")
+}
+
+model Assessment {
+  id                       String                 @id @default(uuid())
+  assessmentTypeId         String
+  subjectId                String
+  levelId                  String
+  termId                   String?
+  weekNumber               Int?
+  title                    String
+  totalMarks               Int                    @default(0)
+  estimatedDurationMinutes Int                    @default(0)
+  status                   String                 @default("draft") // draft, published, archived
+  publishedAt              DateTime?
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+
+  assessmentType           AssessmentType         @relation(fields: [assessmentTypeId], references: [id])
+  subject                  Subject                @relation(fields: [subjectId], references: [id])
+  level                    Level                  @relation(fields: [levelId], references: [id])
+  term                     Term?                  @relation(fields: [termId], references: [id], onDelete: SetNull)
+
+  sections                 AssessmentSection[]
+  questions                AssessmentQuestion[]
+  assignments              AssessmentAssignment[]
+
+  @@map("assessments")
+}
+
+model AssessmentSection {
+  id           String               @id @default(uuid())
+  assessmentId String
+  title        String
+  sortOrder    Int                  @default(1)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  assessment   Assessment           @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  questions    AssessmentQuestion[]
+
+  @@map("assessment_sections")
+}
+
+model AssessmentQuestion {
+  id             String             @id @default(uuid())
+  assessmentId   String
+  sectionId      String
+  questionId     String
+  questionNumber Int
+  marksAvailable Int                @default(1)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  assessment     Assessment         @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  section        AssessmentSection  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  question       Question           @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, questionId])
+  @@map("assessment_questions")
+}
+
+model Question {
+  id            String               @id @default(uuid())
+  subjectId     String
+  levelId       String
+  questionType  String               // mcq, short_answer, numeric
+  prompt        String
+  correctAnswer String?
+  difficulty    String               @default("medium") // easy, medium, hard
+  status        String               @default("active") // active, archived
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  subject       Subject              @relation(fields: [subjectId], references: [id])
+  level         Level                @relation(fields: [levelId], references: [id])
+  options       QuestionOption[]
+  assessments   AssessmentQuestion[]
+  responses     StudentResponse[]
+
+  @@map("questions")
+}
+
+model QuestionOption {
+  id           String   @id @default(uuid())
+  questionId   String
+  optionLabel  String   // A, B, C, D
+  optionText   String
+  isCorrect    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  question     Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  responses    StudentResponse[]
+
+  @@map("question_options")
+}
+
+model AssessmentAssignment {
+  id               String             @id @default(uuid())
+  assessmentId     String
+  studentProfileId String
+  classSectionId   String
+  lessonId         String?
+  assignedByUserId String
+  opensAt          DateTime
+  dueAt            DateTime
+  status           String             @default("assigned") // assigned, cancelled
+  reminderCount    Int                @default(0)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  assessment       Assessment         @relation(fields: [assessmentId], references: [id])
+  studentProfile   StudentProfile     @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  classSection     ClassSection       @relation(fields: [classSectionId], references: [id], onDelete: Cascade)
+  assignedByUser   User               @relation("AssignedAssignments", fields: [assignedByUserId], references: [id])
+  attempts         AssessmentAttempt[]
+
+  @@map("assessment_assignments")
+}
+
+model AssessmentAttempt {
+  id                     String               @id @default(uuid())
+  assessmentAssignmentId String
+  studentProfileId       String
+  attemptNumber          Int                  @default(1)
+  startedAt              DateTime             @default(now())
+  submittedAt            DateTime?
+  timeSpentSeconds       Int                  @default(0)
+  rawScore               Float?
+  maxScore               Float?
+  percentageScore        Float?
+  resultStatus           String               @default("in_progress") // in_progress, completed, marked
+  isLatest               Boolean              @default(true)
+  isBest                 Boolean              @default(true)
+  markedByUserId         String?
+  teacherComment         String?
+  parentComment          String?
+  rawImportPayload       Json?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  assignment             AssessmentAssignment @relation(fields: [assessmentAssignmentId], references: [id], onDelete: Cascade)
+  studentProfile         StudentProfile       @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  markedByUser           User?                @relation("MarkedAttempts", fields: [markedByUserId], references: [id], onDelete: SetNull)
+  responses              StudentResponse[]
+
+  @@map("assessment_attempts")
+}
+
+model StudentResponse {
+  id                  String            @id @default(uuid())
+  assessmentAttemptId String
+  questionId          String
+  selectedOptionId    String?
+  responseText        String?
+  isCorrect           Boolean?
+  marksAwarded        Float?
+  marksAvailable      Float             @default(1)
+  timeSpentSeconds    Int               @default(0)
+  feedback            String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  attempt             AssessmentAttempt @relation(fields: [assessmentAttemptId], references: [id], onDelete: Cascade)
+  question            Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption      QuestionOption?   @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+
+  @@unique([assessmentAttemptId, questionId])
+  @@map("student_responses")
 }

@@ -1,0 +1,94 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { CsrfGuard } from '../auth/guards/csrf.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import {
+  ListResponsesQueryDto,
+  MarkStudentResponseDto,
+  SaveStudentResponseDto,
+  UpdateStudentResponseDto,
+} from './dto/assessments.dto';
+import { StudentResponsesService } from './student-responses.service';
+
+@Controller()
+@UseGuards(CsrfGuard, PermissionsGuard)
+export class StudentResponsesController {
+  constructor(
+    private readonly studentResponsesService: StudentResponsesService,
+  ) {}
+
+  @Get('responses')
+  @RequirePermissions({ action: 'read', subject: 'Assessment' })
+  async listResponses(@Query() query: ListResponsesQueryDto) {
+    return this.studentResponsesService.listResponses(query);
+  }
+
+  @Get('responses/:id')
+  @RequirePermissions({ action: 'read', subject: 'Assessment' })
+  async getResponse(@Param('id') id: string) {
+    return this.studentResponsesService.getResponse(id);
+  }
+
+  @Post('responses')
+  @RequirePermissions({ action: 'attempt', subject: 'Assessment' })
+  async saveResponse(
+    @Body() body: SaveStudentResponseDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.studentResponsesService.saveResponse(body, user.id);
+  }
+
+  @Put('responses/:id')
+  @RequirePermissions({ action: 'attempt', subject: 'Assessment' })
+  async updateResponse(
+    @Param('id') id: string,
+    @Body() body: UpdateStudentResponseDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.studentResponsesService.updateResponse(id, body, user.id);
+  }
+
+  @Post('responses/:id/mark')
+  @RequirePermissions({ action: 'mark', subject: 'Assessment' })
+  async markResponse(
+    @Param('id') id: string,
+    @Body() body: MarkStudentResponseDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.studentResponsesService.markResponse(id, body, user.id);
+  }
+
+  @Get('attempts/:id/responses')
+  @RequirePermissions({ action: 'read', subject: 'Assessment' })
+  async listAttemptResponses(
+    @Param('id') id: string,
+    @Query() query: ListResponsesQueryDto,
+  ) {
+    return this.studentResponsesService.listResponses({
+      ...query,
+      assessmentAttemptId: id,
+    });
+  }
+
+  @Get('questions/:id/responses')
+  @RequirePermissions({ action: 'read', subject: 'Assessment' })
+  async listQuestionResponses(
+    @Param('id') id: string,
+    @Query() query: ListResponsesQueryDto,
+  ) {
+    return this.studentResponsesService.listResponses({
+      ...query,
+      questionId: id,
+    });
+  }
+}

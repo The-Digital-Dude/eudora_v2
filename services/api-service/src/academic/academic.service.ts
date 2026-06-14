@@ -477,4 +477,97 @@ export class AcademicService {
 
     return { message: 'Course class deleted successfully' };
   }
+
+  async getClassSectionRoster(classSectionId: string) {
+    const section = await this.prisma.classSection.findUnique({
+      where: { id: classSectionId },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        classroom: true,
+        program: { select: { id: true, code: true, name: true } },
+        academicYear: { select: { id: true, name: true, startDate: true, endDate: true } },
+        placements: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'asc' },
+          select: {
+            createdAt: true,
+            studentProfile: {
+              select: {
+                id: true,
+                fullName: true,
+                status: true,
+                user: { select: { id: true, email: true, firstName: true, lastName: true } },
+                families: {
+                  take: 1,
+                  select: {
+                    family: {
+                      select: {
+                        id: true,
+                        householdName: true,
+                        status: true,
+                      },
+                    },
+                  },
+                },
+                guardians: {
+                  select: {
+                    id: true,
+                    relationshipType: true,
+                    isPrimary: true,
+                    hasAcademicAccess: true,
+                    hasEmergencyContact: true,
+                    guardianProfile: {
+                      select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
+                        phone: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!section) {
+      throw new NotFoundException('Class section not found');
+    }
+
+    return {
+      id: section.id,
+      code: section.code,
+      name: section.name,
+      classroom: section.classroom,
+      program: section.program,
+      academicYear: section.academicYear,
+      students: section.placements.map((p) => {
+        const student = p.studentProfile;
+        return {
+          id: student.id,
+          fullName: student.fullName,
+          email: student.user.email,
+          status: student.status,
+          createdAt: p.createdAt,
+          family: student.families[0]?.family ?? null,
+          guardians: student.guardians.map((g) => ({
+            id: g.guardianProfile.id,
+            relationshipId: g.id,
+            fullName: g.guardianProfile.fullName,
+            email: g.guardianProfile.email,
+            phone: g.guardianProfile.phone,
+            relationshipType: g.relationshipType,
+            isPrimaryContact: g.isPrimary,
+            isEmergencyContact: g.hasEmergencyContact,
+            hasAcademicAccess: g.hasAcademicAccess,
+          })),
+        };
+      }),
+    };
+  }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -17,6 +17,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { useRegisterMutation } from "@/features/auth/authApi";
+import { login } from "@/features/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,10 +29,19 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agree, setAgree] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const [registerMutation, { isLoading: loading }] = useRegisterMutation();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,17 +57,24 @@ export default function RegisterPage() {
       return;
     }
 
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "User";
+
     try {
-      setLoading(true);
-      // Simulate registration latency
-      await new Promise((res) => setTimeout(res, 1500));
-      console.log("Account created:", { name, email });
+      const user = await registerMutation({
+        email,
+        password,
+        firstName,
+        lastName,
+      }).unwrap();
+
+      // Automatically sign in locally on register success
+      dispatch(login({ user, token: null }));
       router.push("/login");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError("An error occurred. Please try again.");
-    } finally {
-      setLoading(false);
+      setError(err?.data?.message || "An error occurred. Please try again.");
     }
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -16,28 +16,40 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { useLoginMutation } from "@/features/auth/authApi";
+import { login } from "@/features/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const [loginMutation, { isLoading: loading }] = useLoginMutation();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
+    setError("");
 
     try {
-      setLoading(true);
-      // Simulate authentication latency
-      await new Promise((res) => setTimeout(res, 1200));
-      console.log("Authenticated:", { email });
+      const user = await loginMutation({ email, password }).unwrap();
+      dispatch(login({ user, token: null }));
       router.push("/dashboard");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-    } finally {
-      setLoading(false);
+      setError(err?.data?.message || "Invalid email or password.");
     }
   };
 
@@ -118,6 +130,13 @@ export default function LoginPage() {
               Or continue with
             </span>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 text-xs font-semibold text-rose-500 bg-rose-50 border border-rose-100 p-3 rounded-xl">
+              {error}
+            </div>
+          )}
 
           {/* Form */}
           <form className="space-y-5" onSubmit={handleLogin}>

@@ -20,7 +20,8 @@ import {
   ClipboardList,
   CalendarDays,
   MessageSquare,
-  Globe
+  Globe,
+  GraduationCap
 } from "lucide-react";
 
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -176,6 +177,11 @@ export default function DashboardLayout({
       href: "/dashboard/leads",
       icon: <UserCheck className="w-3.5 h-3.5" />,
       label: "Leads & Enrolments",
+    },
+    {
+      href: "/dashboard/students",
+      icon: <GraduationCap className="w-3.5 h-3.5" />,
+      label: "Student Roster",
     },
     {
       href: "/dashboard/classes",

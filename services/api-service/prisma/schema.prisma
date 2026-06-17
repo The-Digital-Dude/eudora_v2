@@ -273,6 +273,7 @@ model CourseClass {
   enrollments StudentCourseEnrollment[]
   sessions    CourseClassSession[]
   homeworks   Homework[]
+  makeupRequests MakeupRequest[]
 
   @@map("course_classes")
 }
@@ -299,6 +300,7 @@ model StudentProfile {
   competencyMasteries   CompetencyMastery[]
   assessmentAssignments AssessmentAssignment[]
   assessmentAttempts    AssessmentAttempt[]
+  makeupRequests        MakeupRequest[]
 
   @@map("student_profiles")
 }
@@ -994,4 +996,49 @@ model StudentResponse {
 
   @@unique([assessmentAttemptId, questionId])
   @@map("student_responses")
+}
+
+model Lead {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  status    String   @default("New") // "New", "Diagnostic Scheduled", "Pending Enrolment", "Enrolled"
+  source    String   @default("Website Form")
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("leads")
+}
+
+model Broadcast {
+  id             String   @id @default(uuid())
+  type           String   // "Announcement", "SMS Alert", "Email Broadcast"
+  title          String
+  content        String?
+  sender         String   @default("System")
+  status         String   @default("SENT") // "SENT", "FAILED", "PENDING"
+  recipientCount Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("broadcasts")
+}
+
+model MakeupRequest {
+  id               String   @id @default(uuid())
+  studentProfileId String
+  courseClassId    String
+  originalDate     DateTime @db.Date
+  reason           String?
+  status           String   @default("Awaiting Action") // "Awaiting Action", "Scheduled", "Declined"
+  scheduledDate    DateTime? @db.Date
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  courseClass      CourseClass    @relation(fields: [courseClassId], references: [id], onDelete: Cascade)
+
+  @@map("makeup_requests")
 }

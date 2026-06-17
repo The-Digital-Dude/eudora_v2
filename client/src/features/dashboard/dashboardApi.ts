@@ -63,6 +63,167 @@ export interface BillingPlan {
   updatedAt: string;
 }
 
+export interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  status: string;
+  source: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CourseClass {
+  id: string;
+  termId: string;
+  name: string;
+  code: string;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
+  term?: {
+    id: string;
+    name: string;
+    academicYear?: {
+      id: string;
+      name: string;
+    };
+  };
+}
+
+export interface ClassSection {
+  id: string;
+  programId: string;
+  academicYearId: string;
+  name: string;
+  code: string;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MakeupRequest {
+  id: string;
+  studentProfileId: string;
+  courseClassId: string;
+  originalDate: string;
+  reason?: string;
+  status: string;
+  scheduledDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  studentProfile?: {
+    id: string;
+    fullName: string;
+  };
+  courseClass?: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface AssessmentAttempt {
+  id: string;
+  assessmentAssignmentId: string;
+  studentProfileId: string;
+  attemptNumber: number;
+  startedAt: string;
+  submittedAt?: string;
+  timeSpentSeconds: number;
+  rawScore?: number;
+  maxScore?: number;
+  percentageScore?: number;
+  resultStatus: string;
+  createdAt: string;
+  updatedAt: string;
+  studentProfile?: {
+    id: string;
+    fullName: string;
+  };
+  assignment?: {
+    id: string;
+    assessment?: {
+      id: string;
+      title: string;
+      subject?: {
+        name: string;
+      };
+    };
+  };
+}
+
+export interface Broadcast {
+  id: string;
+  type: string;
+  title: string;
+  content?: string;
+  sender: string;
+  status: string;
+  recipientCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentProfile {
+  id: string;
+  userId: string;
+  fullName: string;
+  birthDate: string;
+  gender: "MALE" | "FEMALE" | "OTHER";
+  status: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "GRADUATED";
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    email: string;
+  };
+  placements?: {
+    classSectionId: string;
+    academicYearId: string;
+    classSection?: {
+      id: string;
+      name: string;
+      code: string;
+    };
+  }[];
+  enrollments?: {
+    id: string;
+    courseClassId: string;
+    courseClass?: {
+      id: string;
+      name: string;
+      code: string;
+    };
+  }[];
+}
+
+export interface StudentPlacement {
+  studentProfileId: string;
+  classSectionId: string;
+  academicYearId: string;
+  status: "PLACED" | "PENDING" | "WITHDRAWN";
+  isActive: boolean;
+  createdAt?: string;
+}
+
+export interface StudentEnrollment {
+  id: string;
+  studentProfileId: string;
+  courseClassId: string;
+  enrollmentDate: string;
+  status: "ENROLLED" | "COMPLETED" | "DROPPED";
+}
+
+export interface AcademicYear {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: "ACTIVE" | "INACTIVE";
+}
+
 export const dashboardApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
@@ -194,6 +355,204 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       invalidatesTags: ["BillingPlans"],
     } as any),
+
+    getLeads: builder.query<{ items: Lead[]; total: number }, { page?: number; limit?: number } | void>({
+      query: (params: any) => {
+        const page = params?.page ?? 1;
+        const limit = params?.limit ?? 100;
+        return `/leads?page=${page}&limit=${limit}`;
+      },
+      transformResponse: (response: any) => ({
+        items: response.data || [],
+        total: response.meta?.total ?? (response.data?.length ?? 0),
+      }),
+      providesTags: ["Leads"],
+    } as any),
+    createLead: builder.mutation<Lead, Partial<Lead>>({
+      query: (body: any) => ({
+        url: "/leads",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Leads"],
+    } as any),
+    updateLead: builder.mutation<Lead, { id: string; body: Partial<Lead> }>({
+      query: ({ id, body }: any) => ({
+        url: `/leads/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Leads"],
+    } as any),
+    deleteLead: builder.mutation<void, string>({
+      query: (id: any) => ({
+        url: `/leads/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Leads"],
+    } as any),
+
+    getCourseClasses: builder.query<{ items: CourseClass[]; total: number }, { page?: number; limit?: number } | void>({
+      query: (params: any) => {
+        const page = params?.page ?? 1;
+        const limit = params?.limit ?? 100;
+        return `/course-classes?page=${page}&limit=${limit}`;
+      },
+      transformResponse: (response: any) => ({
+        items: response.data || [],
+        total: response.meta?.total ?? (response.data?.length ?? 0),
+      }),
+      providesTags: ["CourseClasses"],
+    } as any),
+
+    getClassSections: builder.query<{ items: ClassSection[]; total: number }, { page?: number; limit?: number } | void>({
+      query: (params: any) => {
+        const page = params?.page ?? 1;
+        const limit = params?.limit ?? 100;
+        return `/class-sections?page=${page}&limit=${limit}`;
+      },
+      transformResponse: (response: any) => ({
+        items: response.data || [],
+        total: response.meta?.total ?? (response.data?.length ?? 0),
+      }),
+      providesTags: ["ClassSections"],
+    } as any),
+
+    getAcademicYears: builder.query<{ items: AcademicYear[]; total: number }, { page?: number; limit?: number } | void>({
+      query: (params: any) => {
+        const page = params?.page ?? 1;
+        const limit = params?.limit ?? 100;
+        return `/academic-years?page=${page}&limit=${limit}`;
+      },
+      transformResponse: (response: any) => ({
+        items: response.data || [],
+        total: response.meta?.total ?? (response.data?.length ?? 0),
+      }),
+    } as any),
+
+    getMakeupRequests: builder.query<{ items: MakeupRequest[]; total: number }, { page?: number; limit?: number } | void>({
+      query: (params: any) => {
+        const page = params?.page ?? 1;
+        const limit = params?.limit ?? 100;
+        return `/makeup-requests?page=${page}&limit=${limit}`;
+      },
+      transformResponse: (response: any) => ({
+        items: response.data || [],
+        total: response.meta?.total ?? (response.data?.length ?? 0),
+      }),
+      providesTags: ["MakeupRequests"],
+    } as any),
+    updateMakeupRequest: builder.mutation<MakeupRequest, { id: string; body: { status: string; scheduledDate?: string } }>({
+      query: ({ id, body }: any) => ({
+        url: `/makeup-requests/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["MakeupRequests"],
+    } as any),
+
+    getAssessmentAttempts: builder.query<{ items: AssessmentAttempt[]; total: number }, { page?: number; limit?: number } | void>({
+      query: (params: any) => {
+        const page = params?.page ?? 1;
+        const limit = params?.limit ?? 100;
+        return `/attempts?page=${page}&limit=${limit}`;
+      },
+      transformResponse: (response: any) => ({
+        items: response.data || [],
+        total: response.meta?.total ?? (response.data?.length ?? 0),
+      }),
+      providesTags: ["Attempts"],
+    } as any),
+
+    getBroadcasts: builder.query<{ items: Broadcast[]; total: number }, { page?: number; limit?: number } | void>({
+      query: (params: any) => {
+        const page = params?.page ?? 1;
+        const limit = params?.limit ?? 100;
+        return `/communication/broadcasts?page=${page}&limit=${limit}`;
+      },
+      transformResponse: (response: any) => ({
+        items: response.data || [],
+        total: response.meta?.total ?? (response.data?.length ?? 0),
+      }),
+      providesTags: ["Broadcasts"],
+    } as any),
+    createBroadcast: builder.mutation<Broadcast, Partial<Broadcast>>({
+      query: (body: any) => ({
+        url: "/communication/broadcasts",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Broadcasts"],
+    } as any),
+
+    getStudentProfiles: builder.query<{ items: StudentProfile[]; total: number }, { page?: number; limit?: number; status?: string } | void>({
+      query: (params: any) => {
+        const page = params?.page ?? 1;
+        const limit = params?.limit ?? 100;
+        const statusQuery = params?.status ? `&status=${params.status}` : "";
+        return `/student-profiles?page=${page}&limit=${limit}${statusQuery}`;
+      },
+      transformResponse: (response: any) => ({
+        items: response.data || [],
+        total: response.meta?.total ?? (response.data?.length ?? 0),
+      }),
+      providesTags: ["Students"],
+    } as any),
+    createStudentProfile: builder.mutation<StudentProfile, Partial<StudentProfile>>({
+      query: (body: any) => ({
+        url: "/student-profiles",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Students"],
+    } as any),
+    updateStudentProfile: builder.mutation<StudentProfile, { id: string; body: Partial<StudentProfile> }>({
+      query: ({ id, body }: any) => ({
+        url: `/student-profiles/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Students"],
+    } as any),
+    deleteStudentProfile: builder.mutation<void, string>({
+      query: (id: any) => ({
+        url: `/student-profiles/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Students"],
+    } as any),
+
+    createStudentPlacement: builder.mutation<StudentPlacement, { studentProfileId: string; classSectionId: string; academicYearId: string }>({
+      query: (body: any) => ({
+        url: "/student-placements",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Students", "Placements"],
+    } as any),
+    deleteStudentPlacement: builder.mutation<void, { studentProfileId: string; classSectionId: string }>({
+      query: ({ studentProfileId, classSectionId }: any) => ({
+        url: `/student-placements/${studentProfileId}/${classSectionId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Students", "Placements"],
+    } as any),
+
+    createStudentEnrollment: builder.mutation<StudentEnrollment, { studentProfileId: string; courseClassId: string }>({
+      query: (body: any) => ({
+        url: "/student-enrollments",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Students", "Enrollments"],
+    } as any),
+    deleteStudentEnrollment: builder.mutation<void, string>({
+      query: (id: any) => ({
+        url: `/student-enrollments/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Students", "Enrollments"],
+    } as any),
   }),
 });
 
@@ -213,4 +572,24 @@ export const {
   useGetRolesQuery,
   useGetBillingPlansQuery,
   useCreateBillingPlanMutation,
+  useGetLeadsQuery,
+  useCreateLeadMutation,
+  useUpdateLeadMutation,
+  useDeleteLeadMutation,
+  useGetCourseClassesQuery,
+  useGetClassSectionsQuery,
+  useGetAcademicYearsQuery,
+  useGetMakeupRequestsQuery,
+  useUpdateMakeupRequestMutation,
+  useGetAssessmentAttemptsQuery,
+  useGetBroadcastsQuery,
+  useCreateBroadcastMutation,
+  useGetStudentProfilesQuery,
+  useCreateStudentProfileMutation,
+  useUpdateStudentProfileMutation,
+  useDeleteStudentProfileMutation,
+  useCreateStudentPlacementMutation,
+  useDeleteStudentPlacementMutation,
+  useCreateStudentEnrollmentMutation,
+  useDeleteStudentEnrollmentMutation,
 } = dashboardApi;

@@ -446,6 +446,229 @@ async function main() {
 
   console.log('✅ Seeded concept mastery curriculum');
 
+  console.log('🌱 Seeding student users and profiles...');
+  const studentData = [
+    { email: 'charlotte@example.com', firstName: 'Charlotte', lastName: 'Harris', gender: 'FEMALE' },
+    { email: 'elijah.m@example.com', firstName: 'Elijah', lastName: 'Miller', gender: 'MALE' },
+    { email: 'aria.w@example.com', firstName: 'Aria', lastName: 'Watson', gender: 'FEMALE' },
+    { email: 'lucas.b@example.com', firstName: 'Lucas', lastName: 'Brooks', gender: 'MALE' },
+  ];
+
+  const studentProfiles = [];
+  const classSection = await prisma.classSection.findUnique({ where: { code: 'CS-2026-A' } });
+
+  for (const s of studentData) {
+    const user = await prisma.user.upsert({
+      where: { email: s.email },
+      update: {},
+      create: {
+        email: s.email,
+        password: hashedPassword,
+        firstName: s.firstName,
+        lastName: s.lastName,
+        isActive: true,
+      },
+    });
+
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: user.id,
+          roleId: userRole.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        roleId: userRole.id,
+      },
+    });
+
+    const profile = await prisma.studentProfile.upsert({
+      where: { userId: user.id },
+      update: {
+        fullName: `${s.firstName} ${s.lastName}`,
+        gender: s.gender as any,
+        status: 'ACTIVE',
+      },
+      create: {
+        userId: user.id,
+        fullName: `${s.firstName} ${s.lastName}`,
+        birthDate: new Date('2010-05-15'),
+        gender: s.gender as any,
+        status: 'ACTIVE',
+      },
+    });
+    studentProfiles.push(profile);
+
+    // Seed class placement
+    if (classSection) {
+      await prisma.studentClassPlacement.upsert({
+        where: {
+          studentProfileId_classSectionId: {
+            studentProfileId: profile.id,
+            classSectionId: classSection.id,
+          },
+        },
+        update: {},
+        create: {
+          studentProfileId: profile.id,
+          classSectionId: classSection.id,
+          academicYearId: academicYear.id,
+          status: s.firstName === 'Elijah' ? 'PENDING' : 'PLACED',
+          isActive: true,
+        },
+      });
+    }
+  }
+  console.log('✅ Seeded student users and profiles');
+
+  // Seed daily attendance
+  console.log('🌱 Seeding daily attendance records...');
+  if (classSection) {
+    const dates = [
+      new Date('2026-06-12'),
+      new Date('2026-06-13'),
+      new Date('2026-06-14'),
+      new Date('2026-06-15'),
+    ];
+
+    for (const profile of studentProfiles) {
+      for (const d of dates) {
+        const isAbsent = profile.fullName === 'Charlotte Harris' && d.getTime() === new Date('2026-06-12').getTime();
+        const status = isAbsent ? 'ABSENT' : 'PRESENT';
+        const remarks = isAbsent ? 'Medical Leave' : 'On time';
+
+        await prisma.dailyAttendance.upsert({
+          where: {
+            studentProfileId_classSectionId_date: {
+              studentProfileId: profile.id,
+              classSectionId: classSection.id,
+              date: d,
+            },
+          },
+          update: {
+            status,
+            remarks,
+          },
+          create: {
+            studentProfileId: profile.id,
+            classSectionId: classSection.id,
+            date: d,
+            status,
+            remarks,
+            recordedById: superAdminUser.id,
+          },
+        });
+      }
+    }
+  }
+  console.log('✅ Seeded daily attendance records');
+
+  // Seed leads
+  console.log('🌱 Seeding leads...');
+  await prisma.lead.deleteMany();
+  await prisma.lead.createMany({
+    data: [
+      {
+        name: 'Charlotte Harris',
+        email: 'charlotte@example.com',
+        phone: '(555) 019-8832',
+        status: 'New',
+        source: 'Website Form',
+        notes: 'Interested in Grade 10 programming bootcamp.',
+      },
+      {
+        name: 'Elijah Miller',
+        email: 'elijah.m@example.com',
+        phone: '(555) 012-3841',
+        status: 'Diagnostic Scheduled',
+        source: 'Referral',
+        notes: 'Needs diagnostic assessment for math level alignment.',
+      },
+      {
+        name: 'Aria Watson',
+        email: 'aria.w@example.com',
+        phone: '(555) 019-3392',
+        status: 'Pending Enrolment',
+        source: 'Facebook Ad',
+        notes: 'Completed evaluation, pending enrollment confirmation.',
+      },
+      {
+        name: 'Lucas Brooks',
+        email: 'lucas.b@example.com',
+        phone: '(555) 015-2831',
+        status: 'Enrolled',
+        source: 'Walk-in',
+        notes: 'Fully enroled in BSC-CS program.',
+      },
+    ],
+  });
+  console.log('✅ Seeded leads');
+
+  // Seed broadcasts
+  console.log('🌱 Seeding communication broadcasts...');
+  await prisma.broadcast.deleteMany();
+  await prisma.broadcast.createMany({
+    data: [
+      {
+        type: 'Announcement',
+        title: 'Fall Semester 2026 Registration Open',
+        content: 'Registration is now open for all programs in the Fall 2026 term.',
+        sender: 'System',
+        status: 'SENT',
+        recipientCount: 120,
+      },
+      {
+        type: 'SMS Alert',
+        title: 'Attendance Reminder Sent to Parent (Watson)',
+        content: 'Watson was absent from morning roll call.',
+        sender: 'Main Campus Branch',
+        status: 'SENT',
+        recipientCount: 1,
+      },
+      {
+        type: 'Email Broadcast',
+        title: 'Tuition Invoices Generated',
+        content: 'Term invoices for Fall Semester 2026 have been issued.',
+        sender: 'Billing System',
+        status: 'SENT',
+        recipientCount: 95,
+      },
+    ],
+  });
+  console.log('✅ Seeded communication broadcasts');
+
+  // Seed makeup requests
+  console.log('🌱 Seeding makeup requests...');
+  await prisma.makeupRequest.deleteMany();
+  const charlotteProfile = studentProfiles.find((p) => p.fullName === 'Charlotte Harris');
+  const elijahProfile = studentProfiles.find((p) => p.fullName === 'Elijah Miller');
+  const dsaClass = await prisma.courseClass.findUnique({ where: { code: 'CS-DSA-2026' } });
+
+  if (charlotteProfile && elijahProfile && dsaClass) {
+    await prisma.makeupRequest.createMany({
+      data: [
+        {
+          studentProfileId: charlotteProfile.id,
+          courseClassId: dsaClass.id,
+          originalDate: new Date('2026-06-12'),
+          reason: 'Medical Leave',
+          status: 'Awaiting Action',
+        },
+        {
+          studentProfileId: elijahProfile.id,
+          courseClassId: dsaClass.id,
+          originalDate: new Date('2026-06-15'),
+          reason: 'Family Event',
+          status: 'Scheduled',
+          scheduledDate: new Date('2026-06-18'),
+        },
+      ],
+    });
+  }
+  console.log('✅ Seeded makeup requests');
+
   console.log('🎉 Seeding completed successfully!');
 }
 

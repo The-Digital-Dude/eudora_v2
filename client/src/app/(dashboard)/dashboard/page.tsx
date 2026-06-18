@@ -48,7 +48,7 @@ export default function DashboardOverview() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/dashboard/campuses">
+          <Link href="/campuses">
             <Button className="h-10 px-4 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold cursor-pointer active:scale-98 flex items-center gap-1.5 shadow-sm">
               <Plus className="w-4 h-4" /> Add Campus
             </Button>
@@ -279,7 +279,7 @@ export default function DashboardOverview() {
               </div>
             </div>
           </div>
-          <Link href="/dashboard/users" className="text-xs font-semibold text-neutral-900 mt-4 flex items-center gap-1 hover:underline">
+          <Link href="/users" className="text-xs font-semibold text-neutral-900 mt-4 flex items-center gap-1 hover:underline">
             Manage users & permissions <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </Card>

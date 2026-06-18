@@ -90,7 +90,10 @@ export const authApi = createApi({
     "Broadcasts",
     "Students",
     "Placements",
-    "Enrollments"
+    "Enrollments",
+    // Clio active learning
+    "Lessons",
+    "LessonFlow",
   ],
   endpoints: (builder) => ({
     login: builder.mutation({

@@ -19,6 +19,7 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { HomeworkModule } from './homework/homework.module';
 import { EvaluationModule } from './evaluation/evaluation.module';
 import { AssessmentsModule } from './assessments/assessments.module';
+import { LessonsModule } from './lessons/lessons.module';
 import { LeadsModule } from './leads/leads.module';
 import { CommunicationModule } from './communication/communication.module';
 import { MakeupModule } from './makeup/makeup.module';
@@ -46,6 +47,7 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
     HomeworkModule,
     EvaluationModule,
     AssessmentsModule,
+    LessonsModule,
     LeadsModule,
     CommunicationModule,
     MakeupModule,

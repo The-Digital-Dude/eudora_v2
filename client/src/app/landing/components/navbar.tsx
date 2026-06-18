@@ -59,8 +59,23 @@ export default function Navbar() {
               <span className="text-xs font-semibold text-neutral-600">
                 Hello, {user?.firstName || "User"}
               </span>
-              <Link href="/dashboard" className="text-xs font-semibold text-neutral-500 hover:text-neutral-950 transition-colors">
-                Dashboard
+              <Link
+                href={
+                  user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" ||
+                  (Array.isArray(user?.roles) && user?.roles.some((r: any) =>
+                    r === "ADMIN" || r === "SUPER_ADMIN" || r.name === "ADMIN" || r.name === "SUPER_ADMIN" || r.role?.name === "ADMIN" || r.role?.name === "SUPER_ADMIN"
+                  ))
+                    ? "/dashboard"
+                    : "/learn"
+                }
+                className="text-xs font-semibold text-neutral-500 hover:text-neutral-950 transition-colors"
+              >
+                {user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" ||
+                (Array.isArray(user?.roles) && user?.roles.some((r: any) =>
+                  r === "ADMIN" || r === "SUPER_ADMIN" || r.name === "ADMIN" || r.name === "SUPER_ADMIN" || r.role?.name === "ADMIN" || r.role?.name === "SUPER_ADMIN"
+                ))
+                  ? "Dashboard"
+                  : "Active Learning"}
               </Link>
               <button 
                 onClick={handleLogout}

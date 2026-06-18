@@ -21,7 +21,9 @@ import {
   CalendarDays,
   MessageSquare,
   Globe,
-  GraduationCap
+  GraduationCap,
+  BookOpen,
+  PenTool
 } from "lucide-react";
 
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -174,6 +176,11 @@ export default function DashboardLayout({
       label: "Overview",
     },
     {
+      href: "/learn",
+      icon: <BookOpen className="w-3.5 h-3.5" />,
+      label: "Active Learning",
+    },
+    {
       href: "/dashboard/leads",
       icon: <UserCheck className="w-3.5 h-3.5" />,
       label: "Leads & Enrolments",
@@ -192,6 +199,11 @@ export default function DashboardLayout({
       href: "/dashboard/diagnostics",
       icon: <ClipboardList className="w-3.5 h-3.5" />,
       label: "Diagnostics",
+    },
+    {
+      href: "/dashboard/lessons",
+      icon: <PenTool className="w-3.5 h-3.5" />,
+      label: "Lesson Authoring",
     },
     {
       href: "/dashboard/communication",

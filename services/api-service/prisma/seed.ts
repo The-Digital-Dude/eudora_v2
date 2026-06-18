@@ -363,6 +363,114 @@ async function main() {
     });
   }
 
+  console.log('🌱 Seeding active learning lessons...');
+  let lesson = await prisma.lesson.findFirst({
+    where: { title: 'Intro to Comparing Fractions' },
+  });
+
+  if (!lesson) {
+    lesson = await prisma.lesson.create({
+      data: {
+        conceptId: concept.id,
+        title: 'Intro to Comparing Fractions',
+        description: 'Visualizing and understanding how different fractions compare.',
+        sortOrder: 1,
+        xpReward: 50,
+      },
+    });
+
+    const mathSubject = await prisma.subject.upsert({
+      where: { code: 'MATH' },
+      update: {},
+      create: { code: 'MATH', name: 'Mathematics' },
+    });
+
+    const gradeLevel = await prisma.level.upsert({
+      where: { code: 'G10' },
+      update: {},
+      create: { code: 'G10', name: 'Grade 10', sortOrder: 10 },
+    });
+
+    const q1 = await prisma.question.create({
+      data: {
+        subjectId: mathSubject.id,
+        levelId: gradeLevel.id,
+        questionType: 'interactive',
+        prompt: 'Slide the dial to increase the numerator and see how the shaded area changes.',
+        correctAnswer: '5',
+        widgetType: 'SLIDER_MANIPULATIVE',
+        isGraded: false,
+        explanation: 'As the numerator increases, you shade more parts of the whole, meaning the value of the fraction grows!',
+        hints: ['Try moving the slider all the way to 5 parts.'],
+        widgetConfig: {
+          min: 1,
+          max: 10,
+          step: 1,
+          defaultValue: 2,
+          targetValue: 5,
+          tolerance: 0.1,
+          displayFormula: '{val} / 10',
+          visualizationType: 'scale_balance',
+        },
+      },
+    });
+
+    await prisma.card.create({
+      data: {
+        lessonId: lesson.id,
+        title: 'Shading the Whole',
+        sortOrder: 1,
+        cardType: 'CONCEPTUAL',
+        content: 'Fractions represent parts of a whole. Let us visualize $$\\frac{x}{10}$$ dynamically. Drag the slider to observe how the value changes relative to 1.',
+        questionId: q1.id,
+      },
+    });
+
+    const q2 = await prisma.question.create({
+      data: {
+        subjectId: mathSubject.id,
+        levelId: gradeLevel.id,
+        questionType: 'mcq',
+        prompt: 'Which fraction is larger: $$\\frac{3}{5}$$ or $$\\frac{3}{7}$$?',
+        correctAnswer: null,
+        widgetType: 'STANDARD_MCQ',
+        isGraded: true,
+        explanation: 'When numerators are equal, the fraction with the smaller denominator is larger because the whole is divided into fewer, larger pieces!',
+        hints: ['Think about sharing a pizza with 5 people versus 7 people.'],
+      },
+    });
+
+    await prisma.questionOption.create({
+      data: {
+        questionId: q2.id,
+        optionLabel: 'A',
+        optionText: '$$\\frac{3}{5}$$',
+        isCorrect: true,
+      },
+    });
+
+    await prisma.questionOption.create({
+      data: {
+        questionId: q2.id,
+        optionLabel: 'B',
+        optionText: '$$\\frac{3}{7}$$',
+        isCorrect: false,
+      },
+    });
+
+    await prisma.card.create({
+      data: {
+        lessonId: lesson.id,
+        title: 'Comparing Equal Numerators',
+        sortOrder: 2,
+        cardType: 'INTERACTIVE',
+        content: 'Now, let us compare two fractions that have the same numerator but different denominators. Make a prediction!',
+        questionId: q2.id,
+      },
+    });
+  }
+  console.log('✅ Seeded active learning lessons');
+
   let rubric = await prisma.rubric.findFirst({
     where: { competencyId: competency.id },
   });

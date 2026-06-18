@@ -29,14 +29,19 @@ export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const user = useAppSelector((state) => state.auth.user) as any;
   const [loginMutation, { isLoading: loading }] = useLoginMutation();
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/dashboard");
+    if (isAuthenticated && user) {
+      const hasAdminRole = user.role === "ADMIN" || user.role === "SUPER_ADMIN" ||
+        (Array.isArray(user.roles) && user.roles.some((r: any) =>
+          r === "ADMIN" || r === "SUPER_ADMIN" || r.name === "ADMIN" || r.name === "SUPER_ADMIN" || r.role?.name === "ADMIN" || r.role?.name === "SUPER_ADMIN"
+        ));
+      router.push(hasAdminRole ? "/dashboard" : "/learn");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,9 +49,13 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const user = await loginMutation({ email, password }).unwrap();
-      dispatch(login({ user, token: null }));
-      router.push("/dashboard");
+      const loggedInUser = await loginMutation({ email, password }).unwrap();
+      dispatch(login({ user: loggedInUser, token: null }));
+      const hasAdminRole = loggedInUser.role === "ADMIN" || loggedInUser.role === "SUPER_ADMIN" ||
+        (Array.isArray(loggedInUser.roles) && loggedInUser.roles.some((r: any) =>
+          r === "ADMIN" || r === "SUPER_ADMIN" || r.name === "ADMIN" || r.name === "SUPER_ADMIN" || r.role?.name === "ADMIN" || r.role?.name === "SUPER_ADMIN"
+        ));
+      router.push(hasAdminRole ? "/dashboard" : "/learn");
     } catch (err: any) {
       console.error(err);
       setError(err?.data?.message || "Invalid email or password.");

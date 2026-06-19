@@ -152,9 +152,6 @@ importers:
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      stall:
-        specifier: ^0.0.2
-        version: 0.0.2
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
@@ -1963,9 +1960,6 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  bindings@1.2.1:
-    resolution: {integrity: sha512-u4cBQNepWxYA55FunZSM7wMi55yQaN0otnhhilNoWHq0MfOfJeQx0v0mRRpolGOExPjZcl6FtB0BB8Xkb88F0g==}
-
   body-parser@2.2.2:
     resolution: {integrity: sha512-oP5VkATKlNwcgvxi0vM0p/D3n2C3EReYVX+DNYs5TjZFn/oQt2j+4sVJtSMr18pdRr8wjTcBl6LoV+FUwzPmNA==}
     engines: {node: '>=18'}
@@ -3186,9 +3180,6 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  nan@1.8.4:
-    resolution: {integrity: sha512-609zQ1h3ApgH/94qmbbEklSrjcYYXCHnsWk4MAojq4OUk3tidhDYhPaMasMFKsZPZ96r4eQA1hbR2W4H7/77XA==}
-
   nanoid@3.3.12:
     resolution: {integrity: sha512-ZB9RH/39qpq5Vu6Y+NmUaFhQR6pp+M2Xt76XBnEwDaGcVAqhlvxrl3B2bKS5D3NH3QR76v3aSrKaF/Kiy7lEtQ==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -3708,9 +3699,6 @@ packages:
 
   stable-hash@0.0.5:
     resolution: {integrity: sha512-+L3ccpzibovGXFK+Ap/f8LOS0ahMrHTf3xu7mMLSpEGU0EO9ucaysSylKo9eRDFNhWve/y275iPmIZ4z39a9iA==}
-
-  stall@0.0.2:
-    resolution: {integrity: sha512-GQang7vhqm3R/ZVt506d4WDXK5RYHh04RVbReX1mLwlU2owXqZnpqWEcxFXJlaf7zpya+GSKHjpdmut5l8MGxA==}
 
   statuses@2.0.2:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
@@ -5827,8 +5815,6 @@ snapshots:
 
   baseline-browser-mapping@2.10.37: {}
 
-  bindings@1.2.1: {}
-
   body-parser@2.2.2:
     dependencies:
       bytes: 3.1.2
@@ -7123,8 +7109,6 @@ snapshots:
 
   ms@2.1.3: {}
 
-  nan@1.8.4: {}
-
   nanoid@3.3.12: {}
 
   napi-postinstall@0.3.4: {}
@@ -7809,11 +7793,6 @@ snapshots:
   source-map@0.6.1: {}
 
   stable-hash@0.0.5: {}
-
-  stall@0.0.2:
-    dependencies:
-      bindings: 1.2.1
-      nan: 1.8.4
 
   statuses@2.0.2: {}
 

@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateMakeupRequestDto, UpdateMakeupRequestDto } from './dto/makeup.dto';
+import {
+  CreateMakeupRequestDto,
+  UpdateMakeupRequestDto,
+} from './dto/makeup.dto';
 
 @Injectable()
 export class MakeupService {
@@ -94,7 +97,9 @@ export class MakeupService {
       where: { id },
       data: {
         status: dto.status,
-        scheduledDate: dto.scheduledDate ? new Date(dto.scheduledDate) : undefined,
+        scheduledDate: dto.scheduledDate
+          ? new Date(dto.scheduledDate)
+          : undefined,
       },
     });
   }

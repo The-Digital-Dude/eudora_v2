@@ -1,4 +1,15 @@
-import { IsString, IsOptional, IsInt, IsBoolean, IsUUID, IsDateString, IsEnum, ValidateNested, IsNumber, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsInt,
+  IsBoolean,
+  IsUUID,
+  IsDateString,
+  IsEnum,
+  ValidateNested,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ListAssessmentsQueryDto {
@@ -321,7 +332,14 @@ export class ListAssignmentsQueryDto {
   classSectionId?: string;
 
   @IsOptional()
-  @IsEnum(['assigned', 'started', 'submitted', 'overdue', 'exempted', 'cancelled'])
+  @IsEnum([
+    'assigned',
+    'started',
+    'submitted',
+    'overdue',
+    'exempted',
+    'cancelled',
+  ])
   status?: string;
 
   @IsOptional()
@@ -358,7 +376,14 @@ export class CreateAssignmentDto {
   dueAt?: string | null;
 
   @IsOptional()
-  @IsEnum(['assigned', 'started', 'submitted', 'overdue', 'exempted', 'cancelled'])
+  @IsEnum([
+    'assigned',
+    'started',
+    'submitted',
+    'overdue',
+    'exempted',
+    'cancelled',
+  ])
   status?: string;
 }
 
@@ -372,7 +397,14 @@ export class UpdateAssignmentDto {
   dueAt?: string | null;
 
   @IsOptional()
-  @IsEnum(['assigned', 'started', 'submitted', 'overdue', 'exempted', 'cancelled'])
+  @IsEnum([
+    'assigned',
+    'started',
+    'submitted',
+    'overdue',
+    'exempted',
+    'cancelled',
+  ])
   status?: string;
 }
 

@@ -18,13 +18,19 @@ describe('Guards Unit Tests', () => {
       guard = new RolesGuard(reflector);
     });
 
-    function createMockContext(user: any, handlerRoles?: string[], classRoles?: string[]): ExecutionContext {
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key, targets) => {
-        if (targets[0] === 'handler') {
-          return handlerRoles;
-        }
-        return classRoles;
-      });
+    function createMockContext(
+      user: any,
+      handlerRoles?: string[],
+      classRoles?: string[],
+    ): ExecutionContext {
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key, targets) => {
+          if (targets[0] === 'handler') {
+            return handlerRoles;
+          }
+          return classRoles;
+        });
 
       return {
         getHandler: () => 'handler',
@@ -75,12 +81,14 @@ describe('Guards Unit Tests', () => {
       handlerPermissions?: RequiredPermission[],
       classPermissions?: RequiredPermission[],
     ): ExecutionContext {
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key, targets) => {
-        if (targets[0] === 'handler') {
-          return handlerPermissions;
-        }
-        return classPermissions;
-      });
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key, targets) => {
+          if (targets[0] === 'handler') {
+            return handlerPermissions;
+          }
+          return classPermissions;
+        });
 
       return {
         getHandler: () => 'handler',
@@ -99,14 +107,17 @@ describe('Guards Unit Tests', () => {
     });
 
     it('should return false if there is no user on the request', () => {
-      const context = createMockContext(undefined, [{ action: 'read', subject: 'User' }]);
+      const context = createMockContext(undefined, [
+        { action: 'read', subject: 'User' },
+      ]);
       expect(guard.canActivate(context)).toBe(false);
     });
 
     it('should return true if user is SUPER_ADMIN', () => {
-      const context = createMockContext({ roles: ['SUPER_ADMIN'], permissions: [] }, [
-        { action: 'read', subject: 'User' },
-      ]);
+      const context = createMockContext(
+        { roles: ['SUPER_ADMIN'], permissions: [] },
+        [{ action: 'read', subject: 'User' }],
+      );
       expect(guard.canActivate(context)).toBe(true);
     });
 

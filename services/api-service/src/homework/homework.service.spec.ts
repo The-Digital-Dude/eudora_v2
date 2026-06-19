@@ -52,24 +52,32 @@ describe('HomeworkService', () => {
     it('should throw NotFoundException if course class does not exist', async () => {
       mockPrismaService.courseClass.findUnique.mockResolvedValue(null);
       await expect(
-        service.createHomework({
-          courseClassId: 'non-existent',
-          title: 'Title',
-          dueDate: new Date().toISOString(),
-          maxPoints: 100,
-        }, 'user-id')
+        service.createHomework(
+          {
+            courseClassId: 'non-existent',
+            title: 'Title',
+            dueDate: new Date().toISOString(),
+            maxPoints: 100,
+          },
+          'user-id',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException if due date is invalid', async () => {
-      mockPrismaService.courseClass.findUnique.mockResolvedValue({ id: 'class-1' });
+      mockPrismaService.courseClass.findUnique.mockResolvedValue({
+        id: 'class-1',
+      });
       await expect(
-        service.createHomework({
-          courseClassId: 'class-1',
-          title: 'Title',
-          dueDate: 'invalid-date',
-          maxPoints: 100,
-        }, 'user-id')
+        service.createHomework(
+          {
+            courseClassId: 'class-1',
+            title: 'Title',
+            dueDate: 'invalid-date',
+            maxPoints: 100,
+          },
+          'user-id',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -79,14 +87,17 @@ describe('HomeworkService', () => {
       mockPrismaService.courseClass.findUnique.mockResolvedValue(mockClass);
       mockPrismaService.homework.create.mockResolvedValue(mockHomework);
 
-      const result = await service.createHomework({
-        courseClassId: 'class-1',
-        title: 'Title',
-        description: 'Desc',
-        dueDate: new Date().toISOString(),
-        maxPoints: 100,
-        attachmentUrl: 'http://link',
-      }, 'user-id');
+      const result = await service.createHomework(
+        {
+          courseClassId: 'class-1',
+          title: 'Title',
+          description: 'Desc',
+          dueDate: new Date().toISOString(),
+          maxPoints: 100,
+          attachmentUrl: 'http://link',
+        },
+        'user-id',
+      );
 
       expect(result).toEqual(mockHomework);
       expect(mockPrismaService.homework.create).toHaveBeenCalled();
@@ -100,19 +111,24 @@ describe('HomeworkService', () => {
         service.submitHomework('student-1', {
           homeworkId: 'non-existent',
           content: 'my solution',
-        })
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException if student is not enrolled', async () => {
-      mockPrismaService.homework.findUnique.mockResolvedValue({ id: 'hw-1', courseClassId: 'class-1' });
-      mockPrismaService.studentCourseEnrollment.findUnique.mockResolvedValue(null);
+      mockPrismaService.homework.findUnique.mockResolvedValue({
+        id: 'hw-1',
+        courseClassId: 'class-1',
+      });
+      mockPrismaService.studentCourseEnrollment.findUnique.mockResolvedValue(
+        null,
+      );
 
       await expect(
         service.submitHomework('student-1', {
           homeworkId: 'hw-1',
           content: 'my solution',
-        })
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -123,8 +139,13 @@ describe('HomeworkService', () => {
         dueDate: new Date(Date.now() + 10000), // future due date
       };
       mockPrismaService.homework.findUnique.mockResolvedValue(mockHomework);
-      mockPrismaService.studentCourseEnrollment.findUnique.mockResolvedValue({ id: 'enroll-1' });
-      mockPrismaService.homeworkSubmission.upsert.mockResolvedValue({ id: 'submission-1', status: SubmissionStatus.SUBMITTED });
+      mockPrismaService.studentCourseEnrollment.findUnique.mockResolvedValue({
+        id: 'enroll-1',
+      });
+      mockPrismaService.homeworkSubmission.upsert.mockResolvedValue({
+        id: 'submission-1',
+        status: SubmissionStatus.SUBMITTED,
+      });
 
       const result = await service.submitHomework('student-1', {
         homeworkId: 'hw-1',
@@ -142,11 +163,15 @@ describe('HomeworkService', () => {
         dueDate: new Date(Date.now() - 10000), // past due date
       };
       mockPrismaService.homework.findUnique.mockResolvedValue(mockHomework);
-      mockPrismaService.studentCourseEnrollment.findUnique.mockResolvedValue({ id: 'enroll-1' });
-      mockPrismaService.homeworkSubmission.upsert.mockImplementation(({ create }) => ({
-        id: 'submission-1',
-        status: create.status,
-      }));
+      mockPrismaService.studentCourseEnrollment.findUnique.mockResolvedValue({
+        id: 'enroll-1',
+      });
+      mockPrismaService.homeworkSubmission.upsert.mockImplementation(
+        ({ create }) => ({
+          id: 'submission-1',
+          status: create.status,
+        }),
+      );
 
       const result = await service.submitHomework('student-1', {
         homeworkId: 'hw-1',
@@ -161,10 +186,14 @@ describe('HomeworkService', () => {
     it('should throw NotFoundException if submission does not exist', async () => {
       mockPrismaService.homeworkSubmission.findUnique.mockResolvedValue(null);
       await expect(
-        service.gradeSubmission('sub-1', {
-          pointsEarned: 10,
-          feedback: 'Nice',
-        }, 'teacher-1')
+        service.gradeSubmission(
+          'sub-1',
+          {
+            pointsEarned: 10,
+            feedback: 'Nice',
+          },
+          'teacher-1',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -174,10 +203,14 @@ describe('HomeworkService', () => {
         homework: { maxPoints: 5 },
       });
       await expect(
-        service.gradeSubmission('sub-1', {
-          pointsEarned: 10,
-          feedback: 'Nice',
-        }, 'teacher-1')
+        service.gradeSubmission(
+          'sub-1',
+          {
+            pointsEarned: 10,
+            feedback: 'Nice',
+          },
+          'teacher-1',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -192,10 +225,14 @@ describe('HomeworkService', () => {
         pointsEarned: 8,
       });
 
-      const result = await service.gradeSubmission('sub-1', {
-        pointsEarned: 8,
-        feedback: 'Good work',
-      }, 'teacher-1');
+      const result = await service.gradeSubmission(
+        'sub-1',
+        {
+          pointsEarned: 8,
+          feedback: 'Good work',
+        },
+        'teacher-1',
+      );
 
       expect(result.status).toEqual(SubmissionStatus.GRADED);
       expect(result.pointsEarned).toEqual(8);

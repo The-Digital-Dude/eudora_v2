@@ -60,20 +60,46 @@ export class AssessmentSetupService {
       data: { code, name: requireText(input.name, 'name') },
       select: lookupSelect,
     });
-    await audit(this.prisma, actorUserId, 'assessments.assessmentType.created', 'assessmentType', record.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.assessmentType.created',
+      'assessmentType',
+      record.id,
+    );
     return record;
   }
 
-  async updateAssessmentType(id: string, input: UpdateLookupDto, actorUserId: string) {
+  async updateAssessmentType(
+    id: string,
+    input: UpdateLookupDto,
+    actorUserId: string,
+  ) {
     const record = await this.prisma.assessmentType.update({
       where: { id },
       data: {
-        ...(input.name !== undefined ? { name: requireText(input.name, 'name') } : {}),
-        ...(input.status !== undefined ? { status: enumValue(input.status, ['active', 'inactive', 'archived'], 'status') } : {}),
+        ...(input.name !== undefined
+          ? { name: requireText(input.name, 'name') }
+          : {}),
+        ...(input.status !== undefined
+          ? {
+              status: enumValue(
+                input.status,
+                ['active', 'inactive', 'archived'],
+                'status',
+              ),
+            }
+          : {}),
       } as any,
       select: lookupSelect,
     });
-    await audit(this.prisma, actorUserId, 'assessments.assessmentType.updated', 'assessmentType', record.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.assessmentType.updated',
+      'assessmentType',
+      record.id,
+    );
     return record;
   }
 
@@ -108,7 +134,13 @@ export class AssessmentSetupService {
       },
       select: levelSelect,
     });
-    await audit(this.prisma, actorUserId, 'assessments.level.created', 'level', record.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.level.created',
+      'level',
+      record.id,
+    );
     return record;
   }
 
@@ -116,13 +148,31 @@ export class AssessmentSetupService {
     const record = await this.prisma.level.update({
       where: { id },
       data: {
-        ...(input.name !== undefined ? { name: requireText(input.name, 'name') } : {}),
-        ...(input.status !== undefined ? { status: enumValue(input.status, ['active', 'inactive', 'archived'], 'status') } : {}),
-        ...(input.sortOrder !== undefined ? { sortOrder: nullableNumber(input.sortOrder, 'sortOrder') ?? 0 } : {}),
+        ...(input.name !== undefined
+          ? { name: requireText(input.name, 'name') }
+          : {}),
+        ...(input.status !== undefined
+          ? {
+              status: enumValue(
+                input.status,
+                ['active', 'inactive', 'archived'],
+                'status',
+              ),
+            }
+          : {}),
+        ...(input.sortOrder !== undefined
+          ? { sortOrder: nullableNumber(input.sortOrder, 'sortOrder') ?? 0 }
+          : {}),
       } as any,
       select: levelSelect,
     });
-    await audit(this.prisma, actorUserId, 'assessments.level.updated', 'level', record.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.level.updated',
+      'level',
+      record.id,
+    );
     return record;
   }
 
@@ -152,17 +202,26 @@ export class AssessmentSetupService {
   }
 
   async getAssessment(id: string) {
-    const assessment = await this.prisma.assessment.findUnique({ where: { id }, select: assessmentSelect });
+    const assessment = await this.prisma.assessment.findUnique({
+      where: { id },
+      select: assessmentSelect,
+    });
     return requireRecord(assessment, 'Assessment not found');
   }
 
   async createAssessment(input: CreateAssessmentDto, actorUserId: string) {
     assertPositiveNumber(input.totalMarks, 'totalMarks');
     assertNullablePositiveInteger(input.weekNumber, 'weekNumber');
-    assertNullablePositiveInteger(input.estimatedDurationMinutes, 'estimatedDurationMinutes');
+    assertNullablePositiveInteger(
+      input.estimatedDurationMinutes,
+      'estimatedDurationMinutes',
+    );
     const assessment = await this.prisma.assessment.create({
       data: {
-        assessmentTypeId: requireText(input.assessmentTypeId, 'assessmentTypeId'),
+        assessmentTypeId: requireText(
+          input.assessmentTypeId,
+          'assessmentTypeId',
+        ),
         subjectId: requireText(input.subjectId, 'subjectId'),
         levelId: requireText(input.levelId, 'levelId'),
         termId: input.termId ? requireText(input.termId, 'termId') : null,
@@ -170,20 +229,35 @@ export class AssessmentSetupService {
         title: requireText(input.title, 'title'),
         totalMarks: input.totalMarks,
         estimatedDurationMinutes: input.estimatedDurationMinutes ?? undefined,
-        ...(input.sections ? { sections: { create: normalizeSections(input.sections) } } : {}),
+        ...(input.sections
+          ? { sections: { create: normalizeSections(input.sections) } }
+          : {}),
       },
       select: assessmentSelect,
     });
-    await audit(this.prisma, actorUserId, 'assessments.assessment.created', 'assessment', assessment.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.assessment.created',
+      'assessment',
+      assessment.id,
+    );
     return assessment;
   }
 
-  async updateAssessment(id: string, input: UpdateAssessmentDto, actorUserId: string) {
+  async updateAssessment(
+    id: string,
+    input: UpdateAssessmentDto,
+    actorUserId: string,
+  ) {
     if (input.totalMarks !== undefined) {
       assertPositiveNumber(input.totalMarks, 'totalMarks');
     }
     assertNullablePositiveInteger(input.weekNumber, 'weekNumber');
-    assertNullablePositiveInteger(input.estimatedDurationMinutes, 'estimatedDurationMinutes');
+    assertNullablePositiveInteger(
+      input.estimatedDurationMinutes,
+      'estimatedDurationMinutes',
+    );
 
     const assessment = await this.prisma.$transaction(async (tx) => {
       if (input.sections) {
@@ -192,22 +266,56 @@ export class AssessmentSetupService {
       return tx.assessment.update({
         where: { id },
         data: {
-          ...(input.assessmentTypeId !== undefined ? { assessmentTypeId: requireText(input.assessmentTypeId, 'assessmentTypeId') } : {}),
-          ...(input.subjectId !== undefined ? { subjectId: requireText(input.subjectId, 'subjectId') } : {}),
-          ...(input.levelId !== undefined ? { levelId: requireText(input.levelId, 'levelId') } : {}),
-          ...(input.termId !== undefined ? { termId: input.termId ? requireText(input.termId, 'termId') : null } : {}),
-          ...(input.weekNumber !== undefined ? { weekNumber: input.weekNumber } : {}),
-          ...(input.title !== undefined ? { title: requireText(input.title, 'title') } : {}),
-          ...(input.totalMarks !== undefined ? { totalMarks: input.totalMarks } : {}),
-          ...(input.estimatedDurationMinutes !== undefined
-            ? { estimatedDurationMinutes: input.estimatedDurationMinutes ?? undefined }
+          ...(input.assessmentTypeId !== undefined
+            ? {
+                assessmentTypeId: requireText(
+                  input.assessmentTypeId,
+                  'assessmentTypeId',
+                ),
+              }
             : {}),
-          ...(input.sections ? { sections: { create: normalizeSections(input.sections) } } : {}),
+          ...(input.subjectId !== undefined
+            ? { subjectId: requireText(input.subjectId, 'subjectId') }
+            : {}),
+          ...(input.levelId !== undefined
+            ? { levelId: requireText(input.levelId, 'levelId') }
+            : {}),
+          ...(input.termId !== undefined
+            ? {
+                termId: input.termId
+                  ? requireText(input.termId, 'termId')
+                  : null,
+              }
+            : {}),
+          ...(input.weekNumber !== undefined
+            ? { weekNumber: input.weekNumber }
+            : {}),
+          ...(input.title !== undefined
+            ? { title: requireText(input.title, 'title') }
+            : {}),
+          ...(input.totalMarks !== undefined
+            ? { totalMarks: input.totalMarks }
+            : {}),
+          ...(input.estimatedDurationMinutes !== undefined
+            ? {
+                estimatedDurationMinutes:
+                  input.estimatedDurationMinutes ?? undefined,
+              }
+            : {}),
+          ...(input.sections
+            ? { sections: { create: normalizeSections(input.sections) } }
+            : {}),
         } as any,
         select: assessmentSelect,
       });
     });
-    await audit(this.prisma, actorUserId, 'assessments.assessment.updated', 'assessment', assessment.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.assessment.updated',
+      'assessment',
+      assessment.id,
+    );
     return assessment;
   }
 
@@ -217,33 +325,55 @@ export class AssessmentSetupService {
       data: { status: 'archived' },
       select: assessmentSelect,
     });
-    await audit(this.prisma, actorUserId, 'assessments.assessment.archived', 'assessment', assessment.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.assessment.archived',
+      'assessment',
+      assessment.id,
+    );
     return assessment;
   }
 
   async publishAssessment(id: string, actorUserId: string) {
-    const questionCount = await this.prisma.assessmentQuestion.count({ where: { assessmentId: id } });
+    const questionCount = await this.prisma.assessmentQuestion.count({
+      where: { assessmentId: id },
+    });
     if (questionCount === 0) {
-      throw new ConflictException('Cannot publish an assessment without questions');
+      throw new ConflictException(
+        'Cannot publish an assessment without questions',
+      );
     }
     const assessment = await this.prisma.assessment.update({
       where: { id },
       data: { status: 'published', publishedAt: new Date() },
       select: assessmentSelect,
     });
-    await audit(this.prisma, actorUserId, 'assessments.assessment.published', 'assessment', assessment.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.assessment.published',
+      'assessment',
+      assessment.id,
+    );
     return assessment;
   }
 
   private async assertAssessmentTypeCodeAvailable(code: string): Promise<void> {
-    const existing = await this.prisma.assessmentType.findUnique({ where: { code }, select: { id: true } });
+    const existing = await this.prisma.assessmentType.findUnique({
+      where: { code },
+      select: { id: true },
+    });
     if (existing) {
       throw new ConflictException('Assessment type code already exists');
     }
   }
 
   private async assertLevelCodeAvailable(code: string): Promise<void> {
-    const existing = await this.prisma.level.findUnique({ where: { code }, select: { id: true } });
+    const existing = await this.prisma.level.findUnique({
+      where: { code },
+      select: { id: true },
+    });
     if (existing) {
       throw new ConflictException('Assessment level code already exists');
     }

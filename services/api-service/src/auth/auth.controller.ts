@@ -1,4 +1,15 @@
-import { Controller, Post, Body, Get, Req, Res, UseGuards, HttpCode, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Req,
+  Res,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -7,7 +18,11 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { CsrfGuard } from './guards/csrf.guard';
-import { setAuthCookies, clearAuthCookies, parseCookieHeader } from './utils/cookies';
+import {
+  setAuthCookies,
+  clearAuthCookies,
+  parseCookieHeader,
+} from './utils/cookies';
 
 @Controller('auth')
 export class AuthController {
@@ -49,7 +64,11 @@ export class AuthController {
   ) {
     const userAgent = req.headers['user-agent'] || null;
     const ipAddress = req.ip || null;
-    const result = await this.authService.loginWithGoogle(dto, userAgent, ipAddress);
+    const result = await this.authService.loginWithGoogle(
+      dto,
+      userAgent,
+      ipAddress,
+    );
     setAuthCookies(res, result.tokens);
     return result.user;
   }
@@ -62,10 +81,7 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(
-    @Req() req: any,
-    @Res({ passthrough: true }) res: any,
-  ) {
+  async refresh(@Req() req: any, @Res({ passthrough: true }) res: any) {
     const cookies = parseCookieHeader(req.headers.cookie);
     const refreshToken = cookies['refresh_token'];
     if (!refreshToken) {
@@ -74,7 +90,11 @@ export class AuthController {
 
     const userAgent = req.headers['user-agent'] || null;
     const ipAddress = req.ip || null;
-    const result = await this.authService.refreshSession(refreshToken, userAgent, ipAddress);
+    const result = await this.authService.refreshSession(
+      refreshToken,
+      userAgent,
+      ipAddress,
+    );
     setAuthCookies(res, result.tokens);
     return result.user;
   }
@@ -83,10 +103,7 @@ export class AuthController {
   @UseGuards(CsrfGuard)
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async logout(
-    @Req() req: any,
-    @Res({ passthrough: true }) res: any,
-  ) {
+  async logout(@Req() req: any, @Res({ passthrough: true }) res: any) {
     const cookies = parseCookieHeader(req.headers.cookie);
     const refreshToken = cookies['refresh_token'];
     if (refreshToken) {
@@ -104,6 +121,10 @@ export class AuthController {
     @CurrentUser() user: any,
     @Body() dto: ChangePasswordDto,
   ) {
-    return this.authService.changePassword(user.id, dto.currentPassword, dto.newPassword);
+    return this.authService.changePassword(
+      user.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 }

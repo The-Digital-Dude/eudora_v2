@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
@@ -43,13 +52,19 @@ export class RolesController {
 
   @Post(':id/permissions')
   @Roles('SUPER_ADMIN')
-  async assignPermission(@Param('id') id: string, @Body() dto: AssignPermissionDto) {
+  async assignPermission(
+    @Param('id') id: string,
+    @Body() dto: AssignPermissionDto,
+  ) {
     return this.rolesService.assignPermission(id, dto.permissionId);
   }
 
   @Delete(':id/permissions/:permissionId')
   @Roles('SUPER_ADMIN')
-  async removePermission(@Param('id') id: string, @Param('permissionId') permissionId: string) {
+  async removePermission(
+    @Param('id') id: string,
+    @Param('permissionId') permissionId: string,
+  ) {
     return this.rolesService.removePermission(id, permissionId);
   }
 }

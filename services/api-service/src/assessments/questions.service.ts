@@ -34,8 +34,18 @@ export class QuestionsService {
       ...searchFilter(query.search, ['prompt', 'correctAnswer']),
       ...idFilter('subjectId', query.subjectId),
       ...idFilter('levelId', query.levelId),
-      ...enumFilter('questionType', query.questionType, ['mcq', 'short_answer', 'numeric', 'written']),
-      ...enumFilter('difficulty', query.difficulty, ['easy', 'medium', 'hard', 'extension']),
+      ...enumFilter('questionType', query.questionType, [
+        'mcq',
+        'short_answer',
+        'numeric',
+        'written',
+      ]),
+      ...enumFilter('difficulty', query.difficulty, [
+        'easy',
+        'medium',
+        'hard',
+        'extension',
+      ]),
       ...enumFilter('status', query.status, ['draft', 'active', 'archived']),
     };
     const [items, total] = await Promise.all([
@@ -61,8 +71,16 @@ export class QuestionsService {
   }
 
   async createQuestion(input: CreateQuestionDto, actorUserId: string) {
-    const questionType = enumValue(input.questionType, ['mcq', 'short_answer', 'numeric', 'written'], 'questionType');
-    const difficulty = enumValue(input.difficulty, ['easy', 'medium', 'hard', 'extension'], 'difficulty');
+    const questionType = enumValue(
+      input.questionType,
+      ['mcq', 'short_answer', 'numeric', 'written'],
+      'questionType',
+    );
+    const difficulty = enumValue(
+      input.difficulty,
+      ['easy', 'medium', 'hard', 'extension'],
+      'difficulty',
+    );
     const options = normalizeOptions(input.options ?? [], questionType);
     const question = await this.prisma.question.create({
       data: {
@@ -72,18 +90,36 @@ export class QuestionsService {
         prompt: requireText(input.prompt, 'prompt'),
         correctAnswer: emptyToNull(input.correctAnswer),
         difficulty,
-        status: enumValue(input.status ?? 'draft', ['draft', 'active', 'archived'], 'status'),
+        status: enumValue(
+          input.status ?? 'draft',
+          ['draft', 'active', 'archived'],
+          'status',
+        ),
         ...(options.length > 0 ? { options: { create: options } } : {}),
       } as any,
       select: questionSelect,
     });
-    await audit(this.prisma, actorUserId, 'assessments.question.created', 'question', question.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.question.created',
+      'question',
+      question.id,
+    );
     return question;
   }
 
-  async updateQuestion(id: string, input: UpdateQuestionDto, actorUserId: string) {
+  async updateQuestion(
+    id: string,
+    input: UpdateQuestionDto,
+    actorUserId: string,
+  ) {
     const questionType = input.questionType
-      ? enumValue(input.questionType, ['mcq', 'short_answer', 'numeric', 'written'], 'questionType')
+      ? enumValue(
+          input.questionType,
+          ['mcq', 'short_answer', 'numeric', 'written'],
+          'questionType',
+        )
       : undefined;
     let effectiveQuestionType = questionType;
     if (input.options && !effectiveQuestionType) {
@@ -91,9 +127,14 @@ export class QuestionsService {
         where: { id },
         select: { questionType: true },
       });
-      effectiveQuestionType = requireRecord(existingQuestion, 'Question not found').questionType as 'mcq' | 'short_answer' | 'numeric' | 'written';
+      effectiveQuestionType = requireRecord(
+        existingQuestion,
+        'Question not found',
+      ).questionType as 'mcq' | 'short_answer' | 'numeric' | 'written';
     }
-    const options = input.options ? normalizeOptions(input.options, effectiveQuestionType ?? 'mcq') : undefined;
+    const options = input.options
+      ? normalizeOptions(input.options, effectiveQuestionType ?? 'mcq')
+      : undefined;
     const question = await this.prisma.$transaction(async (tx) => {
       if (options) {
         await tx.questionOption.deleteMany({ where: { questionId: id } });
@@ -101,23 +142,49 @@ export class QuestionsService {
       return tx.question.update({
         where: { id },
         data: {
-          ...(input.subjectId !== undefined ? { subjectId: emptyToNull(input.subjectId) } : {}),
-          ...(input.levelId !== undefined ? { levelId: emptyToNull(input.levelId) } : {}),
+          ...(input.subjectId !== undefined
+            ? { subjectId: emptyToNull(input.subjectId) }
+            : {}),
+          ...(input.levelId !== undefined
+            ? { levelId: emptyToNull(input.levelId) }
+            : {}),
           ...(questionType !== undefined ? { questionType } : {}),
-          ...(input.prompt !== undefined ? { prompt: requireText(input.prompt, 'prompt') } : {}),
-          ...(input.correctAnswer !== undefined ? { correctAnswer: emptyToNull(input.correctAnswer) } : {}),
+          ...(input.prompt !== undefined
+            ? { prompt: requireText(input.prompt, 'prompt') }
+            : {}),
+          ...(input.correctAnswer !== undefined
+            ? { correctAnswer: emptyToNull(input.correctAnswer) }
+            : {}),
           ...(input.difficulty !== undefined
-            ? { difficulty: enumValue(input.difficulty, ['easy', 'medium', 'hard', 'extension'], 'difficulty') }
+            ? {
+                difficulty: enumValue(
+                  input.difficulty,
+                  ['easy', 'medium', 'hard', 'extension'],
+                  'difficulty',
+                ),
+              }
             : {}),
           ...(input.status !== undefined
-            ? { status: enumValue(input.status, ['draft', 'active', 'archived'], 'status') }
+            ? {
+                status: enumValue(
+                  input.status,
+                  ['draft', 'active', 'archived'],
+                  'status',
+                ),
+              }
             : {}),
           ...(options ? { options: { create: options } } : {}),
         } as any,
         select: questionSelect,
       });
     });
-    await audit(this.prisma, actorUserId, 'assessments.question.updated', 'question', question.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.question.updated',
+      'question',
+      question.id,
+    );
     return question;
   }
 
@@ -127,11 +194,21 @@ export class QuestionsService {
       data: { status: 'archived' },
       select: questionSelect,
     });
-    await audit(this.prisma, actorUserId, 'assessments.question.archived', 'question', question.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.question.archived',
+      'question',
+      question.id,
+    );
     return question;
   }
 
-  async addQuestionToAssessment(assessmentId: string, input: AddAssessmentQuestionDto, actorUserId: string) {
+  async addQuestionToAssessment(
+    assessmentId: string,
+    input: AddAssessmentQuestionDto,
+    actorUserId: string,
+  ) {
     await this.assertSectionBelongsToAssessment(assessmentId, input.sectionId);
     assertPositiveInteger(input.questionNumber, 'questionNumber');
     assertPositiveNumber(input.marksAvailable, 'marksAvailable');
@@ -152,7 +229,13 @@ export class QuestionsService {
         sectionId: true,
       },
     });
-    await audit(this.prisma, actorUserId, 'assessments.assessmentQuestion.created', 'assessment', assessmentId);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.assessmentQuestion.created',
+      'assessment',
+      assessmentId,
+    );
     return assessmentQuestion;
   }
 
@@ -163,7 +246,10 @@ export class QuestionsService {
     actorUserId: string,
   ) {
     if (input.sectionId !== undefined) {
-      await this.assertSectionBelongsToAssessment(assessmentId, input.sectionId);
+      await this.assertSectionBelongsToAssessment(
+        assessmentId,
+        input.sectionId,
+      );
     }
     if (input.questionNumber !== undefined) {
       assertPositiveInteger(input.questionNumber, 'questionNumber');
@@ -174,9 +260,15 @@ export class QuestionsService {
     const assessmentQuestion = await this.prisma.assessmentQuestion.update({
       where: { assessmentId_questionId: { assessmentId, questionId } },
       data: {
-        ...(input.questionNumber !== undefined ? { questionNumber: input.questionNumber } : {}),
-        ...(input.marksAvailable !== undefined ? { marksAvailable: input.marksAvailable } : {}),
-        ...(input.sectionId !== undefined ? { sectionId: requireText(input.sectionId, 'sectionId') } : {}),
+        ...(input.questionNumber !== undefined
+          ? { questionNumber: input.questionNumber }
+          : {}),
+        ...(input.marksAvailable !== undefined
+          ? { marksAvailable: input.marksAvailable }
+          : {}),
+        ...(input.sectionId !== undefined
+          ? { sectionId: requireText(input.sectionId, 'sectionId') }
+          : {}),
       },
       select: {
         id: true,
@@ -187,27 +279,48 @@ export class QuestionsService {
         sectionId: true,
       },
     });
-    await audit(this.prisma, actorUserId, 'assessments.assessmentQuestion.updated', 'assessment', assessmentId);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.assessmentQuestion.updated',
+      'assessment',
+      assessmentId,
+    );
     return assessmentQuestion;
   }
 
-  async removeQuestionFromAssessment(assessmentId: string, questionId: string, actorUserId: string) {
+  async removeQuestionFromAssessment(
+    assessmentId: string,
+    questionId: string,
+    actorUserId: string,
+  ) {
     const assessmentQuestion = await this.prisma.assessmentQuestion.delete({
       where: { assessmentId_questionId: { assessmentId, questionId } },
       select: { id: true, assessmentId: true, questionId: true },
     });
-    await audit(this.prisma, actorUserId, 'assessments.assessmentQuestion.removed', 'assessment', assessmentId);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.assessmentQuestion.removed',
+      'assessment',
+      assessmentId,
+    );
     return assessmentQuestion;
   }
 
-  private async assertSectionBelongsToAssessment(assessmentId: string, sectionId: string | null | undefined): Promise<void> {
+  private async assertSectionBelongsToAssessment(
+    assessmentId: string,
+    sectionId: string | null | undefined,
+  ): Promise<void> {
     const resolvedSectionId = requireText(sectionId, 'sectionId');
     const section = await this.prisma.assessmentSection.findFirst({
       where: { id: resolvedSectionId, assessmentId },
       select: { id: true },
     });
     if (!section) {
-      throw new BadRequestException('sectionId does not belong to this assessment');
+      throw new BadRequestException(
+        'sectionId does not belong to this assessment',
+      );
     }
   }
 }

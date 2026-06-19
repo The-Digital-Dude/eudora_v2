@@ -1,4 +1,12 @@
-import { IsBoolean, IsEnum, IsInt, IsJSON, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsJSON,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export enum WidgetType {
   SLIDER_MANIPULATIVE = 'SLIDER_MANIPULATIVE',

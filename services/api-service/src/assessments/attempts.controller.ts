@@ -75,7 +75,10 @@ export class AttemptsController {
     @Param('id') id: string,
     @Query() query: ListAttemptsQueryDto,
   ) {
-    return this.attemptsService.listAttempts({ ...query, studentProfileId: id });
+    return this.attemptsService.listAttempts({
+      ...query,
+      studentProfileId: id,
+    });
   }
 
   @Get('assignments/:id/attempts')

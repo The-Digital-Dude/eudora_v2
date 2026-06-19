@@ -10,7 +10,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
-import { CreateStudentProfileDto, UpdateStudentProfileDto } from './dto/student-profile.dto';
+import {
+  CreateStudentProfileDto,
+  UpdateStudentProfileDto,
+} from './dto/student-profile.dto';
 import { CreatePlacementDto, UpdatePlacementDto } from './dto/placement.dto';
 import { CreateEnrollmentDto, UpdateEnrollmentDto } from './dto/enrollment.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -102,7 +105,11 @@ export class StudentController {
     @Param('classSectionId') classSectionId: string,
     @Body() dto: UpdatePlacementDto,
   ) {
-    return this.studentService.updatePlacement(studentProfileId, classSectionId, dto);
+    return this.studentService.updatePlacement(
+      studentProfileId,
+      classSectionId,
+      dto,
+    );
   }
 
   @Delete('student-placements/:studentProfileId/:classSectionId')
@@ -111,7 +118,10 @@ export class StudentController {
     @Param('studentProfileId') studentProfileId: string,
     @Param('classSectionId') classSectionId: string,
   ) {
-    return this.studentService.deletePlacement(studentProfileId, classSectionId);
+    return this.studentService.deletePlacement(
+      studentProfileId,
+      classSectionId,
+    );
   }
 
   // --- Student Course Enrollment Endpoints ---

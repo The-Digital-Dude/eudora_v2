@@ -32,10 +32,7 @@ export class SubjectsController {
 
   @Post()
   @RequirePermissions({ action: 'manage', subject: 'Assessment' })
-  async createSubject(
-    @Body() body: CreateLookupDto,
-    @CurrentUser() user: any,
-  ) {
+  async createSubject(@Body() body: CreateLookupDto, @CurrentUser() user: any) {
     return this.subjectsService.createSubject(body, user.id);
   }
 

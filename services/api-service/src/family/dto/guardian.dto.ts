@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsEmail, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsEmail,
+  IsUUID,
+} from 'class-validator';
 import { GuardianStatus } from '@prisma/client';
 
 export class CreateGuardianProfileDto {

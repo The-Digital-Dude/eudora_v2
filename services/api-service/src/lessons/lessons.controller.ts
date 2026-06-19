@@ -8,7 +8,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { LessonsService } from './lessons.service';
-import { CreateLessonDto, CreateCardDto, SubmitCardResponseDto } from './dto/lessons.dto';
+import {
+  CreateLessonDto,
+  CreateCardDto,
+  SubmitCardResponseDto,
+} from './dto/lessons.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -24,10 +28,7 @@ export class LessonsController {
   }
 
   @Get(':id/flow')
-  async getLessonFlow(
-    @Param('id') id: string,
-    @CurrentUser() user: any,
-  ) {
+  async getLessonFlow(@Param('id') id: string, @CurrentUser() user: any) {
     return this.lessonsService.getLessonFlow(id, user.id);
   }
 

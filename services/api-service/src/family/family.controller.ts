@@ -12,9 +12,19 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { FamilyService } from './family.service';
-import { CreateGuardianProfileDto, UpdateGuardianProfileDto } from './dto/guardian.dto';
-import { CreateFamilyDto, UpdateFamilyDto, AddFamilyMemberDto } from './dto/family.dto';
-import { CreateRelationshipDto, UpdateRelationshipDto } from './dto/relationship.dto';
+import {
+  CreateGuardianProfileDto,
+  UpdateGuardianProfileDto,
+} from './dto/guardian.dto';
+import {
+  CreateFamilyDto,
+  UpdateFamilyDto,
+  AddFamilyMemberDto,
+} from './dto/family.dto';
+import {
+  CreateRelationshipDto,
+  UpdateRelationshipDto,
+} from './dto/relationship.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
@@ -32,8 +42,9 @@ export class FamilyController {
     @Req() req: any,
   ) {
     const user = req.user;
-    const isOnlyGuardian = user.roles.includes('GUARDIAN') && 
-      !user.roles.includes('ADMIN') && 
+    const isOnlyGuardian =
+      user.roles.includes('GUARDIAN') &&
+      !user.roles.includes('ADMIN') &&
       !user.roles.includes('SUPER_ADMIN');
 
     if (isOnlyGuardian) {
@@ -65,8 +76,9 @@ export class FamilyController {
     @Req() req: any,
   ) {
     const user = req.user;
-    const isOnlyGuardian = user.roles.includes('GUARDIAN') && 
-      !user.roles.includes('ADMIN') && 
+    const isOnlyGuardian =
+      user.roles.includes('GUARDIAN') &&
+      !user.roles.includes('ADMIN') &&
       !user.roles.includes('SUPER_ADMIN');
 
     if (isOnlyGuardian) {
@@ -173,7 +185,10 @@ export class FamilyController {
     @Param('guardianProfileId') guardianProfileId: string,
     @Param('studentProfileId') studentProfileId: string,
   ) {
-    return this.familyService.findRelationship(guardianProfileId, studentProfileId);
+    return this.familyService.findRelationship(
+      guardianProfileId,
+      studentProfileId,
+    );
   }
 
   @Patch('guardian-relationships/:guardianProfileId/:studentProfileId')
@@ -183,7 +198,11 @@ export class FamilyController {
     @Param('studentProfileId') studentProfileId: string,
     @Body() dto: UpdateRelationshipDto,
   ) {
-    return this.familyService.updateRelationship(guardianProfileId, studentProfileId, dto);
+    return this.familyService.updateRelationship(
+      guardianProfileId,
+      studentProfileId,
+      dto,
+    );
   }
 
   @Delete('guardian-relationships/:guardianProfileId/:studentProfileId')
@@ -192,7 +211,10 @@ export class FamilyController {
     @Param('guardianProfileId') guardianProfileId: string,
     @Param('studentProfileId') studentProfileId: string,
   ) {
-    return this.familyService.deleteRelationship(guardianProfileId, studentProfileId);
+    return this.familyService.deleteRelationship(
+      guardianProfileId,
+      studentProfileId,
+    );
   }
 
   @Post('guardian-relationships/self-link')
@@ -201,6 +223,10 @@ export class FamilyController {
     @Body() dto: { studentEmail: string; relationshipType?: string },
     @Req() req: any,
   ) {
-    return this.familyService.selfLink(req.user.id, dto.studentEmail, dto.relationshipType);
+    return this.familyService.selfLink(
+      req.user.id,
+      dto.studentEmail,
+      dto.relationshipType,
+    );
   }
 }

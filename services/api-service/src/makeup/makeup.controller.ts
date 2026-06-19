@@ -10,7 +10,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { MakeupService } from './makeup.service';
-import { CreateMakeupRequestDto, UpdateMakeupRequestDto } from './dto/makeup.dto';
+import {
+  CreateMakeupRequestDto,
+  UpdateMakeupRequestDto,
+} from './dto/makeup.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
@@ -27,10 +30,7 @@ export class MakeupController {
 
   @Get()
   @Roles('ADMIN', 'SUPER_ADMIN', 'TEACHER')
-  async findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
+  async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
     return this.makeupService.findAll(pageNum, limitNum);
@@ -44,10 +44,7 @@ export class MakeupController {
 
   @Patch(':id')
   @Roles('ADMIN', 'SUPER_ADMIN', 'TEACHER')
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateMakeupRequestDto,
-  ) {
+  async update(@Param('id') id: string, @Body() dto: UpdateMakeupRequestDto) {
     return this.makeupService.update(id, dto);
   }
 

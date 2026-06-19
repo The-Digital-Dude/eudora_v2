@@ -1,6 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateLessonDto, CreateCardDto, SubmitCardResponseDto } from './dto/lessons.dto';
+import {
+  CreateLessonDto,
+  CreateCardDto,
+  SubmitCardResponseDto,
+} from './dto/lessons.dto';
 
 @Injectable()
 export class LessonsService {
@@ -100,7 +108,11 @@ export class LessonsService {
     };
   }
 
-  async submitCardResponse(userId: string, cardId: string, submission: SubmitCardResponseDto) {
+  async submitCardResponse(
+    userId: string,
+    cardId: string,
+    submission: SubmitCardResponseDto,
+  ) {
     const student = await this.getOrCreateStudentProfile(userId);
 
     const card = await this.prisma.card.findUnique({
@@ -139,7 +151,7 @@ export class LessonsService {
 
     // Evaluate correctness
     let isCorrect = true;
-    let explanation = card.question?.explanation || 'Card completed.';
+    const explanation = card.question?.explanation || 'Card completed.';
 
     if (card.cardType !== 'CONCEPTUAL' && card.question) {
       const q = card.question;
@@ -149,9 +161,10 @@ export class LessonsService {
       } else if (q.widgetType === 'SLIDER_MANIPULATIVE') {
         // Slider validation: matches exact coordinate or config threshold
         const target = q.correctAnswer ? parseFloat(q.correctAnswer) : null;
-        const inputVal = submission.interactionState?.finalValue !== undefined 
-          ? parseFloat(submission.interactionState.finalValue) 
-          : null;
+        const inputVal =
+          submission.interactionState?.finalValue !== undefined
+            ? parseFloat(submission.interactionState.finalValue)
+            : null;
 
         if (target !== null && inputVal !== null) {
           isCorrect = Math.abs(inputVal - target) <= 0.1; // Default tolerance margin
@@ -160,11 +173,16 @@ export class LessonsService {
         }
       } else if (q.questionType === 'numeric') {
         const target = q.correctAnswer ? parseFloat(q.correctAnswer) : null;
-        const val = submission.responseText ? parseFloat(submission.responseText) : null;
-        isCorrect = target !== null && val !== null && Math.abs(val - target) <= 0.001;
+        const val = submission.responseText
+          ? parseFloat(submission.responseText)
+          : null;
+        isCorrect =
+          target !== null && val !== null && Math.abs(val - target) <= 0.001;
       } else {
         // Text fallbacks
-        isCorrect = submission.responseText?.trim().toLowerCase() === q.correctAnswer?.trim().toLowerCase();
+        isCorrect =
+          submission.responseText?.trim().toLowerCase() ===
+          q.correctAnswer?.trim().toLowerCase();
       }
     }
 
@@ -189,7 +207,9 @@ export class LessonsService {
         },
       },
       update: {
-        attemptsCount: previousResponse ? previousResponse.attemptsCount + 1 : 1,
+        attemptsCount: previousResponse
+          ? previousResponse.attemptsCount + 1
+          : 1,
         isCorrect,
         interactionTrace: submission.interactionState || null,
       },
@@ -211,7 +231,7 @@ export class LessonsService {
       } else if (attemptsCount === 1) {
         xpEarned = 15; // First try correct
       } else {
-        xpEarned = 8;  // Subsequent try correct
+        xpEarned = 8; // Subsequent try correct
       }
 
       await this.awardXp(student.id, xpEarned);
@@ -242,7 +262,9 @@ export class LessonsService {
     });
 
     const correctCardIds = new Set(correctResponses.map((r) => r.cardId));
-    const allCompleted = allCards.every((c) => c.cardType === 'CONCEPTUAL' || correctCardIds.has(c.id));
+    const allCompleted = allCards.every(
+      (c) => c.cardType === 'CONCEPTUAL' || correctCardIds.has(c.id),
+    );
 
     if (allCompleted && attempt.status !== 'COMPLETED') {
       // Complete attempt
@@ -289,7 +311,7 @@ export class LessonsService {
       });
     }
 
-    let newXp = exp.totalXp + amount;
+    const newXp = exp.totalXp + amount;
     let currentLevel = exp.level;
     let nextThreshold = exp.nextLevelXp;
 
@@ -310,7 +332,7 @@ export class LessonsService {
   }
 
   private async updateStreak(studentProfileId: string) {
-    let streak = await this.prisma.studentStreak.findUnique({
+    const streak = await this.prisma.studentStreak.findUnique({
       where: { studentProfileId },
     });
 

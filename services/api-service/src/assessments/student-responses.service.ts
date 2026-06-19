@@ -77,7 +77,10 @@ export class StudentResponsesService {
         responseText: emptyToNull(input.responseText),
         marksAvailable: context.marksAvailable,
         timeSpentSeconds:
-          nullableNonNegativeInteger(input.timeSpentSeconds, 'timeSpentSeconds') ?? 0,
+          nullableNonNegativeInteger(
+            input.timeSpentSeconds,
+            'timeSpentSeconds',
+          ) ?? 0,
         ...autoMark,
       } as any,
       update: {
@@ -136,7 +139,9 @@ export class StudentResponsesService {
               ),
             }
           : {}),
-        ...(input.feedback !== undefined ? { feedback: emptyToNull(input.feedback) } : {}),
+        ...(input.feedback !== undefined
+          ? { feedback: emptyToNull(input.feedback) }
+          : {}),
       } as any,
       select: responseSelect,
     });
@@ -150,7 +155,11 @@ export class StudentResponsesService {
     return response;
   }
 
-  async markResponse(id: string, input: MarkStudentResponseDto, actorUserId: string) {
+  async markResponse(
+    id: string,
+    input: MarkStudentResponseDto,
+    actorUserId: string,
+  ) {
     const existing = await this.prisma.studentResponse.findUnique({
       where: { id },
       select: { marksAvailable: true, assessmentAttemptId: true },
@@ -165,14 +174,20 @@ export class StudentResponsesService {
       marksAwarded !== undefined &&
       marksAwarded > resolved.marksAvailable
     ) {
-      throw new BadRequestException('marksAwarded cannot exceed marksAvailable');
+      throw new BadRequestException(
+        'marksAwarded cannot exceed marksAvailable',
+      );
     }
     const response = await this.prisma.studentResponse.update({
       where: { id },
       data: {
-        ...(input.isCorrect !== undefined ? { isCorrect: input.isCorrect } : {}),
+        ...(input.isCorrect !== undefined
+          ? { isCorrect: input.isCorrect }
+          : {}),
         ...(marksAwarded !== undefined ? { marksAwarded } : {}),
-        ...(input.feedback !== undefined ? { feedback: emptyToNull(input.feedback) } : {}),
+        ...(input.feedback !== undefined
+          ? { feedback: emptyToNull(input.feedback) }
+          : {}),
       } as any,
       select: responseSelect,
     });
@@ -214,9 +229,12 @@ export class StudentResponsesService {
       },
     });
     const resolvedAttempt = requireRecord(attempt, 'Attempt not found');
-    const assessmentQuestion = resolvedAttempt.assignment.assessment.questions[0];
+    const assessmentQuestion =
+      resolvedAttempt.assignment.assessment.questions[0];
     if (!assessmentQuestion) {
-      throw new BadRequestException('questionId is not part of this assessment');
+      throw new BadRequestException(
+        'questionId is not part of this assessment',
+      );
     }
     const question = await this.prisma.question.findUnique({
       where: { id: questionId },
@@ -233,7 +251,9 @@ export class StudentResponsesService {
       resolvedOptionId &&
       !resolvedQuestion.options.some((option) => option.id === resolvedOptionId)
     ) {
-      throw new BadRequestException('selectedOptionId does not belong to questionId');
+      throw new BadRequestException(
+        'selectedOptionId does not belong to questionId',
+      );
     }
     return {
       marksAvailable: assessmentQuestion.marksAvailable,
@@ -274,7 +294,9 @@ export class StudentResponsesService {
         ...(overrides.resultStatus
           ? { resultStatus: overrides.resultStatus }
           : {}),
-        ...(overrides.submittedAt ? { submittedAt: overrides.submittedAt } : {}),
+        ...(overrides.submittedAt
+          ? { submittedAt: overrides.submittedAt }
+          : {}),
         ...(overrides.markedByUserId
           ? { markedByUserId: overrides.markedByUserId }
           : {}),

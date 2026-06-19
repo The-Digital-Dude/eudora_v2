@@ -1,4 +1,10 @@
-import { Injectable, ConflictException, UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
@@ -32,7 +38,9 @@ export class AuthService {
     });
 
     if (!defaultRole) {
-      throw new ConflictException('Default role USER does not exist. Please seed the database.');
+      throw new ConflictException(
+        'Default role USER does not exist. Please seed the database.',
+      );
     }
 
     const user = await this.prisma.user.create({
@@ -74,7 +82,11 @@ export class AuthService {
     };
   }
 
-  async login(dto: LoginDto, userAgent?: string | null, ipAddress?: string | null) {
+  async login(
+    dto: LoginDto,
+    userAgent?: string | null,
+    ipAddress?: string | null,
+  ) {
     const email = dto.email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -102,17 +114,41 @@ export class AuthService {
     });
 
     if (!user || user.deletedAt) {
-      await this.audit(null, 'auth.login.failed', 'user', null, ipAddress, userAgent, { email });
+      await this.audit(
+        null,
+        'auth.login.failed',
+        'user',
+        null,
+        ipAddress,
+        userAgent,
+        { email },
+      );
       throw new UnauthorizedException('Invalid email or password');
     }
 
     if (!user.isActive) {
-      await this.audit(user.id, 'auth.login.inactive', 'user', user.id, ipAddress, userAgent, { email });
+      await this.audit(
+        user.id,
+        'auth.login.inactive',
+        'user',
+        user.id,
+        ipAddress,
+        userAgent,
+        { email },
+      );
       throw new UnauthorizedException('Account is not active');
     }
 
     if (user.lockedUntil && user.lockedUntil > new Date()) {
-      await this.audit(user.id, 'auth.login.locked', 'user', user.id, ipAddress, userAgent, { email });
+      await this.audit(
+        user.id,
+        'auth.login.locked',
+        'user',
+        user.id,
+        ipAddress,
+        userAgent,
+        { email },
+      );
       throw new ForbiddenException('Account is temporarily locked');
     }
 
@@ -129,10 +165,20 @@ export class AuthService {
         where: { id: user.id },
         data: {
           failedLoginCount: nextFailedLoginCount,
-          lockedUntil: shouldLock ? new Date(Date.now() + 15 * 60 * 1000) : null,
+          lockedUntil: shouldLock
+            ? new Date(Date.now() + 15 * 60 * 1000)
+            : null,
         },
       });
-      await this.audit(user.id, 'auth.login.failed', 'user', user.id, ipAddress, userAgent, { email });
+      await this.audit(
+        user.id,
+        'auth.login.failed',
+        'user',
+        user.id,
+        ipAddress,
+        userAgent,
+        { email },
+      );
       throw new UnauthorizedException('Invalid email or password');
     }
 
@@ -165,8 +211,19 @@ export class AuthService {
       },
     });
 
-    const tokens = await this.createSessionTokens(updatedUser, userAgent ?? null, ipAddress ?? null);
-    await this.audit(user.id, 'auth.login.success', 'user', user.id, ipAddress ?? null, userAgent ?? null);
+    const tokens = await this.createSessionTokens(
+      updatedUser,
+      userAgent ?? null,
+      ipAddress ?? null,
+    );
+    await this.audit(
+      user.id,
+      'auth.login.success',
+      'user',
+      user.id,
+      ipAddress ?? null,
+      userAgent ?? null,
+    );
 
     const { password, ...result } = updatedUser;
     return {
@@ -175,7 +232,11 @@ export class AuthService {
     };
   }
 
-  async loginWithGoogle(dto: any, userAgent?: string | null, ipAddress?: string | null) {
+  async loginWithGoogle(
+    dto: any,
+    userAgent?: string | null,
+    ipAddress?: string | null,
+  ) {
     const { token, role } = dto;
     const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
     const client = new OAuth2Client(googleClientId);
@@ -209,7 +270,9 @@ export class AuthService {
     } else {
       // Access Token
       try {
-        const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
+        const response = await fetch(
+          `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`,
+        );
         const payload = await response.json();
         if (!payload || payload.error || payload.error_description) {
           throw new UnauthorizedException('Invalid Google access token');
@@ -229,10 +292,7 @@ export class AuthService {
 
     let user = await this.prisma.user.findFirst({
       where: {
-        OR: [
-          { googleId },
-          { email: email.toLowerCase().trim() },
-        ],
+        OR: [{ googleId }, { email: email.toLowerCase().trim() }],
       },
       include: {
         roles: {
@@ -264,7 +324,9 @@ export class AuthService {
         where: { name: targetRole },
       });
       if (!dbRole) {
-        throw new ConflictException(`Role ${targetRole} does not exist in the database.`);
+        throw new ConflictException(
+          `Role ${targetRole} does not exist in the database.`,
+        );
       }
 
       user = await this.prisma.user.create({
@@ -301,7 +363,14 @@ export class AuthService {
           studentProfile: true,
         },
       });
-      await this.audit(user.id, 'auth.signup.google', 'user', user.id, ipAddress, userAgent);
+      await this.audit(
+        user.id,
+        'auth.signup.google',
+        'user',
+        user.id,
+        ipAddress,
+        userAgent,
+      );
     } else {
       // User exists. Let's make sure googleId is linked if not set.
       if (!user.googleId) {
@@ -331,10 +400,21 @@ export class AuthService {
           },
         });
       }
-      await this.audit(user.id, 'auth.login.google', 'user', user.id, ipAddress, userAgent);
+      await this.audit(
+        user.id,
+        'auth.login.google',
+        'user',
+        user.id,
+        ipAddress,
+        userAgent,
+      );
     }
 
-    const tokens = await this.createSessionTokens(user, userAgent ?? null, ipAddress ?? null);
+    const tokens = await this.createSessionTokens(
+      user,
+      userAgent ?? null,
+      ipAddress ?? null,
+    );
 
     const { password, ...result } = user;
     return {
@@ -343,7 +423,11 @@ export class AuthService {
     };
   }
 
-  async refreshSession(refreshToken: string, userAgent?: string | null, ipAddress?: string | null) {
+  async refreshSession(
+    refreshToken: string,
+    userAgent?: string | null,
+    ipAddress?: string | null,
+  ) {
     let payload: any;
     try {
       payload = this.jwtService.verify(refreshToken);
@@ -355,7 +439,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshTokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
 
     const session = await this.prisma.authSession.findUnique({
       where: { refreshTokenHash },
@@ -426,7 +513,10 @@ export class AuthService {
     });
 
     const newCsrfToken = crypto.randomBytes(32).toString('base64url');
-    const newRefreshTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+    const newRefreshTokenHash = crypto
+      .createHash('sha256')
+      .update(newRefreshToken)
+      .digest('hex');
 
     await this.prisma.authSession.update({
       where: { id: session.id },
@@ -438,7 +528,14 @@ export class AuthService {
       },
     });
 
-    await this.audit(session.user.id, 'auth.refresh.rotated', 'user', session.user.id, ipAddress, userAgent);
+    await this.audit(
+      session.user.id,
+      'auth.refresh.rotated',
+      'user',
+      session.user.id,
+      ipAddress,
+      userAgent,
+    );
 
     const { password, ...userWithoutPassword } = session.user;
 
@@ -454,7 +551,11 @@ export class AuthService {
     };
   }
 
-  async logout(refreshToken: string, userAgent?: string | null, ipAddress?: string | null) {
+  async logout(
+    refreshToken: string,
+    userAgent?: string | null,
+    ipAddress?: string | null,
+  ) {
     let payload: any;
     try {
       payload = this.jwtService.verify(refreshToken);
@@ -466,7 +567,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshTokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
 
     const session = await this.prisma.authSession.findUnique({
       where: { refreshTokenHash },
@@ -484,10 +588,21 @@ export class AuthService {
       },
     });
 
-    await this.audit(session.userId, 'auth.logout', 'user', session.userId, ipAddress, userAgent);
+    await this.audit(
+      session.userId,
+      'auth.logout',
+      'user',
+      session.userId,
+      ipAddress,
+      userAgent,
+    );
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -497,10 +612,15 @@ export class AuthService {
     }
 
     if (!user.password) {
-      throw new BadRequestException('Users registered via Google do not have a local password.');
+      throw new BadRequestException(
+        'Users registered via Google do not have a local password.',
+      );
     }
 
-    const passwordMatches = await bcrypt.compare(currentPassword, user.password);
+    const passwordMatches = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
 
     if (!passwordMatches) {
       throw new UnauthorizedException('Current password is incorrect');
@@ -544,7 +664,11 @@ export class AuthService {
     });
   }
 
-  private async createSessionTokens(user: any, userAgent: string | null, ipAddress: string | null) {
+  private async createSessionTokens(
+    user: any,
+    userAgent: string | null,
+    ipAddress: string | null,
+  ) {
     const roles = user.roles.map((ur: any) => ur.role.name);
     const permissions = user.roles.flatMap((ur: any) =>
       ur.role.permissions.map((rp: any) => ({
@@ -577,7 +701,10 @@ export class AuthService {
     });
 
     const csrfToken = crypto.randomBytes(32).toString('base64url');
-    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshTokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
 
     await this.prisma.authSession.create({
       data: {

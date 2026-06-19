@@ -16,7 +16,9 @@ export class PlanService {
       where: { name: dto.name },
     });
     if (existing) {
-      throw new ConflictException(`Plan with name "${dto.name}" already exists`);
+      throw new ConflictException(
+        `Plan with name "${dto.name}" already exists`,
+      );
     }
 
     return this.prisma.plan.create({

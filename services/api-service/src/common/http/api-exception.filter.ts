@@ -164,7 +164,9 @@ function isPrismaKnownRequestError(
 }
 
 function isPrismaValidationError(exception: unknown): boolean {
-  return isRecord(exception) && exception.name === 'PrismaClientValidationError';
+  return (
+    isRecord(exception) && exception.name === 'PrismaClientValidationError'
+  );
 }
 
 function prismaStatusCode(code: string): number {

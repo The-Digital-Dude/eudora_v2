@@ -22,9 +22,12 @@ export class SubscriptionService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {
-    this.stripe = new Stripe(this.config.get<string>('STRIPE_SECRET_KEY') ?? '', {
-      apiVersion: '2026-05-27.dahlia',
-    });
+    this.stripe = new Stripe(
+      this.config.get<string>('STRIPE_SECRET_KEY') ?? '',
+      {
+        apiVersion: '2026-05-27.dahlia',
+      },
+    );
   }
 
   // ─── Create Subscription ────────────────────────────────────────────────────
@@ -42,7 +45,8 @@ export class SubscriptionService {
     const plan = await this.prisma.plan.findUnique({
       where: { id: dto.planId },
     });
-    if (!plan || !plan.isActive) throw new NotFoundException('Plan not found or inactive');
+    if (!plan || !plan.isActive)
+      throw new NotFoundException('Plan not found or inactive');
 
     const interval = dto.interval ?? PlanInterval.MONTHLY;
     const stripePriceId =
@@ -54,7 +58,8 @@ export class SubscriptionService {
     let stripeSubscriptionId: string | undefined;
     let currentPeriodEnd: Date;
 
-    const isFree = Number(plan.priceMonthly) === 0 && Number(plan.priceAnnual) === 0;
+    const isFree =
+      Number(plan.priceMonthly) === 0 && Number(plan.priceAnnual) === 0;
 
     if (!isFree && stripePriceId) {
       // Create Stripe customer for campus
@@ -91,7 +96,9 @@ export class SubscriptionService {
         planId: dto.planId,
         stripeCustomerId,
         stripeSubscriptionId,
-        status: isFree ? SubscriptionStatus.ACTIVE : SubscriptionStatus.TRIALING,
+        status: isFree
+          ? SubscriptionStatus.ACTIVE
+          : SubscriptionStatus.TRIALING,
         interval,
         currentPeriodStart: new Date(),
         currentPeriodEnd,
@@ -136,7 +143,9 @@ export class SubscriptionService {
     const subscription = await this.findOne(id);
 
     if (subscription.status === SubscriptionStatus.CANCELED) {
-      throw new BadRequestException('Cannot change plan of a canceled subscription');
+      throw new BadRequestException(
+        'Cannot change plan of a canceled subscription',
+      );
     }
 
     const newPlan = await this.prisma.plan.findUnique({
@@ -158,10 +167,15 @@ export class SubscriptionService {
           : newPlan.stripePriceIdAnnual;
 
       if (newStripePriceId) {
-        await this.stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-          items: [{ id: stripeSub.items.data[0].id, price: newStripePriceId }],
-          proration_behavior: 'create_prorations',
-        });
+        await this.stripe.subscriptions.update(
+          subscription.stripeSubscriptionId,
+          {
+            items: [
+              { id: stripeSub.items.data[0].id, price: newStripePriceId },
+            ],
+            proration_behavior: 'create_prorations',
+          },
+        );
       }
     }
 
@@ -183,9 +197,12 @@ export class SubscriptionService {
 
     if (subscription.stripeSubscriptionId) {
       // Cancel at period end — user retains access until then
-      await this.stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-        cancel_at_period_end: true,
-      });
+      await this.stripe.subscriptions.update(
+        subscription.stripeSubscriptionId,
+        {
+          cancel_at_period_end: true,
+        },
+      );
     }
 
     return this.prisma.subscription.update({
@@ -222,12 +239,18 @@ export class SubscriptionService {
         students: {
           used: studentCount,
           limit: plan.maxStudents ?? null,
-          exceeded: plan.maxStudents !== null ? studentCount >= plan.maxStudents : false,
+          exceeded:
+            plan.maxStudents !== null
+              ? studentCount >= plan.maxStudents
+              : false,
         },
         programs: {
           used: programCount,
           limit: plan.maxPrograms ?? null,
-          exceeded: plan.maxPrograms !== null ? programCount >= plan.maxPrograms : false,
+          exceeded:
+            plan.maxPrograms !== null
+              ? programCount >= plan.maxPrograms
+              : false,
         },
       },
     };

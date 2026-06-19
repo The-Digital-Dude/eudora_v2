@@ -1,8 +1,23 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateGuardianProfileDto, UpdateGuardianProfileDto } from './dto/guardian.dto';
-import { CreateFamilyDto, UpdateFamilyDto, AddFamilyMemberDto } from './dto/family.dto';
-import { CreateRelationshipDto, UpdateRelationshipDto } from './dto/relationship.dto';
+import {
+  CreateGuardianProfileDto,
+  UpdateGuardianProfileDto,
+} from './dto/guardian.dto';
+import {
+  CreateFamilyDto,
+  UpdateFamilyDto,
+  AddFamilyMemberDto,
+} from './dto/family.dto';
+import {
+  CreateRelationshipDto,
+  UpdateRelationshipDto,
+} from './dto/relationship.dto';
 
 @Injectable()
 export class FamilyService {
@@ -22,7 +37,9 @@ export class FamilyService {
       where: { userId: dto.userId },
     });
     if (existingProfile) {
-      throw new ConflictException('A guardian profile already exists for this user');
+      throw new ConflictException(
+        'A guardian profile already exists for this user',
+      );
     }
 
     return this.prisma.guardianProfile.create({
@@ -36,7 +53,9 @@ export class FamilyService {
       this.prisma.guardianProfile.findMany({
         skip,
         take: limit,
-        include: { user: { select: { email: true, firstName: true, lastName: true } } },
+        include: {
+          user: { select: { email: true, firstName: true, lastName: true } },
+        },
         orderBy: { fullName: 'asc' },
       }),
       this.prisma.guardianProfile.count(),
@@ -88,7 +107,9 @@ export class FamilyService {
         where: { userId: dto.userId },
       });
       if (existingProfile) {
-        throw new ConflictException('A guardian profile already exists for this user');
+        throw new ConflictException(
+          'A guardian profile already exists for this user',
+        );
       }
     }
 
@@ -197,7 +218,9 @@ export class FamilyService {
     }
 
     if (!dto.studentProfileId && !dto.guardianProfileId) {
-      throw new BadRequestException('Either studentProfileId or guardianProfileId must be provided');
+      throw new BadRequestException(
+        'Either studentProfileId or guardianProfileId must be provided',
+      );
     }
 
     if (dto.studentProfileId) {
@@ -210,11 +233,16 @@ export class FamilyService {
 
       const existingMember = await this.prisma.familyStudent.findUnique({
         where: {
-          familyId_studentProfileId: { familyId, studentProfileId: dto.studentProfileId },
+          familyId_studentProfileId: {
+            familyId,
+            studentProfileId: dto.studentProfileId,
+          },
         },
       });
       if (existingMember) {
-        throw new ConflictException('Student is already a member of this family');
+        throw new ConflictException(
+          'Student is already a member of this family',
+        );
       }
 
       await this.prisma.familyStudent.create({
@@ -235,11 +263,16 @@ export class FamilyService {
 
       const existingMember = await this.prisma.familyGuardian.findUnique({
         where: {
-          familyId_guardianProfileId: { familyId, guardianProfileId: dto.guardianProfileId },
+          familyId_guardianProfileId: {
+            familyId,
+            guardianProfileId: dto.guardianProfileId,
+          },
         },
       });
       if (existingMember) {
-        throw new ConflictException('Guardian is already a member of this family');
+        throw new ConflictException(
+          'Guardian is already a member of this family',
+        );
       }
 
       await this.prisma.familyGuardian.create({
@@ -266,7 +299,9 @@ export class FamilyService {
     }
 
     if (!studentProfileId && !guardianProfileId) {
-      throw new BadRequestException('Either studentProfileId or guardianProfileId must be specified to remove');
+      throw new BadRequestException(
+        'Either studentProfileId or guardianProfileId must be specified to remove',
+      );
     }
 
     if (studentProfileId) {
@@ -276,7 +311,9 @@ export class FamilyService {
         },
       });
       if (!existing) {
-        throw new NotFoundException('Student member relationship not found in this family');
+        throw new NotFoundException(
+          'Student member relationship not found in this family',
+        );
       }
       await this.prisma.familyStudent.delete({
         where: {
@@ -292,7 +329,9 @@ export class FamilyService {
         },
       });
       if (!existing) {
-        throw new NotFoundException('Guardian member relationship not found in this family');
+        throw new NotFoundException(
+          'Guardian member relationship not found in this family',
+        );
       }
       await this.prisma.familyGuardian.delete({
         where: {
@@ -308,8 +347,12 @@ export class FamilyService {
 
   async createRelationship(dto: CreateRelationshipDto) {
     const [guardian, student] = await Promise.all([
-      this.prisma.guardianProfile.findUnique({ where: { id: dto.guardianProfileId } }),
-      this.prisma.studentProfile.findUnique({ where: { id: dto.studentProfileId } }),
+      this.prisma.guardianProfile.findUnique({
+        where: { id: dto.guardianProfileId },
+      }),
+      this.prisma.studentProfile.findUnique({
+        where: { id: dto.studentProfileId },
+      }),
     ]);
 
     if (!guardian) {
@@ -319,16 +362,19 @@ export class FamilyService {
       throw new NotFoundException('Student profile not found');
     }
 
-    const existingRel = await this.prisma.guardianStudentRelationship.findUnique({
-      where: {
-        guardianProfileId_studentProfileId: {
-          guardianProfileId: dto.guardianProfileId,
-          studentProfileId: dto.studentProfileId,
+    const existingRel =
+      await this.prisma.guardianStudentRelationship.findUnique({
+        where: {
+          guardianProfileId_studentProfileId: {
+            guardianProfileId: dto.guardianProfileId,
+            studentProfileId: dto.studentProfileId,
+          },
         },
-      },
-    });
+      });
     if (existingRel) {
-      throw new ConflictException('A relationship already exists between this guardian and student');
+      throw new ConflictException(
+        'A relationship already exists between this guardian and student',
+      );
     }
 
     return this.prisma.guardianStudentRelationship.create({
@@ -375,7 +421,10 @@ export class FamilyService {
   async findRelationship(guardianProfileId: string, studentProfileId: string) {
     const rel = await this.prisma.guardianStudentRelationship.findUnique({
       where: {
-        guardianProfileId_studentProfileId: { guardianProfileId, studentProfileId },
+        guardianProfileId_studentProfileId: {
+          guardianProfileId,
+          studentProfileId,
+        },
       },
       include: {
         guardianProfile: true,
@@ -395,7 +444,10 @@ export class FamilyService {
   ) {
     const rel = await this.prisma.guardianStudentRelationship.findUnique({
       where: {
-        guardianProfileId_studentProfileId: { guardianProfileId, studentProfileId },
+        guardianProfileId_studentProfileId: {
+          guardianProfileId,
+          studentProfileId,
+        },
       },
     });
     if (!rel) {
@@ -404,16 +456,25 @@ export class FamilyService {
 
     return this.prisma.guardianStudentRelationship.update({
       where: {
-        guardianProfileId_studentProfileId: { guardianProfileId, studentProfileId },
+        guardianProfileId_studentProfileId: {
+          guardianProfileId,
+          studentProfileId,
+        },
       },
       data: dto,
     });
   }
 
-  async deleteRelationship(guardianProfileId: string, studentProfileId: string) {
+  async deleteRelationship(
+    guardianProfileId: string,
+    studentProfileId: string,
+  ) {
     const rel = await this.prisma.guardianStudentRelationship.findUnique({
       where: {
-        guardianProfileId_studentProfileId: { guardianProfileId, studentProfileId },
+        guardianProfileId_studentProfileId: {
+          guardianProfileId,
+          studentProfileId,
+        },
       },
     });
     if (!rel) {
@@ -422,7 +483,10 @@ export class FamilyService {
 
     await this.prisma.guardianStudentRelationship.delete({
       where: {
-        guardianProfileId_studentProfileId: { guardianProfileId, studentProfileId },
+        guardianProfileId_studentProfileId: {
+          guardianProfileId,
+          studentProfileId,
+        },
       },
     });
 
@@ -434,7 +498,9 @@ export class FamilyService {
       where: { userId },
     });
     if (!guardian) {
-      throw new NotFoundException('Guardian profile not found. Please complete your profile details first.');
+      throw new NotFoundException(
+        'Guardian profile not found. Please complete your profile details first.',
+      );
     }
 
     const studentUser = await this.prisma.user.findFirst({
@@ -444,17 +510,20 @@ export class FamilyService {
       },
     });
     if (!studentUser || !studentUser.studentProfile) {
-      throw new NotFoundException(`No student account matches the email: ${studentEmail}`);
+      throw new NotFoundException(
+        `No student account matches the email: ${studentEmail}`,
+      );
     }
 
-    const existingRel = await this.prisma.guardianStudentRelationship.findUnique({
-      where: {
-        guardianProfileId_studentProfileId: {
-          guardianProfileId: guardian.id,
-          studentProfileId: studentUser.studentProfile.id,
+    const existingRel =
+      await this.prisma.guardianStudentRelationship.findUnique({
+        where: {
+          guardianProfileId_studentProfileId: {
+            guardianProfileId: guardian.id,
+            studentProfileId: studentUser.studentProfile.id,
+          },
         },
-      },
-    });
+      });
 
     if (existingRel) {
       return existingRel;

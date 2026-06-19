@@ -63,10 +63,7 @@ export class AssessmentSetupController {
 
   @Post('levels')
   @RequirePermissions({ action: 'manage', subject: 'Assessment' })
-  async createLevel(
-    @Body() body: CreateLookupDto,
-    @CurrentUser() user: any,
-  ) {
+  async createLevel(@Body() body: CreateLookupDto, @CurrentUser() user: any) {
     return this.assessmentSetupService.createLevel(body, user.id);
   }
 
@@ -113,19 +110,13 @@ export class AssessmentSetupController {
 
   @Delete(':id')
   @RequirePermissions({ action: 'manage', subject: 'Assessment' })
-  async archiveAssessment(
-    @Param('id') id: string,
-    @CurrentUser() user: any,
-  ) {
+  async archiveAssessment(@Param('id') id: string, @CurrentUser() user: any) {
     return this.assessmentSetupService.archiveAssessment(id, user.id);
   }
 
   @Post(':id/publish')
   @RequirePermissions({ action: 'manage', subject: 'Assessment' })
-  async publishAssessment(
-    @Param('id') id: string,
-    @CurrentUser() user: any,
-  ) {
+  async publishAssessment(@Param('id') id: string, @CurrentUser() user: any) {
     return this.assessmentSetupService.publishAssessment(id, user.id);
   }
 }

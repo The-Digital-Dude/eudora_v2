@@ -106,13 +106,19 @@ describe('LessonsService', () => {
     const mockAttempt = { id: 'attempt-1', status: 'IN_PROGRESS' };
 
     beforeEach(() => {
-      mockPrismaService.studentProfile.findUnique.mockResolvedValue(mockStudent);
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue(
+        mockStudent,
+      );
       mockPrismaService.card.findUnique.mockResolvedValue(mockCard);
       mockPrismaService.lessonAttempt.findFirst.mockResolvedValue(mockAttempt);
       mockPrismaService.studentCardResponse.findUnique.mockResolvedValue(null);
-      mockPrismaService.studentCardResponse.upsert.mockResolvedValue({ attemptsCount: 1 });
+      mockPrismaService.studentCardResponse.upsert.mockResolvedValue({
+        attemptsCount: 1,
+      });
       mockPrismaService.card.findMany.mockResolvedValue([mockCard]);
-      mockPrismaService.studentCardResponse.findMany.mockResolvedValue([{ cardId: 'card-1' }]);
+      mockPrismaService.studentCardResponse.findMany.mockResolvedValue([
+        { cardId: 'card-1' },
+      ]);
       mockPrismaService.studentExperience.findUnique.mockResolvedValue({
         totalXp: 10,
         level: 1,
@@ -132,7 +138,11 @@ describe('LessonsService', () => {
         selectedOptionId: 'opt-1',
       };
 
-      const result = await service.submitCardResponse('user-1', 'card-1', submission);
+      const result = await service.submitCardResponse(
+        'user-1',
+        'card-1',
+        submission,
+      );
 
       expect(result.isCorrect).toBe(true);
       expect(mockPrismaService.studentCardResponse.upsert).toHaveBeenCalled();
@@ -144,7 +154,11 @@ describe('LessonsService', () => {
         selectedOptionId: 'opt-2',
       };
 
-      const result = await service.submitCardResponse('user-1', 'card-1', submission);
+      const result = await service.submitCardResponse(
+        'user-1',
+        'card-1',
+        submission,
+      );
 
       expect(result.isCorrect).toBe(false);
     });

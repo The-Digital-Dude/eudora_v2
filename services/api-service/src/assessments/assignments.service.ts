@@ -95,7 +95,14 @@ export class AssignmentsService {
           dueAt: parseOptionalDate(input.dueAt, 'dueAt') ?? new Date(),
           status: enumValue(
             input.status ?? 'assigned',
-            ['assigned', 'started', 'submitted', 'overdue', 'exempted', 'cancelled'],
+            [
+              'assigned',
+              'started',
+              'submitted',
+              'overdue',
+              'exempted',
+              'cancelled',
+            ],
             'status',
           ),
         },
@@ -130,11 +137,19 @@ export class AssignmentsService {
               classSectionId: classSectionId!,
               lessonId: emptyToNull(input.lessonId),
               assignedByUserId: actorUserId,
-              opensAt: parseOptionalDate(input.opensAt, 'opensAt') ?? new Date(),
+              opensAt:
+                parseOptionalDate(input.opensAt, 'opensAt') ?? new Date(),
               dueAt: parseOptionalDate(input.dueAt, 'dueAt') ?? new Date(),
               status: enumValue(
                 input.status ?? 'assigned',
-                ['assigned', 'started', 'submitted', 'overdue', 'exempted', 'cancelled'],
+                [
+                  'assigned',
+                  'started',
+                  'submitted',
+                  'overdue',
+                  'exempted',
+                  'cancelled',
+                ],
                 'status',
               ),
             },
@@ -159,17 +174,32 @@ export class AssignmentsService {
     }
   }
 
-  async updateAssignment(id: string, input: UpdateAssignmentDto, actorUserId: string) {
+  async updateAssignment(
+    id: string,
+    input: UpdateAssignmentDto,
+    actorUserId: string,
+  ) {
     const assignment = await this.prisma.assessmentAssignment.update({
       where: { id },
       data: {
-        ...(input.opensAt !== undefined ? { opensAt: parseOptionalDate(input.opensAt, 'opensAt') } : {}),
-        ...(input.dueAt !== undefined ? { dueAt: parseOptionalDate(input.dueAt, 'dueAt') } : {}),
+        ...(input.opensAt !== undefined
+          ? { opensAt: parseOptionalDate(input.opensAt, 'opensAt') }
+          : {}),
+        ...(input.dueAt !== undefined
+          ? { dueAt: parseOptionalDate(input.dueAt, 'dueAt') }
+          : {}),
         ...(input.status !== undefined
           ? {
               status: enumValue(
                 input.status,
-                ['assigned', 'started', 'submitted', 'overdue', 'exempted', 'cancelled'],
+                [
+                  'assigned',
+                  'started',
+                  'submitted',
+                  'overdue',
+                  'exempted',
+                  'cancelled',
+                ],
                 'status',
               ),
             }

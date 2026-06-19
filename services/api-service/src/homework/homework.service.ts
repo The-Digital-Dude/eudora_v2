@@ -109,7 +109,9 @@ export class HomeworkService {
 
     const now = new Date();
     const isLate = now > homework.dueDate;
-    const initialStatus = isLate ? SubmissionStatus.LATE : SubmissionStatus.SUBMITTED;
+    const initialStatus = isLate
+      ? SubmissionStatus.LATE
+      : SubmissionStatus.SUBMITTED;
 
     return this.prisma.homeworkSubmission.upsert({
       where: {
@@ -138,7 +140,11 @@ export class HomeworkService {
     });
   }
 
-  async gradeSubmission(submissionId: string, dto: GradeSubmissionDto, gradedByUserId?: string) {
+  async gradeSubmission(
+    submissionId: string,
+    dto: GradeSubmissionDto,
+    gradedByUserId?: string,
+  ) {
     const submission = await this.prisma.homeworkSubmission.findUnique({
       where: { id: submissionId },
       include: { homework: true },

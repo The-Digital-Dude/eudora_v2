@@ -8,7 +8,10 @@ import {
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PLAN_FEATURE_KEY } from '../decorators/require-plan-feature.decorator';
-import { PLAN_LIMIT_KEY, PlanLimitResource } from '../decorators/check-plan-limit.decorator';
+import {
+  PLAN_LIMIT_KEY,
+  PlanLimitResource,
+} from '../decorators/check-plan-limit.decorator';
 import { SubscriptionStatus } from '@prisma/client';
 
 /**
@@ -104,7 +107,11 @@ export class PlanLimitGuard implements CanActivate {
   private async checkResourceLimit(
     campusId: string,
     resource: PlanLimitResource,
-    plan: { maxStudents: number | null; maxPrograms: number | null; maxCampuses: number | null },
+    plan: {
+      maxStudents: number | null;
+      maxPrograms: number | null;
+      maxCampuses: number | null;
+    },
   ): Promise<void> {
     switch (resource) {
       case 'students': {

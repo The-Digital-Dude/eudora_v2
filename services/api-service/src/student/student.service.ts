@@ -1,6 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateStudentProfileDto, UpdateStudentProfileDto } from './dto/student-profile.dto';
+import {
+  CreateStudentProfileDto,
+  UpdateStudentProfileDto,
+} from './dto/student-profile.dto';
 import { CreatePlacementDto, UpdatePlacementDto } from './dto/placement.dto';
 import { CreateEnrollmentDto, UpdateEnrollmentDto } from './dto/enrollment.dto';
 
@@ -22,7 +30,9 @@ export class StudentService {
       where: { userId: dto.userId },
     });
     if (existingProfile) {
-      throw new ConflictException('A student profile already exists for this user');
+      throw new ConflictException(
+        'A student profile already exists for this user',
+      );
     }
 
     return this.prisma.studentProfile.create({
@@ -48,7 +58,9 @@ export class StudentService {
         where,
         skip,
         take: limit,
-        include: { user: { select: { email: true, firstName: true, lastName: true } } },
+        include: {
+          user: { select: { email: true, firstName: true, lastName: true } },
+        },
         orderBy: { fullName: 'asc' },
       }),
       this.prisma.studentProfile.count({ where }),
@@ -102,7 +114,9 @@ export class StudentService {
         where: { userId: dto.userId },
       });
       if (existingProfile) {
-        throw new ConflictException('A student profile already exists for this user');
+        throw new ConflictException(
+          'A student profile already exists for this user',
+        );
       }
     }
 
@@ -134,9 +148,15 @@ export class StudentService {
 
   async createPlacement(dto: CreatePlacementDto) {
     const [student, section, year] = await Promise.all([
-      this.prisma.studentProfile.findUnique({ where: { id: dto.studentProfileId } }),
-      this.prisma.classSection.findUnique({ where: { id: dto.classSectionId } }),
-      this.prisma.academicYear.findUnique({ where: { id: dto.academicYearId } }),
+      this.prisma.studentProfile.findUnique({
+        where: { id: dto.studentProfileId },
+      }),
+      this.prisma.classSection.findUnique({
+        where: { id: dto.classSectionId },
+      }),
+      this.prisma.academicYear.findUnique({
+        where: { id: dto.academicYearId },
+      }),
     ]);
 
     if (!student) {
@@ -150,19 +170,24 @@ export class StudentService {
     }
 
     if (section.academicYearId !== dto.academicYearId) {
-      throw new BadRequestException('Class section does not belong to the specified academic year');
+      throw new BadRequestException(
+        'Class section does not belong to the specified academic year',
+      );
     }
 
-    const existingPlacement = await this.prisma.studentClassPlacement.findUnique({
-      where: {
-        studentProfileId_classSectionId: {
-          studentProfileId: dto.studentProfileId,
-          classSectionId: dto.classSectionId,
+    const existingPlacement =
+      await this.prisma.studentClassPlacement.findUnique({
+        where: {
+          studentProfileId_classSectionId: {
+            studentProfileId: dto.studentProfileId,
+            classSectionId: dto.classSectionId,
+          },
         },
-      },
-    });
+      });
     if (existingPlacement) {
-      throw new ConflictException('This student is already placed in this class section');
+      throw new ConflictException(
+        'This student is already placed in this class section',
+      );
     }
 
     return this.prisma.studentClassPlacement.create({
@@ -271,7 +296,9 @@ export class StudentService {
 
   async createEnrollment(dto: CreateEnrollmentDto) {
     const [student, courseClass] = await Promise.all([
-      this.prisma.studentProfile.findUnique({ where: { id: dto.studentProfileId } }),
+      this.prisma.studentProfile.findUnique({
+        where: { id: dto.studentProfileId },
+      }),
       this.prisma.courseClass.findUnique({ where: { id: dto.courseClassId } }),
     ]);
 
@@ -282,23 +309,28 @@ export class StudentService {
       throw new NotFoundException('Course class not found');
     }
 
-    const existingEnrollment = await this.prisma.studentCourseEnrollment.findUnique({
-      where: {
-        studentProfileId_courseClassId: {
-          studentProfileId: dto.studentProfileId,
-          courseClassId: dto.courseClassId,
+    const existingEnrollment =
+      await this.prisma.studentCourseEnrollment.findUnique({
+        where: {
+          studentProfileId_courseClassId: {
+            studentProfileId: dto.studentProfileId,
+            courseClassId: dto.courseClassId,
+          },
         },
-      },
-    });
+      });
     if (existingEnrollment) {
-      throw new ConflictException('Student is already enrolled in this course class');
+      throw new ConflictException(
+        'Student is already enrolled in this course class',
+      );
     }
 
     return this.prisma.studentCourseEnrollment.create({
       data: {
         studentProfileId: dto.studentProfileId,
         courseClassId: dto.courseClassId,
-        enrollmentDate: dto.enrollmentDate ? new Date(dto.enrollmentDate) : undefined,
+        enrollmentDate: dto.enrollmentDate
+          ? new Date(dto.enrollmentDate)
+          : undefined,
         status: dto.status,
       },
     });
@@ -366,7 +398,9 @@ export class StudentService {
       where: { id },
       data: {
         status: dto.status,
-        enrollmentDate: dto.enrollmentDate ? new Date(dto.enrollmentDate) : undefined,
+        enrollmentDate: dto.enrollmentDate
+          ? new Date(dto.enrollmentDate)
+          : undefined,
       },
     });
   }

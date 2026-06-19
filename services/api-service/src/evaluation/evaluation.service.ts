@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateConceptDto, CreateCompetencyDto } from './dto/curriculum.dto';
 import { CreateRubricDto } from './dto/rubric.dto';
@@ -77,7 +81,9 @@ export class EvaluationService {
       where: { competencyId: dto.competencyId },
     });
     if (existing) {
-      throw new BadRequestException('A rubric already exists for this competency');
+      throw new BadRequestException(
+        'A rubric already exists for this competency',
+      );
     }
 
     // Create Rubric, criteria, and levels in a single transaction
@@ -262,7 +268,9 @@ export class EvaluationService {
     }
 
     if (totalWeight === 0) {
-      throw new BadRequestException('Total weight of evaluated criteria cannot be zero');
+      throw new BadRequestException(
+        'Total weight of evaluated criteria cannot be zero',
+      );
     }
 
     const overallScore = totalWeightedScore / totalWeight;
@@ -294,7 +302,11 @@ export class EvaluationService {
     });
 
     // Update the student's mastery score and confidence metrics
-    await this.updateMastery(evidence.studentProfileId, evidence.competencyId, overallScore);
+    await this.updateMastery(
+      evidence.studentProfileId,
+      evidence.competencyId,
+      overallScore,
+    );
 
     return this.prisma.rubricAssessment.findUnique({
       where: { id: assessment.id },
@@ -410,7 +422,10 @@ export class EvaluationService {
     });
   }
 
-  async getStudentCompetencyHistory(studentProfileId: string, competencyId: string) {
+  async getStudentCompetencyHistory(
+    studentProfileId: string,
+    competencyId: string,
+  ) {
     const student = await this.prisma.studentProfile.findUnique({
       where: { id: studentProfileId },
     });

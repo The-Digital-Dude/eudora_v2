@@ -17,7 +17,10 @@ export class AttendanceService {
 
   // ─── Daily Attendance ───────────────────────────────────────────────────────
 
-  async recordDailyAttendance(dto: RecordDailyAttendanceDto, recordedByUserId?: string) {
+  async recordDailyAttendance(
+    dto: RecordDailyAttendanceDto,
+    recordedByUserId?: string,
+  ) {
     const section = await this.prisma.classSection.findUnique({
       where: { id: dto.classSectionId },
       include: { placements: true },
@@ -26,7 +29,9 @@ export class AttendanceService {
       throw new NotFoundException('Class section not found');
     }
 
-    const validStudentIds = new Set(section.placements.map((p) => p.studentProfileId));
+    const validStudentIds = new Set(
+      section.placements.map((p) => p.studentProfileId),
+    );
     const targetDate = new Date(dto.date);
 
     // Validate date format
@@ -164,7 +169,10 @@ export class AttendanceService {
 
   // ─── Session Attendance ──────────────────────────────────────────────────────
 
-  async recordSessionAttendance(dto: RecordSessionAttendanceDto, recordedByUserId?: string) {
+  async recordSessionAttendance(
+    dto: RecordSessionAttendanceDto,
+    recordedByUserId?: string,
+  ) {
     const session = await this.prisma.courseClassSession.findUnique({
       where: { id: dto.sessionId },
       include: {
@@ -239,7 +247,11 @@ export class AttendanceService {
 
   // ─── Reporting & Stats Summary ──────────────────────────────────────────────
 
-  async getStudentSummary(studentProfileId: string, startDateStr?: string, endDateStr?: string) {
+  async getStudentSummary(
+    studentProfileId: string,
+    startDateStr?: string,
+    endDateStr?: string,
+  ) {
     const student = await this.prisma.studentProfile.findUnique({
       where: { id: studentProfileId },
     });
@@ -280,7 +292,8 @@ export class AttendanceService {
       });
 
       // Present + Excused + Late can count as attended or present/late
-      const presentCount = breakdown.PRESENT + breakdown.LATE + breakdown.EXCUSED;
+      const presentCount =
+        breakdown.PRESENT + breakdown.LATE + breakdown.EXCUSED;
       const attendanceRate = Math.round((presentCount / total) * 100);
 
       return {

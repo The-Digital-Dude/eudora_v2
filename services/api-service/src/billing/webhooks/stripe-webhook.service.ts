@@ -2,7 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
-import { InvoiceStatus, PaymentStatus, SubscriptionStatus } from '@prisma/client';
+import {
+  InvoiceStatus,
+  PaymentStatus,
+  SubscriptionStatus,
+} from '@prisma/client';
 
 @Injectable()
 export class StripeWebhookService {
@@ -102,9 +106,10 @@ export class StripeWebhookService {
   }
 
   private async handleInvoicePaymentSucceeded(stripeInvoice: any) {
-    const subscriptionId = typeof stripeInvoice.subscription === 'string'
-      ? stripeInvoice.subscription
-      : stripeInvoice.subscription?.id;
+    const subscriptionId =
+      typeof stripeInvoice.subscription === 'string'
+        ? stripeInvoice.subscription
+        : stripeInvoice.subscription?.id;
 
     if (!subscriptionId) return;
 
@@ -155,9 +160,10 @@ export class StripeWebhookService {
   }
 
   private async handleInvoicePaymentFailed(stripeInvoice: any) {
-    const subscriptionId = typeof stripeInvoice.subscription === 'string'
-      ? stripeInvoice.subscription
-      : stripeInvoice.subscription?.id;
+    const subscriptionId =
+      typeof stripeInvoice.subscription === 'string'
+        ? stripeInvoice.subscription
+        : stripeInvoice.subscription?.id;
 
     if (!subscriptionId) return;
 
@@ -166,7 +172,9 @@ export class StripeWebhookService {
     });
     if (!local) return;
 
-    const amountDue = stripeInvoice.amount_due ? stripeInvoice.amount_due / 100 : 0;
+    const amountDue = stripeInvoice.amount_due
+      ? stripeInvoice.amount_due / 100
+      : 0;
 
     await this.prisma.invoice.upsert({
       where: { stripeInvoiceId: stripeInvoice.id },

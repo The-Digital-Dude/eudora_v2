@@ -15,9 +15,12 @@ import { PrismaModule } from '../prisma/prisma.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'default-jwt-secret-key-12345',
+        secret:
+          configService.get<string>('JWT_SECRET') ||
+          'default-jwt-secret-key-12345',
         signOptions: {
-          expiresIn: (configService.get<string>('JWT_EXPIRATION') || '1d') as any,
+          expiresIn: (configService.get<string>('JWT_EXPIRATION') ||
+            '1d') as any,
         },
       }),
     }),

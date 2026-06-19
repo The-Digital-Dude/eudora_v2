@@ -48,7 +48,13 @@ export class SubjectsService {
       data: { code, name: requireText(input.name, 'name') },
       select: lookupSelect,
     });
-    await audit(this.prisma, actorUserId, 'assessments.subject.created', 'subject', record.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.subject.created',
+      'subject',
+      record.id,
+    );
     return record;
   }
 
@@ -56,14 +62,28 @@ export class SubjectsService {
     const record = await this.prisma.subject.update({
       where: { id },
       data: {
-        ...(input.name !== undefined ? { name: requireText(input.name, 'name') } : {}),
+        ...(input.name !== undefined
+          ? { name: requireText(input.name, 'name') }
+          : {}),
         ...(input.status !== undefined
-          ? { status: enumValue(input.status, ['active', 'inactive', 'archived'], 'status') }
+          ? {
+              status: enumValue(
+                input.status,
+                ['active', 'inactive', 'archived'],
+                'status',
+              ),
+            }
           : {}),
       } as any,
       select: lookupSelect,
     });
-    await audit(this.prisma, actorUserId, 'assessments.subject.updated', 'subject', record.id);
+    await audit(
+      this.prisma,
+      actorUserId,
+      'assessments.subject.updated',
+      'subject',
+      record.id,
+    );
     return record;
   }
 

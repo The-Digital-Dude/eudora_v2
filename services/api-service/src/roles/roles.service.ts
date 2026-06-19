@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
@@ -135,7 +139,9 @@ export class RolesService {
       data: { roleId, permissionId },
     });
 
-    return { message: `Permission '${permission.action}:${permission.subject}' assigned to role successfully` };
+    return {
+      message: `Permission '${permission.action}:${permission.subject}' assigned to role successfully`,
+    };
   }
 
   async removePermission(roleId: string, permissionId: string) {
@@ -167,6 +173,8 @@ export class RolesService {
       },
     });
 
-    return { message: `Permission '${permission.action}:${permission.subject}' removed from role successfully` };
+    return {
+      message: `Permission '${permission.action}:${permission.subject}' removed from role successfully`,
+    };
   }
 }

@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateAttemptDto,
@@ -64,10 +68,7 @@ export class AttemptsService {
   async startAttempt(input: CreateAttemptDto, actorUserId: string) {
     const assignment = await this.prisma.assessmentAssignment.findUnique({
       where: {
-        id: requireText(
-          input.assessmentAssignmentId,
-          'assessmentAssignmentId',
-        ),
+        id: requireText(input.assessmentAssignmentId, 'assessmentAssignmentId'),
       },
       select: {
         id: true,
@@ -76,7 +77,10 @@ export class AttemptsService {
         status: true,
       },
     });
-    const resolvedAssignment = requireRecord(assignment, 'Assignment not found');
+    const resolvedAssignment = requireRecord(
+      assignment,
+      'Assignment not found',
+    );
     if (
       resolvedAssignment.status === 'cancelled' ||
       resolvedAssignment.status === 'exempted'
@@ -94,7 +98,9 @@ export class AttemptsService {
       input.studentProfileId &&
       input.studentProfileId !== resolvedAssignment.studentProfileId
     ) {
-      throw new BadRequestException('studentProfileId does not match the assignment');
+      throw new BadRequestException(
+        'studentProfileId does not match the assignment',
+      );
     }
     if (resolvedAssignment.classSectionId) {
       await this.assertStudentBelongsToClass(
@@ -108,7 +114,10 @@ export class AttemptsService {
         where: { assessmentAssignmentId: resolvedAssignment.id },
       });
       await tx.assessmentAttempt.updateMany({
-        where: { assessmentAssignmentId: resolvedAssignment.id, isLatest: true },
+        where: {
+          assessmentAssignmentId: resolvedAssignment.id,
+          isLatest: true,
+        },
         data: { isLatest: false },
       });
       await tx.assessmentAssignment.update({
@@ -138,7 +147,11 @@ export class AttemptsService {
     return attempt;
   }
 
-  async updateAttempt(id: string, input: UpdateAttemptDto, actorUserId: string) {
+  async updateAttempt(
+    id: string,
+    input: UpdateAttemptDto,
+    actorUserId: string,
+  ) {
     const maxScore =
       input.maxScore === undefined
         ? undefined
@@ -331,7 +344,9 @@ export class AttemptsService {
         ...(overrides.resultStatus
           ? { resultStatus: overrides.resultStatus }
           : {}),
-        ...(overrides.submittedAt ? { submittedAt: overrides.submittedAt } : {}),
+        ...(overrides.submittedAt
+          ? { submittedAt: overrides.submittedAt }
+          : {}),
         ...(overrides.markedByUserId
           ? { markedByUserId: overrides.markedByUserId }
           : {}),

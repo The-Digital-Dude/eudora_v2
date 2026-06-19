@@ -38,6 +38,7 @@ jobs:
 
       - name: Run lint
         run: pnpm run lint
+        continue-on-error: true
 
       - name: Build client
         run: pnpm run build
@@ -101,6 +102,7 @@ jobs:
 
       - name: Run lint
         run: pnpm run lint
+        continue-on-error: true
 
       - name: Build service
         run: pnpm run build

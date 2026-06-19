@@ -34,10 +34,10 @@ export function isRawResponseContext(
   context: ExecutionContext,
   request: HttpRequestLike,
 ): boolean {
-  const markedRaw = reflector.getAllAndOverride<boolean>(RAW_RESPONSE_METADATA, [
-    context.getHandler(),
-    context.getClass(),
-  ]);
+  const markedRaw = reflector.getAllAndOverride<boolean>(
+    RAW_RESPONSE_METADATA,
+    [context.getHandler(), context.getClass()],
+  );
 
   return markedRaw === true || isRawResponsePath(request);
 }

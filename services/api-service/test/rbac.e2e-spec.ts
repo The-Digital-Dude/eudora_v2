@@ -32,7 +32,9 @@ describe('RBAC Verification (e2e)', () => {
     prisma = app.get(PrismaService);
 
     // Get the seeded roles
-    const adminRole = await prisma.role.findUnique({ where: { name: 'ADMIN' } });
+    const adminRole = await prisma.role.findUnique({
+      where: { name: 'ADMIN' },
+    });
     const userRole = await prisma.role.findUnique({ where: { name: 'USER' } });
     adminRoleId = adminRole!.id;
     userRoleId = userRole!.id;
@@ -44,9 +46,11 @@ describe('RBAC Verification (e2e)', () => {
         email: 'admin@eudora.app',
         password: 'Admin@123',
       })
-      .expect(201);
-    
-    superAdminToken = loginRes.body.access_token;
+      .expect(200);
+
+    const cookies = loginRes.headers['set-cookie'] || [];
+    const accessTokenCookie = cookies.find((cookie: string) => cookie.startsWith('access_token='));
+    superAdminToken = accessTokenCookie ? accessTokenCookie.split(';')[0].split('=')[1] : '';
     expect(superAdminToken).toBeDefined();
   });
 
@@ -71,7 +75,9 @@ describe('RBAC Verification (e2e)', () => {
       })
       .expect(201);
 
-    testUserToken = registerRes.body.access_token;
+    const regCookies = registerRes.headers['set-cookie'] || [];
+    const regAccessTokenCookie = regCookies.find((cookie: string) => cookie.startsWith('access_token='));
+    testUserToken = regAccessTokenCookie ? regAccessTokenCookie.split(';')[0].split('=')[1] : '';
     expect(testUserToken).toBeDefined();
 
     // Verify user role in database is USER
@@ -99,7 +105,7 @@ describe('RBAC Verification (e2e)', () => {
       .expect(200);
     
     expect(res.body).toHaveProperty('data');
-    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(Array.isArray(res.body.data.data)).toBe(true);
   });
 
   it('should allow Super Admin to assign the ADMIN role to the test user', async () => {

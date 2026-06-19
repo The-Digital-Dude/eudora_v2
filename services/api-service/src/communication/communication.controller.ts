@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { CommunicationService } from './communication.service';
 import { CreateBroadcastDto } from './dto/broadcast.dto';
 import { Roles } from '../auth/decorators/roles.decorator';

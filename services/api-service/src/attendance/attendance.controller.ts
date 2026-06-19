@@ -27,10 +27,7 @@ export class AttendanceController {
    */
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Post('daily')
-  recordDaily(
-    @Body() dto: RecordDailyAttendanceDto,
-    @CurrentUser() user: any,
-  ) {
+  recordDaily(@Body() dto: RecordDailyAttendanceDto, @CurrentUser() user: any) {
     return this.attendanceService.recordDailyAttendance(dto, user.id);
   }
 

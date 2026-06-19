@@ -75,7 +75,10 @@ describe('EvaluationService', () => {
 
   describe('createConcept', () => {
     it('should throw BadRequestException if concept name already exists', async () => {
-      mockPrismaService.concept.findUnique.mockResolvedValue({ id: 'concept-1', name: 'Math' });
+      mockPrismaService.concept.findUnique.mockResolvedValue({
+        id: 'concept-1',
+        name: 'Math',
+      });
       await expect(
         service.createConcept({ name: 'Math', description: 'Desc' }),
       ).rejects.toThrow(BadRequestException);
@@ -83,9 +86,15 @@ describe('EvaluationService', () => {
 
     it('should create a concept successfully', async () => {
       mockPrismaService.concept.findUnique.mockResolvedValue(null);
-      mockPrismaService.concept.create.mockResolvedValue({ id: 'concept-1', name: 'Math' });
+      mockPrismaService.concept.create.mockResolvedValue({
+        id: 'concept-1',
+        name: 'Math',
+      });
 
-      const result = await service.createConcept({ name: 'Math', description: 'Desc' });
+      const result = await service.createConcept({
+        name: 'Math',
+        description: 'Desc',
+      });
       expect(result.name).toBe('Math');
       expect(mockPrismaService.concept.create).toHaveBeenCalled();
     });
@@ -95,13 +104,21 @@ describe('EvaluationService', () => {
     it('should throw NotFoundException if parent concept does not exist', async () => {
       mockPrismaService.concept.findUnique.mockResolvedValue(null);
       await expect(
-        service.createCompetency({ conceptId: 'non-existent', name: 'Compare Fractions' }),
+        service.createCompetency({
+          conceptId: 'non-existent',
+          name: 'Compare Fractions',
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should create competency successfully', async () => {
-      mockPrismaService.concept.findUnique.mockResolvedValue({ id: 'concept-1' });
-      mockPrismaService.competency.create.mockResolvedValue({ id: 'comp-1', name: 'Compare Fractions' });
+      mockPrismaService.concept.findUnique.mockResolvedValue({
+        id: 'concept-1',
+      });
+      mockPrismaService.competency.create.mockResolvedValue({
+        id: 'comp-1',
+        name: 'Compare Fractions',
+      });
 
       const result = await service.createCompetency({
         conceptId: 'concept-1',
@@ -124,7 +141,9 @@ describe('EvaluationService', () => {
     });
 
     it('should throw BadRequestException if rubric already exists for competency', async () => {
-      mockPrismaService.competency.findUnique.mockResolvedValue({ id: 'comp-1' });
+      mockPrismaService.competency.findUnique.mockResolvedValue({
+        id: 'comp-1',
+      });
       mockPrismaService.rubric.findFirst.mockResolvedValue({ id: 'rubric-1' });
 
       await expect(
@@ -137,10 +156,14 @@ describe('EvaluationService', () => {
     });
 
     it('should create a rubric, its criteria and levels inside a transaction', async () => {
-      mockPrismaService.competency.findUnique.mockResolvedValue({ id: 'comp-1' });
+      mockPrismaService.competency.findUnique.mockResolvedValue({
+        id: 'comp-1',
+      });
       mockPrismaService.rubric.findFirst.mockResolvedValue(null);
       mockPrismaService.rubric.create.mockResolvedValue({ id: 'rubric-1' });
-      mockPrismaService.rubricCriterion.create.mockResolvedValue({ id: 'crit-1' });
+      mockPrismaService.rubricCriterion.create.mockResolvedValue({
+        id: 'crit-1',
+      });
       mockPrismaService.rubricLevel.create.mockResolvedValue({ id: 'lvl-1' });
 
       const mockFinalRubric = {
@@ -164,7 +187,12 @@ describe('EvaluationService', () => {
             title: 'Correctness',
             weight: 2.0,
             levels: [
-              { level: 3, title: 'Proficient', description: 'desc', score: 3.0 },
+              {
+                level: 3,
+                title: 'Proficient',
+                description: 'desc',
+                score: 3.0,
+              },
             ],
           },
         ],
@@ -221,9 +249,13 @@ describe('EvaluationService', () => {
     });
 
     it('should calculate weighted average and trigger mastery engine update', async () => {
-      mockPrismaService.assessmentEvidence.findUnique.mockResolvedValue(mockEvidence);
+      mockPrismaService.assessmentEvidence.findUnique.mockResolvedValue(
+        mockEvidence,
+      );
       mockPrismaService.rubric.findUnique.mockResolvedValue(mockRubric);
-      mockPrismaService.rubricAssessment.create.mockResolvedValue({ id: 'assessment-1' });
+      mockPrismaService.rubricAssessment.create.mockResolvedValue({
+        id: 'assessment-1',
+      });
 
       // Mock first assessment: no previous mastery exists
       mockPrismaService.competencyMastery.findUnique.mockResolvedValue(null);
@@ -233,7 +265,9 @@ describe('EvaluationService', () => {
         id: 'assessment-1',
         overallScore: 3.0,
       };
-      mockPrismaService.rubricAssessment.findUnique.mockResolvedValue(mockFinalAssessment);
+      mockPrismaService.rubricAssessment.findUnique.mockResolvedValue(
+        mockFinalAssessment,
+      );
 
       // Ratings:
       // Correctness (weight 2) -> level 3 (score 3.0) -> weighted: 6.0
@@ -275,9 +309,13 @@ describe('EvaluationService', () => {
     });
 
     it('should apply decaying average for subsequent assessments', async () => {
-      mockPrismaService.assessmentEvidence.findUnique.mockResolvedValue(mockEvidence);
+      mockPrismaService.assessmentEvidence.findUnique.mockResolvedValue(
+        mockEvidence,
+      );
       mockPrismaService.rubric.findUnique.mockResolvedValue(mockRubric);
-      mockPrismaService.rubricAssessment.create.mockResolvedValue({ id: 'assessment-2' });
+      mockPrismaService.rubricAssessment.create.mockResolvedValue({
+        id: 'assessment-2',
+      });
 
       // Previous mastery score: 3.0
       mockPrismaService.competencyMastery.findUnique.mockResolvedValue({
@@ -293,7 +331,9 @@ describe('EvaluationService', () => {
         id: 'assessment-2',
         overallScore: 4.0,
       };
-      mockPrismaService.rubricAssessment.findUnique.mockResolvedValue(mockFinalAssessment);
+      mockPrismaService.rubricAssessment.findUnique.mockResolvedValue(
+        mockFinalAssessment,
+      );
 
       // Ratings:
       // Correctness (weight 2) -> level 4 (score 4.0) -> weighted: 8.0

@@ -27,10 +27,7 @@ export class LeadsController {
 
   @Get()
   @Roles('ADMIN', 'SUPER_ADMIN')
-  async findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
+  async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
     return this.leadsService.findAll(pageNum, limitNum);
@@ -44,10 +41,7 @@ export class LeadsController {
 
   @Patch(':id')
   @Roles('ADMIN', 'SUPER_ADMIN')
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateLeadDto,
-  ) {
+  async update(@Param('id') id: string, @Body() dto: UpdateLeadDto) {
     return this.leadsService.update(id, dto);
   }
 

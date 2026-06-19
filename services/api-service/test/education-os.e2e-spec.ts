@@ -8,9 +8,9 @@ import { PrismaService } from '../src/prisma/prisma.service';
 describe('Education OS Administrative Modules (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
-  
+
   let superAdminToken: string;
-  
+
   // Regular User details
   let regularUserToken: string;
   let regularUserId: string;
@@ -54,9 +54,11 @@ describe('Education OS Administrative Modules (e2e)', () => {
         email: 'admin@eudora.app',
         password: 'Admin@123',
       })
-      .expect(201);
-    
-    superAdminToken = loginRes.body.access_token;
+      .expect(200);
+
+    const cookies = loginRes.headers['set-cookie'] || [];
+    const accessTokenCookie = cookies.find((cookie: string) => cookie.startsWith('access_token='));
+    superAdminToken = accessTokenCookie ? accessTokenCookie.split(';')[0].split('=')[1] : '';
     expect(superAdminToken).toBeDefined();
 
     // Create a regular user for RBAC verification
@@ -71,8 +73,12 @@ describe('Education OS Administrative Modules (e2e)', () => {
       })
       .expect(201);
 
-    regularUserToken = registerRes.body.access_token;
-    const dbRegularUser = await prisma.user.findUnique({ where: { email: uniqueEmail } });
+    const regCookies = registerRes.headers['set-cookie'] || [];
+    const regAccessTokenCookie = regCookies.find((cookie: string) => cookie.startsWith('access_token='));
+    regularUserToken = regAccessTokenCookie ? regAccessTokenCookie.split(';')[0].split('=')[1] : '';
+    const dbRegularUser = await prisma.user.findUnique({
+      where: { email: uniqueEmail },
+    });
     regularUserId = dbRegularUser!.id;
   });
 
@@ -83,30 +89,48 @@ describe('Education OS Administrative Modules (e2e)', () => {
       await prisma.family.delete({ where: { id: familyId } }).catch(() => {});
     }
     if (studentProfileId) {
-      await prisma.studentProfile.delete({ where: { id: studentProfileId } }).catch(() => {});
+      await prisma.studentProfile
+        .delete({ where: { id: studentProfileId } })
+        .catch(() => {});
     }
     if (guardianProfileId) {
-      await prisma.guardianProfile.delete({ where: { id: guardianProfileId } }).catch(() => {});
+      await prisma.guardianProfile
+        .delete({ where: { id: guardianProfileId } })
+        .catch(() => {});
     }
     if (studentUserId) {
-      await prisma.userRole.deleteMany({ where: { userId: studentUserId } }).catch(() => {});
-      await prisma.user.delete({ where: { id: studentUserId } }).catch(() => {});
+      await prisma.userRole
+        .deleteMany({ where: { userId: studentUserId } })
+        .catch(() => {});
+      await prisma.user
+        .delete({ where: { id: studentUserId } })
+        .catch(() => {});
     }
     if (guardianUserId) {
-      await prisma.userRole.deleteMany({ where: { userId: guardianUserId } }).catch(() => {});
-      await prisma.user.delete({ where: { id: guardianUserId } }).catch(() => {});
+      await prisma.userRole
+        .deleteMany({ where: { userId: guardianUserId } })
+        .catch(() => {});
+      await prisma.user
+        .delete({ where: { id: guardianUserId } })
+        .catch(() => {});
     }
     if (courseClassId) {
-      await prisma.courseClass.delete({ where: { id: courseClassId } }).catch(() => {});
+      await prisma.courseClass
+        .delete({ where: { id: courseClassId } })
+        .catch(() => {});
     }
     if (classSectionId) {
-      await prisma.classSection.delete({ where: { id: classSectionId } }).catch(() => {});
+      await prisma.classSection
+        .delete({ where: { id: classSectionId } })
+        .catch(() => {});
     }
     if (termId) {
       await prisma.term.delete({ where: { id: termId } }).catch(() => {});
     }
     if (academicYearId) {
-      await prisma.academicYear.delete({ where: { id: academicYearId } }).catch(() => {});
+      await prisma.academicYear
+        .delete({ where: { id: academicYearId } })
+        .catch(() => {});
     }
     if (programId) {
       await prisma.program.delete({ where: { id: programId } }).catch(() => {});
@@ -115,8 +139,12 @@ describe('Education OS Administrative Modules (e2e)', () => {
       await prisma.campus.delete({ where: { id: campusId } }).catch(() => {});
     }
     if (regularUserId) {
-      await prisma.userRole.deleteMany({ where: { userId: regularUserId } }).catch(() => {});
-      await prisma.user.delete({ where: { id: regularUserId } }).catch(() => {});
+      await prisma.userRole
+        .deleteMany({ where: { userId: regularUserId } })
+        .catch(() => {});
+      await prisma.user
+        .delete({ where: { id: regularUserId } })
+        .catch(() => {});
     }
 
     await app.close();
@@ -143,9 +171,9 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      expect(res.body).toHaveProperty('id');
-      expect(res.body.name).toBe('Greenwood Campus');
-      campusId = res.body.id;
+      expect(res.body.data).toHaveProperty('id');
+      expect(res.body.data.name).toBe('Greenwood Campus');
+      campusId = res.body.data.id;
     });
 
     it('should allow all authenticated users to read campuses', async () => {
@@ -155,7 +183,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .expect(200);
 
       expect(res.body).toHaveProperty('data');
-      expect(res.body.data.length).toBeGreaterThan(0);
+      expect(res.body.data.data.length).toBeGreaterThan(0);
     });
 
     it('should deny a regular user from creating a program', async () => {
@@ -181,9 +209,9 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      expect(res.body).toHaveProperty('id');
-      expect(res.body.code).toBe('SE-BSC');
-      programId = res.body.id;
+      expect(res.body.data).toHaveProperty('id');
+      expect(res.body.data.code).toBe('SE-BSC');
+      programId = res.body.data.id;
     });
   });
 
@@ -193,13 +221,13 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .post('/api/academic-years')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          name: 'Academic Year 2026-2027',
+          name: 'Academic Year 2026-2027 - E2E Test',
           startDate: '2026-09-01T00:00:00.000Z',
           endDate: '2027-06-30T00:00:00.000Z',
         })
         .expect(201);
 
-      academicYearId = res.body.id;
+      academicYearId = res.body.data.id;
       expect(academicYearId).toBeDefined();
     });
 
@@ -228,7 +256,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      termId = res.body.id;
+      termId = res.body.data.id;
       expect(termId).toBeDefined();
     });
 
@@ -246,7 +274,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      classSectionId = res.body.id;
+      classSectionId = res.body.data.id;
       expect(classSectionId).toBeDefined();
     });
 
@@ -257,11 +285,11 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .send({
           termId,
           name: 'Algorithms & Data Structures',
-          code: 'CS-DSA-2026',
+          code: 'CS-DSA-2026-E2E',
         })
         .expect(201);
 
-      courseClassId = res.body.id;
+      courseClassId = res.body.data.id;
       expect(courseClassId).toBeDefined();
     });
   });
@@ -279,8 +307,10 @@ describe('Education OS Administrative Modules (e2e)', () => {
           lastName: 'Doe',
         })
         .expect(201);
-      
-      const dbStudent = await prisma.user.findUnique({ where: { email: uniqueStudentEmail } });
+
+      const dbStudent = await prisma.user.findUnique({
+        where: { email: uniqueStudentEmail },
+      });
       studentUserId = dbStudent!.id;
     });
 
@@ -296,7 +326,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      studentProfileId = res.body.id;
+      studentProfileId = res.body.data.id;
       expect(studentProfileId).toBeDefined();
     });
 
@@ -312,8 +342,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      expect(res.body.studentProfileId).toBe(studentProfileId);
-      expect(res.body.classSectionId).toBe(classSectionId);
+      expect(res.body.data.studentProfileId).toBe(studentProfileId);
+      expect(res.body.data.classSectionId).toBe(classSectionId);
     });
 
     it('should allow enrolling a student in a course class', async () => {
@@ -327,8 +357,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      expect(res.body.studentProfileId).toBe(studentProfileId);
-      expect(res.body.courseClassId).toBe(courseClassId);
+      expect(res.body.data.studentProfileId).toBe(studentProfileId);
+      expect(res.body.data.courseClassId).toBe(courseClassId);
     });
   });
 
@@ -345,8 +375,10 @@ describe('Education OS Administrative Modules (e2e)', () => {
           lastName: 'Doe',
         })
         .expect(201);
-      
-      const dbGuardian = await prisma.user.findUnique({ where: { email: uniqueGuardianEmail } });
+
+      const dbGuardian = await prisma.user.findUnique({
+        where: { email: uniqueGuardianEmail },
+      });
       guardianUserId = dbGuardian!.id;
     });
 
@@ -362,7 +394,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      guardianProfileId = res.body.id;
+      guardianProfileId = res.body.data.id;
       expect(guardianProfileId).toBeDefined();
     });
 
@@ -380,8 +412,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      expect(res.body.relationshipType).toBe('FATHER');
-      expect(res.body.guardianProfileId).toBe(guardianProfileId);
+      expect(res.body.data.relationshipType).toBe('FATHER');
+      expect(res.body.data.guardianProfileId).toBe(guardianProfileId);
     });
 
     it('should allow creating a family household', async () => {
@@ -393,7 +425,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      familyId = res.body.id;
+      familyId = res.body.data.id;
       expect(familyId).toBeDefined();
     });
 
@@ -422,10 +454,10 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .set('Authorization', `Bearer ${superAdminToken}`)
         .expect(200);
 
-      expect(res.body.students.length).toBe(1);
-      expect(res.body.guardians.length).toBe(1);
-      expect(res.body.students[0].studentProfileId).toBe(studentProfileId);
-      expect(res.body.guardians[0].guardianProfileId).toBe(guardianProfileId);
+      expect(res.body.data.students.length).toBe(1);
+      expect(res.body.data.guardians.length).toBe(1);
+      expect(res.body.data.students[0].studentProfileId).toBe(studentProfileId);
+      expect(res.body.data.guardians[0].guardianProfileId).toBe(guardianProfileId);
     });
   });
 });

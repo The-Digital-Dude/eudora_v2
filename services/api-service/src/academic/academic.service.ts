@@ -1,9 +1,23 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateAcademicYearDto, UpdateAcademicYearDto } from './dto/academic-year.dto';
+import {
+  CreateAcademicYearDto,
+  UpdateAcademicYearDto,
+} from './dto/academic-year.dto';
 import { CreateTermDto, UpdateTermDto } from './dto/term.dto';
-import { CreateClassSectionDto, UpdateClassSectionDto } from './dto/class-section.dto';
-import { CreateCourseClassDto, UpdateCourseClassDto } from './dto/course-class.dto';
+import {
+  CreateClassSectionDto,
+  UpdateClassSectionDto,
+} from './dto/class-section.dto';
+import {
+  CreateCourseClassDto,
+  UpdateCourseClassDto,
+} from './dto/course-class.dto';
 
 @Injectable()
 export class AcademicService {
@@ -136,7 +150,7 @@ export class AcademicService {
 
     if (start < academicYear.startDate || end > academicYear.endDate) {
       throw new BadRequestException(
-        `Term dates must fall within the academic year bounds: ${academicYear.startDate.toISOString().split('T')[0]} to ${academicYear.endDate.toISOString().split('T')[0]}`
+        `Term dates must fall within the academic year bounds: ${academicYear.startDate.toISOString().split('T')[0]} to ${academicYear.endDate.toISOString().split('T')[0]}`,
       );
     }
 
@@ -216,7 +230,7 @@ export class AcademicService {
 
     if (start < academicYear.startDate || end > academicYear.endDate) {
       throw new BadRequestException(
-        `Term dates must fall within the academic year bounds: ${academicYear.startDate.toISOString().split('T')[0]} to ${academicYear.endDate.toISOString().split('T')[0]}`
+        `Term dates must fall within the academic year bounds: ${academicYear.startDate.toISOString().split('T')[0]} to ${academicYear.endDate.toISOString().split('T')[0]}`,
       );
     }
 
@@ -250,7 +264,9 @@ export class AcademicService {
   async createClassSection(dto: CreateClassSectionDto) {
     const [program, academicYear] = await Promise.all([
       this.prisma.program.findUnique({ where: { id: dto.programId } }),
-      this.prisma.academicYear.findUnique({ where: { id: dto.academicYearId } }),
+      this.prisma.academicYear.findUnique({
+        where: { id: dto.academicYearId },
+      }),
     ]);
 
     if (!program) {
@@ -487,7 +503,9 @@ export class AcademicService {
         name: true,
         classroom: true,
         program: { select: { id: true, code: true, name: true } },
-        academicYear: { select: { id: true, name: true, startDate: true, endDate: true } },
+        academicYear: {
+          select: { id: true, name: true, startDate: true, endDate: true },
+        },
         placements: {
           where: { isActive: true },
           orderBy: { createdAt: 'asc' },
@@ -498,7 +516,14 @@ export class AcademicService {
                 id: true,
                 fullName: true,
                 status: true,
-                user: { select: { id: true, email: true, firstName: true, lastName: true } },
+                user: {
+                  select: {
+                    id: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
                 families: {
                   take: 1,
                   select: {

@@ -10,10 +10,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AcademicService } from './academic.service';
-import { CreateAcademicYearDto, UpdateAcademicYearDto } from './dto/academic-year.dto';
+import {
+  CreateAcademicYearDto,
+  UpdateAcademicYearDto,
+} from './dto/academic-year.dto';
 import { CreateTermDto, UpdateTermDto } from './dto/term.dto';
-import { CreateClassSectionDto, UpdateClassSectionDto } from './dto/class-section.dto';
-import { CreateCourseClassDto, UpdateCourseClassDto } from './dto/course-class.dto';
+import {
+  CreateClassSectionDto,
+  UpdateClassSectionDto,
+} from './dto/class-section.dto';
+import {
+  CreateCourseClassDto,
+  UpdateCourseClassDto,
+} from './dto/course-class.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 

@@ -428,4 +428,46 @@ export class FamilyService {
 
     return { message: 'Guardian student relationship deleted successfully' };
   }
+
+  async selfLink(userId: string, studentEmail: string, relationshipType: any) {
+    const guardian = await this.prisma.guardianProfile.findUnique({
+      where: { userId },
+    });
+    if (!guardian) {
+      throw new NotFoundException('Guardian profile not found. Please complete your profile details first.');
+    }
+
+    const studentUser = await this.prisma.user.findFirst({
+      where: { email: studentEmail.toLowerCase().trim() },
+      include: {
+        studentProfile: true,
+      },
+    });
+    if (!studentUser || !studentUser.studentProfile) {
+      throw new NotFoundException(`No student account matches the email: ${studentEmail}`);
+    }
+
+    const existingRel = await this.prisma.guardianStudentRelationship.findUnique({
+      where: {
+        guardianProfileId_studentProfileId: {
+          guardianProfileId: guardian.id,
+          studentProfileId: studentUser.studentProfile.id,
+        },
+      },
+    });
+
+    if (existingRel) {
+      return existingRel;
+    }
+
+    return this.prisma.guardianStudentRelationship.create({
+      data: {
+        guardianProfileId: guardian.id,
+        studentProfileId: studentUser.studentProfile.id,
+        relationshipType: relationshipType || 'OTHER',
+        isPrimary: false,
+        hasAcademicAccess: true,
+      },
+    });
+  }
 }

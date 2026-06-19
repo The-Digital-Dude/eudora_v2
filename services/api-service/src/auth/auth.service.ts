@@ -1,5 +1,7 @@
-import { Injectable, ConflictException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -11,6 +13,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -89,6 +92,12 @@ export class AuthService {
             },
           },
         },
+        guardianProfile: {
+          include: {
+            students: true,
+          },
+        },
+        studentProfile: true,
       },
     });
 
@@ -105,6 +114,10 @@ export class AuthService {
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       await this.audit(user.id, 'auth.login.locked', 'user', user.id, ipAddress, userAgent, { email });
       throw new ForbiddenException('Account is temporarily locked');
+    }
+
+    if (!user.password) {
+      throw new UnauthorizedException('Please log in using Google');
     }
 
     const passwordMatches = await bcrypt.compare(dto.password, user.password);
@@ -143,6 +156,12 @@ export class AuthService {
             },
           },
         },
+        guardianProfile: {
+          include: {
+            students: true,
+          },
+        },
+        studentProfile: true,
       },
     });
 
@@ -150,6 +169,174 @@ export class AuthService {
     await this.audit(user.id, 'auth.login.success', 'user', user.id, ipAddress ?? null, userAgent ?? null);
 
     const { password, ...result } = updatedUser;
+    return {
+      user: result,
+      tokens,
+    };
+  }
+
+  async loginWithGoogle(dto: any, userAgent?: string | null, ipAddress?: string | null) {
+    const { token, role } = dto;
+    const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+    const client = new OAuth2Client(googleClientId);
+
+    let email: string | undefined;
+    let googleId: string | undefined;
+    let firstName: string | undefined;
+    let lastName: string | undefined;
+
+    if (token.startsWith('ey')) {
+      // JWT (ID Token)
+      let ticket;
+      try {
+        ticket = await client.verifyIdToken({
+          idToken: token,
+          audience: googleClientId,
+        });
+      } catch (error) {
+        throw new UnauthorizedException('Invalid Google ID token');
+      }
+
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new UnauthorizedException('Invalid Google ID token payload');
+      }
+
+      email = payload.email;
+      googleId = payload.sub;
+      firstName = payload.given_name;
+      lastName = payload.family_name;
+    } else {
+      // Access Token
+      try {
+        const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
+        const payload = await response.json();
+        if (!payload || payload.error || payload.error_description) {
+          throw new UnauthorizedException('Invalid Google access token');
+        }
+        email = payload.email;
+        googleId = payload.sub;
+        firstName = payload.given_name;
+        lastName = payload.family_name;
+      } catch (err) {
+        throw new UnauthorizedException('Failed to verify Google access token');
+      }
+    }
+
+    if (!email) {
+      throw new BadRequestException('Google token does not provide email');
+    }
+
+    let user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { googleId },
+          { email: email.toLowerCase().trim() },
+        ],
+      },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        guardianProfile: {
+          include: {
+            students: true,
+          },
+        },
+        studentProfile: true,
+      },
+    });
+
+    if (!user) {
+      // New signup!
+      const targetRole = role === 'GUARDIAN' ? 'GUARDIAN' : 'USER';
+      const dbRole = await this.prisma.role.findUnique({
+        where: { name: targetRole },
+      });
+      if (!dbRole) {
+        throw new ConflictException(`Role ${targetRole} does not exist in the database.`);
+      }
+
+      user = await this.prisma.user.create({
+        data: {
+          email: email.toLowerCase().trim(),
+          googleId,
+          firstName: firstName || '',
+          lastName: lastName || '',
+          roles: {
+            create: {
+              roleId: dbRole.id,
+            },
+          },
+        },
+        include: {
+          roles: {
+            include: {
+              role: {
+                include: {
+                  permissions: {
+                    include: {
+                      permission: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          guardianProfile: {
+            include: {
+              students: true,
+            },
+          },
+          studentProfile: true,
+        },
+      });
+      await this.audit(user.id, 'auth.signup.google', 'user', user.id, ipAddress, userAgent);
+    } else {
+      // User exists. Let's make sure googleId is linked if not set.
+      if (!user.googleId) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { googleId },
+          include: {
+            roles: {
+              include: {
+                role: {
+                  include: {
+                    permissions: {
+                      include: {
+                        permission: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            guardianProfile: {
+              include: {
+                students: true,
+              },
+            },
+            studentProfile: true,
+          },
+        });
+      }
+      await this.audit(user.id, 'auth.login.google', 'user', user.id, ipAddress, userAgent);
+    }
+
+    const tokens = await this.createSessionTokens(user, userAgent ?? null, ipAddress ?? null);
+
+    const { password, ...result } = user;
     return {
       user: result,
       tokens,
@@ -188,6 +375,12 @@ export class AuthService {
                 },
               },
             },
+            guardianProfile: {
+              include: {
+                students: true,
+              },
+            },
+            studentProfile: true,
           },
         },
       },
@@ -301,6 +494,10 @@ export class AuthService {
 
     if (!user || user.deletedAt || !user.isActive) {
       throw new UnauthorizedException('User is unavailable');
+    }
+
+    if (!user.password) {
+      throw new BadRequestException('Users registered via Google do not have a local password.');
     }
 
     const passwordMatches = await bcrypt.compare(currentPassword, user.password);

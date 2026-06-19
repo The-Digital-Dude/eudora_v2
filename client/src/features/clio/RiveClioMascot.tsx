@@ -4,7 +4,16 @@ import React, { useEffect } from "react";
 import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 
 interface ClioMascotProps {
-  state: "idle" | "thinking" | "celebrate" | "encourage" | "wrong";
+  state:
+    | "idle"
+    | "thinking"
+    | "celebrate"
+    | "encourage"
+    | "wrong"
+    | "greeting"
+    | "confused"
+    | "hint"
+    | "milestone";
   size?: number;
 }
 

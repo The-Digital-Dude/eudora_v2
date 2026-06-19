@@ -44,6 +44,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             },
           },
         },
+        guardianProfile: {
+          include: {
+            students: true,
+          },
+        },
+        studentProfile: true,
       },
     });
 
@@ -66,6 +72,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       lastName: user.lastName,
       roles,
       permissions,
+      guardianProfile: user.guardianProfile,
+      studentProfile: user.studentProfile,
     };
   }
 }

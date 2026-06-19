@@ -9,6 +9,8 @@ import { useAppDispatch } from "@/store/hooks";
 import { login, logout } from "@/features/auth/authSlice";
 import { useGetMeQuery } from "@/features/auth/authApi";
 
+import { GoogleOAuthProvider } from "@react-oauth/google";
+
 function AuthInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
   const [mounted, setMounted] = React.useState(false);
@@ -52,9 +54,13 @@ export default function Providers({
 }: {
   children: React.ReactNode;
 }) {
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+
   return (
     <Provider store={store}>
-      <AuthInitializer>{children}</AuthInitializer>
+      <GoogleOAuthProvider clientId={googleClientId}>
+        <AuthInitializer>{children}</AuthInitializer>
+      </GoogleOAuthProvider>
     </Provider>
   );
 }

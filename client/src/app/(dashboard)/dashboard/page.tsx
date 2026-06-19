@@ -26,6 +26,7 @@ import {
   useGetProgramsQuery,
   useGetUsersQuery
 } from "@/features/dashboard/dashboardApi";
+import { ChartAreaInteractive } from "./components/chart-area-interactive";
 
 export default function DashboardOverview() {
   const { data: campusesData } = useGetCampusesQuery();
@@ -150,82 +151,8 @@ export default function DashboardOverview() {
       </div>
 
       {/* Enrollment and Revenue Trends Visuals */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Enrollment Trend */}
-        <Card className="border border-neutral-200/80 shadow-[0_4px_16px_rgba(0,0,0,0.02)] rounded-3xl p-6 bg-white">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-bold tracking-tight text-neutral-900 font-display">
-                Enrollment Trend
-              </h2>
-              <p className="text-[11px] text-neutral-400">Monthly student onboarding trajectory</p>
-            </div>
-          </div>
-          <div className="h-48 w-full flex items-end justify-between pt-4">
-            {/* SVG line graph mock */}
-            <svg viewBox="0 0 400 120" className="w-full h-full text-neutral-900">
-              <defs>
-                <linearGradient id="enrollGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="rgb(23, 23, 23)" stopOpacity="0.15" />
-                  <stop offset="100%" stopColor="rgb(23, 23, 23)" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M 0 100 Q 80 70 160 85 T 320 30 T 400 10"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M 0 100 Q 80 70 160 85 T 320 30 T 400 10 L 400 120 L 0 120 Z"
-                fill="url(#enrollGrad)"
-              />
-              {/* Dots */}
-              <circle cx="160" cy="85" r="4" fill="currentColor" />
-              <circle cx="320" cy="30" r="4" fill="currentColor" />
-            </svg>
-          </div>
-          <div className="flex justify-between text-[10px] text-neutral-400 font-semibold mt-2 pt-2 border-t border-neutral-50">
-            <span>Jan</span>
-            <span>Mar</span>
-            <span>May</span>
-            <span>Jul</span>
-            <span>Sep</span>
-            <span>Nov</span>
-          </div>
-        </Card>
-
-        {/* Revenue Trend */}
-        <Card className="border border-neutral-200/80 shadow-[0_4px_16px_rgba(0,0,0,0.02)] rounded-3xl p-6 bg-white">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-bold tracking-tight text-neutral-900 font-display">
-                Revenue Trend
-              </h2>
-              <p className="text-[11px] text-neutral-400">Monthly tuition fees and collections</p>
-            </div>
-          </div>
-          <div className="h-48 w-full flex items-end justify-between gap-2.5 pt-4">
-            {[45, 60, 55, 75, 90, 80, 95, 110, 105, 130, 125, 145].map((val, idx) => (
-              <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 group h-full justify-end">
-                <div 
-                  style={{ height: `${(val / 150) * 100}%` }}
-                  className="w-full bg-neutral-900 rounded-t-md hover:bg-neutral-800 transition-all cursor-pointer relative"
-                >
-                  <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-neutral-950 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                    ${val}k
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-[10px] text-neutral-400 font-semibold mt-2 pt-2 border-t border-neutral-50">
-            <span>Jan</span>
-            <span>Jun</span>
-            <span>Dec</span>
-          </div>
-        </Card>
+      <div className="grid gap-6 md:grid-cols-1">
+        <ChartAreaInteractive />
       </div>
 
       {/* Admin Dashboard Operations items */}

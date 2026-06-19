@@ -38,7 +38,7 @@ const baseQueryWithReauth: BaseQueryFn<
     const url = typeof args === "string" ? args : args.url;
     
     // Do not attempt refresh on registration, login, logout, or session verification itself
-    const bypassPaths = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/me"];
+    const bypassPaths = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/me", "/auth/google"];
     const isBypass = bypassPaths.some((p) => url.includes(p));
 
     if (!isBypass) {
@@ -119,6 +119,13 @@ export const authApi = createApi({
         method: "POST",
       }),
     }),
+    googleLogin: builder.mutation({
+      query: (dto) => ({
+        url: "/auth/google",
+        method: "POST",
+        body: dto,
+      }),
+    }),
   }),
 });
 
@@ -127,4 +134,5 @@ export const {
   useRegisterMutation,
   useGetMeQuery,
   useLogoutMutation,
+  useGoogleLoginMutation,
 } = authApi;

@@ -68,6 +68,9 @@ jobs:
       run:
         working-directory: services/api-service
 
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5433/eudora_db
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -92,13 +95,9 @@ jobs:
 
       - name: Run migrations
         run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5433/eudora_db
 
-      - name: Seed database
+      - name: Run seed database
         run: npx prisma db seed
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5433/eudora_db
 
       - name: Run lint
         run: pnpm run lint
@@ -113,7 +112,6 @@ jobs:
       - name: Run E2E tests
         run: pnpm run test:e2e --runInBand
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5433/eudora_db
           JWT_SECRET: super-secret-key-change-this-in-production-12345
           JWT_EXPIRATION: 1d
           STRIPE_SECRET_KEY: sk_test_REPLACE_WITH_YOUR_KEY

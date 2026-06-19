@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get, Req, Res, UseGuards, HttpCode, HttpStatus,
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { GoogleLoginDto } from './dto/google.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
@@ -34,6 +35,21 @@ export class AuthController {
     const userAgent = req.headers['user-agent'] || null;
     const ipAddress = req.ip || null;
     const result = await this.authService.login(dto, userAgent, ipAddress);
+    setAuthCookies(res, result.tokens);
+    return result.user;
+  }
+
+  @Public()
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  async googleLogin(
+    @Body() dto: GoogleLoginDto,
+    @Req() req: any,
+    @Res({ passthrough: true }) res: any,
+  ) {
+    const userAgent = req.headers['user-agent'] || null;
+    const ipAddress = req.ip || null;
+    const result = await this.authService.loginWithGoogle(dto, userAgent, ipAddress);
     setAuthCookies(res, result.tokens);
     return result.user;
   }

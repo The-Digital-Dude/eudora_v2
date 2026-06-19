@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { useLoginMutation } from "@/features/auth/authApi";
+import { useGoogleLogin } from "@react-oauth/google";
+import { useLoginMutation, useGoogleLoginMutation } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
@@ -25,23 +26,49 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loginAs, setLoginAs] = useState<"student" | "guardian" | "admin">("student");
 
   const router = useRouter();
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const user = useAppSelector((state) => state.auth.user) as any;
   const [loginMutation, { isLoading: loading }] = useLoginMutation();
+  const [googleLoginMutation, { isLoading: googleLoading }] = useGoogleLoginMutation();
+
+  const checkRedirect = (u: any) => {
+    if (!u) return;
+
+    const hasAdminRole = u.role === "ADMIN" || u.role === "SUPER_ADMIN" ||
+      (Array.isArray(u.roles) && u.roles.some((r: any) =>
+        r === "ADMIN" || r === "SUPER_ADMIN" || r.name === "ADMIN" || r.name === "SUPER_ADMIN" || r.role?.name === "ADMIN" || r.role?.name === "SUPER_ADMIN"
+      ));
+
+    const isGuardian = u.role === "GUARDIAN" ||
+      (Array.isArray(u.roles) && u.roles.some((r: any) =>
+        r === "GUARDIAN" || r.name === "GUARDIAN" || r.role?.name === "GUARDIAN"
+      ));
+
+    if (isGuardian) {
+      const hasProfile = !!u.guardianProfile;
+      const hasStudents = hasProfile && Array.isArray(u.guardianProfile.students) && u.guardianProfile.students.length > 0;
+      if (!hasProfile || !hasStudents) {
+        router.push("/complete-profile");
+      } else {
+        router.push("/dashboard");
+      }
+    } else if (hasAdminRole) {
+      router.push("/dashboard");
+    } else {
+      router.push("/learn");
+    }
+  };
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
-      const hasAdminRole = user.role === "ADMIN" || user.role === "SUPER_ADMIN" ||
-        (Array.isArray(user.roles) && user.roles.some((r: any) =>
-          r === "ADMIN" || r === "SUPER_ADMIN" || r.name === "ADMIN" || r.name === "SUPER_ADMIN" || r.role?.name === "ADMIN" || r.role?.name === "SUPER_ADMIN"
-        ));
-      router.push(hasAdminRole ? "/dashboard" : "/learn");
+      checkRedirect(user);
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,16 +78,32 @@ export default function LoginPage() {
     try {
       const loggedInUser = await loginMutation({ email, password }).unwrap();
       dispatch(login({ user: loggedInUser, token: null }));
-      const hasAdminRole = loggedInUser.role === "ADMIN" || loggedInUser.role === "SUPER_ADMIN" ||
-        (Array.isArray(loggedInUser.roles) && loggedInUser.roles.some((r: any) =>
-          r === "ADMIN" || r === "SUPER_ADMIN" || r.name === "ADMIN" || r.name === "SUPER_ADMIN" || r.role?.name === "ADMIN" || r.role?.name === "SUPER_ADMIN"
-        ));
-      router.push(hasAdminRole ? "/dashboard" : "/learn");
+      checkRedirect(loggedInUser);
     } catch (err: any) {
       console.error(err);
       setError(err?.data?.message || "Invalid email or password.");
     }
   };
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setError("");
+      try {
+        const loggedInUser = await googleLoginMutation({
+          token: tokenResponse.access_token,
+          role: loginAs === "guardian" ? "GUARDIAN" : "USER"
+        }).unwrap();
+        dispatch(login({ user: loggedInUser, token: null }));
+        checkRedirect(loggedInUser);
+      } catch (err: any) {
+        console.error(err);
+        setError(err?.data?.message || "Google authentication failed. Please try again.");
+      }
+    },
+    onError: () => {
+      setError("Google authentication failed. Please try again.");
+    }
+  });
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 py-12 dot-grid relative select-none font-sans bg-neutral-50 text-neutral-900">
@@ -91,11 +134,31 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {/* Role Switcher */}
+          <div className="flex bg-neutral-100 p-1 rounded-xl gap-1 mb-6">
+            {(["student", "guardian", "admin"] as const).map((role) => (
+              <button
+                key={role}
+                type="button"
+                onClick={() => setLoginAs(role)}
+                className={`flex-1 text-center py-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer select-none ${
+                  loginAs === role
+                    ? "bg-white text-neutral-900 shadow-sm"
+                    : "text-neutral-500 hover:text-neutral-900"
+                }`}
+              >
+                {role}
+              </button>
+            ))}
+          </div>
+
           {/* Social Logins */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button
               type="button"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 text-neutral-700 transition-all text-xs font-semibold cursor-pointer active:scale-98 shadow-sm"
+              onClick={() => handleGoogleLogin()}
+              disabled={googleLoading || loading}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 text-neutral-700 transition-all text-xs font-semibold cursor-pointer active:scale-98 shadow-sm disabled:opacity-50"
             >
               {/* Google SVG */}
               <svg className="w-4 h-4" viewBox="0 0 24 24">

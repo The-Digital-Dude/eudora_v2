@@ -121,7 +121,7 @@ export function DragDropWidget({
   };
 
   return (
-    <div className="flex flex-col gap-6 rounded-2xl border border-white/10 bg-white/5 p-6 select-none transition-all duration-300">
+    <div className="flex flex-col gap-6 rounded-2xl border border-border bg-card p-6 select-none transition-all duration-300">
       {/* Target slots grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {normalizedTargets.map((target) => {
@@ -138,22 +138,22 @@ export function DragDropWidget({
               className={[
                 "flex min-h-[64px] items-center justify-between gap-4 rounded-xl border p-4 transition-all duration-200",
                 placedLabel
-                  ? "border-violet-500/35 bg-violet-500/10 cursor-pointer"
-                  : "border-dashed border-white/15 bg-white/[0.02] hover:border-white/30",
-                isOver ? "border-violet-400 bg-violet-500/15 scale-[1.01]" : "",
+                  ? "border-violet-500/35 bg-violet-500/5 cursor-pointer"
+                  : "border-dashed border-border bg-muted/20 hover:border-violet-500/40 hover:bg-muted/40",
+                isOver ? "border-violet-400 bg-violet-500/10 scale-[1.01]" : "",
                 locked ? "cursor-not-allowed opacity-80" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
             >
-              <span className="text-xs font-semibold text-white/50">
+              <span className="text-xs font-semibold text-muted-foreground">
                 {target.placeholder}
               </span>
 
               {placedLabel ? (
                 <div
                   className={[
-                    "flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-violet-950/50 hover:bg-violet-500 transition-colors",
+                    "flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-violet-500/10 hover:bg-violet-500 transition-colors",
                     locked ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing",
                   ]
                     .filter(Boolean)
@@ -170,7 +170,7 @@ export function DragDropWidget({
                   )}
                 </div>
               ) : (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/20">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/30">
                   Drop Here
                 </span>
               )}
@@ -181,8 +181,8 @@ export function DragDropWidget({
 
       {/* Available items bank */}
       {availableLabels.length > 0 && (
-        <div className="border-t border-white/10 pt-5">
-          <p className="mb-3 text-xs font-semibold text-white/45">
+        <div className="border-t border-border pt-5">
+          <p className="mb-3 text-xs font-semibold text-muted-foreground">
             {selectedLabel
               ? "Tap a slot above to place"
               : "Drag or tap items below to match"}
@@ -200,10 +200,10 @@ export function DragDropWidget({
                   onDragEnd={handleDragEnd}
                   onClick={() => handleLabelClick(label)}
                   className={[
-                    "rounded-lg px-3 py-2 text-xs font-bold text-white shadow-sm transition-all duration-200",
+                    "rounded-lg px-3 py-2 text-xs font-bold shadow-sm transition-all duration-200",
                     isSelected
-                      ? "bg-fuchsia-600 border border-fuchsia-400 ring-2 ring-fuchsia-400/50 scale-[1.05]"
-                      : "bg-white/10 hover:bg-white/15 active:scale-95 border border-white/5",
+                      ? "bg-fuchsia-600 border border-fuchsia-400 text-white ring-2 ring-fuchsia-400/50 scale-[1.05]"
+                      : "bg-muted hover:bg-muted/80 text-foreground border border-border",
                     locked ? "cursor-not-allowed opacity-40" : "cursor-grab active:cursor-grabbing",
                   ]
                     .filter(Boolean)

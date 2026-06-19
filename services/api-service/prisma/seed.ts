@@ -59,6 +59,15 @@ async function main() {
       description: 'Regular user with profile-only access',
     },
   });
+
+  const guardianRole = await prisma.role.upsert({
+    where: { name: 'GUARDIAN' },
+    update: {},
+    create: {
+      name: 'GUARDIAN',
+      description: 'Guardian with read-only dashboard access to their linked students',
+    },
+  });
   console.log('✅ Created roles');
 
   for (const permissionId of Object.values(permissionIds)) {

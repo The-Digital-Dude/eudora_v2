@@ -35,16 +35,16 @@ export function MCQWidget({
               "group relative flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all duration-200",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
               !isSelected && !locked
-                ? "border-white/10 bg-white/5 hover:border-violet-400/60 hover:bg-violet-500/10 hover:scale-[1.02] cursor-pointer"
+                ? "border-border bg-card hover:border-violet-500/60 hover:bg-violet-500/5 hover:scale-[1.02] cursor-pointer"
                 : "",
               isSelected && !locked
-                ? "border-violet-400 bg-violet-500/15 scale-[1.02]"
+                ? "border-violet-500 bg-violet-500/10 dark:bg-violet-500/20 scale-[1.02]"
                 : "",
               correct
-                ? "border-emerald-400 bg-emerald-500/15 scale-[1.02]"
+                ? "border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20 scale-[1.02]"
                 : "",
               wrong
-                ? "border-rose-400 bg-rose-500/15 scale-[1.02] animate-shake"
+                ? "border-rose-500 bg-rose-500/10 dark:bg-rose-500/20 scale-[1.02] animate-shake"
                 : "",
               locked && !isSelected ? "opacity-40 cursor-not-allowed" : "",
             ]
@@ -56,12 +56,12 @@ export function MCQWidget({
               className={[
                 "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold transition-colors",
                 correct
-                  ? "bg-emerald-400 text-white"
+                  ? "bg-emerald-500 text-white"
                   : wrong
-                  ? "bg-rose-400 text-white"
+                  ? "bg-rose-500 text-white"
                   : isSelected
-                  ? "bg-violet-400 text-white"
-                  : "bg-white/10 text-white/60 group-hover:bg-violet-400/30 group-hover:text-white",
+                  ? "bg-violet-500 text-white"
+                  : "bg-muted text-muted-foreground group-hover:bg-violet-500/20 group-hover:text-violet-600 dark:group-hover:text-violet-400",
               ]
                 .filter(Boolean)
                 .join(" ")}
@@ -69,18 +69,18 @@ export function MCQWidget({
               {opt.optionLabel}
             </span>
 
-            <span className="text-sm font-medium leading-snug text-white/90">
+            <span className="text-sm font-medium leading-snug text-foreground">
               {opt.optionText}
             </span>
 
             {/* Result icon overlay */}
             {correct && (
-              <span className="absolute right-3 top-3 text-emerald-400 text-lg animate-bounce-once">
+              <span className="absolute right-3 top-3 text-emerald-500 text-lg animate-bounce-once">
                 ✓
               </span>
             )}
             {wrong && (
-              <span className="absolute right-3 top-3 text-rose-400 text-lg">
+              <span className="absolute right-3 top-3 text-rose-500 text-lg">
                 ✗
               </span>
             )}

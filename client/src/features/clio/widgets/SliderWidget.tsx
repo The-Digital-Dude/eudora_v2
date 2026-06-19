@@ -34,7 +34,7 @@ export function SliderWidget({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-8 select-none transition-all duration-300">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-8 select-none transition-all duration-300">
       <div className="relative w-full max-w-md py-6">
         {/* Floating tooltip/value indicator */}
         <div
@@ -43,7 +43,7 @@ export function SliderWidget({
             left: `calc(${percentage}% - 24px)`,
           }}
         >
-          <div className="rounded-lg bg-violet-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg shadow-violet-900/40">
+          <div className="rounded-lg bg-violet-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg shadow-violet-500/20">
             {value}
             {unit}
           </div>
@@ -51,7 +51,7 @@ export function SliderWidget({
         </div>
 
         {/* Custom Range Track Container */}
-        <div className="relative flex h-2 w-full items-center rounded-full bg-white/10">
+        <div className="relative flex h-2 w-full items-center rounded-full bg-muted">
           {/* Progress fill */}
           <div
             className="absolute h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
@@ -81,12 +81,12 @@ export function SliderWidget({
         </div>
 
         {/* Custom Min/Max labels */}
-        <div className="mt-4 flex items-center justify-between text-xs font-semibold text-white/50">
+        <div className="mt-4 flex items-center justify-between text-xs font-semibold text-muted-foreground">
           <span>
             {min}
             {unit}
           </span>
-          <span className="text-white/30 font-medium">Drag to explore</span>
+          <span className="text-muted-foreground/60 font-medium">Drag to explore</span>
           <span>
             {max}
             {unit}

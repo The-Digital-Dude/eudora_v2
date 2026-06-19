@@ -8,6 +8,8 @@ import {
   Body,
   Query,
   UseGuards,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FamilyService } from './family.service';
 import { CreateGuardianProfileDto, UpdateGuardianProfileDto } from './dto/guardian.dto';
@@ -24,8 +26,19 @@ export class FamilyController {
   // --- Guardian Profile Endpoints ---
 
   @Post('guardian-profiles')
-  @Roles('ADMIN', 'SUPER_ADMIN')
-  async createGuardianProfile(@Body() dto: CreateGuardianProfileDto) {
+  @Roles('ADMIN', 'SUPER_ADMIN', 'GUARDIAN')
+  async createGuardianProfile(
+    @Body() dto: CreateGuardianProfileDto,
+    @Req() req: any,
+  ) {
+    const user = req.user;
+    const isOnlyGuardian = user.roles.includes('GUARDIAN') && 
+      !user.roles.includes('ADMIN') && 
+      !user.roles.includes('SUPER_ADMIN');
+
+    if (isOnlyGuardian) {
+      dto.userId = user.id;
+    }
     return this.familyService.createGuardianProfile(dto);
   }
 
@@ -45,11 +58,24 @@ export class FamilyController {
   }
 
   @Patch('guardian-profiles/:id')
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'GUARDIAN')
   async updateGuardianProfile(
     @Param('id') id: string,
     @Body() dto: UpdateGuardianProfileDto,
+    @Req() req: any,
   ) {
+    const user = req.user;
+    const isOnlyGuardian = user.roles.includes('GUARDIAN') && 
+      !user.roles.includes('ADMIN') && 
+      !user.roles.includes('SUPER_ADMIN');
+
+    if (isOnlyGuardian) {
+      const profile = await this.familyService.findGuardianProfileById(id);
+      if (profile.userId !== user.id) {
+        throw new ForbiddenException('You can only update your own profile');
+      }
+      dto.userId = user.id;
+    }
     return this.familyService.updateGuardianProfile(id, dto);
   }
 
@@ -167,5 +193,14 @@ export class FamilyController {
     @Param('studentProfileId') studentProfileId: string,
   ) {
     return this.familyService.deleteRelationship(guardianProfileId, studentProfileId);
+  }
+
+  @Post('guardian-relationships/self-link')
+  @Roles('GUARDIAN', 'ADMIN', 'SUPER_ADMIN')
+  async selfLink(
+    @Body() dto: { studentEmail: string; relationshipType?: string },
+    @Req() req: any,
+  ) {
+    return this.familyService.selfLink(req.user.id, dto.studentEmail, dto.relationshipType);
   }
 }

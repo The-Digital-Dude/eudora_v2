@@ -553,6 +553,20 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       invalidatesTags: ["Students", "Enrollments"],
     } as any),
+    createGuardianProfile: builder.mutation<any, { fullName: string; phone?: string; email?: string }>({
+      query: (body: any) => ({
+        url: "/guardian-profiles",
+        method: "POST",
+        body,
+      }),
+    } as any),
+    selfLinkGuardian: builder.mutation<any, { studentEmail: string; relationshipType?: string }>({
+      query: (body: any) => ({
+        url: "/guardian-relationships/self-link",
+        method: "POST",
+        body,
+      }),
+    } as any),
   }),
 });
 
@@ -592,4 +606,6 @@ export const {
   useDeleteStudentPlacementMutation,
   useCreateStudentEnrollmentMutation,
   useDeleteStudentEnrollmentMutation,
+  useCreateGuardianProfileMutation,
+  useSelfLinkGuardianMutation,
 } = dashboardApi;

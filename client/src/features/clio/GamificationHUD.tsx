@@ -74,13 +74,13 @@ export function GamificationHUD({
   }, [sessionXp, xpRive]);
 
   return (
-    <header className="relative flex h-16 w-full items-center justify-between border-b border-white/10 bg-slate-950/80 px-4 md:px-6 backdrop-blur-md z-40 select-none">
+    <header className="relative flex h-16 w-full items-center justify-between border-b border-border bg-background/80 px-4 md:px-6 backdrop-blur-md z-40 select-none">
       {/* Left: Close Button & Lesson Title */}
       <div className="flex items-center gap-4">
         {onClose && (
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white/75 hover:bg-white/10 hover:text-white transition-all duration-200"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/40 border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -99,10 +99,10 @@ export function GamificationHUD({
           </button>
         )}
         <div>
-          <span className="text-xs font-bold text-violet-400 uppercase tracking-wider">
+          <span className="text-xs font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">
             Active Learning
           </span>
-          <h1 className="text-sm md:text-base font-bold text-white truncate max-w-[150px] sm:max-w-xs md:max-w-md">
+          <h1 className="text-sm md:text-base font-bold text-foreground truncate max-w-[150px] sm:max-w-xs md:max-w-md">
             {lessonTitle}
           </h1>
         </div>
@@ -110,11 +110,11 @@ export function GamificationHUD({
 
       {/* Middle: Progress Bar */}
       <div className="hidden sm:flex flex-col items-center w-1/3 max-w-xs gap-1.5">
-        <div className="flex justify-between w-full text-[10px] font-bold text-white/40">
+        <div className="flex justify-between w-full text-[10px] font-bold text-muted-foreground">
           <span>PROGRESS</span>
           <span>{Math.round(lessonProgress * 100)}%</span>
         </div>
-        <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
           <div
             className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-500 ease-out"
             style={{ width: `${lessonProgress * 100}%` }}
@@ -125,7 +125,7 @@ export function GamificationHUD({
       {/* Right: Gamification HUD Stats */}
       <div className="flex items-center gap-3">
         {/* Streak Stats */}
-        <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 pl-2 pr-3 py-1">
+        <div className="flex items-center gap-1 rounded-xl bg-muted/30 border border-border pl-2 pr-3 py-1">
           <div className="h-7 w-7 flex items-center justify-center">
             {StreakFlameComponent ? (
               <StreakFlameComponent className="w-full h-full object-contain" />
@@ -134,8 +134,8 @@ export function GamificationHUD({
             )}
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] font-bold text-white/40 leading-none">STREAK</span>
-            <span className="text-xs font-bold text-orange-400 leading-tight">
+            <span className="text-[9px] font-bold text-muted-foreground leading-none">STREAK</span>
+            <span className="text-xs font-bold text-orange-500 dark:text-orange-400 leading-tight">
               {streakCount} days
             </span>
           </div>
@@ -146,8 +146,8 @@ export function GamificationHUD({
           className={[
             "relative flex items-center gap-1.5 rounded-xl border px-3 py-1 transition-all duration-300",
             animateXp
-              ? "border-amber-400 bg-amber-500/10 scale-105 shadow-md shadow-amber-500/20"
-              : "border-white/10 bg-white/5",
+              ? "border-amber-400 bg-amber-500/10 dark:bg-amber-500/20 scale-105 shadow-md shadow-amber-500/20"
+              : "border-border bg-muted/30",
           ]
             .filter(Boolean)
             .join(" ")}
@@ -160,8 +160,8 @@ export function GamificationHUD({
           )}
 
           <div className="flex flex-col items-end">
-            <span className="text-[9px] font-bold text-white/40 leading-none">XP EARNED</span>
-            <span className="text-xs font-bold text-amber-400 leading-tight">
+            <span className="text-[9px] font-bold text-muted-foreground leading-none">XP EARNED</span>
+            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 leading-tight">
               +{displayedXp} XP
             </span>
           </div>
@@ -172,7 +172,7 @@ export function GamificationHUD({
             viewBox="0 0 24 24"
             fill="currentColor"
             className={[
-              "h-4 w-4 text-amber-400 transition-transform duration-300",
+              "h-4 w-4 text-amber-500 dark:text-amber-400 transition-transform duration-300",
               animateXp ? "scale-125 rotate-12" : "",
             ]
               .filter(Boolean)

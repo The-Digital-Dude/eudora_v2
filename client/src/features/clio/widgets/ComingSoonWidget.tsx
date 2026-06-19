@@ -13,8 +13,8 @@ export function ComingSoonWidget({ widgetType }: ComingSoonWidgetProps) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-white/10 bg-white/5 p-8 text-center transition-all duration-300">
-      <div className="relative mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
+    <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-border bg-card p-8 text-center transition-all duration-300">
+      <div className="relative mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -32,10 +32,10 @@ export function ComingSoonWidget({ widgetType }: ComingSoonWidgetProps) {
         <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 rounded-full bg-violet-400 animate-ping" />
         <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 rounded-full bg-violet-500" />
       </div>
-      <h3 className="mb-1 text-base font-semibold text-white/95">
+      <h3 className="mb-1 text-base font-semibold text-foreground">
         {formattedType}
       </h3>
-      <p className="max-w-xs text-xs font-normal text-white/60 leading-relaxed">
+      <p className="max-w-xs text-xs font-normal text-muted-foreground leading-relaxed">
         We are building a premium interactive experience for this question. This widget will be available soon!
       </p>
     </div>

@@ -111,7 +111,7 @@ jobs:
         run: pnpm run test
 
       - name: Run E2E tests
-        run: pnpm run test:e2e
+        run: pnpm run test:e2e --runInBand
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5433/eudora_db
           JWT_SECRET: super-secret-key-change-this-in-production-12345

@@ -34,6 +34,7 @@ import { GamificationHUD } from "@/features/clio/GamificationHUD";
 import { RiveClioMascot } from "@/features/clio/RiveClioMascot";
 import { WidgetSelector } from "@/features/clio/widgets/WidgetSelector";
 import { LessonCompleteModal } from "@/features/clio/LessonCompleteModal";
+import { MathRenderer } from "@/components/MathRenderer";
 
 export default function LessonFlowPage() {
   const params = useParams();
@@ -271,7 +272,7 @@ export default function LessonFlowPage() {
               {currentCard.title}
             </h2>
             <div className="text-sm md:text-base font-normal text-foreground/90 leading-relaxed whitespace-pre-wrap">
-              {currentCard.content}
+              <MathRenderer text={currentCard.content} />
             </div>
           </div>
 
@@ -280,9 +281,9 @@ export default function LessonFlowPage() {
             <div className="max-w-2xl py-4 border-t border-border">
               <div className="mb-4">
                 <span className="text-xs font-bold text-violet-600 dark:text-violet-400 uppercase tracking-widest">Question</span>
-                <p className="text-sm font-semibold text-foreground mt-1">
-                  {currentCard.question.prompt}
-                </p>
+                <div className="text-sm font-semibold text-foreground mt-1">
+                  <MathRenderer text={currentCard.question.prompt} />
+                </div>
               </div>
 
               <WidgetSelector
@@ -426,9 +427,9 @@ export default function LessonFlowPage() {
                   </span>
                 )}
               </div>
-              <p className="text-xs md:text-sm font-normal text-foreground/80 dark:text-white/75 leading-relaxed">
-                {lastResult.explanation || currentCard.question?.explanation}
-              </p>
+              <div className="text-xs md:text-sm font-normal text-foreground/80 dark:text-white/75 leading-relaxed">
+                <MathRenderer text={lastResult.explanation || currentCard.question?.explanation || ""} />
+              </div>
             </div>
 
             <button

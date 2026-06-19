@@ -79,30 +79,30 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 py-12 dot-grid relative select-none font-sans bg-neutral-50 text-neutral-900">
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 py-12 dot-grid relative select-none font-sans bg-neutral-50 dark:bg-zinc-950 text-neutral-900 dark:text-zinc-50">
       
       {/* Slide-up entrance animated container */}
       <div className="w-full max-w-[440px] space-y-8 animate-fade-in-up">
         
         {/* Brand Logo and Title */}
         <div className="flex flex-col items-center space-y-3">
-          <Link href="/" className="p-2.5 bg-neutral-900 text-white rounded-xl shadow-sm hover:scale-105 transition-transform">
+          <Link href="/" className="p-2.5 bg-neutral-900 dark:bg-zinc-100 text-white dark:text-neutral-900 rounded-xl shadow-sm hover:scale-105 transition-transform flex items-center justify-center">
             <Sparkles className="w-5 h-5" />
           </Link>
-          <span className="text-xl font-bold tracking-tight text-neutral-900 font-display">
+          <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50 font-display">
             Eudora
           </span>
         </div>
 
         {/* Clean Cupertino Card */}
-        <div className="bg-white border border-neutral-200/80 rounded-[24px] p-8 md:p-10 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)]">
+        <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-zinc-800 rounded-[24px] p-8 md:p-10 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)]">
           
           {/* Header */}
           <div className="text-center space-y-2 mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 font-display">
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50 font-display">
               Create your account
             </h1>
-            <p className="text-xs text-neutral-400 max-w-[280px] mx-auto leading-normal">
+            <p className="text-xs text-neutral-400 dark:text-zinc-500 max-w-[280px] mx-auto leading-normal">
               Sign up to start designing student learning paths and curriculums.
             </p>
           </div>
@@ -111,7 +111,7 @@ export default function RegisterPage() {
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button
               type="button"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 text-neutral-700 transition-all text-xs font-semibold cursor-pointer active:scale-98 shadow-sm"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-neutral-50 dark:hover:bg-zinc-800 hover:border-neutral-300 dark:hover:border-zinc-700 text-neutral-700 dark:text-zinc-300 transition-all text-xs font-semibold cursor-pointer active:scale-98 shadow-sm"
             >
               {/* Google SVG */}
               <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -136,7 +136,7 @@ export default function RegisterPage() {
             </button>
             <button
               type="button"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 text-neutral-700 transition-all text-xs font-semibold cursor-pointer active:scale-98 shadow-sm"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-neutral-50 dark:hover:bg-zinc-800 hover:border-neutral-300 dark:hover:border-zinc-700 text-neutral-700 dark:text-zinc-300 transition-all text-xs font-semibold cursor-pointer active:scale-98 shadow-sm"
             >
               {/* GitHub SVG */}
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -149,16 +149,16 @@ export default function RegisterPage() {
           {/* Separator */}
           <div className="relative flex items-center justify-center mb-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-100"></div>
+              <div className="w-full border-t border-neutral-100 dark:border-zinc-800"></div>
             </div>
-            <span className="relative px-3 text-[10px] text-neutral-400 uppercase tracking-widest bg-white font-semibold">
+            <span className="relative px-3 text-[10px] text-neutral-400 dark:text-zinc-500 uppercase tracking-widest bg-white dark:bg-zinc-900 font-semibold">
               Or sign up with
             </span>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 text-xs font-semibold text-rose-500 bg-rose-50 border border-rose-100 p-3 rounded-xl">
+            <div className="mb-4 text-xs font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 p-3 rounded-xl">
               {error}
             </div>
           )}
@@ -168,7 +168,7 @@ export default function RegisterPage() {
             
             {/* Full Name */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Full Name</Label>
+              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Full Name</Label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
                   <User className="w-4 h-4" />
@@ -177,7 +177,7 @@ export default function RegisterPage() {
                   id="name"
                   type="text"
                   placeholder="John Doe"
-                  className="pl-10 h-11 border-neutral-200 bg-neutral-50/50 text-neutral-900 rounded-xl focus:border-neutral-900 placeholder:text-neutral-300 cupertino-input"
+                  className="pl-10 h-11 border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50 rounded-xl focus:border-neutral-900 dark:focus:border-zinc-300 placeholder:text-neutral-300 dark:placeholder:text-zinc-700 cupertino-input"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -188,7 +188,7 @@ export default function RegisterPage() {
 
             {/* Email Address */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Email Address</Label>
+              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Email Address</Label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
                   <Mail className="w-4 h-4" />
@@ -197,7 +197,7 @@ export default function RegisterPage() {
                   id="email"
                   type="email"
                   placeholder="name@school.edu"
-                  className="pl-10 h-11 border-neutral-200 bg-neutral-50/50 text-neutral-900 rounded-xl focus:border-neutral-900 placeholder:text-neutral-300 cupertino-input"
+                  className="pl-10 h-11 border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50 rounded-xl focus:border-neutral-900 dark:focus:border-zinc-300 placeholder:text-neutral-300 dark:placeholder:text-zinc-700 cupertino-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -208,7 +208,7 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Password</Label>
+              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Password</Label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
                   <Lock className="w-4 h-4" />
@@ -217,7 +217,7 @@ export default function RegisterPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10 pr-10 h-11 border-neutral-200 bg-neutral-50/50 text-neutral-900 rounded-xl focus:border-neutral-900 placeholder:text-neutral-300 cupertino-input"
+                  className="pl-10 pr-10 h-11 border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50 rounded-xl focus:border-neutral-900 dark:focus:border-zinc-300 placeholder:text-neutral-300 dark:placeholder:text-zinc-700 cupertino-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -235,7 +235,7 @@ export default function RegisterPage() {
 
             {/* Confirm Password */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Confirm Password</Label>
+              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Confirm Password</Label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
                   <Lock className="w-4 h-4" />
@@ -244,7 +244,7 @@ export default function RegisterPage() {
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10 pr-10 h-11 border-neutral-200 bg-neutral-50/50 text-neutral-900 rounded-xl focus:border-neutral-900 placeholder:text-neutral-300 cupertino-input"
+                  className="pl-10 pr-10 h-11 border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50 rounded-xl focus:border-neutral-900 dark:focus:border-zinc-300 placeholder:text-neutral-300 dark:placeholder:text-zinc-700 cupertino-input"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -262,18 +262,18 @@ export default function RegisterPage() {
 
             {/* Terms and Conditions Option */}
             <div className="flex items-start py-1">
-              <label className="flex items-start gap-2.5 cursor-pointer group text-xs text-neutral-500 hover:text-neutral-800 select-none">
+              <label className="flex items-start gap-2.5 cursor-pointer group text-xs text-neutral-500 dark:text-zinc-400 hover:text-neutral-800 dark:hover:text-zinc-200 select-none">
                 <input
                   type="checkbox"
                   checked={agree}
                   onChange={(e) => setAgree(e.target.checked)}
-                  className="w-4 h-4 rounded border-neutral-200 bg-white text-neutral-900 focus:ring-neutral-900/20 transition-all cursor-pointer mt-0.5"
+                  className="w-4 h-4 rounded border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-50 focus:ring-neutral-900/20 transition-all cursor-pointer mt-0.5"
                 />
                 <span className="leading-normal">
                   I agree to the{" "}
-                  <a className="underline hover:text-neutral-900">Terms of Service</a>{" "}
+                  <a className="underline hover:text-neutral-900 dark:hover:text-zinc-50">Terms of Service</a>{" "}
                   and{" "}
-                  <a className="underline hover:text-neutral-900">Privacy Policy</a>.
+                  <a className="underline hover:text-neutral-900 dark:hover:text-zinc-50">Privacy Policy</a>.
                 </span>
               </label>
             </div>
@@ -281,7 +281,7 @@ export default function RegisterPage() {
             {/* Primary Action Button */}
             <Button
               type="submit"
-              className="w-full h-11 bg-neutral-900 hover:bg-neutral-800 active:bg-neutral-950 text-white font-semibold rounded-xl transition-all shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-75 disabled:pointer-events-none disabled:active:scale-100"
+              className="w-full h-11 bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 dark:hover:bg-zinc-200 text-white dark:text-neutral-900 font-semibold rounded-xl transition-all shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-75 disabled:pointer-events-none disabled:active:scale-100"
               disabled={loading}
             >
               {loading ? (
@@ -304,9 +304,9 @@ export default function RegisterPage() {
         </div>
 
         {/* Footer Sign-In Link */}
-        <div className="text-center text-xs text-neutral-400">
+        <div className="text-center text-xs text-neutral-400 dark:text-zinc-500">
           Already have an account?{" "}
-          <Link href="/login" className="text-neutral-900 hover:underline font-semibold transition-colors">
+          <Link href="/login" className="text-neutral-900 dark:text-zinc-50 hover:underline font-semibold transition-colors">
             Sign in
           </Link>
         </div>

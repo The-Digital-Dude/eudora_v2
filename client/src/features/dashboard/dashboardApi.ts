@@ -53,12 +53,15 @@ export interface BillingPlan {
   name: string;
   code: string;
   description?: string;
-  amount: number;
+  priceMonthly: number;
+  priceAnnual: number;
   currency: string;
-  interval: "MONTHLY" | "YEARLY";
   active: boolean;
-  stripePriceId?: string;
-  stripeProductId?: string;
+  stripePriceIdMonthly?: string;
+  stripePriceIdAnnual?: string;
+  maxStudents?: number | null;
+  maxCampuses?: number | null;
+  maxPrograms?: number | null;
   createdAt: string;
   updatedAt: string;
 }

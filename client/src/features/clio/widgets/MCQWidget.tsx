@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { QuestionOption } from "../clioApi";
+import { MathRenderer } from "@/components/MathRenderer";
 
 interface MCQWidgetProps {
   options: QuestionOption[];
@@ -70,7 +71,7 @@ export function MCQWidget({
             </span>
 
             <span className="text-sm font-medium leading-snug text-foreground">
-              {opt.optionText}
+              <MathRenderer text={opt.optionText} />
             </span>
 
             {/* Result icon overlay */}

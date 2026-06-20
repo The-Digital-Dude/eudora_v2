@@ -216,6 +216,34 @@ export interface StudentEnrollment {
   status: "ENROLLED" | "COMPLETED" | "DROPPED";
 }
 
+export interface ClassTeacher {
+  teacherProfileId: string;
+  classSectionId: string;
+  role: string;
+  assignedAt?: string;
+  classSection?: ClassSection;
+}
+
+export interface TeacherProfile {
+  id: string;
+  userId: string;
+  fullName: string;
+  employeeCode?: string;
+  phone?: string;
+  specialization?: string;
+  status: "ACTIVE" | "INACTIVE" | "ON_LEAVE";
+  joinDate: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+  classAssignments?: ClassTeacher[];
+}
+
 export interface AcademicYear {
   id: string;
   name: string;
@@ -567,6 +595,89 @@ export const dashboardApi = authApi.injectEndpoints({
         body,
       }),
     } as any),
+
+    getTeacherProfiles: builder.query<{ items: TeacherProfile[]; total: number }, { page?: number; limit?: number; status?: string; search?: string } | void>({
+      query: (params: any) => {
+        const page = params?.page ?? 1;
+        const limit = params?.limit ?? 10;
+        const statusQuery = params?.status ? `&status=${params.status}` : "";
+        const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
+        return `/teacher-profiles?page=${page}&limit=${limit}${statusQuery}${searchQuery}`;
+      },
+      transformResponse: (response: any) => ({
+        items: response.data || [],
+        total: response.meta?.total ?? (response.data?.length ?? 0),
+      }),
+      providesTags: ["Teachers"],
+    } as any),
+    createTeacherProfile: builder.mutation<TeacherProfile, any>({
+      query: (body: any) => ({
+        url: "/teacher-profiles",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Teachers"],
+    } as any),
+    updateTeacherProfile: builder.mutation<TeacherProfile, { id: string; body: Partial<TeacherProfile> }>({
+      query: ({ id, body }: any) => ({
+        url: `/teacher-profiles/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Teachers"],
+    } as any),
+    deleteTeacherProfile: builder.mutation<void, string>({
+      query: (id: any) => ({
+        url: `/teacher-profiles/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Teachers"],
+    } as any),
+    assignTeacherClass: builder.mutation<void, { id: string; classSectionId: string; role?: string }>({
+      query: ({ id, classSectionId, role }: any) => ({
+        url: `/teacher-profiles/${id}/classes`,
+        method: "POST",
+        body: { classSectionId, role },
+      }),
+      invalidatesTags: ["Teachers"],
+    } as any),
+    removeTeacherClass: builder.mutation<void, { id: string; classSectionId: string }>({
+      query: ({ id, classSectionId }: any) => ({
+        url: `/teacher-profiles/${id}/classes/${classSectionId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Teachers"],
+    } as any),
+
+    getNotifications: builder.query<any[], void>({
+      query: () => "/notifications",
+      providesTags: ["Notifications"],
+    } as any),
+    getUnreadNotificationsCount: builder.query<{ count: number }, void>({
+      query: () => "/notifications/unread-count",
+      providesTags: ["Notifications"],
+    } as any),
+    markNotificationAsRead: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/notifications/${id}/read`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Notifications"],
+    } as any),
+    markAllNotificationsAsRead: builder.mutation<void, void>({
+      query: () => ({
+        url: "/notifications/read-all",
+        method: "POST",
+      }),
+      invalidatesTags: ["Notifications"],
+    } as any),
+    deleteNotification: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/notifications/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Notifications"],
+    } as any),
   }),
 });
 
@@ -608,4 +719,15 @@ export const {
   useDeleteStudentEnrollmentMutation,
   useCreateGuardianProfileMutation,
   useSelfLinkGuardianMutation,
+  useGetTeacherProfilesQuery,
+  useCreateTeacherProfileMutation,
+  useUpdateTeacherProfileMutation,
+  useDeleteTeacherProfileMutation,
+  useAssignTeacherClassMutation,
+  useRemoveTeacherClassMutation,
+  useGetNotificationsQuery,
+  useGetUnreadNotificationsCountQuery,
+  useMarkNotificationAsReadMutation,
+  useMarkAllNotificationsAsReadMutation,
+  useDeleteNotificationMutation,
 } = dashboardApi;

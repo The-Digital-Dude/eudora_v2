@@ -11,6 +11,7 @@ import {
   PenTool,
   School,
   Users,
+  Users2,
   CreditCard,
   MessageSquare,
   Settings
@@ -72,6 +73,11 @@ const data = {
           title: "Student Roster",
           url: "/students",
           icon: GraduationCap,
+        },
+        {
+          title: "Teachers",
+          url: "/teachers",
+          icon: Users2,
         },
         {
           title: "Classes & Attendance",

@@ -16,6 +16,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { PrismaService } from '../prisma/prisma.service';
 
+@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller('homework')
 @UseGuards(RolesGuard)
 export class HomeworkController {
@@ -27,7 +28,6 @@ export class HomeworkController {
   /**
    * Create homework assignment. Restricted to SUPER_ADMIN, ADMIN, and TEACHER.
    */
-  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   @Post()
   create(@Body() dto: CreateHomeworkDto, @CurrentUser() user: any) {
     return this.homeworkService.createHomework(dto, user.id);
@@ -36,7 +36,6 @@ export class HomeworkController {
   /**
    * Update homework details. Restricted to SUPER_ADMIN, ADMIN, and TEACHER.
    */
-  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateHomeworkDto) {
     return this.homeworkService.updateHomework(id, dto);
@@ -45,6 +44,7 @@ export class HomeworkController {
   /**
    * Get all homework assignments for a course class.
    */
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('course-class/:courseClassId')
   getHomeworkForClass(@Param('courseClassId') courseClassId: string) {
     return this.homeworkService.getHomeworkForClass(courseClassId);
@@ -54,6 +54,7 @@ export class HomeworkController {
    * Submit homework. Accessible to students (USER/STUDENT role).
    * Resolves the student profile ID using the current user's ID.
    */
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Post('submit')
   async submit(@Body() dto: SubmitHomeworkDto, @CurrentUser() user: any) {
     const student = await this.prisma.studentProfile.findUnique({
@@ -70,7 +71,6 @@ export class HomeworkController {
   /**
    * Get all submissions for a homework assignment. Restricted to teachers/admins.
    */
-  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   @Get('submissions/homework/:homeworkId')
   getSubmissionsForHomework(@Param('homeworkId') homeworkId: string) {
     return this.homeworkService.getSubmissionsForHomework(homeworkId);
@@ -79,7 +79,6 @@ export class HomeworkController {
   /**
    * Grade a student's submission. Restricted to teachers/admins.
    */
-  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   @Patch('submissions/:id/grade')
   grade(
     @Param('id') id: string,
@@ -92,6 +91,7 @@ export class HomeworkController {
   /**
    * Get a student's submission history.
    */
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('student/:studentProfileId')
   getStudentSubmissions(@Param('studentProfileId') studentProfileId: string) {
     return this.homeworkService.getStudentSubmissions(studentProfileId);

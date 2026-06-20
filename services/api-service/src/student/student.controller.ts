@@ -18,7 +18,9 @@ import { CreatePlacementDto, UpdatePlacementDto } from './dto/placement.dto';
 import { CreateEnrollmentDto, UpdateEnrollmentDto } from './dto/enrollment.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 
+@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller()
 @UseGuards(RolesGuard)
 export class StudentController {
@@ -28,11 +30,13 @@ export class StudentController {
 
   @Post('student-profiles')
   @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions({ action: 'create', subject: 'Student' })
   async createProfile(@Body() dto: CreateStudentProfileDto) {
     return this.studentService.createProfile(dto);
   }
 
   @Get('student-profiles')
+  @RequirePermissions({ action: 'read', subject: 'Student' })
   async findAllProfiles(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -44,12 +48,14 @@ export class StudentController {
   }
 
   @Get('student-profiles/:id')
+  @RequirePermissions({ action: 'read', subject: 'Student' })
   async findProfileById(@Param('id') id: string) {
     return this.studentService.findProfileById(id);
   }
 
   @Patch('student-profiles/:id')
   @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions({ action: 'update', subject: 'Student' })
   async updateProfile(
     @Param('id') id: string,
     @Body() dto: UpdateStudentProfileDto,
@@ -59,6 +65,7 @@ export class StudentController {
 
   @Delete('student-profiles/:id')
   @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions({ action: 'delete', subject: 'Student' })
   async deleteProfile(@Param('id') id: string) {
     return this.studentService.deleteProfile(id);
   }
@@ -67,11 +74,13 @@ export class StudentController {
 
   @Post('student-placements')
   @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions({ action: 'manage', subject: 'Student' })
   async createPlacement(@Body() dto: CreatePlacementDto) {
     return this.studentService.createPlacement(dto);
   }
 
   @Get('student-placements')
+  @RequirePermissions({ action: 'read', subject: 'Student' })
   async findAllPlacements(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -91,6 +100,7 @@ export class StudentController {
   }
 
   @Get('student-placements/:studentProfileId/:classSectionId')
+  @RequirePermissions({ action: 'read', subject: 'Student' })
   async findPlacement(
     @Param('studentProfileId') studentProfileId: string,
     @Param('classSectionId') classSectionId: string,
@@ -100,6 +110,7 @@ export class StudentController {
 
   @Patch('student-placements/:studentProfileId/:classSectionId')
   @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions({ action: 'manage', subject: 'Student' })
   async updatePlacement(
     @Param('studentProfileId') studentProfileId: string,
     @Param('classSectionId') classSectionId: string,
@@ -114,6 +125,7 @@ export class StudentController {
 
   @Delete('student-placements/:studentProfileId/:classSectionId')
   @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions({ action: 'manage', subject: 'Student' })
   async deletePlacement(
     @Param('studentProfileId') studentProfileId: string,
     @Param('classSectionId') classSectionId: string,
@@ -128,11 +140,13 @@ export class StudentController {
 
   @Post('student-enrollments')
   @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions({ action: 'manage', subject: 'Student' })
   async createEnrollment(@Body() dto: CreateEnrollmentDto) {
     return this.studentService.createEnrollment(dto);
   }
 
   @Get('student-enrollments')
+  @RequirePermissions({ action: 'read', subject: 'Student' })
   async findAllEnrollments(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -150,12 +164,14 @@ export class StudentController {
   }
 
   @Get('student-enrollments/:id')
+  @RequirePermissions({ action: 'read', subject: 'Student' })
   async findEnrollmentById(@Param('id') id: string) {
     return this.studentService.findEnrollmentById(id);
   }
 
   @Patch('student-enrollments/:id')
   @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions({ action: 'manage', subject: 'Student' })
   async updateEnrollment(
     @Param('id') id: string,
     @Body() dto: UpdateEnrollmentDto,
@@ -165,6 +181,7 @@ export class StudentController {
 
   @Delete('student-enrollments/:id')
   @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions({ action: 'manage', subject: 'Student' })
   async deleteEnrollment(@Param('id') id: string) {
     return this.studentService.deleteEnrollment(id);
   }

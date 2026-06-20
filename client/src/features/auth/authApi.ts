@@ -94,6 +94,8 @@ export const authApi = createApi({
     // Clio active learning
     "Lessons",
     "LessonFlow",
+    "Teachers",
+    "Notifications",
   ],
   endpoints: (builder) => ({
     login: builder.mutation({

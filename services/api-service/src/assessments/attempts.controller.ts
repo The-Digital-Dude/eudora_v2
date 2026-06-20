@@ -19,7 +19,9 @@ import {
   UpdateAttemptDto,
 } from './dto/assessments.dto';
 import { AttemptsService } from './attempts.service';
+import { Roles } from '../auth/decorators/roles.decorator';
 
+@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller()
 @UseGuards(CsrfGuard, PermissionsGuard)
 export class AttemptsController {
@@ -31,18 +33,21 @@ export class AttemptsController {
     return this.attemptsService.listAttempts(query);
   }
 
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('attempts/:id')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
   async getAttempt(@Param('id') id: string) {
     return this.attemptsService.getAttempt(id);
   }
 
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Post('attempts')
   @RequirePermissions({ action: 'attempt', subject: 'Assessment' })
   async startAttempt(@Body() body: CreateAttemptDto, @CurrentUser() user: any) {
     return this.attemptsService.startAttempt(body, user.id);
   }
 
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Put('attempts/:id')
   @RequirePermissions({ action: 'attempt', subject: 'Assessment' })
   async updateAttempt(
@@ -53,6 +58,7 @@ export class AttemptsController {
     return this.attemptsService.updateAttempt(id, body, user.id);
   }
 
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Post('attempts/:id/submit')
   @RequirePermissions({ action: 'attempt', subject: 'Assessment' })
   async submitAttempt(@Param('id') id: string, @CurrentUser() user: any) {
@@ -69,6 +75,7 @@ export class AttemptsController {
     return this.attemptsService.markAttempt(id, body, user.id);
   }
 
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('students/:id/attempts')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
   async listStudentAttempts(

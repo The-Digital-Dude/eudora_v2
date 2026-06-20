@@ -22,14 +22,21 @@ describe('Guards Unit Tests', () => {
       user: any,
       handlerRoles?: string[],
       classRoles?: string[],
+      isPublic?: boolean,
     ): ExecutionContext {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key, targets) => {
-          if (targets[0] === 'handler') {
-            return handlerRoles;
+          if (key === 'isPublic') {
+            return isPublic;
           }
-          return classRoles;
+          if (key === 'roles') {
+            if (targets[0] === 'handler') {
+              return handlerRoles;
+            }
+            return classRoles;
+          }
+          return undefined;
         });
 
       return {

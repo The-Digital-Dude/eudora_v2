@@ -4,19 +4,18 @@ import { CreateBroadcastDto } from './dto/broadcast.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
+@Roles('SUPER_ADMIN', 'ADMIN')
 @Controller('communication')
 @UseGuards(RolesGuard)
 export class CommunicationController {
   constructor(private readonly communicationService: CommunicationService) {}
 
   @Post('broadcasts')
-  @Roles('ADMIN', 'SUPER_ADMIN')
   async createBroadcast(@Body() dto: CreateBroadcastDto) {
     return this.communicationService.createBroadcast(dto);
   }
 
   @Get('broadcasts')
-  @Roles('ADMIN', 'SUPER_ADMIN')
   async getBroadcasts(
     @Query('page') page?: string,
     @Query('limit') limit?: string,

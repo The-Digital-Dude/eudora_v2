@@ -26,6 +26,7 @@ import {
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
+@Roles('SUPER_ADMIN', 'ADMIN')
 @Controller()
 @UseGuards(RolesGuard)
 export class AcademicController {

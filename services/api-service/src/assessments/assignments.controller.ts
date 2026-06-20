@@ -19,7 +19,9 @@ import {
   UpdateAssignmentDto,
 } from './dto/assessments.dto';
 import { AssignmentsService } from './assignments.service';
+import { Roles } from '../auth/decorators/roles.decorator';
 
+@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller()
 @UseGuards(CsrfGuard, PermissionsGuard)
 export class AssignmentsController {
@@ -31,6 +33,7 @@ export class AssignmentsController {
     return this.assignmentsService.listAssignments(query);
   }
 
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('assignments/:id')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
   async getAssignment(@Param('id') id: string) {
@@ -68,6 +71,7 @@ export class AssignmentsController {
     return this.assignmentsService.remindAssignment(id, user.id);
   }
 
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('students/:id/assignments')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
   async listStudentAssignments(

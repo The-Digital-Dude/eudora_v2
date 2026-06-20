@@ -16,6 +16,7 @@ model User {
   googleId           String?            @unique
   firstName          String
   lastName           String
+  avatarUrl          String?
   isActive           Boolean            @default(true)
   failedLoginCount   Int                @default(0)
   lockedUntil        DateTime?
@@ -27,10 +28,13 @@ model User {
   roles               UserRole[]
   studentProfile      StudentProfile?
   guardianProfile     GuardianProfile?
+  teacherProfile      TeacherProfile?
   rubricAssessments   RubricAssessment[]
   authSessions        AuthSession[]
   assignedAssignments AssessmentAssignment[] @relation("AssignedAssignments")
   markedAttempts      AssessmentAttempt[]    @relation("MarkedAttempts")
+  notifications       Notification[]
+  fileUploads         FileUpload[]
 
   @@map("users")
 }
@@ -239,6 +243,7 @@ model ClassSection {
   academicYear          AcademicYear            @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   placements            StudentClassPlacement[]
   dailyAttendance       DailyAttendance[]
+  teachers              ClassTeacher[]
   assessmentAssignments AssessmentAssignment[]
 
   @@map("class_sections")
@@ -413,6 +418,45 @@ model FamilyGuardian {
 
   @@id([familyId, guardianProfileId])
   @@map("family_guardians")
+}
+
+// ─── Teacher ────────────────────────────────────────────────────────────────
+
+enum TeacherStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+}
+
+model TeacherProfile {
+  id             String           @id @default(uuid())
+  userId         String           @unique
+  fullName       String
+  employeeCode   String?          @unique
+  phone          String?
+  specialization String?          // e.g. "Mathematics", "Computer Science"
+  status         TeacherStatus    @default(ACTIVE)
+  joinDate       DateTime         @default(now())
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classAssignments ClassTeacher[]
+
+  @@map("teacher_profiles")
+}
+
+model ClassTeacher {
+  teacherProfileId String
+  classSectionId   String
+  role             String          @default("PRIMARY")  // PRIMARY, ASSISTANT, SUBSTITUTE
+  assignedAt       DateTime        @default(now())
+
+  teacherProfile   TeacherProfile  @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  classSection     ClassSection    @relation(fields: [classSectionId], references: [id], onDelete: Cascade)
+
+  @@id([teacherProfileId, classSectionId])
+  @@map("class_teachers")
 }
 
 // ─── Billing ─────────────────────────────────────────────────────────────────
@@ -590,6 +634,7 @@ model HomeworkSubmission {
   studentProfileId String
   submissionDate   DateTime         @default(now())
   content          String?          // Submitted text or solution links
+  attachmentUrls   String[]         @default([])
   status           SubmissionStatus @default(SUBMITTED)
   pointsEarned     Int?
   feedback         String?
@@ -1165,4 +1210,38 @@ model StudentExperience {
   studentProfile   StudentProfile         @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
 
   @@map("student_experiences")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  type      String    // e.g. "INFO", "WARNING", "ASSIGNMENT", "GRADE", "SYSTEM"
+  title     String
+  body      String
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model FileUpload {
+  id           String   @id @default(uuid())
+  url          String
+  key          String   // Storage key/path
+  bucket       String?  // Storage bucket (S3)
+  provider     String   // "LOCAL" or "S3"
+  size         Int
+  mimetype     String
+  originalName String
+  userId       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("file_uploads")
 }

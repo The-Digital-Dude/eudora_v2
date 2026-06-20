@@ -10,8 +10,8 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Starting database seeding...');
 
-  const subjects = ['User', 'Role', 'Permission'];
-  const actions = ['create', 'read', 'update', 'delete'];
+  const subjects = ['User', 'Role', 'Permission', 'Teacher', 'Student', 'Assessment'];
+  const actions = ['create', 'read', 'update', 'delete', 'manage', 'attempt', 'mark', 'assign'];
 
   const permissionIds: Record<string, string> = {};
 
@@ -68,6 +68,15 @@ async function main() {
       description: 'Guardian with read-only dashboard access to their linked students',
     },
   });
+
+  const teacherRole = await prisma.role.upsert({
+    where: { name: 'TEACHER' },
+    update: {},
+    create: {
+      name: 'TEACHER',
+      description: 'Teacher with class management and assessment scoring permissions',
+    },
+  });
   console.log('✅ Created roles');
 
   for (const permissionId of Object.values(permissionIds)) {
@@ -87,9 +96,12 @@ async function main() {
   }
 
   const adminPermissions = [
-    'read:User', 'update:User',
+    'create:User', 'read:User', 'update:User', 'delete:User',
     'create:Role', 'read:Role', 'update:Role', 'delete:Role',
-    'read:Permission'
+    'read:Permission',
+    'create:Teacher', 'read:Teacher', 'update:Teacher', 'delete:Teacher', 'manage:Teacher',
+    'create:Student', 'read:Student', 'update:Student', 'delete:Student', 'manage:Student',
+    'read:Assessment', 'manage:Assessment', 'assign:Assessment'
   ];
 
   for (const permKey of adminPermissions) {
@@ -111,7 +123,11 @@ async function main() {
     }
   }
 
-  const userPermissions = ['read:User'];
+  const userPermissions = [
+    'read:User',
+    'read:Student',
+    'read:Assessment', 'attempt:Assessment'
+  ];
   for (const permKey of userPermissions) {
     const permissionId = permissionIds[permKey];
     if (permissionId) {
@@ -125,6 +141,31 @@ async function main() {
         update: {},
         create: {
           roleId: userRole.id,
+          permissionId,
+        },
+      });
+    }
+  }
+
+  const teacherPermissions = [
+    'read:User',
+    'read:Teacher',
+    'read:Student', 'update:Student', 'manage:Student',
+    'read:Assessment', 'attempt:Assessment', 'mark:Assessment', 'assign:Assessment'
+  ];
+  for (const permKey of teacherPermissions) {
+    const permissionId = permissionIds[permKey];
+    if (permissionId) {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: teacherRole.id,
+            permissionId,
+          },
+        },
+        update: {},
+        create: {
+          roleId: teacherRole.id,
           permissionId,
         },
       });
@@ -213,7 +254,7 @@ async function main() {
     });
   }
 
-  await prisma.classSection.upsert({
+  const demoClassSection = await prisma.classSection.upsert({
     where: { code: 'CS-2026-A' },
     update: {},
     create: {
@@ -226,6 +267,68 @@ async function main() {
       status: 'ACTIVE',
     },
   });
+
+  const teacherPassword = await bcrypt.hash('Teacher@123', 10);
+
+  const teacherData = [
+    { email: 'prof.turing@eudora.app', firstName: 'Alan', lastName: 'Turing', specialization: 'Computer Science', employeeCode: 'EMP-TURING' },
+    { email: 'prof.lovelace@eudora.app', firstName: 'Ada', lastName: 'Lovelace', specialization: 'Mathematics', employeeCode: 'EMP-LOVELACE' },
+  ];
+
+  for (const t of teacherData) {
+    const user = await prisma.user.upsert({
+      where: { email: t.email },
+      update: {},
+      create: {
+        email: t.email,
+        password: teacherPassword,
+        firstName: t.firstName,
+        lastName: t.lastName,
+        isActive: true,
+      },
+    });
+
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: user.id,
+          roleId: teacherRole.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        roleId: teacherRole.id,
+      },
+    });
+
+    const profile = await prisma.teacherProfile.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        fullName: `${t.firstName} ${t.lastName}`,
+        employeeCode: t.employeeCode,
+        specialization: t.specialization,
+        status: 'ACTIVE',
+      },
+    });
+
+    await prisma.classTeacher.upsert({
+      where: {
+        teacherProfileId_classSectionId: {
+          teacherProfileId: profile.id,
+          classSectionId: demoClassSection.id,
+        },
+      },
+      update: {},
+      create: {
+        teacherProfileId: profile.id,
+        classSectionId: demoClassSection.id,
+        role: 'PRIMARY',
+      },
+    });
+  }
 
   await prisma.courseClass.upsert({
     where: { code: 'CS-DSA-2026' },
@@ -785,6 +888,36 @@ async function main() {
     });
   }
   console.log('✅ Seeded makeup requests');
+
+  // Seed notifications
+  console.log('🌱 Seeding notifications...');
+  await prisma.notification.deleteMany();
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: superAdminUser.id,
+        type: 'INFO',
+        title: 'Welcome to Eudora',
+        body: 'Welcome to your new educational management dashboard. Explore your administrative options!',
+        readAt: null,
+      },
+      {
+        userId: superAdminUser.id,
+        type: 'WARNING',
+        title: 'High Makeup Request Volume',
+        body: 'There are pending makeup requests that require attention.',
+        readAt: null,
+      },
+      {
+        userId: superAdminUser.id,
+        type: 'SYSTEM',
+        title: 'Backup Successful',
+        body: 'System database backup completed successfully.',
+        readAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      }
+    ],
+  });
+  console.log('✅ Seeded notifications');
 
   console.log('🎉 Seeding completed successfully!');
 }

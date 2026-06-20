@@ -15,6 +15,7 @@ import { Public } from '../../auth/decorators/public.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 
+@Roles('SUPER_ADMIN')
 @Controller('billing/plans')
 export class PlanController {
   constructor(private readonly planService: PlanService) {}
@@ -32,7 +33,6 @@ export class PlanController {
   /**
    * Admin endpoint — lists all plans including inactive/private ones
    */
-  @UseGuards(RolesGuard)
   @Roles('SUPER_ADMIN', 'ADMIN')
   @Get()
   findAll() {
@@ -45,22 +45,16 @@ export class PlanController {
     return this.planService.findOne(id);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN')
   @Post()
   create(@Body() dto: CreatePlanDto) {
     return this.planService.create(dto);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdatePlanDto) {
     return this.planService.update(id, dto);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.planService.remove(id);

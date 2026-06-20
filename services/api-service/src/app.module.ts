@@ -10,6 +10,8 @@ import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { RolesGuard } from './auth/guards/roles.guard';
+import { PermissionsGuard } from './auth/guards/permissions.guard';
 import { InstitutionModule } from './institution/institution.module';
 import { AcademicModule } from './academic/academic.module';
 import { StudentModule } from './student/student.module';
@@ -23,6 +25,8 @@ import { LessonsModule } from './lessons/lessons.module';
 import { LeadsModule } from './leads/leads.module';
 import { CommunicationModule } from './communication/communication.module';
 import { MakeupModule } from './makeup/makeup.module';
+import { TeacherModule } from './teacher/teacher.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { ApiEnvelopeInterceptor } from './common/http/api-envelope.interceptor';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 
@@ -51,6 +55,8 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
     LeadsModule,
     CommunicationModule,
     MakeupModule,
+    TeacherModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -58,6 +64,14 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionsGuard,
     },
     {
       provide: APP_INTERCEPTOR,

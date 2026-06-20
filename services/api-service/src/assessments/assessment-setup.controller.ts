@@ -22,7 +22,9 @@ import {
   UpdateLookupDto,
 } from './dto/assessments.dto';
 import { AssessmentSetupService } from './assessment-setup.service';
+import { Roles } from '../auth/decorators/roles.decorator';
 
+@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller('assessments')
 @UseGuards(CsrfGuard, PermissionsGuard)
 export class AssessmentSetupController {

@@ -18,7 +18,9 @@ import {
   UpdateLookupDto,
 } from './dto/assessments.dto';
 import { SubjectsService } from './subjects.service';
+import { Roles } from '../auth/decorators/roles.decorator';
 
+@Roles('SUPER_ADMIN', 'ADMIN')
 @Controller('subjects')
 @UseGuards(CsrfGuard, PermissionsGuard)
 export class SubjectsController {

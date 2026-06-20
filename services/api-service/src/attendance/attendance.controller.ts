@@ -17,6 +17,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
+@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller('attendance')
 @UseGuards(RolesGuard)
 export class AttendanceController {
@@ -25,7 +26,6 @@ export class AttendanceController {
   /**
    * Bulk record or update daily attendance for a homeroom / class section.
    */
-  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Post('daily')
   recordDaily(
     @Body() dto: RecordDailyAttendanceDto,
@@ -48,7 +48,6 @@ export class AttendanceController {
   /**
    * Create a new subject session / lecture slot.
    */
-  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Post('sessions')
   createSession(@Body() dto: CreateSessionDto) {
     return this.attendanceService.createSession(dto);
@@ -65,7 +64,6 @@ export class AttendanceController {
   /**
    * Bulk record or update attendance for a specific lecture session.
    */
-  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Post('session-attendance')
   recordSession(
     @Body() dto: RecordSessionAttendanceDto,

@@ -13,6 +13,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
+@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
 @Controller('lessons')
 @UseGuards(RolesGuard)
 export class LessonsController {
@@ -42,13 +43,13 @@ export class LessonsController {
 
   // Admin and teacher-only capabilities for authoring lessons
   @Post()
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   async createLesson(@Body() dto: CreateLessonDto) {
     return this.lessonsService.createLesson(dto);
   }
 
   @Post('cards')
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   async createCard(@Body() dto: CreateCardDto) {
     return this.lessonsService.createCard(dto);
   }

@@ -19,7 +19,9 @@ import {
   UpdateStudentResponseDto,
 } from './dto/assessments.dto';
 import { StudentResponsesService } from './student-responses.service';
+import { Roles } from '../auth/decorators/roles.decorator';
 
+@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller()
 @UseGuards(CsrfGuard, PermissionsGuard)
 export class StudentResponsesController {
@@ -33,12 +35,14 @@ export class StudentResponsesController {
     return this.studentResponsesService.listResponses(query);
   }
 
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Get('responses/:id')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
   async getResponse(@Param('id') id: string) {
     return this.studentResponsesService.getResponse(id);
   }
 
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Post('responses')
   @RequirePermissions({ action: 'attempt', subject: 'Assessment' })
   async saveResponse(
@@ -48,6 +52,7 @@ export class StudentResponsesController {
     return this.studentResponsesService.saveResponse(body, user.id);
   }
 
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Put('responses/:id')
   @RequirePermissions({ action: 'attempt', subject: 'Assessment' })
   async updateResponse(
@@ -68,6 +73,7 @@ export class StudentResponsesController {
     return this.studentResponsesService.markResponse(id, body, user.id);
   }
 
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Get('attempts/:id/responses')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
   async listAttemptResponses(

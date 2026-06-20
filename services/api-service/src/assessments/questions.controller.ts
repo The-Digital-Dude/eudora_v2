@@ -21,7 +21,9 @@ import {
   UpdateQuestionDto,
 } from './dto/assessments.dto';
 import { QuestionsService } from './questions.service';
+import { Roles } from '../auth/decorators/roles.decorator';
 
+@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller()
 @UseGuards(CsrfGuard, PermissionsGuard)
 export class QuestionsController {

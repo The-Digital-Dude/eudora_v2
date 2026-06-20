@@ -20,10 +20,13 @@ describe('Guards Unit Tests', () => {
 
     function createMockContext(user: any, handlerRoles?: string[], classRoles?: string[]): ExecutionContext {
       jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key, targets) => {
-        if (targets[0] === 'handler') {
-          return handlerRoles;
+        if (key === 'roles') {
+          if (targets[0] === 'handler') {
+            return handlerRoles;
+          }
+          return classRoles;
         }
-        return classRoles;
+        return undefined;
       });
 
       return {

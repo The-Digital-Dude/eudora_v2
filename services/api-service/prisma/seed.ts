@@ -10,7 +10,7 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Starting database seeding...');
 
-  const subjects = ['User', 'Role', 'Permission', 'Teacher', 'Student', 'Assessment'];
+  const subjects = ['User', 'Role', 'Permission', 'Teacher', 'Student', 'Assessment', 'Timetable', 'Attendance', 'Homework', 'Gradebook', 'ReportCard'];
   const actions = ['create', 'read', 'update', 'delete', 'manage', 'attempt', 'mark', 'assign'];
 
   const permissionIds: Record<string, string> = {};
@@ -101,7 +101,12 @@ async function main() {
     'read:Permission',
     'create:Teacher', 'read:Teacher', 'update:Teacher', 'delete:Teacher', 'manage:Teacher',
     'create:Student', 'read:Student', 'update:Student', 'delete:Student', 'manage:Student',
-    'read:Assessment', 'manage:Assessment', 'assign:Assessment'
+    'read:Assessment', 'manage:Assessment', 'assign:Assessment',
+    'create:Timetable', 'read:Timetable', 'update:Timetable', 'delete:Timetable', 'manage:Timetable',
+    'create:Attendance', 'read:Attendance', 'update:Attendance', 'delete:Attendance', 'manage:Attendance',
+    'create:Homework', 'read:Homework', 'update:Homework', 'delete:Homework', 'manage:Homework',
+    'create:Gradebook', 'read:Gradebook', 'update:Gradebook', 'delete:Gradebook', 'manage:Gradebook',
+    'create:ReportCard', 'read:ReportCard', 'update:ReportCard', 'delete:ReportCard', 'manage:ReportCard'
   ];
 
   for (const permKey of adminPermissions) {
@@ -126,7 +131,12 @@ async function main() {
   const userPermissions = [
     'read:User',
     'read:Student',
-    'read:Assessment', 'attempt:Assessment'
+    'read:Assessment', 'attempt:Assessment',
+    'read:Timetable',
+    'read:Attendance',
+    'read:Homework',
+    'read:Gradebook',
+    'read:ReportCard'
   ];
   for (const permKey of userPermissions) {
     const permissionId = permissionIds[permKey];
@@ -151,7 +161,11 @@ async function main() {
     'read:User',
     'read:Teacher',
     'read:Student', 'update:Student', 'manage:Student',
-    'read:Assessment', 'attempt:Assessment', 'mark:Assessment', 'assign:Assessment'
+    'read:Assessment', 'attempt:Assessment', 'mark:Assessment', 'assign:Assessment',
+    'read:Timetable',
+    'create:Attendance', 'read:Attendance', 'update:Attendance', 'manage:Attendance',
+    'create:Homework', 'read:Homework', 'update:Homework', 'delete:Homework', 'manage:Homework',
+    'create:Gradebook', 'read:Gradebook', 'update:Gradebook', 'manage:Gradebook'
   ];
   for (const permKey of teacherPermissions) {
     const permissionId = permissionIds[permKey];
@@ -166,6 +180,33 @@ async function main() {
         update: {},
         create: {
           roleId: teacherRole.id,
+          permissionId,
+        },
+      });
+    }
+  }
+
+  const guardianPermissions = [
+    'read:User',
+    'read:Student',
+    'read:Timetable',
+    'read:Attendance',
+    'read:Homework',
+    'read:ReportCard'
+  ];
+  for (const permKey of guardianPermissions) {
+    const permissionId = permissionIds[permKey];
+    if (permissionId) {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: guardianRole.id,
+            permissionId,
+          },
+        },
+        update: {},
+        create: {
+          roleId: guardianRole.id,
           permissionId,
         },
       });

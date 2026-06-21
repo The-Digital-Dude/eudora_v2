@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HomeworkService } from './homework.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { GradebookService } from '../gradebook/gradebook.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { SubmissionStatus } from '@prisma/client';
 
@@ -32,6 +33,10 @@ describe('HomeworkService', () => {
     },
   };
 
+  const mockGradebookService = {
+    upsertFromHomeworkSubmission: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -39,6 +44,10 @@ describe('HomeworkService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: GradebookService,
+          useValue: mockGradebookService,
         },
       ],
     }).compile();
@@ -94,7 +103,7 @@ describe('HomeworkService', () => {
           description: 'Desc',
           dueDate: new Date().toISOString(),
           maxPoints: 100,
-          attachmentUrl: 'http://link',
+          attachmentUrls: ['http://link'],
         },
         'user-id',
       );
@@ -105,6 +114,14 @@ describe('HomeworkService', () => {
   });
 
   describe('submitHomework', () => {
+    it('should throw BadRequestException if submit text content and attachments are both missing', async () => {
+      await expect(
+        service.submitHomework('student-1', {
+          homeworkId: 'hw-1',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should throw NotFoundException if homework does not exist', async () => {
       mockPrismaService.homework.findUnique.mockResolvedValue(null);
       await expect(
@@ -236,6 +253,38 @@ describe('HomeworkService', () => {
 
       expect(result.status).toEqual(SubmissionStatus.GRADED);
       expect(result.pointsEarned).toEqual(8);
+    });
+  });
+
+  describe('getStudentPendingHomework', () => {
+    it('should throw NotFoundException if student profile does not exist', async () => {
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue(null);
+      await expect(
+        service.getStudentPendingHomework('non-existent'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return pending homeworks successfully', async () => {
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue({
+        id: 'student-1',
+        enrollments: [{ courseClassId: 'class-1' }],
+      });
+      mockPrismaService.homework.findMany.mockResolvedValue([
+        {
+          id: 'hw-1',
+          courseClassId: 'class-1',
+          submissions: [], // No submission
+        },
+        {
+          id: 'hw-2',
+          courseClassId: 'class-1',
+          submissions: [{ id: 'sub-1' }], // Has submission
+        },
+      ]);
+
+      const result = await service.getStudentPendingHomework('student-1');
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('hw-1');
     });
   });
 });

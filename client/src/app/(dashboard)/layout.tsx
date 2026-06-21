@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Loader2, ShieldAlert } from "lucide-react";
 
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -37,23 +37,69 @@ export default function DashboardLayout({
   const [themeCustomizerOpen, setThemeCustomizerOpen] = useState(false);
   const { config } = useSidebarConfig();
 
-  // Check auth and roles
-  const hasAdminRole = React.useMemo(() => {
-    if (!user) return false;
-    if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") return true;
-    if (Array.isArray(user.roles)) {
-      return user.roles.some(
-        (r: any) =>
-          r === "ADMIN" ||
-          r === "SUPER_ADMIN" ||
-          r.name === "ADMIN" ||
-          r.name === "SUPER_ADMIN" ||
-          r.role?.name === "ADMIN" ||
-          r.role?.name === "SUPER_ADMIN"
-      );
+  const pathname = usePathname();
+
+  // Normalize user roles
+  const userRoles = React.useMemo<string[]>(() => {
+    if (!user) return [];
+    const rolesList: string[] = [];
+    if (user.role) {
+      rolesList.push(user.role);
     }
-    return false;
+    if (Array.isArray(user.roles)) {
+      user.roles.forEach((r: any) => {
+        if (typeof r === "string") {
+          rolesList.push(r);
+        } else if (r && typeof r === "object") {
+          if (r.name) rolesList.push(r.name);
+          else if (r.role?.name) rolesList.push(r.role?.name);
+        }
+      });
+    }
+    return rolesList;
   }, [user]);
+
+  // Check auth and roles
+  const hasAuthorizedRole = React.useMemo(() => {
+    const allowedRoles = ["SUPER_ADMIN", "ADMIN", "TEACHER", "USER", "GUARDIAN"];
+    return userRoles.some((role) => allowedRoles.includes(role));
+  }, [userRoles]);
+
+  const isRouteAuthorized = React.useMemo(() => {
+    if (userRoles.includes("SUPER_ADMIN") || userRoles.includes("ADMIN")) {
+      return true;
+    }
+
+    const adminOnlyRoutes = [
+      "/users",
+      "/campuses",
+      "/plans",
+      "/leads",
+      "/teachers",
+      "/communication",
+    ];
+
+    const isSensitive = adminOnlyRoutes.some((route) =>
+      pathname.startsWith(route)
+    );
+
+    if (isSensitive) {
+      return false;
+    }
+
+    const teacherOnlyRoutes = ["/classes", "/diagnostics", "/lessons"];
+    const studentOnlyRoutes = ["/learn"];
+
+    if (teacherOnlyRoutes.some((route) => pathname.startsWith(route))) {
+      return userRoles.includes("TEACHER");
+    }
+
+    if (studentOnlyRoutes.some((route) => pathname.startsWith(route))) {
+      return userRoles.includes("USER") || userRoles.includes("TEACHER");
+    }
+
+    return true;
+  }, [pathname, userRoles]);
 
   const handleLogout = async () => {
     try {
@@ -77,7 +123,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (!hasAdminRole) {
+  if (!hasAuthorizedRole || !isRouteAuthorized) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 dark:bg-zinc-950 p-6">
         <div className="bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 rounded-3xl p-8 max-w-md w-full shadow-lg text-center space-y-6">
@@ -87,7 +133,7 @@ export default function DashboardLayout({
           <div className="space-y-2">
             <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-50 font-display">Access Denied</h1>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-              This dashboard is only accessible to system administrators. Please contact your administrator if you believe this is an error.
+              You do not have permission to access this page. Please contact your administrator if you believe this is an error.
             </p>
           </div>
           <div className="pt-2 flex flex-col gap-2">

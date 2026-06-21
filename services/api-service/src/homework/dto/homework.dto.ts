@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsPositive,
   Min,
+  IsArray,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -31,9 +32,10 @@ export class CreateHomeworkDto {
   @Type(() => Number)
   maxPoints: number;
 
-  @IsString()
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
-  attachmentUrl?: string;
+  attachmentUrls?: string[];
 }
 
 export class UpdateHomeworkDto {
@@ -56,7 +58,8 @@ export class UpdateHomeworkDto {
   @Type(() => Number)
   maxPoints?: number;
 
-  @IsString()
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
-  attachmentUrl?: string;
+  attachmentUrls?: string[];
 }

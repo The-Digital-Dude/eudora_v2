@@ -7,10 +7,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateHomeworkDto, UpdateHomeworkDto } from './dto/homework.dto';
 import { SubmitHomeworkDto, GradeSubmissionDto } from './dto/submission.dto';
 import { SubmissionStatus } from '@prisma/client';
+import { GradebookService } from '../gradebook/gradebook.service';
 
 @Injectable()
 export class HomeworkService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gradebookService: GradebookService,
+  ) {}
 
   // ─── Homework Assignments Operations ────────────────────────────────────────
 
@@ -34,7 +38,7 @@ export class HomeworkService {
         description: dto.description,
         dueDate: due,
         maxPoints: dto.maxPoints,
-        attachmentUrl: dto.attachmentUrl,
+        attachmentUrls: dto.attachmentUrls || [],
         recordedById: recordedByUserId,
       },
     });
@@ -63,7 +67,7 @@ export class HomeworkService {
         description: dto.description ?? undefined,
         dueDate: dto.dueDate ? due : undefined,
         maxPoints: dto.maxPoints ?? undefined,
-        attachmentUrl: dto.attachmentUrl ?? undefined,
+        attachmentUrls: dto.attachmentUrls ?? undefined,
       },
     });
   }
@@ -85,6 +89,12 @@ export class HomeworkService {
   // ─── Submissions Operations ──────────────────────────────────────────────────
 
   async submitHomework(studentProfileId: string, dto: SubmitHomeworkDto) {
+    if (!dto.content && (!dto.attachmentUrls || dto.attachmentUrls.length === 0)) {
+      throw new BadRequestException(
+        'Submission must contain either text content or at least one attachment file',
+      );
+    }
+
     const homework = await this.prisma.homework.findUnique({
       where: { id: dto.homeworkId },
     });
@@ -121,7 +131,8 @@ export class HomeworkService {
         },
       },
       update: {
-        content: dto.content,
+        content: dto.content ?? null,
+        attachmentUrls: dto.attachmentUrls || [],
         submissionDate: now,
         status: initialStatus,
         // Reset grade fields if resubmitted
@@ -133,7 +144,8 @@ export class HomeworkService {
       create: {
         homeworkId: dto.homeworkId,
         studentProfileId,
-        content: dto.content,
+        content: dto.content ?? null,
+        attachmentUrls: dto.attachmentUrls || [],
         submissionDate: now,
         status: initialStatus,
       },
@@ -159,16 +171,26 @@ export class HomeworkService {
       );
     }
 
-    return this.prisma.homeworkSubmission.update({
+    const gradedAt = new Date();
+    const updated = await this.prisma.homeworkSubmission.update({
       where: { id: submissionId },
       data: {
         pointsEarned: dto.pointsEarned,
         feedback: dto.feedback ?? undefined,
         status: SubmissionStatus.GRADED,
         gradedById: gradedByUserId,
-        gradedAt: new Date(),
+        gradedAt,
       },
     });
+
+    await this.gradebookService.upsertFromHomeworkSubmission(
+      submissionId,
+      dto.pointsEarned,
+      submission.homework.maxPoints,
+      gradedAt,
+    );
+
+    return updated;
   }
 
   async getSubmissionsForHomework(homeworkId: string) {
@@ -211,5 +233,37 @@ export class HomeworkService {
         submissionDate: 'desc',
       },
     });
+  }
+
+  async getStudentPendingHomework(studentProfileId: string) {
+    const student = await this.prisma.studentProfile.findUnique({
+      where: { id: studentProfileId },
+      include: {
+        enrollments: true,
+      },
+    });
+    if (!student) {
+      throw new NotFoundException('Student profile not found');
+    }
+
+    const enrolledCourseClassIds = student.enrollments.map((e) => e.courseClassId);
+    if (enrolledCourseClassIds.length === 0) {
+      return [];
+    }
+
+    const allHomework = await this.prisma.homework.findMany({
+      where: {
+        courseClassId: { in: enrolledCourseClassIds },
+      },
+      include: {
+        courseClass: true,
+        submissions: {
+          where: { studentProfileId },
+        },
+      },
+      orderBy: { dueDate: 'asc' },
+    });
+
+    return allHomework.filter((h) => h.submissions.length === 0);
   }
 }

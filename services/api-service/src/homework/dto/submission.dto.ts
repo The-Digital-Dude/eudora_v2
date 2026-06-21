@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsNumber,
   Min,
+  IsArray,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -13,8 +14,13 @@ export class SubmitHomeworkDto {
   homeworkId: string;
 
   @IsString()
-  @IsNotEmpty()
-  content: string; // The submitted text/links
+  @IsOptional()
+  content?: string; // Optional submitted text
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  attachmentUrls?: string[]; // Optional submission attachments
 }
 
 export class GradeSubmissionDto {

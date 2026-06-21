@@ -28,6 +28,8 @@ import { MakeupModule } from './makeup/makeup.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { TimetableModule } from './timetable/timetable.module';
+import { GradebookModule } from './gradebook/gradebook.module';
 import { ApiEnvelopeInterceptor } from './common/http/api-envelope.interceptor';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 
@@ -59,6 +61,8 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
     TeacherModule,
     NotificationsModule,
     UploadsModule,
+    TimetableModule,
+    GradebookModule,
   ],
   controllers: [AppController],
   providers: [

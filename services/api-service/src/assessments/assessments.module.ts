@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
+import { GradebookModule } from '../gradebook/gradebook.module';
 import { AssessmentSetupController } from './assessment-setup.controller';
 import { AssessmentSetupService } from './assessment-setup.service';
 import { AssignmentsController } from './assignments.controller';
@@ -14,7 +15,7 @@ import { SubjectsController } from './subjects.controller';
 import { SubjectsService } from './subjects.service';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, GradebookModule],
   controllers: [
     AssessmentSetupController,
     SubjectsController,

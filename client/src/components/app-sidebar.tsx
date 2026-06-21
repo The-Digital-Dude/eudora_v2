@@ -43,21 +43,49 @@ const data = {
           title: "Overview",
           url: "/dashboard",
           icon: LayoutDashboard,
+          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
+        },
+        {
+          title: "Timetable",
+          url: "/timetable",
+          icon: CalendarDays,
+          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
+        },
+        {
+          title: "Attendance",
+          url: "/attendance",
+          icon: UserCheck,
+          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "GUARDIAN"],
+        },
+        {
+          title: "Homework",
+          url: "/homework",
+          icon: PenTool,
+          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
+        },
+        {
+          title: "Gradebook",
+          url: "/gradebook",
+          icon: ClipboardList,
+          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
         },
         {
           title: "Active Learning",
           url: "/learn",
           icon: BookOpen,
+          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER"],
         },
         {
           title: "Lesson Authoring",
           url: "/lessons",
           icon: PenTool,
+          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER"],
         },
         {
           title: "Diagnostics",
           url: "/diagnostics",
           icon: ClipboardList,
+          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER"],
         },
       ],
     },
@@ -68,31 +96,37 @@ const data = {
           title: "Leads & Enrolments",
           url: "/leads",
           icon: UserCheck,
+          roles: ["ADMIN", "SUPER_ADMIN"],
         },
         {
           title: "Student Roster",
           url: "/students",
           icon: GraduationCap,
+          roles: ["ADMIN", "SUPER_ADMIN"],
         },
         {
           title: "Teachers",
           url: "/teachers",
           icon: Users2,
+          roles: ["ADMIN", "SUPER_ADMIN"],
         },
         {
           title: "Classes & Attendance",
           url: "/classes",
           icon: CalendarDays,
+          roles: ["ADMIN", "SUPER_ADMIN"],
         },
         {
           title: "Campuses & Programs",
           url: "/campuses",
           icon: School,
+          roles: ["ADMIN", "SUPER_ADMIN"],
         },
         {
           title: "Users & Roles",
           url: "/users",
           icon: Users,
+          roles: ["ADMIN", "SUPER_ADMIN"],
         },
       ],
     },
@@ -103,11 +137,13 @@ const data = {
           title: "Communication",
           url: "/communication",
           icon: MessageSquare,
+          roles: ["ADMIN", "SUPER_ADMIN"],
         },
         {
           title: "Billing & Plans",
           url: "/plans",
           icon: CreditCard,
+          roles: ["ADMIN", "SUPER_ADMIN"],
         },
       ],
     },
@@ -118,6 +154,8 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: {
     name: string
     email: string
+    roles?: string[]
+    role?: string
   }
 }
 
@@ -132,6 +170,42 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         .toUpperCase()
         .slice(0, 2)
     : "A"
+
+  // Extract roles
+  const userRoles = React.useMemo<string[]>(() => {
+    if (!user) return [];
+    const rolesList: string[] = [];
+    if (user.role) {
+      rolesList.push(user.role);
+    }
+    if (Array.isArray(user.roles)) {
+      user.roles.forEach((r: any) => {
+        if (typeof r === "string") {
+          rolesList.push(r);
+        } else if (r && typeof r === "object") {
+          if (r.name) rolesList.push(r.name);
+          else if (r.role?.name) rolesList.push(r.role?.name);
+        }
+      });
+    }
+    return rolesList;
+  }, [user]);
+
+  const hasRole = (allowedRoles: string[]) => {
+    return userRoles.some((role) => allowedRoles.includes(role));
+  };
+
+  const filteredNavGroups = React.useMemo(() => {
+    return data.navGroups
+      .map((group) => {
+        const items = group.items.filter((item) => {
+          if (!item.roles) return true;
+          return hasRole(item.roles);
+        });
+        return { ...group, items };
+      })
+      .filter((group) => group.items.length > 0);
+  }, [userRoles]);
 
   return (
     <Sidebar {...props}>
@@ -154,9 +228,9 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       </SidebarHeader>
 
       <SidebarContent className="py-4">
-        {data.navGroups.map((group) => (
+        {filteredNavGroups.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider px-3 mb-1">
+            <SidebarGroupLabel className="text-[10px] font-bold text-neutral-400 dark:text-neutral-505 uppercase tracking-wider px-3 mb-1">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>

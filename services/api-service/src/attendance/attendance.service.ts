@@ -291,7 +291,6 @@ export class AttendanceService {
         breakdown[r.status] = (breakdown[r.status] || 0) + 1;
       });
 
-      // Present + Excused + Late can count as attended or present/late
       const presentCount =
         breakdown.PRESENT + breakdown.LATE + breakdown.EXCUSED;
       const attendanceRate = Math.round((presentCount / total) * 100);
@@ -309,5 +308,229 @@ export class AttendanceService {
       dailyStats: calculateStats(dailyRecords),
       subjectStats: calculateStats(courseRecords),
     };
+  }
+
+  async getClassDailySheet(classSectionId: string, dateStr: string) {
+    const targetDate = new Date(dateStr);
+    if (isNaN(targetDate.getTime())) {
+      throw new BadRequestException('Invalid date format');
+    }
+
+    const placements = await this.prisma.studentClassPlacement.findMany({
+      where: {
+        classSectionId,
+        isActive: true,
+      },
+      include: {
+        studentProfile: true,
+      },
+      orderBy: {
+        studentProfile: {
+          fullName: 'asc',
+        },
+      },
+    });
+
+    const attendanceRecords = await this.prisma.dailyAttendance.findMany({
+      where: {
+        classSectionId,
+        date: targetDate,
+      },
+    });
+
+    const recordMap = new Map(
+      attendanceRecords.map((r) => [r.studentProfileId, r]),
+    );
+
+    return placements.map((p) => {
+      const record = recordMap.get(p.studentProfileId);
+      return {
+        studentProfileId: p.studentProfileId,
+        fullName: p.studentProfile.fullName,
+        gender: p.studentProfile.gender,
+        status: record ? record.status : null,
+        remarks: record ? record.remarks : null,
+        attendanceId: record ? record.id : null,
+      };
+    });
+  }
+
+  async getClassAttendanceSummary(
+    classSectionId: string,
+    startDateStr: string,
+    endDateStr: string,
+  ) {
+    const start = new Date(startDateStr);
+    const end = new Date(endDateStr);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Invalid date format');
+    }
+
+    const records = await this.prisma.dailyAttendance.findMany({
+      where: {
+        classSectionId,
+        date: { gte: start, lte: end },
+      },
+    });
+
+    const total = records.length;
+    const breakdown = { PRESENT: 0, ABSENT: 0, LATE: 0, EXCUSED: 0 };
+    records.forEach((r) => {
+      breakdown[r.status] = (breakdown[r.status] || 0) + 1;
+    });
+
+    const attended = breakdown.PRESENT + breakdown.LATE + breakdown.EXCUSED;
+    const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 100;
+
+    return {
+      total,
+      attendanceRate,
+      breakdown,
+    };
+  }
+
+  async getMonthlyAttendanceSummary(
+    monthStr: string,
+    academicYearId?: string,
+    classSectionId?: string,
+  ) {
+    const [year, month] = monthStr.split('-').map(Number);
+    const start = new Date(Date.UTC(year, month - 1, 1));
+    const end = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+
+    const where: any = {
+      date: { gte: start, lte: end },
+    };
+
+    if (classSectionId) {
+      where.classSectionId = classSectionId;
+    } else if (academicYearId) {
+      where.classSection = { academicYearId };
+    }
+
+    const records = await this.prisma.dailyAttendance.findMany({
+      where,
+    });
+
+    const total = records.length;
+    const breakdown = { PRESENT: 0, ABSENT: 0, LATE: 0, EXCUSED: 0 };
+    records.forEach((r) => {
+      breakdown[r.status] = (breakdown[r.status] || 0) + 1;
+    });
+
+    const attended = breakdown.PRESENT + breakdown.LATE + breakdown.EXCUSED;
+    const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 100;
+
+    return {
+      month: monthStr,
+      total,
+      attendanceRate,
+      breakdown,
+    };
+  }
+
+  async getAbsenceTrends(
+    startDateStr: string,
+    endDateStr: string,
+    classSectionId?: string,
+  ) {
+    const start = new Date(startDateStr);
+    const end = new Date(endDateStr);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Invalid date format');
+    }
+
+    const where: any = {
+      date: { gte: start, lte: end },
+    };
+
+    if (classSectionId) {
+      where.classSectionId = classSectionId;
+    }
+
+    const records = await this.prisma.dailyAttendance.findMany({
+      where,
+      orderBy: { date: 'asc' },
+    });
+
+    const grouped = new Map<string, { absent: number; late: number }>();
+    records.forEach((r) => {
+      const dateKey = r.date.toISOString().split('T')[0];
+      if (!grouped.has(dateKey)) {
+        grouped.set(dateKey, { absent: 0, late: 0 });
+      }
+      const counts = grouped.get(dateKey)!;
+      if (r.status === 'ABSENT') counts.absent++;
+      if (r.status === 'LATE') counts.late++;
+    });
+
+    const trends: Array<{ date: string; absentCount: number; lateCount: number }> = [];
+    grouped.forEach((counts, date) => {
+      trends.push({
+        date,
+        absentCount: counts.absent,
+        lateCount: counts.late,
+      });
+    });
+
+    return trends;
+  }
+
+  async getAtRiskAttendanceStudents(
+    threshold: number,
+    academicYearId: string,
+    classSectionId?: string,
+  ) {
+    const placements = await this.prisma.studentClassPlacement.findMany({
+      where: {
+        academicYearId,
+        ...(classSectionId && { classSectionId }),
+        isActive: true,
+      },
+      include: {
+        studentProfile: true,
+        classSection: true,
+      },
+    });
+
+    const atRiskStudents = [];
+
+    for (const placement of placements) {
+      const studentId = placement.studentProfileId;
+      const records = await this.prisma.dailyAttendance.findMany({
+        where: {
+          studentProfileId: studentId,
+          classSectionId: placement.classSectionId,
+        },
+      });
+
+      const total = records.length;
+      if (total === 0) continue;
+
+      const breakdown = { PRESENT: 0, ABSENT: 0, LATE: 0, EXCUSED: 0 };
+      records.forEach((r) => {
+        breakdown[r.status] = (breakdown[r.status] || 0) + 1;
+      });
+
+      const attended = breakdown.PRESENT + breakdown.LATE + breakdown.EXCUSED;
+      const rate = Math.round((attended / total) * 100);
+
+      if (rate < threshold) {
+        atRiskStudents.push({
+          studentProfileId: studentId,
+          fullName: placement.studentProfile.fullName,
+          classSectionName: placement.classSection.name,
+          classSectionId: placement.classSectionId,
+          attendanceRate: rate,
+          absentCount: breakdown.ABSENT,
+          lateCount: breakdown.LATE,
+          totalClasses: total,
+        });
+      }
+    }
+
+    return atRiskStudents.sort((a, b) => a.attendanceRate - b.attendanceRate);
   }
 }

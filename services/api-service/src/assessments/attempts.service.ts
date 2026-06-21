@@ -4,6 +4,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { GradebookService } from '../gradebook/gradebook.service';
 import {
   CreateAttemptDto,
   ListAttemptsQueryDto,
@@ -29,7 +30,10 @@ import {
 
 @Injectable()
 export class AttemptsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gradebookService: GradebookService,
+  ) {}
 
   async listAttempts(query: ListAttemptsQueryDto = {}) {
     const pagination = normalizePagination(query);
@@ -247,6 +251,15 @@ export class AttemptsService {
         : {}),
     });
     await this.updateBestAttempt(attempt.assessmentAssignmentId);
+
+    // Sync to Gradebook
+    await this.gradebookService.upsertFromAssessmentAttempt(
+      attempt.id,
+      attempt.rawScore ?? 0,
+      attempt.maxScore ?? 0,
+      attempt.updatedAt,
+    );
+
     await audit(
       this.prisma,
       actorUserId,

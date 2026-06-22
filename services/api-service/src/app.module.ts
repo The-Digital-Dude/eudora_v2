@@ -30,6 +30,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { TimetableModule } from './timetable/timetable.module';
 import { GradebookModule } from './gradebook/gradebook.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { ApiEnvelopeInterceptor } from './common/http/api-envelope.interceptor';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 
@@ -63,6 +64,7 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
     UploadsModule,
     TimetableModule,
     GradebookModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

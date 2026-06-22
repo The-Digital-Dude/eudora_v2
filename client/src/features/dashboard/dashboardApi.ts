@@ -702,6 +702,12 @@ export const dashboardApi = authApi.injectEndpoints({
         body: formData,
       }),
     } as any),
+    getDashboardSnapshot: builder.query<any, { date?: string } | void>({
+      query: (params) => ({
+        url: "/dashboard/snapshot",
+        params: params || {},
+      }),
+    }),
   }),
 });
 
@@ -755,4 +761,5 @@ export const {
   useMarkAllNotificationsAsReadMutation,
   useDeleteNotificationMutation,
   useUploadFileMutation,
+  useGetDashboardSnapshotQuery,
 } = dashboardApi;

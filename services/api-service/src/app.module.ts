@@ -31,6 +31,9 @@ import { UploadsModule } from './uploads/uploads.module';
 import { TimetableModule } from './timetable/timetable.module';
 import { GradebookModule } from './gradebook/gradebook.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { GamificationModule } from './gamification/gamification.module';
+import { MessagingModule } from './messaging/messaging.module';
+import { ParentModule } from './parent/parent.module';
 import { ApiEnvelopeInterceptor } from './common/http/api-envelope.interceptor';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 
@@ -65,6 +68,9 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
     TimetableModule,
     GradebookModule,
     DashboardModule,
+    GamificationModule,
+    MessagingModule,
+    ParentModule,
   ],
   controllers: [AppController],
   providers: [

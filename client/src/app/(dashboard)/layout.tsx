@@ -80,8 +80,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       return false;
     }
 
-    const teacherOnlyRoutes = ["/classes", "/diagnostics", "/lessons", "/questions", "/assessments"];
-    const studentOnlyRoutes = ["/learn"];
+    const teacherOnlyRoutes = ["/classes", "/diagnostics", "/lessons", "/questions", "/assessments", "/teacher"];
+    const studentOnlyRoutes = ["/learn", "/student"];
+    const guardianOnlyRoutes = ["/parent"];
 
     if (teacherOnlyRoutes.some((route) => pathname.startsWith(route))) {
       return userRoles.includes("TEACHER");
@@ -89,6 +90,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     if (studentOnlyRoutes.some((route) => pathname.startsWith(route))) {
       return userRoles.includes("USER") || userRoles.includes("TEACHER");
+    }
+
+    if (guardianOnlyRoutes.some((route) => pathname.startsWith(route))) {
+      return userRoles.includes("GUARDIAN");
     }
 
     return true;

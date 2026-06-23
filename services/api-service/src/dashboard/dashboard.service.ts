@@ -306,10 +306,65 @@ export class DashboardService {
       take: 5,
     });
 
+    // 4. upcomingAssessments
+    const upcomingAssessmentsRaw = await this.prisma.assessmentAssignment.findMany({
+      where: {
+        studentProfileId: studentProfile.id,
+        dueAt: { gte: new Date() },
+        status: 'assigned',
+      },
+      include: {
+        assessment: true,
+      },
+      orderBy: {
+        dueAt: 'asc',
+      },
+    });
+
+    const upcomingAssessments = upcomingAssessmentsRaw.map((aa) => ({
+      id: aa.id,
+      title: aa.assessment.title,
+      dueAt: aa.dueAt,
+    }));
+
+    // 5. attendanceSummary
+    const totalAttendance = await this.prisma.dailyAttendance.count({
+      where: { studentProfileId: studentProfile.id },
+    });
+    const presentCount = await this.prisma.dailyAttendance.count({
+      where: { studentProfileId: studentProfile.id, status: 'PRESENT' },
+    });
+    const lateCount = await this.prisma.dailyAttendance.count({
+      where: { studentProfileId: studentProfile.id, status: 'LATE' },
+    });
+    const absentCount = await this.prisma.dailyAttendance.count({
+      where: { studentProfileId: studentProfile.id, status: 'ABSENT' },
+    });
+    const excusedCount = await this.prisma.dailyAttendance.count({
+      where: { studentProfileId: studentProfile.id, status: 'EXCUSED' },
+    });
+
+    const attendanceRate = totalAttendance > 0 
+      ? Math.round(((presentCount + lateCount) / totalAttendance) * 100) 
+      : 100;
+
+    const attendanceSummary = {
+      attendanceRate,
+      total: totalAttendance,
+      breakdown: {
+        PRESENT: presentCount,
+        ABSENT: absentCount,
+        LATE: lateCount,
+        EXCUSED: excusedCount,
+      },
+    };
+
     return {
       todaySchedule,
       pendingHomework,
       recentFeedback,
+      upcomingAssessments,
+      attendanceSummary,
     };
   }
 

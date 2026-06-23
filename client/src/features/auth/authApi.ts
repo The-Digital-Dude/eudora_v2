@@ -111,6 +111,11 @@ export const authApi = createApi({
     "Questions",
     "Assessments",
     "Assignments",
+    "Messages",
+    "ParentPortal",
+    "Gamification",
+    "Leaderboard",
+    "TeacherPortal",
   ],
   endpoints: (builder) => ({
     login: builder.mutation({

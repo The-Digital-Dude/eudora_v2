@@ -75,7 +75,7 @@ export class AuthService {
     const tokens = await this.createSessionTokens(user, null, null);
     await this.audit(user.id, 'auth.signup.created', 'user', user.id);
 
-    const { password: _password, ...result } = user;
+    const { password: _, ...result } = user;
     return {
       user: result,
       tokens,
@@ -416,7 +416,7 @@ export class AuthService {
       ipAddress ?? null,
     );
 
-    const { password: _password, ...result } = user;
+    const { password: _, ...result } = user;
     return {
       user: result,
       tokens,

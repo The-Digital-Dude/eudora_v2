@@ -8,6 +8,7 @@ import {
 import { DashboardService } from './dashboard.service';
 import { DashboardQueryDto } from './dto/dashboard.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
@@ -18,12 +19,14 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('snapshot')
-  async getSnapshot(@Query() query: DashboardQueryDto, @CurrentUser() user: any) {
+  async getSnapshot(
+    @Query() query: DashboardQueryDto,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     const date = query.date ? new Date(query.date) : new Date();
     const targetDate = isNaN(date.getTime()) ? new Date() : date;
 
     const rolesList: string[] = [];
-    if (user.role) rolesList.push(user.role);
     if (Array.isArray(user.roles)) {
       user.roles.forEach((r: any) => {
         if (typeof r === 'string') rolesList.push(r);
@@ -42,6 +45,8 @@ export class DashboardController {
       return this.dashboardService.getGuardianSnapshot(user.id, targetDate);
     }
 
-    throw new ForbiddenException('User has no authorized academic role assigned');
+    throw new ForbiddenException(
+      'User has no authorized academic role assigned',
+    );
   }
 }

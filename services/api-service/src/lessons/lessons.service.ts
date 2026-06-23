@@ -452,7 +452,9 @@ export class LessonsService {
       where: { id },
       data: {
         ...(dto.title !== undefined ? { title: dto.title } : {}),
-        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description }
+          : {}),
         ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
         ...(dto.xpReward !== undefined ? { xpReward: dto.xpReward } : {}),
       },
@@ -477,11 +479,13 @@ export class LessonsService {
   }
 
   async reorderCards(lessonId: string, dto: ReorderCardsDto) {
-    const lesson = await this.prisma.lesson.findUnique({ where: { id: lessonId } });
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+    });
     if (!lesson) {
       throw new NotFoundException('Lesson not found');
     }
-    
+
     return this.prisma.$transaction(async (tx) => {
       const results = [];
       for (const cardOrder of dto.cards) {

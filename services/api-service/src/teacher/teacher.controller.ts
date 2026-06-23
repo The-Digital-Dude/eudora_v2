@@ -18,6 +18,7 @@ import { AssignClassDto } from './dto/assign-class.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { TeacherStatus } from '@prisma/client';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 
@@ -30,7 +31,7 @@ export class TeacherController {
   @Roles('TEACHER')
   @Get('me')
   @RequirePermissions({ action: 'read', subject: 'Teacher' })
-  async getMe(@CurrentUser() user: any) {
+  async getMe(@CurrentUser() user: CurrentUserDto) {
     return this.teacherService.findByUserId(user.id);
   }
 

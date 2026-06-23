@@ -35,6 +35,9 @@ model User {
   markedAttempts      AssessmentAttempt[]    @relation("MarkedAttempts")
   notifications       Notification[]
   fileUploads         FileUpload[]
+  guardianThreads     MessageThread[]        @relation("GuardianThreads")
+  teacherThreads      MessageThread[]        @relation("TeacherThreads")
+  sentMessages        Message[]              @relation("SentMessages")
 
   @@map("users")
 }
@@ -319,6 +322,7 @@ model StudentProfile {
   streak                StudentStreak?
   experience            StudentExperience?
   gradeBookEntries      GradeBookEntry[]
+  messageThreads        MessageThread[]
 
   @@map("student_profiles")
 }
@@ -401,6 +405,8 @@ model Family {
 
   students      FamilyStudent[]
   guardians     FamilyGuardian[]
+  invoices      FamilyInvoice[]
+  payments      FamilyPayment[]
 
   @@map("families")
 }
@@ -1378,4 +1384,82 @@ model GradeBookEntry {
   @@index([classSectionId, termId])
   @@index([studentProfileId, termId])
   @@map("gradebook_entries")
+}
+
+model FamilyInvoice {
+  id          String   @id @default(uuid())
+  familyId    String
+  amount      Decimal  @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  description String?  // "Term 1 Tuition", "Uniform Fee", etc.
+  issueDate   DateTime
+  dueDate     DateTime
+  status      String   @default("PENDING") // PENDING, PAID, OVERDUE
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  family      Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@index([familyId, dueDate])
+  @@map("family_invoices")
+}
+
+model FamilyPayment {
+  id            String   @id @default(uuid())
+  familyId      String
+  invoiceId     String?  // optional: which invoice this paid off
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("USD")
+  paymentDate   DateTime
+  method        String   // "BANK_TRANSFER", "CASH", "CHECK", "MANUAL"
+  reference     String?  // receipt/transaction id
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  family        Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@index([familyId, paymentDate])
+  @@map("family_payments")
+}
+
+enum MessageThreadStatus {
+  OPEN
+  ARCHIVED
+}
+
+model MessageThread {
+  id               String              @id @default(uuid())
+  subject          String
+  studentProfileId String?             // context: which child the thread is about
+  guardianUserId   String              // participant 1 (parent)
+  teacherUserId    String              // participant 2 (teacher)
+  status           MessageThreadStatus @default(OPEN)
+  lastMessageAt    DateTime            @default(now())
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  studentProfile   StudentProfile?     @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
+  guardian         User                @relation("GuardianThreads", fields: [guardianUserId], references: [id], onDelete: Cascade)
+  teacher          User                @relation("TeacherThreads", fields: [teacherUserId], references: [id], onDelete: Cascade)
+  messages         Message[]
+
+  @@index([guardianUserId, status])
+  @@index([teacherUserId, status])
+  @@map("message_threads")
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  threadId       String
+  senderUserId   String
+  body           String
+  readAt         DateTime?
+  attachmentUrls String[]      @default([])
+  createdAt      DateTime      @default(now())
+
+  thread         MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender         User          @relation("SentMessages", fields: [senderUserId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@map("messages")
 }

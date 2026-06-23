@@ -13,6 +13,7 @@ import {
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -30,30 +31,33 @@ export class NotificationsController {
   }
 
   @Get()
-  async findAll(@CurrentUser() user: any) {
+  async findAll(@CurrentUser() user: CurrentUserDto) {
     return this.notificationsService.findAllForUser(user.id);
   }
 
   @Get('unread-count')
-  async getUnreadCount(@CurrentUser() user: any) {
+  async getUnreadCount(@CurrentUser() user: CurrentUserDto) {
     return this.notificationsService.getUnreadCount(user.id);
   }
 
   @Patch(':id/read')
   @HttpCode(HttpStatus.OK)
-  async markAsRead(@Param('id') id: string, @CurrentUser() user: any) {
+  async markAsRead(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.notificationsService.markAsRead(id, user.id);
   }
 
   @Post('read-all')
   @HttpCode(HttpStatus.OK)
-  async markAllAsRead(@CurrentUser() user: any) {
+  async markAllAsRead(@CurrentUser() user: CurrentUserDto) {
     return this.notificationsService.markAllAsRead(user.id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id') id: string, @CurrentUser() user: any) {
+  async remove(@Param('id') id: string, @CurrentUser() user: CurrentUserDto) {
     return this.notificationsService.remove(id, user.id);
   }
 }

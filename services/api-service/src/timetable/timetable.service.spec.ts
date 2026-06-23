@@ -52,7 +52,7 @@ describe('TimetableConflictService', () => {
           dayOfWeek: DayOfWeek.MONDAY,
           periodIndex: 1,
           startTimeMinutes: 540, // 09:00 AM
-          endTimeMinutes: 600,   // 10:00 AM
+          endTimeMinutes: 600, // 10:00 AM
           classSectionId: 'class-section-1',
           teacherProfileId: 'teacher-1',
           room: 'Room 101',
@@ -61,7 +61,7 @@ describe('TimetableConflictService', () => {
           dayOfWeek: DayOfWeek.MONDAY,
           periodIndex: 2,
           startTimeMinutes: 600, // 10:00 AM (Adjacent, no overlap)
-          endTimeMinutes: 660,   // 11:00 AM
+          endTimeMinutes: 660, // 11:00 AM
           classSectionId: 'class-section-1',
           teacherProfileId: 'teacher-1',
           room: 'Room 101',
@@ -162,7 +162,9 @@ describe('TimetableConflictService', () => {
         },
       };
 
-      mockPrismaService.timetableSlot.findMany.mockResolvedValue([conflictingDbSlot]);
+      mockPrismaService.timetableSlot.findMany.mockResolvedValue([
+        conflictingDbSlot,
+      ]);
 
       const conflicts = await service.checkConflicts(targetTimetableId, slots);
       expect(conflicts).toHaveLength(1);
@@ -196,7 +198,9 @@ describe('TimetableConflictService', () => {
         },
       };
 
-      mockPrismaService.timetableSlot.findMany.mockResolvedValue([nonConflictingDbSlot]);
+      mockPrismaService.timetableSlot.findMany.mockResolvedValue([
+        nonConflictingDbSlot,
+      ]);
 
       const conflicts = await service.checkConflicts(targetTimetableId, slots);
       expect(conflicts).toHaveLength(0);
@@ -230,7 +234,9 @@ describe('TimetableConflictService', () => {
         },
       };
 
-      mockPrismaService.timetableSlot.findMany.mockResolvedValue([conflictingDbSlot]);
+      mockPrismaService.timetableSlot.findMany.mockResolvedValue([
+        conflictingDbSlot,
+      ]);
 
       const conflicts = await service.checkConflicts(targetTimetableId, slots);
       expect(conflicts).toHaveLength(1);

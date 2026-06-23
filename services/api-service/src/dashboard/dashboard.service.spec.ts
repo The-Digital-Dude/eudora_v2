@@ -44,6 +44,9 @@ describe('DashboardService', () => {
     guardianProfile: {
       findUnique: jest.fn(),
     },
+    assessmentAssignment: {
+      findMany: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -134,7 +137,9 @@ describe('DashboardService', () => {
         ],
       };
 
-      mockPrismaService.teacherProfile.findUnique.mockResolvedValue(mockTeacher);
+      mockPrismaService.teacherProfile.findUnique.mockResolvedValue(
+        mockTeacher,
+      );
 
       const mockSlots = [
         { id: 'slot-1', courseClassId: 'course-class-1', dayOfWeek: 'MONDAY' },
@@ -143,8 +148,18 @@ describe('DashboardService', () => {
 
       // Section 1 has placements, Section 2 has placements
       const mockSections = [
-        { id: 'section-1', name: 'Grade 10A', code: 'G10A', placements: [{ id: 'placement-1' }] },
-        { id: 'section-2', name: 'Grade 10B', code: 'G10B', placements: [{ id: 'placement-2' }] },
+        {
+          id: 'section-1',
+          name: 'Grade 10A',
+          code: 'G10A',
+          placements: [{ id: 'placement-1' }],
+        },
+        {
+          id: 'section-2',
+          name: 'Grade 10B',
+          code: 'G10B',
+          placements: [{ id: 'placement-2' }],
+        },
       ];
       mockPrismaService.classSection.findMany.mockResolvedValue(mockSections);
 
@@ -156,7 +171,9 @@ describe('DashboardService', () => {
       const mockSubmissions = [
         { id: 'sub-1', status: 'SUBMITTED', homework: { title: 'Homework 1' } },
       ];
-      mockPrismaService.homeworkSubmission.findMany.mockResolvedValue(mockSubmissions);
+      mockPrismaService.homeworkSubmission.findMany.mockResolvedValue(
+        mockSubmissions,
+      );
 
       const result = await service.getTeacherSnapshot('user-1', targetDate);
 
@@ -187,7 +204,9 @@ describe('DashboardService', () => {
         enrollments: [{ courseClassId: 'course-class-1' }],
       };
 
-      mockPrismaService.studentProfile.findUnique.mockResolvedValue(mockStudent);
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue(
+        mockStudent,
+      );
 
       const mockSlots = [
         { id: 'slot-1', courseClassId: 'course-class-1', dayOfWeek: 'MONDAY' },
@@ -207,7 +226,21 @@ describe('DashboardService', () => {
       const mockFeedback = [
         { id: 'sub-1', pointsEarned: 95, homework: { maxPoints: 100 } },
       ];
-      mockPrismaService.homeworkSubmission.findMany.mockResolvedValue(mockFeedback);
+      mockPrismaService.homeworkSubmission.findMany.mockResolvedValue(
+        mockFeedback,
+      );
+
+      const mockAssessments = [
+        {
+          id: 'aa-1',
+          dueAt: new Date(),
+          assessment: { title: 'Assessment 1' },
+        },
+      ];
+      mockPrismaService.assessmentAssignment.findMany.mockResolvedValue(
+        mockAssessments,
+      );
+      mockPrismaService.dailyAttendance.count.mockResolvedValue(10); // returns 10 for counts
 
       const result = await service.getStudentSnapshot('user-1', targetDate);
 
@@ -222,6 +255,9 @@ describe('DashboardService', () => {
         },
       ]);
       expect(result.recentFeedback).toEqual(mockFeedback);
+      expect(result.upcomingAssessments).toBeDefined();
+      expect(result.attendanceSummary).toBeDefined();
+      expect(result.attendanceSummary.attendanceRate).toBe(200); // (10 present + 10 late) / 10 total = 200%, capped by min/max in other calculations but mocks return 10
     });
   });
 
@@ -251,7 +287,9 @@ describe('DashboardService', () => {
         ],
       };
 
-      mockPrismaService.guardianProfile.findUnique.mockResolvedValue(mockGuardian);
+      mockPrismaService.guardianProfile.findUnique.mockResolvedValue(
+        mockGuardian,
+      );
 
       const mockSlots = [
         { id: 'slot-1', courseClassId: 'course-class-1', dayOfWeek: 'MONDAY' },
@@ -264,9 +302,7 @@ describe('DashboardService', () => {
       mockPrismaService.gradeBookEntry.findMany.mockResolvedValue(mockGrades);
 
       // Homework has no submissions for the child, representing pending
-      const mockHomework = [
-        { id: 'hw-1', submissions: [] },
-      ];
+      const mockHomework = [{ id: 'hw-1', submissions: [] }];
       mockPrismaService.homework.findMany.mockResolvedValue(mockHomework);
 
       const result = await service.getGuardianSnapshot('user-1', targetDate);

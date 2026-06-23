@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateAcademicYearDto,
@@ -295,7 +296,7 @@ export class AcademicService {
     programId?: string,
   ) {
     const skip = (page - 1) * limit;
-    const where: any = {};
+    const where: Prisma.ClassSectionWhereInput = {};
     if (academicYearId) where.academicYearId = academicYearId;
     if (programId) where.programId = programId;
 

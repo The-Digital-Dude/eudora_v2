@@ -46,6 +46,24 @@ const data = {
           roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
         },
         {
+          title: "Parent Portal",
+          url: "/parent",
+          icon: Users2,
+          roles: ["GUARDIAN", "ADMIN", "SUPER_ADMIN"],
+        },
+        {
+          title: "Student Portal",
+          url: "/student",
+          icon: GraduationCap,
+          roles: ["USER", "ADMIN", "SUPER_ADMIN"],
+        },
+        {
+          title: "Teacher Portal",
+          url: "/teacher",
+          icon: Users2,
+          roles: ["TEACHER", "ADMIN", "SUPER_ADMIN"],
+        },
+        {
           title: "Timetable",
           url: "/timetable",
           icon: CalendarDays,

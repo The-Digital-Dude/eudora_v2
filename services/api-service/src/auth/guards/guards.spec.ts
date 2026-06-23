@@ -31,7 +31,7 @@ describe('Guards Unit Tests', () => {
             return isPublic;
           }
           if (key === 'roles') {
-            if (targets[0] === 'handler') {
+            if ((targets[0] as unknown) === 'handler') {
               return handlerRoles;
             }
             return classRoles;
@@ -91,7 +91,7 @@ describe('Guards Unit Tests', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key, targets) => {
-          if (targets[0] === 'handler') {
+          if ((targets[0] as unknown) === 'handler') {
             return handlerPermissions;
           }
           return classPermissions;

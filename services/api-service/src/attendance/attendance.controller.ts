@@ -14,6 +14,7 @@ import {
   RecordSessionAttendanceDto,
 } from './dto/record-session-attendance.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -29,7 +30,10 @@ export class AttendanceController {
    */
   @Post('daily')
   @RequirePermissions({ action: 'create', subject: 'Attendance' })
-  recordDaily(@Body() dto: RecordDailyAttendanceDto, @CurrentUser() user: any) {
+  recordDaily(
+    @Body() dto: RecordDailyAttendanceDto,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.attendanceService.recordDailyAttendance(dto, user.id);
   }
 
@@ -70,7 +74,7 @@ export class AttendanceController {
   @RequirePermissions({ action: 'create', subject: 'Attendance' })
   recordSession(
     @Body() dto: RecordSessionAttendanceDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.attendanceService.recordSessionAttendance(dto, user.id);
   }

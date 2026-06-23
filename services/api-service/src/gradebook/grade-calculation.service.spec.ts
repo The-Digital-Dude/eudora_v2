@@ -40,13 +40,15 @@ describe('GradeCalculationService', () => {
   describe('calculateStudentAverages', () => {
     it('should throw NotFoundException if student does not exist', async () => {
       mockPrismaService.studentProfile.findUnique.mockResolvedValue(null);
-      await expect(service.calculateStudentAverages('student-1')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.calculateStudentAverages('student-1'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should return empty stats if no gradebook entries exist', async () => {
-      mockPrismaService.studentProfile.findUnique.mockResolvedValue({ id: 'student-1' });
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue({
+        id: 'student-1',
+      });
       mockPrismaService.gradeBookEntry.findMany.mockResolvedValue([]);
 
       const result = await service.calculateStudentAverages('student-1');
@@ -61,7 +63,9 @@ describe('GradeCalculationService', () => {
     });
 
     it('should calculate weighted category averages and unweighted term average', async () => {
-      mockPrismaService.studentProfile.findUnique.mockResolvedValue({ id: 'student-1' });
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue({
+        id: 'student-1',
+      });
       mockPrismaService.gradeBookEntry.findMany.mockResolvedValue([
         { category: 'HOMEWORK', percentage: 80, weight: 1.0 },
         { category: 'HOMEWORK', percentage: 90, weight: 1.0 },
@@ -81,7 +85,9 @@ describe('GradeCalculationService', () => {
     });
 
     it('should compute class rank and percentile correctly', async () => {
-      mockPrismaService.studentProfile.findUnique.mockResolvedValue({ id: 'student-1' });
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue({
+        id: 'student-1',
+      });
       mockPrismaService.studentClassPlacement.findFirst.mockResolvedValue({
         classSectionId: 'class-sec-1',
       });

@@ -1,7 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpsertTimetableSlotDto } from './dto/timetable.dto';
-import { DayOfWeek, TimetableSlotStatus, TimetableStatus } from '@prisma/client';
+import {
+  DayOfWeek,
+  TimetableSlotStatus,
+  TimetableStatus,
+} from '@prisma/client';
 
 export type TimetableConflict = {
   type: 'TEACHER' | 'CLASS_SECTION' | 'ROOM' | 'INVALID_TIME';
@@ -53,7 +57,9 @@ export class TimetableConflictService {
     });
 
     if (!timetable) {
-      throw new BadRequestException(`Timetable with ID ${timetableId} not found`);
+      throw new BadRequestException(
+        `Timetable with ID ${timetableId} not found`,
+      );
     }
 
     // 1. Check self-conflicts within the payload and basic validations

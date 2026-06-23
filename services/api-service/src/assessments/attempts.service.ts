@@ -310,10 +310,10 @@ export class AttemptsService {
     await Promise.all(
       responses.map((response) => {
         const marked = autoMarkResponse(
-          response.question,
+          response.question as any,
           response.selectedOptionId,
           response.responseText,
-          response.interactionState,
+          response.interactionState as any,
           response.marksAvailable,
         );
         if (marked.isCorrect === undefined) {

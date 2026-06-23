@@ -1,4 +1,5 @@
 import { Injectable, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateAssessmentDto,
@@ -75,22 +76,20 @@ export class AssessmentSetupService {
     input: UpdateLookupDto,
     actorUserId: string,
   ) {
+    const data: Prisma.AssessmentTypeUpdateInput = {};
+    if (input.name !== undefined) {
+      data.name = requireText(input.name, 'name');
+    }
+    if (input.status !== undefined) {
+      data.status = enumValue(
+        input.status,
+        ['active', 'inactive', 'archived'],
+        'status',
+      );
+    }
     const record = await this.prisma.assessmentType.update({
       where: { id },
-      data: {
-        ...(input.name !== undefined
-          ? { name: requireText(input.name, 'name') }
-          : {}),
-        ...(input.status !== undefined
-          ? {
-              status: enumValue(
-                input.status,
-                ['active', 'inactive', 'archived'],
-                'status',
-              ),
-            }
-          : {}),
-      } as any,
+      data,
       select: lookupSelect,
     });
     await audit(
@@ -145,25 +144,23 @@ export class AssessmentSetupService {
   }
 
   async updateLevel(id: string, input: UpdateLookupDto, actorUserId: string) {
+    const data: Prisma.LevelUpdateInput = {};
+    if (input.name !== undefined) {
+      data.name = requireText(input.name, 'name');
+    }
+    if (input.status !== undefined) {
+      data.status = enumValue(
+        input.status,
+        ['active', 'inactive', 'archived'],
+        'status',
+      );
+    }
+    if (input.sortOrder !== undefined) {
+      data.sortOrder = nullableNumber(input.sortOrder, 'sortOrder') ?? 0;
+    }
     const record = await this.prisma.level.update({
       where: { id },
-      data: {
-        ...(input.name !== undefined
-          ? { name: requireText(input.name, 'name') }
-          : {}),
-        ...(input.status !== undefined
-          ? {
-              status: enumValue(
-                input.status,
-                ['active', 'inactive', 'archived'],
-                'status',
-              ),
-            }
-          : {}),
-        ...(input.sortOrder !== undefined
-          ? { sortOrder: nullableNumber(input.sortOrder, 'sortOrder') ?? 0 }
-          : {}),
-      } as any,
+      data,
       select: levelSelect,
     });
     await audit(
@@ -263,49 +260,41 @@ export class AssessmentSetupService {
       if (input.sections) {
         await tx.assessmentSection.deleteMany({ where: { assessmentId: id } });
       }
+      const data: Prisma.AssessmentUncheckedUpdateInput = {};
+      if (input.assessmentTypeId !== undefined) {
+        data.assessmentTypeId = requireText(
+          input.assessmentTypeId,
+          'assessmentTypeId',
+        );
+      }
+      if (input.subjectId !== undefined) {
+        data.subjectId = requireText(input.subjectId, 'subjectId');
+      }
+      if (input.levelId !== undefined) {
+        data.levelId = requireText(input.levelId, 'levelId');
+      }
+      if (input.termId !== undefined) {
+        data.termId = input.termId ? requireText(input.termId, 'termId') : null;
+      }
+      if (input.weekNumber !== undefined) {
+        data.weekNumber = input.weekNumber;
+      }
+      if (input.title !== undefined) {
+        data.title = requireText(input.title, 'title');
+      }
+      if (input.totalMarks !== undefined) {
+        data.totalMarks = input.totalMarks;
+      }
+      if (input.estimatedDurationMinutes !== undefined) {
+        data.estimatedDurationMinutes =
+          input.estimatedDurationMinutes ?? undefined;
+      }
+      if (input.sections) {
+        data.sections = { create: normalizeSections(input.sections) };
+      }
       return tx.assessment.update({
         where: { id },
-        data: {
-          ...(input.assessmentTypeId !== undefined
-            ? {
-                assessmentTypeId: requireText(
-                  input.assessmentTypeId,
-                  'assessmentTypeId',
-                ),
-              }
-            : {}),
-          ...(input.subjectId !== undefined
-            ? { subjectId: requireText(input.subjectId, 'subjectId') }
-            : {}),
-          ...(input.levelId !== undefined
-            ? { levelId: requireText(input.levelId, 'levelId') }
-            : {}),
-          ...(input.termId !== undefined
-            ? {
-                termId: input.termId
-                  ? requireText(input.termId, 'termId')
-                  : null,
-              }
-            : {}),
-          ...(input.weekNumber !== undefined
-            ? { weekNumber: input.weekNumber }
-            : {}),
-          ...(input.title !== undefined
-            ? { title: requireText(input.title, 'title') }
-            : {}),
-          ...(input.totalMarks !== undefined
-            ? { totalMarks: input.totalMarks }
-            : {}),
-          ...(input.estimatedDurationMinutes !== undefined
-            ? {
-                estimatedDurationMinutes:
-                  input.estimatedDurationMinutes ?? undefined,
-              }
-            : {}),
-          ...(input.sections
-            ? { sections: { create: normalizeSections(input.sections) } }
-            : {}),
-        } as any,
+        data,
         select: assessmentSelect,
       });
     });

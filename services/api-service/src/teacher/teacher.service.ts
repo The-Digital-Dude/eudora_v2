@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
@@ -197,8 +201,12 @@ export class TeacherService {
 
   async assignClass(teacherProfileId: string, dto: AssignClassDto) {
     const [teacher, classSection] = await Promise.all([
-      this.prisma.teacherProfile.findFirst({ where: { id: teacherProfileId, user: { deletedAt: null } } }),
-      this.prisma.classSection.findUnique({ where: { id: dto.classSectionId } }),
+      this.prisma.teacherProfile.findFirst({
+        where: { id: teacherProfileId, user: { deletedAt: null } },
+      }),
+      this.prisma.classSection.findUnique({
+        where: { id: dto.classSectionId },
+      }),
     ]);
 
     if (!teacher) {
@@ -217,7 +225,9 @@ export class TeacherService {
       },
     });
     if (existingAssignment) {
-      throw new ConflictException('Teacher is already assigned to this class section');
+      throw new ConflictException(
+        'Teacher is already assigned to this class section',
+      );
     }
 
     return this.prisma.classTeacher.create({
@@ -255,5 +265,122 @@ export class TeacherService {
     });
 
     return { message: 'Class assignment removed successfully' };
+  }
+
+  async getClassesOverview(userId: string) {
+    const teacher = await this.findByUserId(userId);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const classes = [];
+    for (const assignment of teacher.classAssignments) {
+      const cs = assignment.classSection;
+      const rosterCount = await this.prisma.studentClassPlacement.count({
+        where: { classSectionId: cs.id, isActive: true },
+      });
+
+      const attendanceCount = await this.prisma.dailyAttendance.count({
+        where: { classSectionId: cs.id, date: today },
+      });
+
+      classes.push({
+        classSectionId: cs.id,
+        name: cs.name,
+        code: cs.code,
+        rosterCount,
+        isAttendanceMarkedToday: attendanceCount > 0,
+      });
+    }
+
+    return classes;
+  }
+
+  async getPerformanceAlerts(userId: string) {
+    const teacher = await this.findByUserId(userId);
+    const classSectionIds = teacher.classAssignments.map(
+      (ca) => ca.classSectionId,
+    );
+
+    if (classSectionIds.length === 0) {
+      return [];
+    }
+
+    const placements = await this.prisma.studentClassPlacement.findMany({
+      where: {
+        classSectionId: { in: classSectionIds },
+        isActive: true,
+      },
+      include: {
+        studentProfile: true,
+        classSection: true,
+      },
+    });
+
+    const alerts = [];
+
+    for (const placement of placements) {
+      const student = placement.studentProfile;
+
+      // 1. Check Attendance
+      const totalAttendance = await this.prisma.dailyAttendance.count({
+        where: {
+          studentProfileId: student.id,
+          classSectionId: placement.classSectionId,
+        },
+      });
+
+      if (totalAttendance >= 3) {
+        const presentAttendance = await this.prisma.dailyAttendance.count({
+          where: {
+            studentProfileId: student.id,
+            classSectionId: placement.classSectionId,
+            status: { in: ['PRESENT', 'LATE'] },
+          },
+        });
+        const attendanceRate = Math.round(
+          (presentAttendance / totalAttendance) * 100,
+        );
+
+        if (attendanceRate < 85) {
+          alerts.push({
+            studentProfileId: student.id,
+            fullName: student.fullName,
+            classSectionName: placement.classSection.name,
+            reason: 'LOW_ATTENDANCE',
+            metric: `${attendanceRate}% attendance`,
+          });
+        }
+      }
+
+      // 2. Check Grades
+      const gradeEntries = await this.prisma.gradeBookEntry.findMany({
+        where: {
+          studentProfileId: student.id,
+          status: 'PUBLISHED',
+          percentage: { not: null },
+        },
+        select: { percentage: true },
+      });
+
+      if (gradeEntries.length > 0) {
+        const sum = gradeEntries.reduce(
+          (acc, entry) => acc + (entry.percentage ?? 0),
+          0,
+        );
+        const average = Math.round(sum / gradeEntries.length);
+
+        if (average < 60) {
+          alerts.push({
+            studentProfileId: student.id,
+            fullName: student.fullName,
+            classSectionName: placement.classSection.name,
+            reason: 'LOW_GRADE',
+            metric: `Grade average ${average}%`,
+          });
+        }
+      }
+    }
+
+    return alerts;
   }
 }

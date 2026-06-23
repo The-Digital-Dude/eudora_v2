@@ -33,10 +33,7 @@ export class MakeupController {
   @Get()
   @Roles('ADMIN', 'SUPER_ADMIN', 'TEACHER')
   @RequirePermissions({ action: 'read', subject: 'MakeupRequest' })
-  async findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
+  async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
     return this.makeupService.findAll(pageNum, limitNum);
@@ -51,10 +48,7 @@ export class MakeupController {
   @Patch(':id')
   @Roles('ADMIN', 'SUPER_ADMIN', 'TEACHER')
   @RequirePermissions({ action: 'update', subject: 'MakeupRequest' })
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateMakeupRequestDto,
-  ) {
+  async update(@Param('id') id: string, @Body() dto: UpdateMakeupRequestDto) {
     return this.makeupService.update(id, dto);
   }
 

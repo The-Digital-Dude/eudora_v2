@@ -12,6 +12,7 @@ import { CsrfGuard } from '../auth/guards/csrf.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import {
   CreateAttemptDto,
   ListAttemptsQueryDto,
@@ -43,7 +44,10 @@ export class AttemptsController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Post('attempts')
   @RequirePermissions({ action: 'attempt', subject: 'Assessment' })
-  async startAttempt(@Body() body: CreateAttemptDto, @CurrentUser() user: any) {
+  async startAttempt(
+    @Body() body: CreateAttemptDto,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.attemptsService.startAttempt(body, user.id);
   }
 
@@ -53,7 +57,7 @@ export class AttemptsController {
   async updateAttempt(
     @Param('id') id: string,
     @Body() body: UpdateAttemptDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.attemptsService.updateAttempt(id, body, user.id);
   }
@@ -61,7 +65,10 @@ export class AttemptsController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Post('attempts/:id/submit')
   @RequirePermissions({ action: 'attempt', subject: 'Assessment' })
-  async submitAttempt(@Param('id') id: string, @CurrentUser() user: any) {
+  async submitAttempt(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.attemptsService.submitAttempt(id, user.id);
   }
 
@@ -70,7 +77,7 @@ export class AttemptsController {
   async markAttempt(
     @Param('id') id: string,
     @Body() body: MarkAttemptDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.attemptsService.markAttempt(id, body, user.id);
   }

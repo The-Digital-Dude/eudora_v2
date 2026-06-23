@@ -14,6 +14,7 @@ import { CreateConceptDto, CreateCompetencyDto } from './dto/curriculum.dto';
 import { CreateRubricDto } from './dto/rubric.dto';
 import { RecordEvidenceDto, CreateAssessmentDto } from './dto/assessment.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
@@ -93,7 +94,10 @@ export class EvaluationController {
   // ─── Assessment Endpoints ────────────────────────────────────────────────────
 
   @Post('assessments')
-  evaluateEvidence(@Body() dto: CreateAssessmentDto, @CurrentUser() user: any) {
+  evaluateEvidence(
+    @Body() dto: CreateAssessmentDto,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.evaluationService.evaluateEvidence(dto, user.id);
   }
 

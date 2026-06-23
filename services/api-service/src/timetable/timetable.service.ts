@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TimetableConflictService } from './timetable-conflict.service';
 import {
@@ -8,7 +12,11 @@ import {
   UpdateTimetableSlotDto,
   BulkUpsertSlotsDto,
 } from './dto/timetable.dto';
-import { TimetableStatus, TimetableSlotStatus, TimetableSlot } from '@prisma/client';
+import {
+  TimetableStatus,
+  TimetableSlotStatus,
+  TimetableSlot,
+} from '@prisma/client';
 
 @Injectable()
 export class TimetableService {
@@ -40,9 +48,13 @@ export class TimetableService {
   }) {
     return this.prisma.timetable.findMany({
       where: {
-        ...(filters.academicYearId && { academicYearId: filters.academicYearId }),
+        ...(filters.academicYearId && {
+          academicYearId: filters.academicYearId,
+        }),
         ...(filters.termId && { termId: filters.termId }),
-        ...(filters.classSectionId && { classSectionId: filters.classSectionId }),
+        ...(filters.classSectionId && {
+          classSectionId: filters.classSectionId,
+        }),
         ...(filters.status && { status: filters.status }),
       },
       include: {
@@ -85,7 +97,9 @@ export class TimetableService {
       data: {
         ...(dto.name && { name: dto.name }),
         ...(dto.status && { status: dto.status }),
-        ...(dto.effectiveFrom && { effectiveFrom: new Date(dto.effectiveFrom) }),
+        ...(dto.effectiveFrom && {
+          effectiveFrom: new Date(dto.effectiveFrom),
+        }),
         ...(dto.effectiveTo !== undefined && {
           effectiveTo: dto.effectiveTo ? new Date(dto.effectiveTo) : null,
         }),
@@ -209,26 +223,25 @@ export class TimetableService {
       periodIndex: dto.periodIndex ?? slot.periodIndex,
       startTimeMinutes: dto.startTimeMinutes ?? slot.startTimeMinutes,
       endTimeMinutes: dto.endTimeMinutes ?? slot.endTimeMinutes,
-      room: dto.room !== undefined ? dto.room : (slot.room || undefined),
+      room: dto.room !== undefined ? dto.room : slot.room || undefined,
       classSectionId: dto.classSectionId ?? slot.classSectionId,
       courseClassId:
         dto.courseClassId !== undefined
           ? dto.courseClassId
-          : (slot.courseClassId || undefined),
+          : slot.courseClassId || undefined,
       teacherProfileId:
         dto.teacherProfileId !== undefined
           ? dto.teacherProfileId
-          : (slot.teacherProfileId || undefined),
-      notes: dto.notes !== undefined ? dto.notes : (slot.notes || undefined),
+          : slot.teacherProfileId || undefined,
+      notes: dto.notes !== undefined ? dto.notes : slot.notes || undefined,
     };
 
     // Run conflict validation only if slot remains ACTIVE
     const newStatus = dto.status ?? slot.status;
     if (newStatus === TimetableSlotStatus.ACTIVE) {
-      const conflicts = await this.conflictService.checkConflicts(
-        timetableId,
-        [updatedSlot],
-      );
+      const conflicts = await this.conflictService.checkConflicts(timetableId, [
+        updatedSlot,
+      ]);
       if (conflicts.length > 0) {
         throw new BadRequestException({
           message: 'Timetable slot scheduling conflict detected.',
@@ -389,10 +402,7 @@ export class TimetableService {
         courseClass: true,
         teacherProfile: true,
       },
-      orderBy: [
-        { dayOfWeek: 'asc' },
-        { startTimeMinutes: 'asc' },
-      ],
+      orderBy: [{ dayOfWeek: 'asc' }, { startTimeMinutes: 'asc' }],
     });
   }
 
@@ -410,10 +420,7 @@ export class TimetableService {
         courseClass: true,
         classSection: true,
       },
-      orderBy: [
-        { dayOfWeek: 'asc' },
-        { startTimeMinutes: 'asc' },
-      ],
+      orderBy: [{ dayOfWeek: 'asc' }, { startTimeMinutes: 'asc' }],
     });
   }
 
@@ -431,10 +438,7 @@ export class TimetableService {
         courseClass: true,
         teacherProfile: true,
       },
-      orderBy: [
-        { dayOfWeek: 'asc' },
-        { startTimeMinutes: 'asc' },
-      ],
+      orderBy: [{ dayOfWeek: 'asc' }, { startTimeMinutes: 'asc' }],
     });
   }
 }

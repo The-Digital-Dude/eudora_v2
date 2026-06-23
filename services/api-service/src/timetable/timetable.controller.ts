@@ -21,6 +21,7 @@ import {
 } from './dto/timetable.dto';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { TimetableStatus } from '@prisma/client';
 
 @Controller('timetables')
@@ -32,7 +33,10 @@ export class TimetableController {
 
   @Post()
   @RequirePermissions({ action: 'create', subject: 'Timetable' })
-  async create(@Body() dto: CreateTimetableDto, @CurrentUser() user: any) {
+  async create(
+    @Body() dto: CreateTimetableDto,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.timetableService.create(dto, user?.id);
   }
 
@@ -54,19 +58,25 @@ export class TimetableController {
 
   @Get('schedule/student/:studentProfileId')
   @RequirePermissions({ action: 'read', subject: 'Timetable' })
-  async getStudentSchedule(@Param('studentProfileId') studentProfileId: string) {
+  async getStudentSchedule(
+    @Param('studentProfileId') studentProfileId: string,
+  ) {
     return this.timetableService.getStudentSchedule(studentProfileId);
   }
 
   @Get('schedule/teacher/:teacherProfileId')
   @RequirePermissions({ action: 'read', subject: 'Timetable' })
-  async getTeacherSchedule(@Param('teacherProfileId') teacherProfileId: string) {
+  async getTeacherSchedule(
+    @Param('teacherProfileId') teacherProfileId: string,
+  ) {
     return this.timetableService.getTeacherSchedule(teacherProfileId);
   }
 
   @Get('schedule/class-section/:classSectionId')
   @RequirePermissions({ action: 'read', subject: 'Timetable' })
-  async getClassSectionSchedule(@Param('classSectionId') classSectionId: string) {
+  async getClassSectionSchedule(
+    @Param('classSectionId') classSectionId: string,
+  ) {
     return this.timetableService.getClassSectionSchedule(classSectionId);
   }
 
@@ -140,7 +150,9 @@ export class TimetableController {
     @Body('slots') slots: UpsertTimetableSlotDto[],
   ) {
     if (!timetableId || !slots || !Array.isArray(slots)) {
-      throw new BadRequestException('timetableId and slots (array) are required');
+      throw new BadRequestException(
+        'timetableId and slots (array) are required',
+      );
     }
     return this.conflictService.checkConflicts(timetableId, slots);
   }

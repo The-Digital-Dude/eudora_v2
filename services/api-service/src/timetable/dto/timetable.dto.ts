@@ -10,7 +10,11 @@ import {
   IsArray,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { DayOfWeek, TimetableStatus, TimetableSlotStatus } from '@prisma/client';
+import {
+  DayOfWeek,
+  TimetableStatus,
+  TimetableSlotStatus,
+} from '@prisma/client';
 
 export class CreateTimetableDto {
   @IsString()

@@ -61,6 +61,7 @@ export class StudentResponsesService {
       context.question,
       input.selectedOptionId,
       input.responseText,
+      input.interactionState,
       context.marksAvailable,
     );
     const response = await this.prisma.studentResponse.upsert({
@@ -75,6 +76,7 @@ export class StudentResponsesService {
         questionId: input.questionId,
         selectedOptionId: emptyToNull(input.selectedOptionId),
         responseText: emptyToNull(input.responseText),
+        interactionState: input.interactionState ?? null,
         marksAvailable: context.marksAvailable,
         timeSpentSeconds:
           nullableNonNegativeInteger(
@@ -86,6 +88,7 @@ export class StudentResponsesService {
       update: {
         selectedOptionId: emptyToNull(input.selectedOptionId),
         responseText: emptyToNull(input.responseText),
+        interactionState: input.interactionState !== undefined ? (input.interactionState ?? null) : undefined,
         timeSpentSeconds: nullableNonNegativeInteger(
           input.timeSpentSeconds,
           'timeSpentSeconds',
@@ -242,6 +245,8 @@ export class StudentResponsesService {
         id: true,
         questionType: true,
         correctAnswer: true,
+        widgetType: true,
+        widgetConfig: true,
         options: { select: { id: true, isCorrect: true } },
       },
     });

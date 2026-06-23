@@ -52,6 +52,20 @@ export const assessmentSelect = {
           prompt: true,
           difficulty: true,
           status: true,
+          widgetType: true,
+          widgetConfig: true,
+          correctAnswer: true,
+          explanation: true,
+          hints: true,
+          options: {
+            orderBy: { optionLabel: 'asc' as const },
+            select: {
+              id: true,
+              optionLabel: true,
+              optionText: true,
+              isCorrect: true,
+            },
+          },
         },
       },
     },
@@ -67,6 +81,10 @@ export const questionSelect = {
   correctAnswer: true,
   difficulty: true,
   status: true,
+  widgetType: true,
+  widgetConfig: true,
+  explanation: true,
+  hints: true,
   createdAt: true,
   updatedAt: true,
   options: {
@@ -128,6 +146,7 @@ export const attemptSelect = {
       questionId: true,
       selectedOptionId: true,
       responseText: true,
+      interactionState: true,
       isCorrect: true,
       marksAwarded: true,
       marksAvailable: true,
@@ -143,6 +162,7 @@ export const responseSelect = {
   questionId: true,
   selectedOptionId: true,
   responseText: true,
+  interactionState: true,
   isCorrect: true,
   marksAwarded: true,
   marksAvailable: true,
@@ -408,13 +428,16 @@ export function autoMarkResponse(
   question: {
     questionType: string;
     correctAnswer: string | null;
+    widgetType?: string | null;
+    widgetConfig?: any;
     options: { id: string; isCorrect: boolean }[];
   },
   selectedOptionId: string | null | undefined,
   responseText: string | null | undefined,
+  interactionState: any,
   marksAvailable: number,
 ): { isCorrect?: boolean; marksAwarded?: number } {
-  if (question.questionType === 'mcq') {
+  if (question.widgetType === 'STANDARD_MCQ' || question.questionType === 'mcq') {
     const option = question.options.find(
       (candidate) => candidate.id === selectedOptionId,
     );
@@ -425,6 +448,65 @@ export function autoMarkResponse(
       isCorrect: option.isCorrect,
       marksAwarded: option.isCorrect ? marksAvailable : 0,
     };
+  }
+
+  if (question.widgetType === 'SLIDER_MANIPULATIVE') {
+    const target = question.correctAnswer ? parseFloat(question.correctAnswer) : null;
+    const inputVal =
+      interactionState?.finalValue !== undefined
+        ? parseFloat(interactionState.finalValue)
+        : null;
+
+    if (target !== null && inputVal !== null) {
+      const isCorrect = Math.abs(inputVal - target) <= 0.1;
+      return { isCorrect, marksAwarded: isCorrect ? marksAvailable : 0 };
+    }
+  }
+
+  if (question.widgetType === 'COORDINATE_PLOTTER' && question.widgetConfig) {
+    const config = typeof question.widgetConfig === 'string'
+      ? JSON.parse(question.widgetConfig)
+      : question.widgetConfig;
+    const correctPoints = config?.correctPoints ?? [];
+    const tolerance = config?.tolerance ?? 0.1;
+    const studentPoints = interactionState?.points ?? [];
+
+    if (correctPoints.length !== studentPoints.length) {
+      return { isCorrect: false, marksAwarded: 0 };
+    }
+
+    const allMatched = correctPoints.every((cp: any) => {
+      return studentPoints.some((sp: any) => {
+        const dx = cp.x - sp.x;
+        const dy = cp.y - sp.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        return dist <= tolerance;
+      });
+    });
+
+    return { isCorrect: allMatched, marksAwarded: allMatched ? marksAvailable : 0 };
+  }
+
+  if (question.widgetType === 'GRID_MATCHING' && question.widgetConfig) {
+    const config = typeof question.widgetConfig === 'string'
+      ? JSON.parse(question.widgetConfig)
+      : question.widgetConfig;
+    const correctPairs = config?.correctPairs ?? [];
+    const studentPairs = interactionState?.pairs ?? [];
+
+    if (correctPairs.length !== studentPairs.length) {
+      return { isCorrect: false, marksAwarded: 0 };
+    }
+
+    const allMatched = correctPairs.every((cp: any) => {
+      const cpLeft = cp[0];
+      const cpRight = cp[1];
+      return studentPairs.some((sp: any) => {
+        return (sp[0] === cpLeft && sp[1] === cpRight) || (sp[0] === cpRight && sp[1] === cpLeft);
+      });
+    });
+
+    return { isCorrect: allMatched, marksAwarded: allMatched ? marksAvailable : 0 };
   }
 
   if (

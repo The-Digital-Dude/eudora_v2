@@ -1,36 +1,47 @@
 "use client";
 
-import * as React from "react";
-import { useAppSelector } from "@/store/hooks";
 import {
-  useGetTimetablesQuery,
-  useCreateTimetableMutation,
-  usePublishTimetableMutation,
-  useGetTeacherMeQuery,
-  useGetTeacherScheduleQuery,
-  useGetStudentScheduleQuery,
-  useGetClassSectionScheduleQuery,
-  Timetable,
-  TimetableSlot,
-} from "@/features/academic/timetableApi";
-import { useGetClassSectionsQuery } from "@/features/dashboard/dashboardApi";
-import { ScheduleFilterBar } from "./components/schedule-filter-bar";
-import { WeeklyTimetableGrid } from "./components/weekly-timetable-grid";
-import { TimetableSlotDialog } from "./components/timetable-slot-dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  Award,
+  Calendar,
+  Eye,
+  GraduationCap,
+  Plus,
+  RefreshCw,
+  UploadCloud,
+  Users,
+} from "lucide-react";
+import * as React from "react";
+import { toast } from "sonner";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { Calendar, Plus, UploadCloud, Eye, Award, Users, GraduationCap, RefreshCw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Timetable,
+  TimetableSlot,
+  useCreateTimetableMutation,
+  useGetClassSectionScheduleQuery,
+  useGetStudentScheduleQuery,
+  useGetTeacherMeQuery,
+  useGetTeacherScheduleQuery,
+  useGetTimetablesQuery,
+  usePublishTimetableMutation,
+} from "@/features/academic/timetableApi";
+import { useGetClassSectionsQuery } from "@/features/dashboard/dashboardApi";
+import { useAppSelector } from "@/store/hooks";
+
+import { ScheduleFilterBar } from "./components/schedule-filter-bar";
+import { TimetableSlotDialog } from "./components/timetable-slot-dialog";
+import { WeeklyTimetableGrid } from "./components/weekly-timetable-grid";
 
 export default function TimetablePage() {
   const auth = useAppSelector((state) => state.auth);
@@ -65,7 +76,7 @@ export default function TimetablePage() {
   // Guardian linked student selection
   const linkedStudents = user?.guardianProfile?.students || [];
   const [selectedStudentId, setSelectedStudentId] = React.useState<string>(
-    linkedStudents[0]?.studentProfileId || ""
+    linkedStudents[0]?.studentProfileId || "",
   );
 
   // Dialog states for Slot CRUD
@@ -85,9 +96,12 @@ export default function TimetablePage() {
   const [publishTimetable, { isLoading: isPublishing }] = usePublishTimetableMutation();
 
   // Load teacher profile if teacher
-  const { data: teacherProfile, isLoading: loadingTeacherProfile } = useGetTeacherMeQuery(undefined, {
-    skip: !isTeacher,
-  });
+  const { data: teacherProfile, isLoading: loadingTeacherProfile } = useGetTeacherMeQuery(
+    undefined,
+    {
+      skip: !isTeacher,
+    },
+  );
 
   // Queries depending on role
   const { data: timetablesData, refetch: refetchTimetables } = useGetTimetablesQuery(
@@ -98,23 +112,20 @@ export default function TimetablePage() {
           classSectionId: selectedClassId !== "all" ? selectedClassId : undefined,
         }
       : {},
-    { skip: !isAdmin }
+    { skip: !isAdmin },
   );
 
-  const { data: teacherSchedule } = useGetTeacherScheduleQuery(
-    teacherProfile?.id || "",
-    { skip: !isTeacher || !teacherProfile?.id }
-  );
+  const { data: teacherSchedule } = useGetTeacherScheduleQuery(teacherProfile?.id || "", {
+    skip: !isTeacher || !teacherProfile?.id,
+  });
 
-  const { data: studentSchedule } = useGetStudentScheduleQuery(
-    user?.studentProfile?.id || "",
-    { skip: !isStudent }
-  );
+  const { data: studentSchedule } = useGetStudentScheduleQuery(user?.studentProfile?.id || "", {
+    skip: !isStudent,
+  });
 
-  const { data: guardianStudentSchedule } = useGetStudentScheduleQuery(
-    selectedStudentId,
-    { skip: !isGuardian || !selectedStudentId }
-  );
+  const { data: guardianStudentSchedule } = useGetStudentScheduleQuery(selectedStudentId, {
+    skip: !isGuardian || !selectedStudentId,
+  });
 
   // Class sections for the timetable creation dropdown
   const { data: classSectionsData } = useGetClassSectionsQuery();
@@ -172,7 +183,9 @@ export default function TimetablePage() {
       toast.success("Timetable published successfully.");
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.data?.message || "Failed to publish timetable. Check for booking conflicts.");
+      toast.error(
+        err?.data?.message || "Failed to publish timetable. Check for booking conflicts.",
+      );
     }
   };
 
@@ -192,12 +205,12 @@ export default function TimetablePage() {
   return (
     <div className="space-y-6">
       {/* Upper Title Area */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-2xl font-black text-neutral-900 dark:text-neutral-50 tracking-tight font-display">
+          <h1 className="font-display text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-50">
             Timetable & Scheduling
           </h1>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">
+          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
             {isAdmin
               ? "Manage recurring weekly schedules, resolve room/teacher booking conflicts."
               : "View your recurring weekly class schedule and classroom assignments."}
@@ -208,9 +221,9 @@ export default function TimetablePage() {
           <div className="flex gap-2">
             <Button
               onClick={() => setCreateTimetableOpen(true)}
-              className="rounded-xl bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 dark:hover:bg-zinc-200 text-white dark:text-neutral-900 text-xs font-semibold h-11 px-4 flex items-center gap-2 cursor-pointer"
+              className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-zinc-100 dark:text-neutral-900 dark:hover:bg-zinc-200"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="h-4 w-4" />
               Create Timetable
             </Button>
           </div>
@@ -233,16 +246,17 @@ export default function TimetablePage() {
 
           {activeTimetable ? (
             <div className="space-y-4">
-              <div className="flex justify-between items-center bg-neutral-50 dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 p-4 rounded-2xl">
+              <div className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
                 <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-neutral-500" />
+                  <Calendar className="h-5 w-5 text-neutral-500" />
                   <div>
                     <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                       {activeTimetable.name}
                     </h3>
-                    <p className="text-[10px] text-neutral-400 font-semibold uppercase">
+                    <p className="text-[10px] font-semibold text-neutral-400 uppercase">
                       Effective: {new Date(activeTimetable.effectiveFrom).toLocaleDateString()}
-                      {activeTimetable.effectiveTo && ` - ${new Date(activeTimetable.effectiveTo).toLocaleDateString()}`}
+                      {activeTimetable.effectiveTo &&
+                        ` - ${new Date(activeTimetable.effectiveTo).toLocaleDateString()}`}
                     </p>
                   </div>
                 </div>
@@ -250,7 +264,7 @@ export default function TimetablePage() {
                 <div className="flex items-center gap-3">
                   <Badge
                     variant={activeTimetable.status === "PUBLISHED" ? "default" : "secondary"}
-                    className="rounded-lg text-[10px] font-bold py-1 px-2.5 uppercase tracking-wide"
+                    className="rounded-lg px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase"
                   >
                     {activeTimetable.status}
                   </Badge>
@@ -260,7 +274,7 @@ export default function TimetablePage() {
                       size="sm"
                       onClick={handlePublish}
                       disabled={isPublishing}
-                      className="rounded-xl text-[10px] font-bold bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 text-white dark:text-neutral-900 h-9 cursor-pointer"
+                      className="h-9 cursor-pointer rounded-xl bg-neutral-900 text-[10px] font-bold text-white hover:bg-neutral-800 dark:bg-zinc-100 dark:text-neutral-900"
                     >
                       Publish Schedule
                     </Button>
@@ -276,11 +290,14 @@ export default function TimetablePage() {
               />
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center border border-dashed border-neutral-200 dark:border-zinc-800 rounded-3xl p-12 text-center bg-neutral-50/50 dark:bg-zinc-900/10">
-              <Calendar className="w-12 h-12 text-neutral-300 dark:text-zinc-800 mb-4" />
-              <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">No Timetable Selected</h3>
-              <p className="text-xs text-neutral-400 dark:text-neutral-500 max-w-sm mt-1 mb-6">
-                Please select a Class Section or click "Create Timetable" to start defining slot schedules.
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-neutral-200 bg-neutral-50/50 p-12 text-center dark:border-zinc-800 dark:bg-zinc-900/10">
+              <Calendar className="mb-4 h-12 w-12 text-neutral-300 dark:text-zinc-800" />
+              <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                No Timetable Selected
+              </h3>
+              <p className="mt-1 mb-6 max-w-sm text-xs text-neutral-400 dark:text-neutral-500">
+                Please select a Class Section or click "Create Timetable" to start defining slot
+                schedules.
               </p>
             </div>
           )}
@@ -290,13 +307,13 @@ export default function TimetablePage() {
       {/* Teacher Workspace Schedule View */}
       {isTeacher && (
         <div className="space-y-6">
-          <div className="bg-neutral-50 dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 p-4 rounded-2xl flex items-center gap-3">
-            <Users className="w-5 h-5 text-neutral-500" />
+          <div className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <Users className="h-5 w-5 text-neutral-500" />
             <div>
               <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                 Weekly Class Schedule - {teacherProfile?.fullName || user.firstName}
               </h3>
-              <p className="text-[10px] text-neutral-400 font-semibold uppercase">
+              <p className="text-[10px] font-semibold text-neutral-400 uppercase">
                 Showing all active published lectures and periods assigned to you.
               </p>
             </div>
@@ -314,13 +331,13 @@ export default function TimetablePage() {
       {/* Student Workspace Schedule View */}
       {isStudent && (
         <div className="space-y-6">
-          <div className="bg-neutral-50 dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 p-4 rounded-2xl flex items-center gap-3">
-            <GraduationCap className="w-5 h-5 text-neutral-500" />
+          <div className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <GraduationCap className="h-5 w-5 text-neutral-500" />
             <div>
               <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                 My Class Timetable
               </h3>
-              <p className="text-[10px] text-neutral-400 font-semibold uppercase">
+              <p className="text-[10px] font-semibold text-neutral-400 uppercase">
                 Schedule derived from homeroom placement and enrolled course classes.
               </p>
             </div>
@@ -339,15 +356,17 @@ export default function TimetablePage() {
       {isGuardian && (
         <div className="space-y-6">
           {linkedStudents.length > 1 ? (
-            <div className="bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-3">
-              <Label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Select Student</Label>
+            <div className="space-y-3 rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <Label className="text-xs font-bold tracking-wider text-neutral-400 uppercase">
+                Select Student
+              </Label>
               <div className="flex gap-2">
                 {linkedStudents.map((rel: any) => (
                   <Button
                     key={rel.studentProfileId}
                     variant={selectedStudentId === rel.studentProfileId ? "default" : "outline"}
                     onClick={() => setSelectedStudentId(rel.studentProfileId)}
-                    className="rounded-xl text-xs font-semibold h-10 px-4 cursor-pointer"
+                    className="h-10 cursor-pointer rounded-xl px-4 text-xs font-semibold"
                   >
                     {rel.studentProfile?.fullName || "Student"}
                   </Button>
@@ -355,9 +374,10 @@ export default function TimetablePage() {
               </div>
             </div>
           ) : (
-            <div className="bg-neutral-50 dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 p-4 rounded-2xl">
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
               <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                Weekly Class Schedule - {linkedStudents[0]?.studentProfile?.fullName || "Linked Student"}
+                Weekly Class Schedule -{" "}
+                {linkedStudents[0]?.studentProfile?.fullName || "Linked Student"}
               </p>
             </div>
           )}
@@ -386,9 +406,9 @@ export default function TimetablePage() {
 
       {/* Create Timetable Dialog */}
       <Dialog open={createTimetableOpen} onOpenChange={setCreateTimetableOpen}>
-        <DialogContent className="max-w-sm rounded-3xl p-6 bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 shadow-xl overflow-hidden">
+        <DialogContent className="max-w-sm overflow-hidden rounded-3xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-neutral-900 dark:text-neutral-50 font-display">
+            <DialogTitle className="font-display text-lg font-bold text-neutral-900 dark:text-neutral-50">
               Create New Timetable
             </DialogTitle>
             <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -398,23 +418,27 @@ export default function TimetablePage() {
 
           <form onSubmit={handleCreateTimetable} className="space-y-4 pt-2">
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Timetable Name</Label>
+              <Label className="text-xs font-semibold tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
+                Timetable Name
+              </Label>
               <Input
                 type="text"
                 placeholder="e.g. Grade 10 Section A Timetable"
                 value={timetableName}
                 onChange={(e) => setTimetableName(e.target.value)}
-                className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50"
+                className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
                 required
               />
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Class Section</Label>
+              <Label className="text-xs font-semibold tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
+                Class Section
+              </Label>
               <select
                 value={newTimetableClassId}
                 onChange={(e) => setNewTimetableClassId(e.target.value)}
-                className="w-full h-10 px-3 rounded-xl border border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50 text-neutral-800 dark:text-neutral-200 focus:outline-none"
+                className="h-10 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-xs text-neutral-800 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
                 required
               >
                 <option value="">Select Class Section</option>
@@ -427,39 +451,43 @@ export default function TimetablePage() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Effective From</Label>
+              <Label className="text-xs font-semibold tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
+                Effective From
+              </Label>
               <Input
                 type="date"
                 value={effectiveFrom}
                 onChange={(e) => setEffectiveFrom(e.target.value)}
-                className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50"
+                className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
                 required
               />
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Effective Until (Optional)</Label>
+              <Label className="text-xs font-semibold tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
+                Effective Until (Optional)
+              </Label>
               <Input
                 type="date"
                 value={effectiveTo}
                 onChange={(e) => setEffectiveTo(e.target.value)}
-                className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50"
+                className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
               />
             </div>
 
-            <DialogFooter className="pt-4 flex gap-2">
+            <DialogFooter className="flex gap-2 pt-4">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setCreateTimetableOpen(false)}
-                className="rounded-xl h-10 text-xs font-semibold cursor-pointer"
+                className="h-10 cursor-pointer rounded-xl text-xs font-semibold"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isCreatingTimetable}
-                className="rounded-xl bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 dark:hover:bg-zinc-200 text-white dark:text-neutral-900 h-10 text-xs font-semibold px-4 cursor-pointer"
+                className="h-10 cursor-pointer rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-zinc-100 dark:text-neutral-900 dark:hover:bg-zinc-200"
               >
                 Create
               </Button>

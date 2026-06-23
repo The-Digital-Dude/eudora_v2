@@ -8,6 +8,9 @@ import {
   CreateLessonDto,
   CreateCardDto,
   SubmitCardResponseDto,
+  UpdateLessonDto,
+  UpdateCardDto,
+  ReorderCardsDto,
 } from './dto/lessons.dto';
 
 @Injectable()
@@ -438,5 +441,65 @@ export class LessonsService {
         questionId: dto.questionId || null,
       },
     });
+  }
+
+  async updateLesson(id: string, dto: UpdateLessonDto) {
+    const lesson = await this.prisma.lesson.findUnique({ where: { id } });
+    if (!lesson) {
+      throw new NotFoundException('Lesson not found');
+    }
+    return this.prisma.lesson.update({
+      where: { id },
+      data: {
+        ...(dto.title !== undefined ? { title: dto.title } : {}),
+        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+        ...(dto.xpReward !== undefined ? { xpReward: dto.xpReward } : {}),
+      },
+    });
+  }
+
+  async updateCard(id: string, dto: UpdateCardDto) {
+    const card = await this.prisma.card.findUnique({ where: { id } });
+    if (!card) {
+      throw new NotFoundException('Card not found');
+    }
+    return this.prisma.card.update({
+      where: { id },
+      data: {
+        ...(dto.title !== undefined ? { title: dto.title } : {}),
+        ...(dto.cardType !== undefined ? { cardType: dto.cardType } : {}),
+        ...(dto.content !== undefined ? { content: dto.content } : {}),
+        ...(dto.questionId !== undefined ? { questionId: dto.questionId } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+      },
+    });
+  }
+
+  async reorderCards(lessonId: string, dto: ReorderCardsDto) {
+    const lesson = await this.prisma.lesson.findUnique({ where: { id: lessonId } });
+    if (!lesson) {
+      throw new NotFoundException('Lesson not found');
+    }
+    
+    return this.prisma.$transaction(async (tx) => {
+      const results = [];
+      for (const cardOrder of dto.cards) {
+        const updated = await tx.card.update({
+          where: { id: cardOrder.cardId, lessonId },
+          data: { sortOrder: cardOrder.sortOrder },
+        });
+        results.push(updated);
+      }
+      return results;
+    });
+  }
+
+  async deleteCard(id: string) {
+    const card = await this.prisma.card.findUnique({ where: { id } });
+    if (!card) {
+      throw new NotFoundException('Card not found');
+    }
+    return this.prisma.card.delete({ where: { id } });
   }
 }

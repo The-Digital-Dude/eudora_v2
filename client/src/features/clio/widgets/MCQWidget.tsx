@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
-import type { QuestionOption } from "../clioApi";
+
 import { MathRenderer } from "@/components/MathRenderer";
+
+import type { QuestionOption } from "../clioApi";
 
 interface MCQWidgetProps {
   options: QuestionOption[];
@@ -12,13 +14,7 @@ interface MCQWidgetProps {
   isCorrect?: boolean | null;
 }
 
-export function MCQWidget({
-  options,
-  selectedId,
-  onSelect,
-  locked,
-  isCorrect,
-}: MCQWidgetProps) {
+export function MCQWidget({ options, selectedId, onSelect, locked, isCorrect }: MCQWidgetProps) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {options.map((opt) => {
@@ -36,18 +32,18 @@ export function MCQWidget({
               "group relative flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all duration-200",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
               !isSelected && !locked
-                ? "border-border bg-card hover:border-violet-500/60 hover:bg-violet-500/5 hover:scale-[1.02] cursor-pointer"
+                ? "border-border bg-card cursor-pointer hover:scale-[1.02] hover:border-violet-500/60 hover:bg-violet-500/5"
                 : "",
               isSelected && !locked
-                ? "border-violet-500 bg-violet-500/10 dark:bg-violet-500/20 scale-[1.02]"
+                ? "scale-[1.02] border-violet-500 bg-violet-500/10 dark:bg-violet-500/20"
                 : "",
               correct
-                ? "border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20 scale-[1.02]"
+                ? "scale-[1.02] border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20"
                 : "",
               wrong
-                ? "border-rose-500 bg-rose-500/10 dark:bg-rose-500/20 scale-[1.02] animate-shake"
+                ? "animate-shake scale-[1.02] border-rose-500 bg-rose-500/10 dark:bg-rose-500/20"
                 : "",
-              locked && !isSelected ? "opacity-40 cursor-not-allowed" : "",
+              locked && !isSelected ? "cursor-not-allowed opacity-40" : "",
             ]
               .filter(Boolean)
               .join(" ")}
@@ -59,10 +55,10 @@ export function MCQWidget({
                 correct
                   ? "bg-emerald-500 text-white"
                   : wrong
-                  ? "bg-rose-500 text-white"
-                  : isSelected
-                  ? "bg-violet-500 text-white"
-                  : "bg-muted text-muted-foreground group-hover:bg-violet-500/20 group-hover:text-violet-600 dark:group-hover:text-violet-400",
+                    ? "bg-rose-500 text-white"
+                    : isSelected
+                      ? "bg-violet-500 text-white"
+                      : "bg-muted text-muted-foreground group-hover:bg-violet-500/20 group-hover:text-violet-600 dark:group-hover:text-violet-400",
               ]
                 .filter(Boolean)
                 .join(" ")}
@@ -70,21 +66,17 @@ export function MCQWidget({
               {opt.optionLabel}
             </span>
 
-            <span className="text-sm font-medium leading-snug text-foreground">
+            <span className="text-foreground text-sm leading-snug font-medium">
               <MathRenderer text={opt.optionText} />
             </span>
 
             {/* Result icon overlay */}
             {correct && (
-              <span className="absolute right-3 top-3 text-emerald-500 text-lg animate-bounce-once">
+              <span className="animate-bounce-once absolute top-3 right-3 text-lg text-emerald-500">
                 ✓
               </span>
             )}
-            {wrong && (
-              <span className="absolute right-3 top-3 text-rose-500 text-lg">
-                ✗
-              </span>
-            )}
+            {wrong && <span className="absolute top-3 right-3 text-lg text-rose-500">✗</span>}
           </button>
         );
       })}

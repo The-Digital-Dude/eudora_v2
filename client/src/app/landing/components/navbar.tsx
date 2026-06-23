@@ -1,11 +1,12 @@
 "use client";
 
+import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Sparkles } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { logout } from "@/features/auth/authSlice";
+
 import { useLogoutMutation } from "@/features/auth/authApi";
+import { logout } from "@/features/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 export default function Navbar() {
   const router = useRouter();
@@ -27,27 +28,35 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-neutral-200/50 bg-white/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between select-none">
-        
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 select-none">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="p-1.5 bg-neutral-900 text-white rounded-lg transition-transform group-hover:scale-105 shadow-sm">
-            <Sparkles className="w-4 h-4" />
+        <Link href="/" className="group flex items-center gap-2">
+          <div className="rounded-lg bg-neutral-900 p-1.5 text-white shadow-sm transition-transform group-hover:scale-105">
+            <Sparkles className="h-4 w-4" />
           </div>
-          <span className="text-base font-bold tracking-tight text-neutral-900 font-display">
+          <span className="font-display text-base font-bold tracking-tight text-neutral-900">
             Eudora
           </span>
         </Link>
 
         {/* Mid Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8">
-          <a href="#features" className="text-xs font-semibold text-neutral-500 hover:text-neutral-950 transition-colors">
+        <nav className="hidden items-center gap-8 md:flex">
+          <a
+            href="#features"
+            className="text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-950"
+          >
             Features
           </a>
-          <a href="#stats" className="text-xs font-semibold text-neutral-500 hover:text-neutral-950 transition-colors">
+          <a
+            href="#stats"
+            className="text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-950"
+          >
             Analytics
           </a>
-          <a href="/docs" className="text-xs font-semibold text-neutral-500 hover:text-neutral-950 transition-colors">
+          <a
+            href="/docs"
+            className="text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-950"
+          >
             Documentation
           </a>
         </nav>
@@ -61,43 +70,61 @@ export default function Navbar() {
               </span>
               <Link
                 href={
-                  user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" ||
-                  (Array.isArray(user?.roles) && user?.roles.some((r: any) =>
-                    r === "ADMIN" || r === "SUPER_ADMIN" || r.name === "ADMIN" || r.name === "SUPER_ADMIN" || r.role?.name === "ADMIN" || r.role?.name === "SUPER_ADMIN"
-                  ))
+                  user?.role === "ADMIN" ||
+                  user?.role === "SUPER_ADMIN" ||
+                  (Array.isArray(user?.roles) &&
+                    user?.roles.some(
+                      (r: any) =>
+                        r === "ADMIN" ||
+                        r === "SUPER_ADMIN" ||
+                        r.name === "ADMIN" ||
+                        r.name === "SUPER_ADMIN" ||
+                        r.role?.name === "ADMIN" ||
+                        r.role?.name === "SUPER_ADMIN",
+                    ))
                     ? "/dashboard"
                     : "/learn"
                 }
-                className="text-xs font-semibold text-neutral-500 hover:text-neutral-950 transition-colors"
+                className="text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-950"
               >
-                {user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" ||
-                (Array.isArray(user?.roles) && user?.roles.some((r: any) =>
-                  r === "ADMIN" || r === "SUPER_ADMIN" || r.name === "ADMIN" || r.name === "SUPER_ADMIN" || r.role?.name === "ADMIN" || r.role?.name === "SUPER_ADMIN"
-                ))
+                {user?.role === "ADMIN" ||
+                user?.role === "SUPER_ADMIN" ||
+                (Array.isArray(user?.roles) &&
+                  user?.roles.some(
+                    (r: any) =>
+                      r === "ADMIN" ||
+                      r === "SUPER_ADMIN" ||
+                      r.name === "ADMIN" ||
+                      r.name === "SUPER_ADMIN" ||
+                      r.role?.name === "ADMIN" ||
+                      r.role?.name === "SUPER_ADMIN",
+                  ))
                   ? "Dashboard"
                   : "Active Learning"}
               </Link>
-              <button 
+              <button
                 onClick={handleLogout}
-                className="h-9 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold rounded-xl text-xs px-4 active:scale-97 shadow-sm transition-all cursor-pointer"
+                className="h-9 cursor-pointer rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white shadow-sm transition-all hover:bg-neutral-800 active:scale-97"
               >
                 Sign Out
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-4">
-              <Link href="/login" className="text-xs font-semibold text-neutral-500 hover:text-neutral-950 transition-colors">
+              <Link
+                href="/login"
+                className="text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-950"
+              >
                 Sign In
               </Link>
               <Link href="/register">
-                <button className="h-9 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold rounded-xl text-xs px-4 active:scale-97 shadow-sm transition-all cursor-pointer">
+                <button className="h-9 cursor-pointer rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white shadow-sm transition-all hover:bg-neutral-800 active:scale-97">
                   Get Started
                 </button>
               </Link>
             </div>
           )}
         </div>
-
       </div>
     </header>
   );

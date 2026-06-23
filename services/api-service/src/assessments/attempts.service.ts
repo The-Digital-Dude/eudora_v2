@@ -294,11 +294,14 @@ export class AttemptsService {
         id: true,
         selectedOptionId: true,
         responseText: true,
+        interactionState: true,
         marksAvailable: true,
         question: {
           select: {
             questionType: true,
             correctAnswer: true,
+            widgetType: true,
+            widgetConfig: true,
             options: { select: { id: true, isCorrect: true } },
           },
         },
@@ -310,6 +313,7 @@ export class AttemptsService {
           response.question,
           response.selectedOptionId,
           response.responseText,
+          response.interactionState,
           response.marksAvailable,
         );
         if (marked.isCorrect === undefined) {

@@ -81,3 +81,47 @@ export class SubmitCardResponseDto {
   @IsOptional()
   responseText?: string;
 }
+
+export class UpdateLessonDto {
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsInt()
+  @IsOptional()
+  sortOrder?: number;
+
+  @IsInt()
+  @IsOptional()
+  xpReward?: number;
+}
+
+export class UpdateCardDto {
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @IsString()
+  @IsOptional()
+  cardType?: string;
+
+  @IsString()
+  @IsOptional()
+  content?: string;
+
+  @IsString()
+  @IsOptional()
+  questionId?: string | null;
+
+  @IsInt()
+  @IsOptional()
+  sortOrder?: number;
+}
+
+export class ReorderCardsDto {
+  cards: { cardId: string; sortOrder: number }[];
+}

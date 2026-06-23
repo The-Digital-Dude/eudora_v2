@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
 import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
+import React, { useEffect } from "react";
 
 interface ClioMascotProps {
   state:
@@ -57,7 +57,7 @@ export function RiveClioMascot({ state, size = 120 }: ClioMascotProps) {
       style={{ width: size, height: size }}
       className="relative flex items-center justify-center overflow-hidden"
     >
-      <RiveComponent className="w-full h-full object-contain" />
+      <RiveComponent className="h-full w-full object-contain" />
     </div>
   );
 }

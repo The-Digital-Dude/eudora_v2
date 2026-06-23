@@ -99,9 +99,7 @@ export const clioApi = authApi.injectEndpoints({
     // List all available lessons (optionally filtered by conceptId)
     getLessons: builder.query<LessonSummary[], { conceptId?: string } | void>({
       query: (params: any) => {
-        const conceptQuery = params?.conceptId
-          ? `?conceptId=${params.conceptId}`
-          : "";
+        const conceptQuery = params?.conceptId ? `?conceptId=${params.conceptId}` : "";
         return `/lessons${conceptQuery}`;
       },
       providesTags: ["Lessons"],
@@ -116,18 +114,13 @@ export const clioApi = authApi.injectEndpoints({
     } as any),
 
     // Submit a card response; backend evaluates correctness + awards XP
-    submitCard: builder.mutation<
-      SubmitCardResult,
-      { cardId: string; body: SubmitCardPayload }
-    >({
+    submitCard: builder.mutation<SubmitCardResult, { cardId: string; body: SubmitCardPayload }>({
       query: ({ cardId, body }: any) => ({
         url: `/lessons/cards/${cardId}/submit`,
         method: "POST",
         body,
       }),
-      invalidatesTags: (_result: any, _err: any, { cardId }: any) => [
-        "LessonFlow" as any,
-      ],
+      invalidatesTags: (_result: any, _err: any, { cardId }: any) => ["LessonFlow" as any],
     } as any),
 
     // Fetch curriculum concepts for dropdown selection
@@ -154,6 +147,45 @@ export const clioApi = authApi.injectEndpoints({
       }),
       invalidatesTags: ["LessonFlow" as any],
     } as any),
+
+    // Update lesson metadata
+    updateLesson: builder.mutation<LessonSummary, { id: string; body: Partial<CreateLessonPayload> }>({
+      query: ({ id, body }: any) => ({
+        url: `/lessons/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Lessons" as any, "LessonFlow" as any],
+    } as any),
+
+    // Update card metadata & content
+    updateCard: builder.mutation<any, { cardId: string; body: any }>({
+      query: ({ cardId, body }: any) => ({
+        url: `/lessons/cards/${cardId}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["LessonFlow" as any],
+    } as any),
+
+    // Reorder cards in a lesson
+    reorderCards: builder.mutation<any, { id: string; body: { cards: { cardId: string; sortOrder: number }[] } }>({
+      query: ({ id, body }: any) => ({
+        url: `/lessons/${id}/cards/reorder`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["LessonFlow" as any],
+    } as any),
+
+    // Delete card from a lesson
+    deleteCard: builder.mutation<any, string>({
+      query: (cardId: string) => ({
+        url: `/lessons/cards/${cardId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["LessonFlow" as any],
+    } as any),
   }),
 });
 
@@ -164,4 +196,8 @@ export const {
   useGetConceptsQuery,
   useCreateLessonMutation,
   useCreateCardMutation,
+  useUpdateLessonMutation,
+  useUpdateCardMutation,
+  useReorderCardsMutation,
+  useDeleteCardMutation,
 } = clioApi;

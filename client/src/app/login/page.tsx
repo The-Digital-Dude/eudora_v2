@@ -1,23 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useGoogleLogin } from "@react-oauth/google";
+import { ArrowRight,Eye, EyeOff, Lock, Mail, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { 
-  Sparkles, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  ArrowRight
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect,useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { useGoogleLogin } from "@react-oauth/google";
-import { useLoginMutation, useGoogleLoginMutation } from "@/features/auth/authApi";
+import { useGoogleLoginMutation,useLoginMutation } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
@@ -38,19 +30,33 @@ export default function LoginPage() {
   const checkRedirect = (u: any) => {
     if (!u) return;
 
-    const hasAdminRole = u.role === "ADMIN" || u.role === "SUPER_ADMIN" ||
-      (Array.isArray(u.roles) && u.roles.some((r: any) =>
-        r === "ADMIN" || r === "SUPER_ADMIN" || r.name === "ADMIN" || r.name === "SUPER_ADMIN" || r.role?.name === "ADMIN" || r.role?.name === "SUPER_ADMIN"
-      ));
+    const hasAdminRole =
+      u.role === "ADMIN" ||
+      u.role === "SUPER_ADMIN" ||
+      (Array.isArray(u.roles) &&
+        u.roles.some(
+          (r: any) =>
+            r === "ADMIN" ||
+            r === "SUPER_ADMIN" ||
+            r.name === "ADMIN" ||
+            r.name === "SUPER_ADMIN" ||
+            r.role?.name === "ADMIN" ||
+            r.role?.name === "SUPER_ADMIN",
+        ));
 
-    const isGuardian = u.role === "GUARDIAN" ||
-      (Array.isArray(u.roles) && u.roles.some((r: any) =>
-        r === "GUARDIAN" || r.name === "GUARDIAN" || r.role?.name === "GUARDIAN"
-      ));
+    const isGuardian =
+      u.role === "GUARDIAN" ||
+      (Array.isArray(u.roles) &&
+        u.roles.some(
+          (r: any) => r === "GUARDIAN" || r.name === "GUARDIAN" || r.role?.name === "GUARDIAN",
+        ));
 
     if (isGuardian) {
       const hasProfile = !!u.guardianProfile;
-      const hasStudents = hasProfile && Array.isArray(u.guardianProfile.students) && u.guardianProfile.students.length > 0;
+      const hasStudents =
+        hasProfile &&
+        Array.isArray(u.guardianProfile.students) &&
+        u.guardianProfile.students.length > 0;
       if (!hasProfile || !hasStudents) {
         router.push("/complete-profile");
       } else {
@@ -91,7 +97,7 @@ export default function LoginPage() {
       try {
         const loggedInUser = await googleLoginMutation({
           token: tokenResponse.access_token,
-          role: loginAs === "guardian" ? "GUARDIAN" : "USER"
+          role: loginAs === "guardian" ? "GUARDIAN" : "USER",
         }).unwrap();
         dispatch(login({ user: loggedInUser, token: null }));
         checkRedirect(loggedInUser);
@@ -102,48 +108,45 @@ export default function LoginPage() {
     },
     onError: () => {
       setError("Google authentication failed. Please try again.");
-    }
+    },
   });
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 py-12 dot-grid relative select-none font-sans bg-neutral-50 dark:bg-zinc-950 text-neutral-900 dark:text-zinc-50">
-      
+    <div className="dot-grid relative flex min-h-screen flex-col items-center justify-center bg-neutral-50 px-4 py-12 font-sans text-neutral-900 select-none dark:bg-zinc-950 dark:text-zinc-50">
       {/* Centered card container with slide-up fade-in animation */}
-      <div className="w-full max-w-[440px] space-y-8 animate-fade-in-up">
-        
+      <div className="animate-fade-in-up w-full max-w-[440px] space-y-8">
         {/* Brand Logo and Name */}
         <div className="flex flex-col items-center space-y-3">
-          <div className="p-2.5 bg-neutral-900 text-white rounded-xl shadow-sm">
-            <Sparkles className="w-5 h-5" />
+          <div className="rounded-xl bg-neutral-900 p-2.5 text-white shadow-sm">
+            <Sparkles className="h-5 w-5" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50 font-display">
+          <span className="font-display text-xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50">
             Eudora
           </span>
         </div>
 
         {/* Clean Login Card */}
-        <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-zinc-800 rounded-[24px] p-8 md:p-10 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)]">
-          
+        <div className="rounded-[24px] border border-neutral-200/80 bg-white p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10 dark:border-zinc-800 dark:bg-zinc-900">
           {/* Header */}
-          <div className="text-center space-y-2 mb-8">
-            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50 font-display">
+          <div className="mb-8 space-y-2 text-center">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50">
               Sign in to your account
             </h1>
-            <p className="text-xs text-neutral-400 dark:text-zinc-500 max-w-[280px] mx-auto leading-normal">
+            <p className="mx-auto max-w-[280px] text-xs leading-normal text-neutral-400 dark:text-zinc-500">
               Enter your email and password below to access your classrooms and learning paths.
             </p>
           </div>
 
           {/* Role Switcher */}
-          <div className="flex bg-neutral-100 dark:bg-zinc-950 p-1 rounded-xl gap-1 mb-6">
+          <div className="mb-6 flex gap-1 rounded-xl bg-neutral-100 p-1 dark:bg-zinc-950">
             {(["student", "guardian", "admin"] as const).map((role) => (
               <button
                 key={role}
                 type="button"
                 onClick={() => setLoginAs(role)}
-                className={`flex-1 text-center py-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer select-none ${
+                className={`flex-1 cursor-pointer rounded-lg py-1.5 text-center text-xs font-semibold capitalize transition-all select-none ${
                   loginAs === role
-                    ? "bg-white dark:bg-zinc-800 text-neutral-900 dark:text-zinc-50 shadow-sm"
+                    ? "bg-white text-neutral-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
                     : "text-neutral-500 hover:text-neutral-900 dark:hover:text-zinc-200"
                 }`}
               >
@@ -153,15 +156,15 @@ export default function LoginPage() {
           </div>
 
           {/* Social Logins */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="mb-6 grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => handleGoogleLogin()}
               disabled={googleLoading || loading}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-neutral-50 dark:hover:bg-zinc-800 hover:border-neutral-300 dark:hover:border-zinc-700 text-neutral-700 dark:text-zinc-300 transition-all text-xs font-semibold cursor-pointer active:scale-98 shadow-sm disabled:opacity-50"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-xs font-semibold text-neutral-700 shadow-sm transition-all hover:border-neutral-300 hover:bg-neutral-50 active:scale-98 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
             >
               {/* Google SVG */}
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -183,48 +186,53 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-neutral-50 dark:hover:bg-zinc-800 hover:border-neutral-300 dark:hover:border-zinc-700 text-neutral-700 dark:text-zinc-300 transition-all text-xs font-semibold cursor-pointer active:scale-98 shadow-sm"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-xs font-semibold text-neutral-700 shadow-sm transition-all hover:border-neutral-300 hover:bg-neutral-50 active:scale-98 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
             >
               {/* GitHub SVG */}
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.164 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.164 22 16.418 22 12c0-5.523-4.477-10-10-10z"
+                />
               </svg>
               GitHub
             </button>
           </div>
 
           {/* Separator */}
-          <div className="relative flex items-center justify-center mb-6">
+          <div className="relative mb-6 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-neutral-100 dark:border-zinc-800"></div>
             </div>
-            <span className="relative px-3 text-[10px] text-neutral-400 dark:text-zinc-500 uppercase tracking-widest bg-white dark:bg-zinc-900 font-semibold">
+            <span className="relative bg-white px-3 text-[10px] font-semibold tracking-widest text-neutral-400 uppercase dark:bg-zinc-900 dark:text-zinc-500">
               Or continue with
             </span>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 text-xs font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 p-3 rounded-xl">
+            <div className="mb-4 rounded-xl border border-rose-100 bg-rose-50 p-3 text-xs font-semibold text-rose-500 dark:border-rose-900/30 dark:bg-rose-950/20">
               {error}
             </div>
           )}
 
           {/* Form */}
           <form className="space-y-5" onSubmit={handleLogin}>
-            
             {/* Email Address */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Email Address</Label>
+              <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-zinc-500">
+                Email Address
+              </Label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
-                  <Mail className="w-4 h-4" />
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-neutral-400">
+                  <Mail className="h-4 w-4" />
                 </span>
                 <Input
                   id="email"
                   type="email"
                   placeholder="name@company.com"
-                  className="pl-10 h-11 border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50 rounded-xl focus:border-neutral-900 dark:focus:border-zinc-300 placeholder:text-neutral-300 dark:placeholder:text-zinc-700 cupertino-input"
+                  className="cupertino-input h-11 rounded-xl border-neutral-200 bg-neutral-50/50 pl-10 text-neutral-900 placeholder:text-neutral-300 focus:border-neutral-900 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-50 dark:placeholder:text-zinc-700 dark:focus:border-zinc-300"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -235,21 +243,23 @@ export default function LoginPage() {
 
             {/* Password */}
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Password</Label>
-                <a className="text-[11px] text-neutral-500 dark:text-zinc-400 hover:text-neutral-900 dark:hover:text-zinc-200 font-semibold cursor-pointer transition-colors hover:underline">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-zinc-500">
+                  Password
+                </Label>
+                <a className="cursor-pointer text-[11px] font-semibold text-neutral-500 transition-colors hover:text-neutral-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200">
                   Forgot?
                 </a>
               </div>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
-                  <Lock className="w-4 h-4" />
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-neutral-400">
+                  <Lock className="h-4 w-4" />
                 </span>
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10 pr-10 h-11 border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50 rounded-xl focus:border-neutral-900 dark:focus:border-zinc-300 placeholder:text-neutral-300 dark:placeholder:text-zinc-700 cupertino-input"
+                  className="cupertino-input h-11 rounded-xl border-neutral-200 bg-neutral-50/50 pr-10 pl-10 text-neutral-900 placeholder:text-neutral-300 focus:border-neutral-900 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-50 dark:placeholder:text-zinc-700 dark:focus:border-zinc-300"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -258,19 +268,19 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 hover:text-neutral-600 transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 transition-colors hover:text-neutral-600"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
             {/* Remember Me Option */}
             <div className="flex items-center">
-              <label className="flex items-center gap-2.5 cursor-pointer group text-xs text-neutral-500 dark:text-zinc-400 hover:text-neutral-800 dark:hover:text-zinc-200 select-none">
+              <label className="group flex cursor-pointer items-center gap-2.5 text-xs text-neutral-500 select-none hover:text-neutral-800 dark:text-zinc-400 dark:hover:text-zinc-200">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-50 focus:ring-neutral-900/20 transition-all cursor-pointer"
+                  className="h-4 w-4 cursor-pointer rounded border-neutral-200 bg-white text-neutral-900 transition-all focus:ring-neutral-900/20 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
                 />
                 Keep me signed in
               </label>
@@ -279,38 +289,53 @@ export default function LoginPage() {
             {/* Primary Action Button */}
             <Button
               type="submit"
-              className="w-full h-11 bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 dark:hover:bg-zinc-200 text-white dark:text-neutral-900 font-semibold rounded-xl transition-all shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-75 disabled:pointer-events-none disabled:active:scale-100"
+              className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-neutral-900 font-semibold text-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all hover:bg-neutral-800 active:scale-98 disabled:pointer-events-none disabled:opacity-75 disabled:active:scale-100 dark:bg-zinc-100 dark:text-neutral-900 dark:hover:bg-zinc-200"
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <svg
+                    className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Connecting...
                 </>
               ) : (
                 <>
                   Continue
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
           </form>
-
         </div>
 
         {/* Footer Registration Link */}
         <div className="text-center text-xs text-neutral-400 dark:text-zinc-500">
           Don’t have an account?{" "}
-          <Link href="/register" className="text-neutral-900 dark:text-zinc-50 hover:underline font-semibold transition-colors">
+          <Link
+            href="/register"
+            className="font-semibold text-neutral-900 transition-colors hover:underline dark:text-zinc-50"
+          >
             Create an account
           </Link>
         </div>
-
       </div>
-
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Sparkles } from "lucide-react";
+import Link from "next/link";
 
 export default function Footer() {
   const footerLinks = [
@@ -8,47 +8,46 @@ export default function Footer() {
       links: [
         { label: "Features", href: "#features" },
         { label: "Metrics", href: "#stats" },
-        { label: "Pricing", href: "/pricing" }
-      ]
+        { label: "Pricing", href: "/pricing" },
+      ],
     },
     {
       title: "Resources",
       links: [
         { label: "Documentation", href: "/docs" },
         { label: "Status Page", href: "/status" },
-        { label: "Changelog", href: "/changelog" }
-      ]
+        { label: "Changelog", href: "/changelog" },
+      ],
     },
     {
       title: "Company",
       links: [
         { label: "About", href: "/about" },
         { label: "Blog", href: "/blog" },
-        { label: "Security", href: "/security" }
-      ]
+        { label: "Security", href: "/security" },
+      ],
     },
     {
       title: "Legal",
       links: [
         { label: "Privacy", href: "/privacy" },
         { label: "Terms", href: "/terms" },
-        { label: "SLA Policy", href: "/sla" }
-      ]
-    }
+        { label: "SLA Policy", href: "/sla" },
+      ],
+    },
   ];
 
   return (
-    <footer className="py-16 bg-white border-t border-neutral-200/40 select-none text-xs text-neutral-400">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-12">
-          
+    <footer className="border-t border-neutral-200/40 bg-white py-16 text-xs text-neutral-400 select-none">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-5 md:gap-12">
           {/* Logo Column */}
           <div className="col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2">
-              <div className="p-1.5 bg-neutral-900 text-white rounded-lg shadow-sm">
-                <Sparkles className="w-4 h-4" />
+              <div className="rounded-lg bg-neutral-900 p-1.5 text-white shadow-sm">
+                <Sparkles className="h-4 w-4" />
               </div>
-              <span className="text-sm font-bold tracking-tight text-neutral-900 font-display">
+              <span className="font-display text-sm font-bold tracking-tight text-neutral-900">
                 Eudora
               </span>
             </Link>
@@ -60,13 +59,13 @@ export default function Footer() {
           {/* Links Columns */}
           {footerLinks.map((group, idx) => (
             <div key={idx} className="space-y-3">
-              <h4 className="font-bold text-neutral-900 uppercase tracking-widest text-[10px]">
+              <h4 className="text-[10px] font-bold tracking-widest text-neutral-900 uppercase">
                 {group.title}
               </h4>
               <ul className="space-y-2">
                 {group.links.map((link, linkIdx) => (
                   <li key={linkIdx}>
-                    <Link href={link.href} className="hover:text-neutral-900 transition-colors">
+                    <Link href={link.href} className="transition-colors hover:text-neutral-900">
                       {link.label}
                     </Link>
                   </li>
@@ -74,19 +73,17 @@ export default function Footer() {
               </ul>
             </div>
           ))}
-
         </div>
 
         {/* Bottom row */}
-        <div className="border-t border-neutral-100 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-neutral-400">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-neutral-100 pt-8 text-neutral-400 sm:flex-row">
           <p>© {new Date().getFullYear()} Eudora Technologies. All rights reserved.</p>
           <div className="flex gap-4">
-            <span className="hover:text-neutral-900 cursor-pointer">Twitter</span>
-            <span className="hover:text-neutral-900 cursor-pointer">GitHub</span>
-            <span className="hover:text-neutral-900 cursor-pointer">Discord</span>
+            <span className="cursor-pointer hover:text-neutral-900">Twitter</span>
+            <span className="cursor-pointer hover:text-neutral-900">GitHub</span>
+            <span className="cursor-pointer hover:text-neutral-900">Discord</span>
           </div>
         </div>
-
       </div>
     </footer>
   );

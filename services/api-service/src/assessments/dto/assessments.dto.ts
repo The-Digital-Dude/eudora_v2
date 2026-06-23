@@ -11,6 +11,7 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { WidgetType } from '../../lessons/dto/lessons.dto';
 
 export class ListAssessmentsQueryDto {
   @IsOptional()
@@ -249,6 +250,13 @@ export class CreateQuestionDto {
   status?: string;
 
   @IsOptional()
+  @IsEnum(WidgetType)
+  widgetType?: WidgetType;
+
+  @IsOptional()
+  widgetConfig?: any;
+
+  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => QuestionOptionDto)
   options?: QuestionOptionDto[];
@@ -282,6 +290,13 @@ export class UpdateQuestionDto {
   @IsOptional()
   @IsEnum(['draft', 'active', 'archived'])
   status?: string;
+
+  @IsOptional()
+  @IsEnum(WidgetType)
+  widgetType?: WidgetType;
+
+  @IsOptional()
+  widgetConfig?: any;
 
   @IsOptional()
   @ValidateNested({ each: true })
@@ -521,6 +536,9 @@ export class SaveStudentResponseDto {
   @IsOptional()
   @IsString()
   responseText?: string | null;
+
+  @IsOptional()
+  interactionState?: any;
 
   @IsOptional()
   @IsInt()

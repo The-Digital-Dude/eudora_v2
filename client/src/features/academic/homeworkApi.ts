@@ -123,9 +123,7 @@ export const homeworkApi = authApi.injectEndpoints({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: "Homework" },
-      ],
+      invalidatesTags: (result, error, { id }) => [{ type: "Homework" }],
     }),
 
     submitHomework: builder.mutation<HomeworkSubmission, SubmitHomeworkPayload>({
@@ -134,9 +132,7 @@ export const homeworkApi = authApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { homeworkId }) => [
-        { type: "Homework" },
-      ],
+      invalidatesTags: (result, error, { homeworkId }) => [{ type: "Homework" }],
     }),
 
     gradeHomeworkSubmission: builder.mutation<HomeworkSubmission, GradeSubmissionPayload>({
@@ -145,9 +141,7 @@ export const homeworkApi = authApi.injectEndpoints({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: (result, error, { submissionId }) => [
-        { type: "Homework" },
-      ],
+      invalidatesTags: (result, error, { submissionId }) => [{ type: "Homework" }],
     }),
 
     getCourseClassById: builder.query<any, string>({

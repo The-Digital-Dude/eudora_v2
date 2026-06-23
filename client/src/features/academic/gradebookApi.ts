@@ -76,7 +76,10 @@ export interface BulkUpsertGradesPayload {
 export const gradebookApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
-    getGradebookForClass: builder.query<ClassGradebookResponse, { courseClassId: string; termId?: string }>({
+    getGradebookForClass: builder.query<
+      ClassGradebookResponse,
+      { courseClassId: string; termId?: string }
+    >({
       query: ({ courseClassId, termId }) => ({
         url: `/gradebook/course-class/${courseClassId}`,
         params: termId ? { termId } : {},
@@ -84,7 +87,10 @@ export const gradebookApi = authApi.injectEndpoints({
       providesTags: ["Gradebook"],
     }),
 
-    getGradebookForClassSection: builder.query<ClassGradebookResponse, { classSectionId: string; termId?: string }>({
+    getGradebookForClassSection: builder.query<
+      ClassGradebookResponse,
+      { classSectionId: string; termId?: string }
+    >({
       query: ({ classSectionId, termId }) => ({
         url: `/gradebook/class-section/${classSectionId}`,
         params: termId ? { termId } : {},
@@ -92,7 +98,10 @@ export const gradebookApi = authApi.injectEndpoints({
       providesTags: ["Gradebook"],
     }),
 
-    getStudentGrades: builder.query<GradeBookEntry[], { studentProfileId: string; termId?: string }>({
+    getStudentGrades: builder.query<
+      GradeBookEntry[],
+      { studentProfileId: string; termId?: string }
+    >({
       query: ({ studentProfileId, termId }) => ({
         url: `/gradebook/student/${studentProfileId}`,
         params: termId ? { termId } : {},
@@ -100,7 +109,10 @@ export const gradebookApi = authApi.injectEndpoints({
       providesTags: ["Gradebook"],
     }),
 
-    getStudentSummary: builder.query<StudentGradeSummary, { studentProfileId: string; termId?: string }>({
+    getStudentSummary: builder.query<
+      StudentGradeSummary,
+      { studentProfileId: string; termId?: string }
+    >({
       query: ({ studentProfileId, termId }) => ({
         url: `/gradebook/student/${studentProfileId}/summary`,
         params: termId ? { termId } : {},
@@ -108,7 +120,10 @@ export const gradebookApi = authApi.injectEndpoints({
       providesTags: ["Gradebook"],
     }),
 
-    getClassSummary: builder.query<ClassGradebookSummaryItem[], { courseClassId: string; termId?: string }>({
+    getClassSummary: builder.query<
+      ClassGradebookSummaryItem[],
+      { courseClassId: string; termId?: string }
+    >({
       query: ({ courseClassId, termId }) => ({
         url: `/gradebook/course-class/${courseClassId}/summary`,
         params: termId ? { termId } : {},

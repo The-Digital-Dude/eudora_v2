@@ -1,6 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import type { SubmitCardResult } from "./clioApi";
+
 import type { RootState } from "@/store/store";
+
+import type { SubmitCardResult } from "./clioApi";
 
 // ─── State Shape ──────────────────────────────────────────────────────────────
 
@@ -76,10 +78,7 @@ const lessonSlice = createSlice({
     },
 
     /** Store the live widget interaction state for a given card */
-    setWidgetState(
-      state,
-      action: PayloadAction<{ cardId: string; state: any }>
-    ) {
+    setWidgetState(state, action: PayloadAction<{ cardId: string; state: any }>) {
       state.widgetState[action.payload.cardId] = action.payload.state;
     },
 
@@ -114,8 +113,7 @@ export const {
 
 // ─── Selectors ────────────────────────────────────────────────────────────────
 
-export const selectCurrentCardIndex = (s: RootState) =>
-  s.lesson.currentCardIndex;
+export const selectCurrentCardIndex = (s: RootState) => s.lesson.currentCardIndex;
 export const selectShowExplanation = (s: RootState) => s.lesson.showExplanation;
 export const selectLastResult = (s: RootState) => s.lesson.lastSubmitResult;
 export const selectWidgetState = (cardId: string) => (s: RootState) =>

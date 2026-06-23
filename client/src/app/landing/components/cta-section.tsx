@@ -1,42 +1,39 @@
-import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 export default function CtaSection() {
   return (
-    <section className="py-24 bg-neutral-50 border-t border-neutral-200/40 select-none">
-      <div className="max-w-4xl mx-auto px-6">
-        
+    <section className="border-t border-neutral-200/40 bg-neutral-50 py-24 select-none">
+      <div className="mx-auto max-w-4xl px-6">
         {/* CTA Card */}
-        <div className="bg-white border border-neutral-200/80 rounded-[24px] p-8 md:p-16 text-center shadow-[0_24px_50px_rgba(0,0,0,0.02)] flex flex-col items-center space-y-6">
-          
+        <div className="flex flex-col items-center space-y-6 rounded-[24px] border border-neutral-200/80 bg-white p-8 text-center shadow-[0_24px_50px_rgba(0,0,0,0.02)] md:p-16">
           {/* Badge */}
-          <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-neutral-200 bg-neutral-50/50 text-[9px] font-bold text-neutral-500 uppercase tracking-widest">
-            <Sparkles className="w-3 h-3 text-neutral-800" />
+          <div className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50/50 px-3 py-1 text-[9px] font-bold tracking-widest text-neutral-500 uppercase">
+            <Sparkles className="h-3 w-3 text-neutral-800" />
             Get Started
           </div>
 
           {/* Heading */}
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 font-display">
+          <h2 className="font-display text-2xl font-extrabold tracking-tight text-neutral-900 sm:text-3xl">
             Transform your classroom today.
           </h2>
 
           {/* Description */}
-          <p className="text-xs sm:text-sm text-neutral-400 max-w-lg leading-relaxed">
-            Get started with the AI-powered education operating system. Save hours of lesson prep and grading, and improve student learning outcomes.
+          <p className="max-w-lg text-xs leading-relaxed text-neutral-400 sm:text-sm">
+            Get started with the AI-powered education operating system. Save hours of lesson prep
+            and grading, and improve student learning outcomes.
           </p>
 
           {/* Actions */}
           <div className="pt-2">
             <Link href="/login">
-              <button className="h-11 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold rounded-xl text-sm px-6 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-neutral-900/10 active:scale-97">
+              <button className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 text-sm font-semibold text-white shadow-md shadow-neutral-900/10 transition-all hover:bg-neutral-800 active:scale-97">
                 Deploy Your App
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="h-4 w-4" />
               </button>
             </Link>
           </div>
-
         </div>
-
       </div>
     </section>
   );

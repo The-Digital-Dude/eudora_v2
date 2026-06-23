@@ -73,7 +73,7 @@ export const timetableApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
     }),
 

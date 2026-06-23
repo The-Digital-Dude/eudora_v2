@@ -27,7 +27,6 @@ export class DashboardController {
     const targetDate = isNaN(date.getTime()) ? new Date() : date;
 
     const rolesList: string[] = [];
-    if (user.role) rolesList.push(user.role);
     if (Array.isArray(user.roles)) {
       user.roles.forEach((r: any) => {
         if (typeof r === 'string') rolesList.push(r);

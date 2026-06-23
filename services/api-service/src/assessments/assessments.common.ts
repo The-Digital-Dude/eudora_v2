@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WidgetConfig, InteractionState } from './types/widget-config';
 
@@ -460,7 +461,7 @@ export function autoMarkResponse(
       : null;
     const inputVal =
       interactionState?.finalValue !== undefined
-        ? parseFloat(interactionState.finalValue)
+        ? interactionState.finalValue
         : null;
 
     if (target !== null && inputVal !== null) {
@@ -591,8 +592,8 @@ export async function audit(
       targetType: targetType ?? null,
       targetId: targetId ?? null,
       metadata: metadata
-        ? (JSON.parse(JSON.stringify(metadata)) as Record<string, unknown>)
-        : null,
+        ? (JSON.parse(JSON.stringify(metadata)) as Prisma.InputJsonValue)
+        : undefined,
     },
   });
 }

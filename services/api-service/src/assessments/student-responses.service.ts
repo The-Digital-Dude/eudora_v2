@@ -58,7 +58,7 @@ export class StudentResponsesService {
       input.selectedOptionId,
     );
     const autoMark = autoMarkResponse(
-      context.question,
+      context.question as any,
       input.selectedOptionId,
       input.responseText,
       input.interactionState,

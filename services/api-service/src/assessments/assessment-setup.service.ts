@@ -260,7 +260,7 @@ export class AssessmentSetupService {
       if (input.sections) {
         await tx.assessmentSection.deleteMany({ where: { assessmentId: id } });
       }
-      const data: Prisma.AssessmentUpdateInput = {};
+      const data: Prisma.AssessmentUncheckedUpdateInput = {};
       if (input.assessmentTypeId !== undefined) {
         data.assessmentTypeId = requireText(
           input.assessmentTypeId,

@@ -5,9 +5,13 @@ import { StorageProvider } from './storage.provider';
 export class S3StorageService implements StorageProvider {
   private readonly logger = new Logger(S3StorageService.name);
 
-  async uploadFile(file: any): Promise<{ key: string; url: string; bucket: string }> {
-    this.logger.log(`[S3 Storage Service Mock] Uploading file: ${file.originalname}`);
-    
+  async uploadFile(
+    file: any,
+  ): Promise<{ key: string; url: string; bucket: string }> {
+    this.logger.log(
+      `[S3 Storage Service Mock] Uploading file: ${file.originalname}`,
+    );
+
     // In production, when integrating AWS SDK S3 client:
     // 1. Install @aws-sdk/client-s3 (v3)
     // 2. Initialize S3 client:
@@ -39,8 +43,10 @@ export class S3StorageService implements StorageProvider {
   }
 
   async deleteFile(key: string, bucket?: string): Promise<void> {
-    this.logger.log(`[S3 Storage Service Mock] Deleting file: ${key} from bucket ${bucket}`);
-    
+    this.logger.log(
+      `[S3 Storage Service Mock] Deleting file: ${key} from bucket ${bucket}`,
+    );
+
     // In production:
     // await s3.send(new DeleteObjectCommand({
     //   Bucket: bucket || this.configService.get('AWS_S3_BUCKET'),

@@ -177,10 +177,18 @@ export class QuestionsService {
                 ),
               }
             : {}),
-          ...(input.widgetType !== undefined ? { widgetType: input.widgetType } : {}),
-          ...(input.widgetConfig !== undefined ? { widgetConfig: input.widgetConfig } : {}),
-          ...((input as any).explanation !== undefined ? { explanation: emptyToNull((input as any).explanation) } : {}),
-          ...((input as any).hints !== undefined ? { hints: (input as any).hints } : {}),
+          ...(input.widgetType !== undefined
+            ? { widgetType: input.widgetType }
+            : {}),
+          ...(input.widgetConfig !== undefined
+            ? { widgetConfig: input.widgetConfig }
+            : {}),
+          ...((input as any).explanation !== undefined
+            ? { explanation: emptyToNull((input as any).explanation) }
+            : {}),
+          ...((input as any).hints !== undefined
+            ? { hints: (input as any).hints }
+            : {}),
           ...(options ? { options: { create: options } } : {}),
         } as any,
         select: questionSelect,

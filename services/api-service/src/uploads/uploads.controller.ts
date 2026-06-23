@@ -14,6 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { UploadsService } from './uploads.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('uploads')
@@ -28,7 +29,10 @@ export class UploadsController {
       },
     }),
   )
-  async uploadFile(@UploadedFile() file: any, @CurrentUser() user: any) {
+  async uploadFile(
+    @UploadedFile() file: any,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.uploadsService.uploadFile(file, user.id);
   }
 
@@ -41,7 +45,10 @@ export class UploadsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async deleteFile(@Param('id') id: string, @CurrentUser() user: any) {
+  async deleteFile(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.uploadsService.deleteFile(id, user.id, user.roles || []);
   }
 }

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GuardianAccessService } from '../family/guardian-access.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -15,20 +20,27 @@ export class MessagingService {
   async getThreads(userId: string) {
     const threads = await this.prisma.messageThread.findMany({
       where: {
-        OR: [
-          { guardianUserId: userId },
-          { teacherUserId: userId },
-        ],
+        OR: [{ guardianUserId: userId }, { teacherUserId: userId }],
       },
       include: {
         studentProfile: {
           select: { id: true, fullName: true },
         },
         guardian: {
-          select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
         },
         teacher: {
-          select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
         },
         messages: {
           orderBy: { createdAt: 'desc' },
@@ -52,7 +64,7 @@ export class MessagingService {
           ...thread,
           unreadCount,
         };
-      })
+      }),
     );
 
     return threadsWithUnread;
@@ -66,16 +78,31 @@ export class MessagingService {
           select: { id: true, fullName: true },
         },
         guardian: {
-          select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
         },
         teacher: {
-          select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
         },
         messages: {
           orderBy: { createdAt: 'asc' },
           include: {
             sender: {
-              select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+              },
             },
           },
         },
@@ -100,12 +127,17 @@ export class MessagingService {
     });
 
     if (!guardianProfile) {
-      throw new ForbiddenException('Only guardians can start messaging threads.');
+      throw new ForbiddenException(
+        'Only guardians can start messaging threads.',
+      );
     }
 
     // 2. Verify that guardian is linked to student and has academic access
     if (dto.studentProfileId) {
-      await this.guardianAccessService.assertCanAccessStudent(userId, dto.studentProfileId);
+      await this.guardianAccessService.assertCanAccessStudent(
+        userId,
+        dto.studentProfileId,
+      );
     }
 
     // 3. Verify that teacher exists
@@ -141,13 +173,15 @@ export class MessagingService {
     });
 
     // 5. Send notification to teacher
-    await this.notificationsService.create({
-      userId: dto.teacherUserId,
-      type: 'INFO',
-      title: `New Message Thread: ${dto.subject}`,
-      body: `You have received a new message thread from guardian ${guardianProfile.fullName}.`,
-      metadata: { threadId: thread.id },
-    }).catch(err => console.error('Failed to create notification', err));
+    await this.notificationsService
+      .create({
+        userId: dto.teacherUserId,
+        type: 'INFO',
+        title: `New Message Thread: ${dto.subject}`,
+        body: `You have received a new message thread from guardian ${guardianProfile.fullName}.`,
+        metadata: { threadId: thread.id },
+      })
+      .catch((err) => console.error('Failed to create notification', err));
 
     return this.getThreadById(userId, thread.id);
   }
@@ -176,7 +210,12 @@ export class MessagingService {
         },
         include: {
           sender: {
-            select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
           },
         },
       });
@@ -190,16 +229,22 @@ export class MessagingService {
     });
 
     // 2. Notify recipient
-    const recipientUserId = thread.guardianUserId === userId ? thread.teacherUserId : thread.guardianUserId;
-    const senderName = thread.guardianUserId === userId ? 'Guardian' : 'Teacher';
+    const recipientUserId =
+      thread.guardianUserId === userId
+        ? thread.teacherUserId
+        : thread.guardianUserId;
+    const senderName =
+      thread.guardianUserId === userId ? 'Guardian' : 'Teacher';
 
-    await this.notificationsService.create({
-      userId: recipientUserId,
-      type: 'INFO',
-      title: `New Message in thread: ${thread.subject}`,
-      body: `${senderName} sent you a new message.`,
-      metadata: { threadId, messageId: message.id },
-    }).catch(err => console.error('Failed to create notification', err));
+    await this.notificationsService
+      .create({
+        userId: recipientUserId,
+        type: 'INFO',
+        title: `New Message in thread: ${thread.subject}`,
+        body: `${senderName} sent you a new message.`,
+        metadata: { threadId, messageId: message.id },
+      })
+      .catch((err) => console.error('Failed to create notification', err));
 
     return message;
   }
@@ -235,10 +280,7 @@ export class MessagingService {
     const count = await this.prisma.message.count({
       where: {
         thread: {
-          OR: [
-            { guardianUserId: userId },
-            { teacherUserId: userId },
-          ],
+          OR: [{ guardianUserId: userId }, { teacherUserId: userId }],
         },
         senderUserId: { not: userId },
         readAt: null,

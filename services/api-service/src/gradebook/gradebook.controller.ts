@@ -11,8 +11,13 @@ import {
 } from '@nestjs/common';
 import { GradebookService } from './gradebook.service';
 import { GradeCalculationService } from './grade-calculation.service';
-import { CreateManualGradeDto, UpdateGradeEntryDto, BulkUpsertGradesDto } from './dto/gradebook.dto';
+import {
+  CreateManualGradeDto,
+  UpdateGradeEntryDto,
+  BulkUpsertGradesDto,
+} from './dto/gradebook.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -30,7 +35,10 @@ export class GradebookController {
 
   @Post('manual-entry')
   @RequirePermissions({ action: 'create', subject: 'Gradebook' })
-  createManualGrade(@Body() dto: CreateManualGradeDto, @CurrentUser() user: any) {
+  createManualGrade(
+    @Body() dto: CreateManualGradeDto,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.gradebookService.createManualGrade(dto, user.id);
   }
 
@@ -39,7 +47,7 @@ export class GradebookController {
   updateGradeEntry(
     @Param('id') id: string,
     @Body() dto: UpdateGradeEntryDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.gradebookService.updateGradeEntry(id, dto, user.id);
   }
@@ -52,7 +60,10 @@ export class GradebookController {
 
   @Post('entries/bulk')
   @RequirePermissions({ action: 'create', subject: 'Gradebook' })
-  bulkUpsertGrades(@Body() dto: BulkUpsertGradesDto, @CurrentUser() user: any) {
+  bulkUpsertGrades(
+    @Body() dto: BulkUpsertGradesDto,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.gradebookService.bulkUpsertGrades(dto, user.id);
   }
 
@@ -71,7 +82,10 @@ export class GradebookController {
     @Param('classSectionId') classSectionId: string,
     @Query('termId') termId?: string,
   ) {
-    return this.gradebookService.getGradebookForClassSection(classSectionId, termId);
+    return this.gradebookService.getGradebookForClassSection(
+      classSectionId,
+      termId,
+    );
   }
 
   @Get('student/:studentProfileId')
@@ -89,7 +103,10 @@ export class GradebookController {
     @Param('studentProfileId') studentProfileId: string,
     @Query('termId') termId?: string,
   ) {
-    return this.gradeCalculationService.calculateStudentAverages(studentProfileId, termId);
+    return this.gradeCalculationService.calculateStudentAverages(
+      studentProfileId,
+      termId,
+    );
   }
 
   @Get('course-class/:courseClassId/summary')
@@ -98,7 +115,10 @@ export class GradebookController {
     @Param('courseClassId') courseClassId: string,
     @Query('termId') termId?: string,
   ) {
-    return this.gradeCalculationService.getClassGradebookSummary(courseClassId, termId);
+    return this.gradeCalculationService.getClassGradebookSummary(
+      courseClassId,
+      termId,
+    );
   }
 
   @Post('sync')

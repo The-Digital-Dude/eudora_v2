@@ -56,9 +56,18 @@ describe('Education OS Administrative Modules (e2e)', () => {
       })
       .expect(200);
 
-    const cookies = loginRes.headers['set-cookie'] || [];
-    const accessTokenCookie = cookies.find((cookie: string) => cookie.startsWith('access_token='));
-    superAdminToken = accessTokenCookie ? accessTokenCookie.split(';')[0].split('=')[1] : '';
+    const rawCookies = loginRes.headers['set-cookie'];
+    const cookies = Array.isArray(rawCookies)
+      ? rawCookies
+      : rawCookies
+        ? [rawCookies]
+        : [];
+    const accessTokenCookie = cookies.find((cookie: string) =>
+      cookie.startsWith('access_token='),
+    );
+    superAdminToken = accessTokenCookie
+      ? accessTokenCookie.split(';')[0].split('=')[1]
+      : '';
     expect(superAdminToken).toBeDefined();
 
     // Create a regular user for RBAC verification
@@ -73,9 +82,18 @@ describe('Education OS Administrative Modules (e2e)', () => {
       })
       .expect(201);
 
-    const regCookies = registerRes.headers['set-cookie'] || [];
-    const regAccessTokenCookie = regCookies.find((cookie: string) => cookie.startsWith('access_token='));
-    regularUserToken = regAccessTokenCookie ? regAccessTokenCookie.split(';')[0].split('=')[1] : '';
+    const rawRegCookies = registerRes.headers['set-cookie'];
+    const regCookies = Array.isArray(rawRegCookies)
+      ? rawRegCookies
+      : rawRegCookies
+        ? [rawRegCookies]
+        : [];
+    const regAccessTokenCookie = regCookies.find((cookie: string) =>
+      cookie.startsWith('access_token='),
+    );
+    regularUserToken = regAccessTokenCookie
+      ? regAccessTokenCookie.split(';')[0].split('=')[1]
+      : '';
     const dbRegularUser = await prisma.user.findUnique({
       where: { email: uniqueEmail },
     });
@@ -171,9 +189,10 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      expect(res.body.data).toHaveProperty('id');
-      expect(res.body.data.name).toBe('Greenwood Campus');
-      campusId = res.body.data.id;
+      const body = res.body as { data: { id: string; name: string } };
+      expect(body.data).toHaveProperty('id');
+      expect(body.data.name).toBe('Greenwood Campus');
+      campusId = body.data.id;
     });
 
     it('should allow all authenticated users to read campuses', async () => {
@@ -182,8 +201,9 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .set('Authorization', `Bearer ${regularUserToken}`)
         .expect(200);
 
-      expect(res.body).toHaveProperty('data');
-      expect(res.body.data.data.length).toBeGreaterThan(0);
+      const body = res.body as { data: { data: unknown[] } };
+      expect(body).toHaveProperty('data');
+      expect(body.data.data.length).toBeGreaterThan(0);
     });
 
     it('should deny a regular user from creating a program', async () => {
@@ -209,9 +229,10 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      expect(res.body.data).toHaveProperty('id');
-      expect(res.body.data.code).toBe('SE-BSC');
-      programId = res.body.data.id;
+      const body = res.body as { data: { id: string; code: string } };
+      expect(body.data).toHaveProperty('id');
+      expect(body.data.code).toBe('SE-BSC');
+      programId = body.data.id;
     });
   });
 
@@ -227,7 +248,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      academicYearId = res.body.data.id;
+      const body = res.body as { data: { id: string } };
+      academicYearId = body.data.id;
       expect(academicYearId).toBeDefined();
     });
 
@@ -256,7 +278,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      termId = res.body.data.id;
+      const body = res.body as { data: { id: string } };
+      termId = body.data.id;
       expect(termId).toBeDefined();
     });
 
@@ -274,7 +297,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      classSectionId = res.body.data.id;
+      const body = res.body as { data: { id: string } };
+      classSectionId = body.data.id;
       expect(classSectionId).toBeDefined();
     });
 
@@ -289,7 +313,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      courseClassId = res.body.data.id;
+      const body = res.body as { data: { id: string } };
+      courseClassId = body.data.id;
       expect(courseClassId).toBeDefined();
     });
   });
@@ -298,7 +323,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
     beforeAll(async () => {
       // Create a user account to link to the student profile
       const uniqueStudentEmail = `student-${Date.now()}@example.com`;
-      const registerRes = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post('/api/auth/register')
         .send({
           email: uniqueStudentEmail,
@@ -326,7 +351,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      studentProfileId = res.body.data.id;
+      const body = res.body as { data: { id: string } };
+      studentProfileId = body.data.id;
       expect(studentProfileId).toBeDefined();
     });
 
@@ -342,8 +368,11 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      expect(res.body.data.studentProfileId).toBe(studentProfileId);
-      expect(res.body.data.classSectionId).toBe(classSectionId);
+      const body = res.body as {
+        data: { studentProfileId: string; classSectionId: string };
+      };
+      expect(body.data.studentProfileId).toBe(studentProfileId);
+      expect(body.data.classSectionId).toBe(classSectionId);
     });
 
     it('should allow enrolling a student in a course class', async () => {
@@ -357,8 +386,11 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      expect(res.body.data.studentProfileId).toBe(studentProfileId);
-      expect(res.body.data.courseClassId).toBe(courseClassId);
+      const body = res.body as {
+        data: { studentProfileId: string; courseClassId: string };
+      };
+      expect(body.data.studentProfileId).toBe(studentProfileId);
+      expect(body.data.courseClassId).toBe(courseClassId);
     });
   });
 
@@ -366,7 +398,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
     beforeAll(async () => {
       // Create a user account to link to the guardian profile
       const uniqueGuardianEmail = `guardian-${Date.now()}@example.com`;
-      const registerRes = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post('/api/auth/register')
         .send({
           email: uniqueGuardianEmail,
@@ -394,7 +426,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      guardianProfileId = res.body.data.id;
+      const body = res.body as { data: { id: string } };
+      guardianProfileId = body.data.id;
       expect(guardianProfileId).toBeDefined();
     });
 
@@ -412,8 +445,11 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      expect(res.body.data.relationshipType).toBe('FATHER');
-      expect(res.body.data.guardianProfileId).toBe(guardianProfileId);
+      const body = res.body as {
+        data: { relationshipType: string; guardianProfileId: string };
+      };
+      expect(body.data.relationshipType).toBe('FATHER');
+      expect(body.data.guardianProfileId).toBe(guardianProfileId);
     });
 
     it('should allow creating a family household', async () => {
@@ -425,7 +461,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         })
         .expect(201);
 
-      familyId = res.body.data.id;
+      const body = res.body as { data: { id: string } };
+      familyId = body.data.id;
       expect(familyId).toBeDefined();
     });
 
@@ -454,10 +491,16 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .set('Authorization', `Bearer ${superAdminToken}`)
         .expect(200);
 
-      expect(res.body.data.students.length).toBe(1);
-      expect(res.body.data.guardians.length).toBe(1);
-      expect(res.body.data.students[0].studentProfileId).toBe(studentProfileId);
-      expect(res.body.data.guardians[0].guardianProfileId).toBe(guardianProfileId);
+      const body = res.body as {
+        data: {
+          students: { studentProfileId: string }[];
+          guardians: { guardianProfileId: string }[];
+        };
+      };
+      expect(body.data.students.length).toBe(1);
+      expect(body.data.guardians.length).toBe(1);
+      expect(body.data.students[0].studentProfileId).toBe(studentProfileId);
+      expect(body.data.guardians[0].guardianProfileId).toBe(guardianProfileId);
     });
   });
 });

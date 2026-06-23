@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { LocalStorageService } from './local-storage.service';
@@ -18,7 +22,9 @@ export class UploadsService {
     private readonly localStorageService: LocalStorageService,
     private readonly s3StorageService: S3StorageService,
   ) {
-    this.providerType = this.configService.get<string>('STORAGE_PROVIDER', 'LOCAL').toUpperCase();
+    this.providerType = this.configService
+      .get<string>('STORAGE_PROVIDER', 'LOCAL')
+      .toUpperCase();
     if (this.providerType === 'S3') {
       this.storageProvider = this.s3StorageService;
     } else {
@@ -71,7 +77,10 @@ export class UploadsService {
 
     // Delete from storage provider
     if (fileUpload.provider === 'S3') {
-      await this.s3StorageService.deleteFile(fileUpload.key, fileUpload.bucket || undefined);
+      await this.s3StorageService.deleteFile(
+        fileUpload.key,
+        fileUpload.bucket || undefined,
+      );
     } else {
       await this.localStorageService.deleteFile(fileUpload.key);
     }

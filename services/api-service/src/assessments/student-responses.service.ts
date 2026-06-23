@@ -88,7 +88,10 @@ export class StudentResponsesService {
       update: {
         selectedOptionId: emptyToNull(input.selectedOptionId),
         responseText: emptyToNull(input.responseText),
-        interactionState: input.interactionState !== undefined ? (input.interactionState ?? null) : undefined,
+        interactionState:
+          input.interactionState !== undefined
+            ? (input.interactionState ?? null)
+            : undefined,
         timeSpentSeconds: nullableNonNegativeInteger(
           input.timeSpentSeconds,
           'timeSpentSeconds',

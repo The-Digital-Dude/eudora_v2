@@ -89,7 +89,10 @@ export class HomeworkService {
   // ─── Submissions Operations ──────────────────────────────────────────────────
 
   async submitHomework(studentProfileId: string, dto: SubmitHomeworkDto) {
-    if (!dto.content && (!dto.attachmentUrls || dto.attachmentUrls.length === 0)) {
+    if (
+      !dto.content &&
+      (!dto.attachmentUrls || dto.attachmentUrls.length === 0)
+    ) {
       throw new BadRequestException(
         'Submission must contain either text content or at least one attachment file',
       );
@@ -246,7 +249,9 @@ export class HomeworkService {
       throw new NotFoundException('Student profile not found');
     }
 
-    const enrolledCourseClassIds = student.enrollments.map((e) => e.courseClassId);
+    const enrolledCourseClassIds = student.enrollments.map(
+      (e) => e.courseClassId,
+    );
     if (enrolledCourseClassIds.length === 0) {
       return [];
     }

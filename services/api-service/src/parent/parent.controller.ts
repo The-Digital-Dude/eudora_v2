@@ -3,6 +3,8 @@ import { ParentService } from './parent.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { GuardianScopeGuard } from '../auth/guards/guardian-scope.guard';
 
 @Controller('parent')
@@ -12,7 +14,7 @@ export class ParentController {
   constructor(private readonly parentService: ParentService) {}
 
   @Get('children')
-  async getChildren(@CurrentUser() user: any) {
+  async getChildren(@CurrentUser() user: CurrentUserDto) {
     return this.parentService.getChildren(user.id);
   }
 
@@ -24,7 +26,9 @@ export class ParentController {
 
   @Get('children/:studentProfileId/attendance')
   @UseGuards(GuardianScopeGuard)
-  async getChildAttendance(@Param('studentProfileId') studentProfileId: string) {
+  async getChildAttendance(
+    @Param('studentProfileId') studentProfileId: string,
+  ) {
     return this.parentService.getChildAttendance(studentProfileId);
   }
 
@@ -41,12 +45,12 @@ export class ParentController {
   }
 
   @Get('billing/invoices')
-  async getInvoices(@CurrentUser() user: any) {
+  async getInvoices(@CurrentUser() user: CurrentUserDto) {
     return this.parentService.getInvoices(user.id);
   }
 
   @Get('billing/payments')
-  async getPayments(@CurrentUser() user: any) {
+  async getPayments(@CurrentUser() user: CurrentUserDto) {
     return this.parentService.getPayments(user.id);
   }
 }

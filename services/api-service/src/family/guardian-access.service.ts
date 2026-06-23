@@ -24,10 +24,15 @@ export class GuardianAccessService {
     return guardianProfile.students.map((rel) => rel.studentProfileId);
   }
 
-  async assertCanAccessStudent(userId: string, studentProfileId: string): Promise<void> {
+  async assertCanAccessStudent(
+    userId: string,
+    studentProfileId: string,
+  ): Promise<void> {
     const linkedIds = await this.getLinkedStudentIds(userId);
     if (!linkedIds.includes(studentProfileId)) {
-      throw new ForbiddenException('You do not have permission to access this student\'s academic records.');
+      throw new ForbiddenException(
+        "You do not have permission to access this student's academic records.",
+      );
     }
   }
 

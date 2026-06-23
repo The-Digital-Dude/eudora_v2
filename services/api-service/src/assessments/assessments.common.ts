@@ -1,5 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { WidgetConfig, InteractionState } from './types/widget-config';
 
 export const lookupSelect = {
   id: true,
@@ -429,15 +430,18 @@ export function autoMarkResponse(
     questionType: string;
     correctAnswer: string | null;
     widgetType?: string | null;
-    widgetConfig?: any;
+    widgetConfig?: WidgetConfig;
     options: { id: string; isCorrect: boolean }[];
   },
   selectedOptionId: string | null | undefined,
   responseText: string | null | undefined,
-  interactionState: any,
-  marksAvailable: number,
+  interactionState?: InteractionState,
+  marksAvailable: number = 0,
 ): { isCorrect?: boolean; marksAwarded?: number } {
-  if (question.widgetType === 'STANDARD_MCQ' || question.questionType === 'mcq') {
+  if (
+    question.widgetType === 'STANDARD_MCQ' ||
+    question.questionType === 'mcq'
+  ) {
     const option = question.options.find(
       (candidate) => candidate.id === selectedOptionId,
     );
@@ -451,7 +455,9 @@ export function autoMarkResponse(
   }
 
   if (question.widgetType === 'SLIDER_MANIPULATIVE') {
-    const target = question.correctAnswer ? parseFloat(question.correctAnswer) : null;
+    const target = question.correctAnswer
+      ? parseFloat(question.correctAnswer)
+      : null;
     const inputVal =
       interactionState?.finalValue !== undefined
         ? parseFloat(interactionState.finalValue)
@@ -464,19 +470,24 @@ export function autoMarkResponse(
   }
 
   if (question.widgetType === 'COORDINATE_PLOTTER' && question.widgetConfig) {
-    const config = typeof question.widgetConfig === 'string'
-      ? JSON.parse(question.widgetConfig)
-      : question.widgetConfig;
-    const correctPoints = config?.correctPoints ?? [];
-    const tolerance = config?.tolerance ?? 0.1;
+    const config =
+      typeof question.widgetConfig === 'string'
+        ? (JSON.parse(question.widgetConfig) as WidgetConfig)
+        : (question.widgetConfig as WidgetConfig);
+    const coordConfig = config as typeof config & {
+      correctPoints?: Array<{ x: number; y: number }>;
+      tolerance?: number;
+    };
+    const correctPoints = coordConfig?.correctPoints ?? [];
+    const tolerance = coordConfig?.tolerance ?? 0.1;
     const studentPoints = interactionState?.points ?? [];
 
     if (correctPoints.length !== studentPoints.length) {
       return { isCorrect: false, marksAwarded: 0 };
     }
 
-    const allMatched = correctPoints.every((cp: any) => {
-      return studentPoints.some((sp: any) => {
+    const allMatched = correctPoints.every((cp) => {
+      return studentPoints.some((sp) => {
         const dx = cp.x - sp.x;
         const dy = cp.y - sp.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -484,29 +495,42 @@ export function autoMarkResponse(
       });
     });
 
-    return { isCorrect: allMatched, marksAwarded: allMatched ? marksAvailable : 0 };
+    return {
+      isCorrect: allMatched,
+      marksAwarded: allMatched ? marksAvailable : 0,
+    };
   }
 
   if (question.widgetType === 'GRID_MATCHING' && question.widgetConfig) {
-    const config = typeof question.widgetConfig === 'string'
-      ? JSON.parse(question.widgetConfig)
-      : question.widgetConfig;
-    const correctPairs = config?.correctPairs ?? [];
+    const config =
+      typeof question.widgetConfig === 'string'
+        ? (JSON.parse(question.widgetConfig) as WidgetConfig)
+        : (question.widgetConfig as WidgetConfig);
+    const gridConfig = config as typeof config & {
+      correctPairs?: Array<[string, string]>;
+    };
+    const correctPairs = gridConfig?.correctPairs ?? [];
     const studentPairs = interactionState?.pairs ?? [];
 
     if (correctPairs.length !== studentPairs.length) {
       return { isCorrect: false, marksAwarded: 0 };
     }
 
-    const allMatched = correctPairs.every((cp: any) => {
+    const allMatched = correctPairs.every((cp) => {
       const cpLeft = cp[0];
       const cpRight = cp[1];
-      return studentPairs.some((sp: any) => {
-        return (sp[0] === cpLeft && sp[1] === cpRight) || (sp[0] === cpRight && sp[1] === cpLeft);
+      return studentPairs.some((sp) => {
+        return (
+          (sp[0] === cpLeft && sp[1] === cpRight) ||
+          (sp[0] === cpRight && sp[1] === cpLeft)
+        );
       });
     });
 
-    return { isCorrect: allMatched, marksAwarded: allMatched ? marksAvailable : 0 };
+    return {
+      isCorrect: allMatched,
+      marksAwarded: allMatched ? marksAvailable : 0,
+    };
   }
 
   if (
@@ -548,7 +572,7 @@ export function requireRecord<T>(
   return record;
 }
 
-function IsInteger(value: any): boolean {
+function IsInteger(value: unknown): boolean {
   return typeof value === 'number' && Number.isInteger(value);
 }
 
@@ -558,7 +582,7 @@ export async function audit(
   event: string,
   targetType?: string | null,
   targetId?: string | null,
-  metadata?: any,
+  metadata?: Record<string, unknown> | null,
 ): Promise<void> {
   await prisma.auditLog.create({
     data: {
@@ -566,7 +590,9 @@ export async function audit(
       event,
       targetType: targetType ?? null,
       targetId: targetId ?? null,
-      metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null,
+      metadata: metadata
+        ? (JSON.parse(JSON.stringify(metadata)) as Record<string, unknown>)
+        : null,
     },
   });
 }

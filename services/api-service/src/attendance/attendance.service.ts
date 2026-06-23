@@ -381,7 +381,8 @@ export class AttendanceService {
     });
 
     const attended = breakdown.PRESENT + breakdown.LATE + breakdown.EXCUSED;
-    const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 100;
+    const attendanceRate =
+      total > 0 ? Math.round((attended / total) * 100) : 100;
 
     return {
       total,
@@ -420,7 +421,8 @@ export class AttendanceService {
     });
 
     const attended = breakdown.PRESENT + breakdown.LATE + breakdown.EXCUSED;
-    const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 100;
+    const attendanceRate =
+      total > 0 ? Math.round((attended / total) * 100) : 100;
 
     return {
       month: monthStr,
@@ -466,7 +468,11 @@ export class AttendanceService {
       if (r.status === 'LATE') counts.late++;
     });
 
-    const trends: Array<{ date: string; absentCount: number; lateCount: number }> = [];
+    const trends: Array<{
+      date: string;
+      absentCount: number;
+      lateCount: number;
+    }> = [];
     grouped.forEach((counts, date) => {
       trends.push({
         date,

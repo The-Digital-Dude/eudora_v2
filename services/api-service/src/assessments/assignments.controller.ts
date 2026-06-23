@@ -13,6 +13,7 @@ import { CsrfGuard } from '../auth/guards/csrf.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import {
   CreateAssignmentDto,
   ListAssignmentsQueryDto,
@@ -44,7 +45,7 @@ export class AssignmentsController {
   @RequirePermissions({ action: 'assign', subject: 'Assessment' })
   async createAssignment(
     @Body() body: CreateAssignmentDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.assignmentsService.createAssignment(body, user.id);
   }
@@ -54,20 +55,26 @@ export class AssignmentsController {
   async updateAssignment(
     @Param('id') id: string,
     @Body() body: UpdateAssignmentDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.assignmentsService.updateAssignment(id, body, user.id);
   }
 
   @Delete('assignments/:id')
   @RequirePermissions({ action: 'assign', subject: 'Assessment' })
-  async cancelAssignment(@Param('id') id: string, @CurrentUser() user: any) {
+  async cancelAssignment(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.assignmentsService.cancelAssignment(id, user.id);
   }
 
   @Post('assignments/:id/remind')
   @RequirePermissions({ action: 'assign', subject: 'Assessment' })
-  async remindAssignment(@Param('id') id: string, @CurrentUser() user: any) {
+  async remindAssignment(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.assignmentsService.remindAssignment(id, user.id);
   }
 

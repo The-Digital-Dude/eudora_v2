@@ -37,7 +37,8 @@ export class ParentService {
 
     for (const rel of guardianProfile.students) {
       const child = rel.studentProfile;
-      const classSection = child.placements.find((p) => p.isActive)?.classSection || null;
+      const classSection =
+        child.placements.find((p) => p.isActive)?.classSection || null;
       const courseClassIds = child.enrollments.map((e) => e.courseClassId);
 
       // 1. Calculate Attendance Rate
@@ -50,7 +51,10 @@ export class ParentService {
           status: { in: ['PRESENT', 'LATE'] },
         },
       });
-      const attendanceRate = totalAttendance > 0 ? Math.round((presentAttendance / totalAttendance) * 100) : 100;
+      const attendanceRate =
+        totalAttendance > 0
+          ? Math.round((presentAttendance / totalAttendance) * 100)
+          : 100;
 
       // 2. Calculate Pending Homework Count
       let pendingHomeworkCount = 0;
@@ -63,7 +67,9 @@ export class ParentService {
             },
           },
         });
-        pendingHomeworkCount = homework.filter((hw) => hw.submissions.length === 0).length;
+        pendingHomeworkCount = homework.filter(
+          (hw) => hw.submissions.length === 0,
+        ).length;
       }
 
       // 3. Find Latest Grade
@@ -80,16 +86,24 @@ export class ParentService {
         fullName: child.fullName,
         birthDate: child.birthDate,
         gender: child.gender,
-        classSection: classSection ? { id: classSection.id, name: classSection.name, code: classSection.code } : null,
+        classSection: classSection
+          ? {
+              id: classSection.id,
+              name: classSection.name,
+              code: classSection.code,
+            }
+          : null,
         attendanceRate,
         pendingHomeworkCount,
-        latestGrade: latestGrade ? {
-          title: latestGrade.title,
-          percentage: latestGrade.percentage,
-          pointsEarned: latestGrade.pointsEarned,
-          pointsPossible: latestGrade.pointsPossible,
-          assessedAt: latestGrade.assessedAt,
-        } : null,
+        latestGrade: latestGrade
+          ? {
+              title: latestGrade.title,
+              percentage: latestGrade.percentage,
+              pointsEarned: latestGrade.pointsEarned,
+              pointsPossible: latestGrade.pointsPossible,
+              assessedAt: latestGrade.assessedAt,
+            }
+          : null,
       });
     }
 
@@ -175,7 +189,12 @@ export class ParentService {
         courseClass: { select: { name: true } },
         submissions: {
           where: { studentProfileId },
-          select: { id: true, status: true, submissionDate: true, score: true, feedback: true },
+          select: {
+            id: true,
+            status: true,
+            submissionDate: true,
+            feedback: true,
+          },
         },
       },
       orderBy: { dueDate: 'desc' },
@@ -186,7 +205,7 @@ export class ParentService {
       title: hw.title,
       description: hw.description,
       dueDate: hw.dueDate,
-      pointsPossible: hw.pointsPossible,
+      pointsPossible: hw.maxPoints,
       courseName: hw.courseClass.name,
       submission: hw.submissions[0] || null,
     }));
@@ -209,7 +228,8 @@ export class ParentService {
   }
 
   async getInvoices(userId: string) {
-    const familyId = await this.guardianAccessService.getGuardianFamilyId(userId);
+    const familyId =
+      await this.guardianAccessService.getGuardianFamilyId(userId);
     if (!familyId) {
       return [];
     }
@@ -223,7 +243,8 @@ export class ParentService {
   }
 
   async getPayments(userId: string) {
-    const familyId = await this.guardianAccessService.getGuardianFamilyId(userId);
+    const familyId =
+      await this.guardianAccessService.getGuardianFamilyId(userId);
     if (!familyId) {
       return [];
     }

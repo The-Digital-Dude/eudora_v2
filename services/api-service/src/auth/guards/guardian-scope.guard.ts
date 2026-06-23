@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { GuardianAccessService } from '../../family/guardian-access.service';
 
 @Injectable()
@@ -19,14 +24,22 @@ export class GuardianScopeGuard implements CanActivate {
     }
 
     // Resolve studentProfileId from params, query, or body
-    const studentProfileId = params.studentProfileId || query.studentProfileId || body.studentProfileId;
+    const studentProfileId =
+      params.studentProfileId ||
+      query.studentProfileId ||
+      body.studentProfileId;
 
     if (!studentProfileId) {
-      throw new ForbiddenException('studentProfileId is required to access this resource.');
+      throw new ForbiddenException(
+        'studentProfileId is required to access this resource.',
+      );
     }
 
     // Validate the link
-    await this.guardianAccessService.assertCanAccessStudent(user.id, studentProfileId);
+    await this.guardianAccessService.assertCanAccessStudent(
+      user.id,
+      studentProfileId,
+    );
 
     return true;
   }

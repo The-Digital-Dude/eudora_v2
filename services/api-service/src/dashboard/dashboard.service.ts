@@ -307,19 +307,20 @@ export class DashboardService {
     });
 
     // 4. upcomingAssessments
-    const upcomingAssessmentsRaw = await this.prisma.assessmentAssignment.findMany({
-      where: {
-        studentProfileId: studentProfile.id,
-        dueAt: { gte: new Date() },
-        status: 'assigned',
-      },
-      include: {
-        assessment: true,
-      },
-      orderBy: {
-        dueAt: 'asc',
-      },
-    });
+    const upcomingAssessmentsRaw =
+      await this.prisma.assessmentAssignment.findMany({
+        where: {
+          studentProfileId: studentProfile.id,
+          dueAt: { gte: new Date() },
+          status: 'assigned',
+        },
+        include: {
+          assessment: true,
+        },
+        orderBy: {
+          dueAt: 'asc',
+        },
+      });
 
     const upcomingAssessments = upcomingAssessmentsRaw.map((aa) => ({
       id: aa.id,
@@ -344,9 +345,10 @@ export class DashboardService {
       where: { studentProfileId: studentProfile.id, status: 'EXCUSED' },
     });
 
-    const attendanceRate = totalAttendance > 0 
-      ? Math.round(((presentCount + lateCount) / totalAttendance) * 100) 
-      : 100;
+    const attendanceRate =
+      totalAttendance > 0
+        ? Math.round(((presentCount + lateCount) / totalAttendance) * 100)
+        : 100;
 
     const attendanceSummary = {
       attendanceRate,

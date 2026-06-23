@@ -44,14 +44,17 @@ export class GradeCalculationService {
     }
 
     // 1. Group by category and calculate weighted category average
-    const categoriesMap: { [cat: string]: { sumWeightedPercentage: number; sumWeight: number } } = {};
+    const categoriesMap: {
+      [cat: string]: { sumWeightedPercentage: number; sumWeight: number };
+    } = {};
     for (const entry of entries) {
       if (entry.percentage === null) continue;
       const cat = entry.category || 'GENERAL';
       if (!categoriesMap[cat]) {
         categoriesMap[cat] = { sumWeightedPercentage: 0, sumWeight: 0 };
       }
-      categoriesMap[cat].sumWeightedPercentage += entry.percentage * entry.weight;
+      categoriesMap[cat].sumWeightedPercentage +=
+        entry.percentage * entry.weight;
       categoriesMap[cat].sumWeight += entry.weight;
     }
 
@@ -69,13 +72,15 @@ export class GradeCalculationService {
       }
     }
 
-    const termAverage = categoryCount > 0
-      ? Math.round((totalCategorySum / categoryCount) * 100) / 100
-      : null;
+    const termAverage =
+      categoryCount > 0
+        ? Math.round((totalCategorySum / categoryCount) * 100) / 100
+        : null;
 
-    const { gpa, letter: letterGrade } = termAverage !== null
-      ? this.mapScoreToGpa(termAverage)
-      : { gpa: null, letter: 'N/A' };
+    const { gpa, letter: letterGrade } =
+      termAverage !== null
+        ? this.mapScoreToGpa(termAverage)
+        : { gpa: null, letter: 'N/A' };
 
     // 2. Class rank & percentile calculations
     let classRank: number | null = null;
@@ -109,14 +114,17 @@ export class GradeCalculationService {
 
         if (peerEntries.length === 0) continue;
 
-        const peerCatsMap: { [cat: string]: { sumWeightedPercentage: number; sumWeight: number } } = {};
+        const peerCatsMap: {
+          [cat: string]: { sumWeightedPercentage: number; sumWeight: number };
+        } = {};
         for (const entry of peerEntries) {
           if (entry.percentage === null) continue;
           const cat = entry.category || 'GENERAL';
           if (!peerCatsMap[cat]) {
             peerCatsMap[cat] = { sumWeightedPercentage: 0, sumWeight: 0 };
           }
-          peerCatsMap[cat].sumWeightedPercentage += entry.percentage * entry.weight;
+          peerCatsMap[cat].sumWeightedPercentage +=
+            entry.percentage * entry.weight;
           peerCatsMap[cat].sumWeight += entry.weight;
         }
 
@@ -142,13 +150,18 @@ export class GradeCalculationService {
       // Sort peers by average descending
       peerAverages.sort((a, b) => b.avg - a.avg);
 
-      const rankIndex = peerAverages.findIndex((p) => p.studentId === studentProfileId);
+      const rankIndex = peerAverages.findIndex(
+        (p) => p.studentId === studentProfileId,
+      );
       if (rankIndex !== -1) {
         classRank = rankIndex + 1;
         const totalWithGrades = peerAverages.length;
-        classPercentile = totalWithGrades > 1
-          ? Math.round(((totalWithGrades - classRank) / (totalWithGrades - 1)) * 100)
-          : 100;
+        classPercentile =
+          totalWithGrades > 1
+            ? Math.round(
+                ((totalWithGrades - classRank) / (totalWithGrades - 1)) * 100,
+              )
+            : 100;
       }
     }
 
@@ -180,7 +193,10 @@ export class GradeCalculationService {
 
     const summaries = [];
     for (const e of classInfo.enrollments) {
-      const studentSum = await this.calculateStudentAverages(e.studentProfileId, termId);
+      const studentSum = await this.calculateStudentAverages(
+        e.studentProfileId,
+        termId,
+      );
       summaries.push({
         studentId: e.studentProfileId,
         fullName: e.studentProfile.fullName,

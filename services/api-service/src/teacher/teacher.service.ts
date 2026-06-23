@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
@@ -197,8 +201,12 @@ export class TeacherService {
 
   async assignClass(teacherProfileId: string, dto: AssignClassDto) {
     const [teacher, classSection] = await Promise.all([
-      this.prisma.teacherProfile.findFirst({ where: { id: teacherProfileId, user: { deletedAt: null } } }),
-      this.prisma.classSection.findUnique({ where: { id: dto.classSectionId } }),
+      this.prisma.teacherProfile.findFirst({
+        where: { id: teacherProfileId, user: { deletedAt: null } },
+      }),
+      this.prisma.classSection.findUnique({
+        where: { id: dto.classSectionId },
+      }),
     ]);
 
     if (!teacher) {
@@ -217,7 +225,9 @@ export class TeacherService {
       },
     });
     if (existingAssignment) {
-      throw new ConflictException('Teacher is already assigned to this class section');
+      throw new ConflictException(
+        'Teacher is already assigned to this class section',
+      );
     }
 
     return this.prisma.classTeacher.create({
@@ -246,13 +256,13 @@ export class TeacherService {
     }
 
     await this.prisma.classTeacher.delete({
-        where: {
-          teacherProfileId_classSectionId: {
-            teacherProfileId,
-            classSectionId,
-          },
+      where: {
+        teacherProfileId_classSectionId: {
+          teacherProfileId,
+          classSectionId,
         },
-      });
+      },
+    });
 
     return { message: 'Class assignment removed successfully' };
   }
@@ -287,7 +297,9 @@ export class TeacherService {
 
   async getPerformanceAlerts(userId: string) {
     const teacher = await this.findByUserId(userId);
-    const classSectionIds = teacher.classAssignments.map((ca) => ca.classSectionId);
+    const classSectionIds = teacher.classAssignments.map(
+      (ca) => ca.classSectionId,
+    );
 
     if (classSectionIds.length === 0) {
       return [];
@@ -311,7 +323,10 @@ export class TeacherService {
 
       // 1. Check Attendance
       const totalAttendance = await this.prisma.dailyAttendance.count({
-        where: { studentProfileId: student.id, classSectionId: placement.classSectionId },
+        where: {
+          studentProfileId: student.id,
+          classSectionId: placement.classSectionId,
+        },
       });
 
       if (totalAttendance >= 3) {
@@ -322,7 +337,9 @@ export class TeacherService {
             status: { in: ['PRESENT', 'LATE'] },
           },
         });
-        const attendanceRate = Math.round((presentAttendance / totalAttendance) * 100);
+        const attendanceRate = Math.round(
+          (presentAttendance / totalAttendance) * 100,
+        );
 
         if (attendanceRate < 85) {
           alerts.push({
@@ -346,7 +363,10 @@ export class TeacherService {
       });
 
       if (gradeEntries.length > 0) {
-        const sum = gradeEntries.reduce((acc, entry) => acc + (entry.percentage ?? 0), 0);
+        const sum = gradeEntries.reduce(
+          (acc, entry) => acc + (entry.percentage ?? 0),
+          0,
+        );
         const average = Math.round(sum / gradeEntries.length);
 
         if (average < 60) {

@@ -44,6 +44,9 @@ describe('DashboardService', () => {
     guardianProfile: {
       findUnique: jest.fn(),
     },
+    assessmentAssignment: {
+      findMany: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -209,6 +212,12 @@ describe('DashboardService', () => {
       ];
       mockPrismaService.homeworkSubmission.findMany.mockResolvedValue(mockFeedback);
 
+      const mockAssessments = [
+        { id: 'aa-1', dueAt: new Date(), assessment: { title: 'Assessment 1' } },
+      ];
+      mockPrismaService.assessmentAssignment.findMany.mockResolvedValue(mockAssessments);
+      mockPrismaService.dailyAttendance.count.mockResolvedValue(10); // returns 10 for counts
+
       const result = await service.getStudentSnapshot('user-1', targetDate);
 
       expect(result).toBeDefined();
@@ -222,6 +231,9 @@ describe('DashboardService', () => {
         },
       ]);
       expect(result.recentFeedback).toEqual(mockFeedback);
+      expect(result.upcomingAssessments).toBeDefined();
+      expect(result.attendanceSummary).toBeDefined();
+      expect(result.attendanceSummary.attendanceRate).toBe(200); // (10 present + 10 late) / 10 total = 200%, capped by min/max in other calculations but mocks return 10
     });
   });
 

@@ -116,20 +116,22 @@ export default function ParentPage() {
 
       {activeSection === "academics" && (
         <div className="space-y-6">
-          {/* Child Selector */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl border border-zinc-200/50 bg-white/40 dark:border-zinc-800/50 dark:bg-zinc-950/20 backdrop-blur-md">
-            <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
-              Select child to view academic progress:
-            </span>
-            <ChildSelector
-              childrenList={children}
-              activeStudentId={activeStudentId}
-              onSelect={setActiveStudentId}
-            />
+          {/* Children Status Cards Grid */}
+          <div>
+            <h3 className="text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">
+              Linked Children
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {children.map((child) => (
+                <ChildStatusCard
+                  key={child.studentProfileId}
+                  child={child}
+                  isActive={child.studentProfileId === activeStudentId}
+                  onSelect={() => setActiveStudentId(child.studentProfileId)}
+                />
+              ))}
+            </div>
           </div>
-
-          {/* Child status card rollup */}
-          {selectedChild && <ChildStatusCard rollup={selectedChild} />}
 
           {/* Academic details */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
@@ -138,7 +140,13 @@ export default function ParentPage() {
               <h3 className="text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">
                 Attendance Calendar
               </h3>
-              <AttendanceCalendar attendance={attendance} isLoading={isAttendanceLoading} />
+              {isAttendanceLoading ? (
+                <div className="rounded-3xl border border-zinc-200/50 bg-white/40 p-6 shadow-xl dark:border-zinc-800/50 dark:bg-zinc-950/20 backdrop-blur-md flex items-center justify-center h-[280px]">
+                  <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+                </div>
+              ) : (
+                <AttendanceCalendar records={attendance} />
+              )}
             </div>
 
             {/* Homework and Grades (col-span-2) */}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Loader2 } from "lucide-react";
 import * as React from "react";
@@ -35,7 +35,7 @@ export function HomeworkContainer() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-neutral-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -49,7 +49,7 @@ export function HomeworkContainer() {
   }
 
   return (
-    <div className="rounded-3xl border border-neutral-200 bg-white p-12 text-center text-xs text-neutral-400 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="rounded-3xl border border-border bg-card p-12 text-center text-xs text-muted-foreground">
       <p className="font-bold">Access Denied / Role Not Recognized</p>
       <p className="mt-1">Please verify your role assignments with your administrator.</p>
     </div>

@@ -440,7 +440,10 @@ export class AcademicService {
   async findCourseClassById(id: string) {
     const cls = await this.prisma.courseClass.findUnique({
       where: { id },
-      include: { term: { include: { academicYear: true } }, enrollments: true },
+      include: {
+        term: { include: { academicYear: true } },
+        enrollments: { include: { studentProfile: true } },
+      },
     });
     if (!cls) {
       throw new NotFoundException('Course class not found');

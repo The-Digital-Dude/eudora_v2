@@ -1,19 +1,27 @@
 "use client";
 
 import {
-  BookOpen,
+  CalendarCheck,
   CalendarDays,
+  ClipboardCheck,
   ClipboardList,
   CreditCard,
   GraduationCap,
+  HeartHandshake,
   LayoutDashboard,
+  Library,
   MessageSquare,
-  PenTool,
+  NotebookPen,
+  PencilRuler,
+  Presentation,
   School,
-  Settings,
-  UserCheck,
-  Users,
+  Sparkles,
+  SquareStack,
+  Stethoscope,
+  UserCog,
+  UserPlus,
   Users2,
+  UsersRound,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -48,7 +56,7 @@ const data = {
         {
           title: "Parent Portal",
           url: "/parent",
-          icon: Users2,
+          icon: HeartHandshake,
           roles: ["GUARDIAN", "ADMIN", "SUPER_ADMIN"],
         },
         {
@@ -60,7 +68,7 @@ const data = {
         {
           title: "Teacher Portal",
           url: "/teacher",
-          icon: Users2,
+          icon: Presentation,
           roles: ["TEACHER", "ADMIN", "SUPER_ADMIN"],
         },
         {
@@ -72,43 +80,43 @@ const data = {
         {
           title: "Attendance",
           url: "/attendance",
-          icon: UserCheck,
+          icon: CalendarCheck,
           roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "GUARDIAN"],
         },
         {
           title: "Homework",
           url: "/homework",
-          icon: PenTool,
+          icon: NotebookPen,
           roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
         },
         {
           title: "Gradebook",
           url: "/gradebook",
-          icon: ClipboardList,
+          icon: ClipboardCheck,
           roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
         },
         {
           title: "Active Learning",
           url: "/learn",
-          icon: BookOpen,
+          icon: Sparkles,
           roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER"],
         },
         {
           title: "Lesson Authoring",
           url: "/lessons",
-          icon: PenTool,
+          icon: PencilRuler,
           roles: ["ADMIN", "SUPER_ADMIN", "TEACHER"],
         },
         {
           title: "Diagnostics",
           url: "/diagnostics",
-          icon: ClipboardList,
+          icon: Stethoscope,
           roles: ["ADMIN", "SUPER_ADMIN", "TEACHER"],
         },
         {
           title: "Question Bank",
           url: "/questions",
-          icon: BookOpen,
+          icon: Library,
           roles: ["ADMIN", "SUPER_ADMIN", "TEACHER"],
         },
         {
@@ -125,13 +133,13 @@ const data = {
         {
           title: "Leads & Enrolments",
           url: "/leads",
-          icon: UserCheck,
+          icon: UserPlus,
           roles: ["ADMIN", "SUPER_ADMIN"],
         },
         {
           title: "Student Roster",
           url: "/students",
-          icon: GraduationCap,
+          icon: UsersRound,
           roles: ["ADMIN", "SUPER_ADMIN"],
         },
         {
@@ -143,7 +151,7 @@ const data = {
         {
           title: "Classes & Attendance",
           url: "/classes",
-          icon: CalendarDays,
+          icon: SquareStack,
           roles: ["ADMIN", "SUPER_ADMIN"],
         },
         {
@@ -155,7 +163,7 @@ const data = {
         {
           title: "Users & Roles",
           url: "/users",
-          icon: Users,
+          icon: UserCog,
           roles: ["ADMIN", "SUPER_ADMIN"],
         },
       ],
@@ -248,10 +256,8 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                   <Logo size={18} className="text-current" />
                 </div>
                 <div className="grid flex-1 text-left text-xs leading-tight">
-                  <span className="truncate font-bold text-neutral-900 dark:text-neutral-50">
-                    Eudora Admin
-                  </span>
-                  <span className="truncate text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">
+                  <span className="truncate font-bold text-sidebar-foreground">Eudora Admin</span>
+                  <span className="truncate text-[10px] font-semibold tracking-wider text-sidebar-foreground/50 uppercase">
                     Console
                   </span>
                 </div>
@@ -264,7 +270,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       <SidebarContent className="py-4">
         {filteredNavGroups.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="dark:text-neutral-505 mb-1 px-3 text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+            <SidebarGroupLabel className="mb-1 px-3 text-[10px] font-bold tracking-wider text-sidebar-foreground/50 uppercase">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -280,11 +286,15 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                         tooltip={item.title}
                         className={`w-full rounded-xl transition-all duration-200 ${
                           isActive
-                            ? "bg-neutral-900 font-bold text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-950"
-                            : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                            ? "bg-sidebar-primary font-bold text-sidebar-primary-foreground shadow-sm"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`}
                       >
-                        <Link href={item.url} className="flex items-center gap-3">
+                        <Link
+                          href={item.url}
+                          className="flex items-center gap-3"
+                          aria-current={isActive ? "page" : undefined}
+                        >
                           <Icon className="h-4 w-4" />
                           <span className="text-xs font-semibold">{item.title}</span>
                         </Link>
@@ -300,16 +310,12 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
 
       <SidebarFooter className="border-sidebar-border/50 border-t p-4">
         <div className="flex items-center gap-3">
-          <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-xs font-bold text-white dark:bg-neutral-100 dark:text-neutral-900">
+          <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">
             {userInitials}
           </div>
           <div className="min-w-0 flex-1 text-left">
-            <p className="truncate text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-              {user.name}
-            </p>
-            <p className="truncate text-[10px] text-neutral-400 dark:text-neutral-500">
-              {user.email}
-            </p>
+            <p className="truncate text-xs font-semibold text-sidebar-foreground">{user.name}</p>
+            <p className="truncate text-[10px] text-sidebar-foreground/50">{user.email}</p>
           </div>
         </div>
       </SidebarFooter>

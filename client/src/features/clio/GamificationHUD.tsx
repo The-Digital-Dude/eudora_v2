@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRive } from "@rive-app/react-canvas";
 import React, { useEffect, useRef,useState } from "react";
@@ -95,7 +95,7 @@ export function GamificationHUD({
           </button>
         )}
         <div>
-          <span className="text-xs font-bold tracking-wider text-violet-600 uppercase dark:text-violet-400">
+          <span className="text-xs font-bold tracking-wider text-primary uppercase">
             Active Learning
           </span>
           <h1 className="text-foreground max-w-[150px] truncate text-sm font-bold sm:max-w-xs md:max-w-md md:text-base">
@@ -142,7 +142,7 @@ export function GamificationHUD({
           className={[
             "relative flex items-center gap-1.5 rounded-xl border px-3 py-1 transition-all duration-300",
             animateXp
-              ? "scale-105 border-amber-400 bg-amber-500/10 shadow-md shadow-amber-500/20 dark:bg-amber-500/20"
+              ? "scale-105 border-warning bg-warning/10 shadow-md shadow-warning/20"
               : "border-border bg-muted/30",
           ]
             .filter(Boolean)
@@ -159,7 +159,7 @@ export function GamificationHUD({
             <span className="text-muted-foreground text-[9px] leading-none font-bold">
               XP EARNED
             </span>
-            <span className="text-xs leading-tight font-bold text-amber-600 dark:text-amber-400">
+            <span className="text-xs leading-tight font-bold text-warning">
               +{displayedXp} XP
             </span>
           </div>
@@ -170,7 +170,7 @@ export function GamificationHUD({
             viewBox="0 0 24 24"
             fill="currentColor"
             className={[
-              "h-4 w-4 text-amber-500 transition-transform duration-300 dark:text-amber-400",
+              "h-4 w-4 text-warning transition-transform duration-300",
               animateXp ? "scale-125 rotate-12" : "",
             ]
               .filter(Boolean)

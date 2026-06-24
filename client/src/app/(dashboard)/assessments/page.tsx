@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -157,11 +157,11 @@ export default function AssessmentsPage() {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "published":
-        return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+        return "bg-success/10 text-success border-success/20";
       case "archived":
-        return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
+        return "bg-destructive/10 text-destructive border-destructive/20";
       default:
-        return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+        return "bg-warning/10 text-warning border-warning/20";
     }
   };
 
@@ -170,26 +170,26 @@ export default function AssessmentsPage() {
       {/* Header section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white flex items-center gap-2">
-            <FileText className="h-8 w-8 text-violet-500" />
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground dark:text-white flex items-center gap-2">
+            <FileText className="h-8 w-8 text-primary" />
             Assessment Platform
           </h1>
-          <p className="text-sm text-neutral-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Build, publish, and assign assessments, or manage student attempts and marking.
           </p>
         </div>
         <Button
           onClick={() => setCreateDialogOpen(true)}
-          className="h-11 rounded-xl bg-violet-600 px-5 text-xs font-bold text-white shadow-lg shadow-violet-500/20 transition-all hover:bg-violet-500"
+          className="h-11 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
         >
           <Plus className="mr-2 h-4 w-4" /> Create Assessment
         </Button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="rounded-2xl border border-neutral-150 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50 flex flex-wrap items-center gap-3">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search assessments..."
             value={search}
@@ -201,7 +201,7 @@ export default function AssessmentsPage() {
         {/* Subject Filter */}
         <div className="w-[160px]">
           <Select value={subjectId} onValueChange={setSubjectId}>
-            <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+            <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
               <SelectValue placeholder="All Subjects" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
@@ -218,7 +218,7 @@ export default function AssessmentsPage() {
         {/* Level Filter */}
         <div className="w-[160px]">
           <Select value={levelId} onValueChange={setLevelId}>
-            <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+            <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
               <SelectValue placeholder="All Levels" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
@@ -235,7 +235,7 @@ export default function AssessmentsPage() {
         {/* Status Filter */}
         <div className="w-[140px]">
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+            <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
@@ -252,14 +252,14 @@ export default function AssessmentsPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-48 rounded-3xl bg-neutral-100 dark:bg-zinc-800 animate-pulse" />
+            <div key={i} className="h-48 rounded-3xl bg-muted animate-pulse" />
           ))}
         </div>
       ) : assessments.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-neutral-200 p-12 text-center dark:border-zinc-800">
-          <AlertCircle className="mx-auto h-12 w-12 text-neutral-400 mb-3" />
-          <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">No Assessments Found</h3>
-          <p className="text-xs text-neutral-500 mt-1 max-w-sm mx-auto">
+        <div className="rounded-3xl border border-dashed border-border p-12 text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
+          <h3 className="text-sm font-bold text-foreground">No Assessments Found</h3>
+          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
             Try adjusting your search filters or click "Create Assessment" to start building your first paper.
           </p>
         </div>
@@ -268,7 +268,7 @@ export default function AssessmentsPage() {
           {assessments.map((item) => (
             <div
               key={item.id}
-              className="group relative rounded-3xl border border-neutral-150 bg-white p-5 shadow-sm hover:shadow-md transition-all dark:border-zinc-800 dark:bg-zinc-900/50 flex flex-col justify-between"
+              className="group relative rounded-3xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >
               {/* Badges and Top Actions */}
               <div className="flex justify-between items-start mb-4">
@@ -277,12 +277,12 @@ export default function AssessmentsPage() {
                     {item.status}
                   </span>
                   {item.subject && (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-neutral-100 text-neutral-600 dark:bg-zinc-850 dark:text-zinc-400">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground">
                       {item.subject.name}
                     </span>
                   )}
                   {item.level && (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-600 dark:bg-violet-950/20 dark:text-violet-400">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">
                       {item.level.name}
                     </span>
                   )}
@@ -290,7 +290,7 @@ export default function AssessmentsPage() {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-zinc-800 text-neutral-500">
+                    <button className="h-8 w-8 rounded-xl flex items-center justify-center hover:bg-muted text-muted-foreground">
                       <MoreVertical className="h-4 w-4" />
                     </button>
                   </DropdownMenuTrigger>
@@ -308,7 +308,7 @@ export default function AssessmentsPage() {
                     {item.status === "draft" && (
                       <DropdownMenuItem
                         onClick={() => handlePublish(item.id)}
-                        className="text-xs font-medium cursor-pointer text-emerald-600 dark:text-emerald-400"
+                        className="text-xs font-medium cursor-pointer text-success"
                       >
                         Publish Paper
                       </DropdownMenuItem>
@@ -316,7 +316,7 @@ export default function AssessmentsPage() {
                     {item.status !== "archived" && (
                       <DropdownMenuItem
                         onClick={() => handleArchive(item.id)}
-                        className="text-xs font-medium cursor-pointer text-rose-500"
+                        className="text-xs font-medium cursor-pointer text-destructive"
                       >
                         Archive Paper
                       </DropdownMenuItem>
@@ -327,32 +327,32 @@ export default function AssessmentsPage() {
 
               {/* Title & Metadata */}
               <div>
-                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-50 line-clamp-1">
+                <h3 className="text-base font-bold text-foreground line-clamp-1">
                   {item.title}
                 </h3>
-                <p className="text-[11px] text-neutral-400 mt-1">
+                <p className="text-[11px] text-muted-foreground mt-1">
                   Type: {item.assessmentType?.name || "Standard Evaluation"}
                 </p>
 
-                <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-neutral-100 dark:border-zinc-800/80">
+                <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-border/80">
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-neutral-400 font-medium">Duration</span>
-                    <div className="flex items-center gap-1 text-xs font-bold text-neutral-700 dark:text-neutral-300 mt-0.5">
-                      <Clock className="h-3.5 w-3.5 text-neutral-400" />
+                    <span className="text-[10px] text-muted-foreground font-medium">Duration</span>
+                    <div className="flex items-center gap-1 text-xs font-bold text-foreground mt-0.5">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                       {item.estimatedDurationMinutes}m
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-neutral-400 font-medium">Max Marks</span>
-                    <div className="flex items-center gap-1 text-xs font-bold text-neutral-700 dark:text-neutral-300 mt-0.5">
-                      <Award className="h-3.5 w-3.5 text-neutral-400" />
+                    <span className="text-[10px] text-muted-foreground font-medium">Max Marks</span>
+                    <div className="flex items-center gap-1 text-xs font-bold text-foreground mt-0.5">
+                      <Award className="h-3.5 w-3.5 text-muted-foreground" />
                       {item.totalMarks}
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-neutral-400 font-medium">Term</span>
-                    <div className="flex items-center gap-1 text-xs font-bold text-neutral-700 dark:text-neutral-300 mt-0.5">
-                      <Layers className="h-3.5 w-3.5 text-neutral-400" />
+                    <span className="text-[10px] text-muted-foreground font-medium">Term</span>
+                    <div className="flex items-center gap-1 text-xs font-bold text-foreground mt-0.5">
+                      <Layers className="h-3.5 w-3.5 text-muted-foreground" />
                       {item.term?.name || `Wk ${item.weekNumber || "-"}`}
                     </div>
                   </div>
@@ -364,7 +364,7 @@ export default function AssessmentsPage() {
                 <Link href={`/assessments/${item.id}`} className="flex-1">
                   <Button
                     variant="outline"
-                    className="w-full h-9 rounded-xl text-[11px] font-bold border-neutral-200 dark:border-zinc-800"
+                    className="w-full h-9 rounded-xl text-[11px] font-bold border-border"
                   >
                     Edit Builder
                   </Button>
@@ -372,14 +372,14 @@ export default function AssessmentsPage() {
                 {item.status === "published" ? (
                   <Button
                     onClick={() => openAssignDialog(item)}
-                    className="flex-1 h-9 rounded-xl bg-violet-600 text-[11px] font-bold text-white hover:bg-violet-500"
+                    className="flex-1 h-9 rounded-xl bg-primary text-[11px] font-bold text-primary-foreground hover:bg-primary/90"
                   >
                     <GraduationCap className="mr-1 h-3.5 w-3.5" /> Assign
                   </Button>
                 ) : (
                   <Button
                     onClick={() => handlePublish(item.id)}
-                    className="flex-1 h-9 rounded-xl bg-emerald-600 text-[11px] font-bold text-white hover:bg-emerald-500"
+                    className="flex-1 h-9 rounded-xl bg-success text-[11px] font-bold text-success-foreground hover:bg-success/90"
                   >
                     Publish
                   </Button>
@@ -392,10 +392,10 @@ export default function AssessmentsPage() {
 
       {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-md rounded-3xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+        <DialogContent className="max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-neutral-900 dark:text-neutral-50 flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-violet-500" />
+            <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
               Create Assessment Paper
             </DialogTitle>
           </DialogHeader>
@@ -403,14 +403,14 @@ export default function AssessmentsPage() {
           <form onSubmit={handleCreate} className="space-y-4 mt-3">
             {/* Title */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Paper Title
               </Label>
               <Input
                 placeholder="e.g. Calculus Mid-Term Examination"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-neutral-50/50"
+                className="h-10 rounded-xl text-xs bg-muted/30"
                 required
               />
             </div>
@@ -418,11 +418,11 @@ export default function AssessmentsPage() {
             <div className="grid grid-cols-2 gap-4">
               {/* Type */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Assessment Type
                 </Label>
                 <Select value={newTypeId} onValueChange={setNewTypeId}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
                     <SelectValue placeholder="Select type..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -437,11 +437,11 @@ export default function AssessmentsPage() {
 
               {/* Subject */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Subject
                 </Label>
                 <Select value={newSubjectId} onValueChange={setNewSubjectId}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
                     <SelectValue placeholder="Select subject..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -456,11 +456,11 @@ export default function AssessmentsPage() {
 
               {/* Level */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Grade Level
                 </Label>
                 <Select value={newLevelId} onValueChange={setNewLevelId}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
                     <SelectValue placeholder="Select level..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -475,11 +475,11 @@ export default function AssessmentsPage() {
 
               {/* Term */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Term / Period
                 </Label>
                 <Select value={newTermId} onValueChange={setNewTermId}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
                     <SelectValue placeholder="Optional term..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -496,7 +496,7 @@ export default function AssessmentsPage() {
             <div className="grid grid-cols-3 gap-3">
               {/* Week */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Week No
                 </Label>
                 <Input
@@ -504,13 +504,13 @@ export default function AssessmentsPage() {
                   placeholder="Optional"
                   value={newWeek}
                   onChange={(e) => setNewWeek(e.target.value)}
-                  className="h-10 rounded-xl text-xs bg-neutral-50/50"
+                  className="h-10 rounded-xl text-xs bg-muted/30"
                 />
               </div>
 
               {/* Duration */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Duration (mins)
                 </Label>
                 <Input
@@ -518,14 +518,14 @@ export default function AssessmentsPage() {
                   placeholder="60"
                   value={newDuration}
                   onChange={(e) => setNewDuration(e.target.value)}
-                  className="h-10 rounded-xl text-xs bg-neutral-50/50"
+                  className="h-10 rounded-xl text-xs bg-muted/30"
                   required
                 />
               </div>
 
               {/* Max Score */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Max Marks
                 </Label>
                 <Input
@@ -533,7 +533,7 @@ export default function AssessmentsPage() {
                   placeholder="100"
                   value={newTotalMarks}
                   onChange={(e) => setNewTotalMarks(e.target.value)}
-                  className="h-10 rounded-xl text-xs bg-neutral-50/50"
+                  className="h-10 rounded-xl text-xs bg-muted/30"
                   required
                 />
               </div>
@@ -551,7 +551,7 @@ export default function AssessmentsPage() {
               <Button
                 type="submit"
                 disabled={isCreating}
-                className="h-10 flex-1 cursor-pointer rounded-xl bg-violet-600 text-xs font-semibold text-white hover:bg-violet-500"
+                className="h-10 flex-1 cursor-pointer rounded-xl bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90"
               >
                 {isCreating ? "Creating..." : "Create Paper"}
               </Button>

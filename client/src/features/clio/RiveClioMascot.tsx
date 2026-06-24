@@ -1,6 +1,6 @@
 "use client";
 
-import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
+import { useRive } from "@rive-app/react-canvas";
 import React, { useEffect } from "react";
 
 interface ClioMascotProps {
@@ -20,37 +20,24 @@ interface ClioMascotProps {
 export function RiveClioMascot({ state, size = 120 }: ClioMascotProps) {
   const { rive, RiveComponent } = useRive({
     src: "/rive/clio-mascot.riv",
-    stateMachines: "State Machine 1",
     autoplay: true,
   });
-
-  // Try to bind to state machine input named after the requested state state
-  const stateInput = useStateMachineInput(rive, "State Machine 1", state);
 
   useEffect(() => {
     if (!rive) return;
 
-    if (stateInput) {
-      // If state machine input is a trigger
-      stateInput.fire();
-    } else {
-      // Fallback: try to play the animation by name if state machine is not fully configured
-      try {
-        const animations = rive.animationNames;
-        if (animations && animations.includes(state)) {
-          rive.stop();
-          rive.play(state);
-        } else {
-          // Play the first animation available as a fallback
-          if (animations && animations.length > 0 && !rive.isPlaying) {
-            rive.play(animations[0]);
-          }
-        }
-      } catch (err) {
-        console.warn("Rive mascot animation playback fallback error:", err);
+    try {
+      const animations = rive.animationNames;
+      if (animations && animations.includes(state)) {
+        rive.stop();
+        rive.play(state);
+      } else if (animations && animations.length > 0 && !rive.isPlaying) {
+        rive.play(animations[0]);
       }
+    } catch (err) {
+      console.warn("Rive mascot animation playback error:", err);
     }
-  }, [state, stateInput, rive]);
+  }, [state, rive]);
 
   return (
     <div

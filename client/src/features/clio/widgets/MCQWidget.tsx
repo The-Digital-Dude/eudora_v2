@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 
@@ -30,18 +30,18 @@ export function MCQWidget({ options, selectedId, onSelect, locked, isCorrect }: 
             disabled={locked}
             className={[
               "group relative flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all duration-200",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
               !isSelected && !locked
-                ? "border-border bg-card cursor-pointer hover:scale-[1.02] hover:border-violet-500/60 hover:bg-violet-500/5"
+                ? "border-border bg-card cursor-pointer hover:scale-[1.02] hover:border-primary/60 hover:bg-primary/5"
                 : "",
               isSelected && !locked
-                ? "scale-[1.02] border-violet-500 bg-violet-500/10 dark:bg-violet-500/20"
+                ? "scale-[1.02] border-primary bg-primary/10 dark:bg-primary/20"
                 : "",
               correct
-                ? "scale-[1.02] border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20"
+                ? "scale-[1.02] border-success bg-success/10"
                 : "",
               wrong
-                ? "animate-shake scale-[1.02] border-rose-500 bg-rose-500/10 dark:bg-rose-500/20"
+                ? "animate-shake scale-[1.02] border-destructive bg-destructive/10"
                 : "",
               locked && !isSelected ? "cursor-not-allowed opacity-40" : "",
             ]
@@ -53,12 +53,12 @@ export function MCQWidget({ options, selectedId, onSelect, locked, isCorrect }: 
               className={[
                 "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold transition-colors",
                 correct
-                  ? "bg-emerald-500 text-white"
+                  ? "bg-success text-success-foreground"
                   : wrong
-                    ? "bg-rose-500 text-white"
+                    ? "bg-destructive text-destructive-foreground"
                     : isSelected
-                      ? "bg-violet-500 text-white"
-                      : "bg-muted text-muted-foreground group-hover:bg-violet-500/20 group-hover:text-violet-600 dark:group-hover:text-violet-400",
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary dark:group-hover:text-primary",
               ]
                 .filter(Boolean)
                 .join(" ")}
@@ -72,11 +72,11 @@ export function MCQWidget({ options, selectedId, onSelect, locked, isCorrect }: 
 
             {/* Result icon overlay */}
             {correct && (
-              <span className="animate-bounce-once absolute top-3 right-3 text-lg text-emerald-500">
+              <span className="animate-bounce-once absolute top-3 right-3 text-lg text-success">
                 ✓
               </span>
             )}
-            {wrong && <span className="absolute top-3 right-3 text-lg text-rose-500">✗</span>}
+            {wrong && <span className="absolute top-3 right-3 text-lg text-destructive">✗</span>}
           </button>
         );
       })}

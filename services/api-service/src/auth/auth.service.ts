@@ -482,18 +482,11 @@ export class AuthService {
     }
 
     const roles = session.user.roles.map((ur: any) => ur.role.name);
-    const permissions = session.user.roles.flatMap((ur: any) =>
-      ur.role.permissions.map((rp: any) => ({
-        action: rp.permission.action,
-        subject: rp.permission.subject,
-      })),
-    );
 
     const accessPayload = {
       sub: session.user.id,
       email: session.user.email,
       roles,
-      permissions,
       typ: 'access',
     };
 
@@ -670,18 +663,11 @@ export class AuthService {
     ipAddress: string | null,
   ) {
     const roles = user.roles.map((ur: any) => ur.role.name);
-    const permissions = user.roles.flatMap((ur: any) =>
-      ur.role.permissions.map((rp: any) => ({
-        action: rp.permission.action,
-        subject: rp.permission.subject,
-      })),
-    );
 
     const accessPayload = {
       sub: user.id,
       email: user.email,
       roles,
-      permissions,
       typ: 'access',
     };
 

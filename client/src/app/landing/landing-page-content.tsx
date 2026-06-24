@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import CtaSection from "./components/cta-section";
 import FeaturesSection from "./components/features-section";
@@ -9,7 +9,7 @@ import StatsSection from "./components/stats-section";
 
 export function LandingPageContent() {
   return (
-    <div className="flex min-h-screen flex-col bg-neutral-50 font-sans text-neutral-900">
+    <div className="flex min-h-screen flex-col bg-background font-sans text-foreground">
       <Navbar />
 
       <main className="flex-1">

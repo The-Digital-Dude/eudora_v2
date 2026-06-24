@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 
@@ -38,11 +38,11 @@ export function SliderWidget({ config, value, onChange, locked }: SliderWidgetPr
             left: `calc(${percentage}% - 24px)`,
           }}
         >
-          <div className="rounded-lg bg-violet-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg shadow-violet-500/20">
+          <div className="rounded-lg bg-primary px-2.5 py-1 text-xs font-bold text-white shadow-lg shadow-primary/20">
             {value}
             {unit}
           </div>
-          <div className="-mt-1 h-1.5 w-1.5 rotate-45 bg-violet-600" />
+          <div className="-mt-1 h-1.5 w-1.5 rotate-45 bg-primary" />
         </div>
 
         {/* Custom Range Track Container */}

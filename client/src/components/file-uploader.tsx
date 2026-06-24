@@ -82,10 +82,10 @@ export function FileUploader({
           onDragOver={handleDrag}
           onDragLeave={handleDrag}
           onDrop={handleDrop}
-          className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white/50 p-6 text-center transition-all dark:bg-zinc-950/20 ${
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-card/50 p-6 text-center transition-all ${
             dragActive
-              ? "border-neutral-900 bg-neutral-50/50 dark:border-white dark:bg-zinc-900/50"
-              : "border-neutral-200 hover:border-neutral-400 dark:border-zinc-800 dark:hover:border-zinc-700"
+              ? "border-foreground bg-muted/30"
+              : "border-border hover:border-border/60"
           }`}
         >
           <input
@@ -101,39 +101,39 @@ export function FileUploader({
             className="flex w-full cursor-pointer flex-col items-center"
           >
             {isLoading ? (
-              <Loader2 className="mb-3 h-8 w-8 animate-spin text-neutral-400 dark:text-neutral-500" />
+              <Loader2 className="mb-3 h-8 w-8 animate-spin text-muted-foreground" />
             ) : (
-              <Upload className="mb-3 h-8 w-8 text-neutral-400 dark:text-neutral-500" />
+              <Upload className="mb-3 h-8 w-8 text-muted-foreground" />
             )}
-            <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+            <p className="text-xs font-semibold text-foreground">
               {isLoading ? "Uploading..." : label}
             </p>
-            <p className="mt-1 text-[10px] text-neutral-400 dark:text-neutral-500">
+            <p className="mt-1 text-[10px] text-muted-foreground">
               Drag & drop or click to browse (Max {maxSizeMB}MB)
             </p>
           </label>
 
           {(uploadError || error) && (
-            <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-rose-500">
+            <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-destructive">
               <AlertCircle className="h-3.5 w-3.5" />
               <span>{uploadError || "Upload failed. Please try again."}</span>
             </div>
           )}
         </div>
       ) : (
-        <div className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white/50 p-3 dark:border-zinc-800 dark:bg-zinc-950/20">
-          <div className="rounded-xl bg-neutral-100 p-2 text-neutral-700 dark:bg-zinc-900 dark:text-neutral-300">
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card/50 p-3">
+          <div className="rounded-xl bg-muted p-2 text-foreground">
             <File className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+            <p className="truncate text-xs font-semibold text-foreground">
               {uploadedFile.originalName}
             </p>
             <div className="mt-0.5 flex items-center gap-1.5">
-              <span className="text-[10px] text-neutral-400 dark:text-neutral-500">
+              <span className="text-[10px] text-muted-foreground">
                 {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
               </span>
-              <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-500">
+              <span className="flex items-center gap-1 text-[10px] font-semibold text-success">
                 <CheckCircle className="h-3 w-3" /> Ready
               </span>
             </div>
@@ -143,9 +143,9 @@ export function FileUploader({
             variant="ghost"
             size="icon"
             onClick={handleClear}
-            className="h-8 w-8 cursor-pointer rounded-full hover:bg-neutral-100 dark:hover:bg-zinc-900"
+            className="h-8 w-8 cursor-pointer rounded-full hover:bg-muted"
           >
-            <X className="h-4 w-4 text-neutral-400 hover:text-neutral-700" />
+            <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
           </Button>
         </div>
       )}

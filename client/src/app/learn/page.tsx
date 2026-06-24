@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ArrowRight, Award,BookOpen, GraduationCap, Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -14,7 +14,7 @@ export default function LearnCatalogPage() {
       {/* Header bar */}
       <header className="mx-auto mb-12 flex w-full max-w-4xl items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="rounded-xl bg-violet-600 p-2 text-white shadow-lg shadow-violet-950/40">
+          <div className="rounded-xl bg-primary p-2 text-white shadow-lg shadow-primary/40">
             <Sparkles className="h-5 w-5 animate-pulse" />
           </div>
           <span className="from-foreground to-muted-foreground bg-gradient-to-r bg-clip-text text-lg font-extrabold tracking-tight text-transparent">
@@ -31,7 +31,7 @@ export default function LearnCatalogPage() {
 
       {/* Hero section */}
       <section className="mx-auto mb-16 max-w-2xl space-y-4 text-center">
-        <span className="rounded-full bg-violet-500/10 px-3 py-1 text-xs font-bold tracking-widest text-violet-600 uppercase dark:text-violet-400">
+        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold tracking-widest text-primary uppercase">
           Interactive Journeys
         </span>
         <h1 className="text-foreground text-3xl leading-tight font-black tracking-tight md:text-5xl">
@@ -47,14 +47,14 @@ export default function LearnCatalogPage() {
       <main className="mx-auto w-full max-w-4xl flex-1">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center space-y-3 py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-muted-foreground text-xs font-semibold">
               Fetching learning catalog...
             </p>
           </div>
         ) : error ? (
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6 text-center">
-            <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">
+          <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center">
+            <p className="text-sm font-semibold text-destructive">
               Failed to load lessons list.
             </p>
             <p className="text-muted-foreground mt-1 text-xs">
@@ -74,22 +74,22 @@ export default function LearnCatalogPage() {
             {lessons.map((lesson) => (
               <div
                 key={lesson.id}
-                className="group border-border bg-card hover:bg-muted/30 relative flex flex-col justify-between rounded-2xl border p-6 transition-all duration-300 hover:border-violet-500/40 hover:shadow-xl hover:shadow-violet-500/5"
+                className="group border-border bg-card hover:bg-muted/30 relative flex flex-col justify-between rounded-2xl border p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5"
               >
                 <div className="space-y-3">
                   {/* Category and Reward */}
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-[10px] font-bold tracking-widest text-violet-600 uppercase dark:text-violet-400">
+                    <span className="flex items-center gap-1 text-[10px] font-bold tracking-widest text-primary uppercase">
                       <GraduationCap className="h-3.5 w-3.5" />
                       {lesson.concept?.name || "Concept"}
                     </span>
-                    <span className="flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-extrabold text-amber-500 dark:text-amber-400">
+                    <span className="flex items-center gap-1 rounded-lg border border-warning/20 bg-warning/10 px-2 py-0.5 text-[10px] font-extrabold text-warning">
                       <Award className="h-3 w-3" />+{lesson.xpReward} XP
                     </span>
                   </div>
 
                   {/* Title & Description */}
-                  <h3 className="text-card-foreground text-base font-bold transition-colors group-hover:text-violet-600 dark:group-hover:text-violet-400">
+                  <h3 className="text-card-foreground text-base font-bold transition-colors group-hover:text-primary dark:group-hover:text-primary">
                     {lesson.title}
                   </h3>
                   <p className="text-muted-foreground text-xs leading-relaxed font-medium">
@@ -105,7 +105,7 @@ export default function LearnCatalogPage() {
                   </span>
                   <Link
                     href={`/learn/${lesson.id}`}
-                    className="flex items-center gap-1 rounded-xl bg-violet-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-violet-500"
+                    className="flex items-center gap-1 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-primary"
                   >
                     Start Journey <ArrowRight className="h-3.5 w-3.5" />
                   </Link>

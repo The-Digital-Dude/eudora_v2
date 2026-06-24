@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+﻿import { Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer() {
@@ -38,16 +38,16 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="border-t border-neutral-200/40 bg-white py-16 text-xs text-neutral-400 select-none">
+    <footer className="border-t border-border/40 bg-white py-16 text-xs text-muted-foreground select-none">
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-5 md:gap-12">
           {/* Logo Column */}
           <div className="col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2">
-              <div className="rounded-lg bg-neutral-900 p-1.5 text-white shadow-sm">
+              <div className="rounded-lg bg-foreground p-1.5 text-white shadow-sm">
                 <Sparkles className="h-4 w-4" />
               </div>
-              <span className="font-display text-sm font-bold tracking-tight text-neutral-900">
+              <span className="font-display text-sm font-bold tracking-tight text-foreground">
                 Eudora
               </span>
             </Link>
@@ -59,13 +59,13 @@ export default function Footer() {
           {/* Links Columns */}
           {footerLinks.map((group, idx) => (
             <div key={idx} className="space-y-3">
-              <h4 className="text-[10px] font-bold tracking-widest text-neutral-900 uppercase">
+              <h4 className="text-[10px] font-bold tracking-widest text-foreground uppercase">
                 {group.title}
               </h4>
               <ul className="space-y-2">
                 {group.links.map((link, linkIdx) => (
                   <li key={linkIdx}>
-                    <Link href={link.href} className="transition-colors hover:text-neutral-900">
+                    <Link href={link.href} className="transition-colors hover:text-foreground">
                       {link.label}
                     </Link>
                   </li>
@@ -76,12 +76,12 @@ export default function Footer() {
         </div>
 
         {/* Bottom row */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-neutral-100 pt-8 text-neutral-400 sm:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 text-muted-foreground sm:flex-row">
           <p>© {new Date().getFullYear()} Eudora Technologies. All rights reserved.</p>
           <div className="flex gap-4">
-            <span className="cursor-pointer hover:text-neutral-900">Twitter</span>
-            <span className="cursor-pointer hover:text-neutral-900">GitHub</span>
-            <span className="cursor-pointer hover:text-neutral-900">Discord</span>
+            <span className="cursor-pointer hover:text-foreground">Twitter</span>
+            <span className="cursor-pointer hover:text-foreground">GitHub</span>
+            <span className="cursor-pointer hover:text-foreground">Discord</span>
           </div>
         </div>
       </div>

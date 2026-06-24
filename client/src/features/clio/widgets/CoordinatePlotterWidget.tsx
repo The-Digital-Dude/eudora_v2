@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useRef } from "react";
 import type { CoordinatePlotterConfig } from "../../assessments/widgetConfigSchemas";
@@ -119,20 +119,20 @@ export function CoordinatePlotterWidget({
   return (
     <div className="border-border bg-card flex flex-col items-center justify-center rounded-3xl border p-6 shadow-sm select-none">
       <div className="mb-4 text-center">
-        <span className="text-xs text-neutral-500 font-medium">
+        <span className="text-xs text-muted-foreground font-medium">
           {locked ? "Locked" : "Click intersections to plot or remove coordinates"}
         </span>
-        <div className="mt-1 flex items-center justify-center gap-4 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+        <div className="mt-1 flex items-center justify-center gap-4 text-xs font-semibold text-foreground">
           <span>Points plotted: {points.length}</span>
           {locked && isCorrect !== undefined && (
-            <span className={isCorrect ? "text-emerald-500" : "text-rose-500"}>
+            <span className={isCorrect ? "text-success" : "text-destructive"}>
               {isCorrect ? "Correct!" : "Incorrect"}
             </span>
           )}
         </div>
       </div>
 
-      <div className="relative aspect-square w-full max-w-[360px] rounded-xl overflow-hidden border border-neutral-200 bg-white shadow-inner dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="relative aspect-square w-full max-w-[360px] rounded-xl overflow-hidden border border-border bg-card shadow-inner">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${width} ${height}`}
@@ -273,7 +273,7 @@ export function CoordinatePlotterWidget({
           {points.map((pt, idx) => (
             <span
               key={`badge-${idx}`}
-              className="inline-flex items-center gap-1 rounded-md bg-neutral-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-semibold text-neutral-800 dark:text-neutral-200"
+              className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground"
             >
               ({pt.x}, {pt.y})
             </span>

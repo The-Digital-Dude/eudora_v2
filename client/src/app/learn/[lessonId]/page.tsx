@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   AlertCircle,
@@ -121,7 +121,7 @@ export default function LessonFlowPage() {
   if (isLoading) {
     return (
       <div className="bg-background text-foreground flex h-screen w-full flex-col items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-violet-500" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
         <p className="text-muted-foreground mt-4 text-sm font-semibold">
           Loading your immersive math journey...
         </p>
@@ -132,7 +132,7 @@ export default function LessonFlowPage() {
   if (error || !data || !currentCard) {
     return (
       <div className="bg-background text-foreground flex h-screen w-full flex-col items-center justify-center p-6 text-center">
-        <AlertCircle className="mb-4 h-12 w-12 text-rose-500" />
+        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
         <h2 className="text-foreground mb-2 text-xl font-bold">Failed to load lesson flow</h2>
         <p className="text-muted-foreground mb-6 max-w-sm text-sm">
           There was an error retrieving the details for this active learning lesson. Please try
@@ -140,7 +140,7 @@ export default function LessonFlowPage() {
         </p>
         <button
           onClick={() => refetch()}
-          className="rounded-xl bg-violet-600 px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-violet-500"
+          className="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-primary/90"
         >
           Retry Load
         </button>
@@ -261,7 +261,7 @@ export default function LessonFlowPage() {
                 {currentCardIndex + 1} of {cards.length}
               </span>
               <span className="bg-border h-1.5 w-1.5 rounded-full" />
-              <span className="tracking-wider text-violet-600 uppercase dark:text-violet-400">
+              <span className="tracking-wider text-primary uppercase">
                 {currentCard.cardType}
               </span>
             </div>
@@ -289,7 +289,7 @@ export default function LessonFlowPage() {
           {hasQuestion && currentCard.question && (
             <div className="border-border max-w-2xl border-t py-4">
               <div className="mb-4">
-                <span className="text-xs font-bold tracking-widest text-violet-600 uppercase dark:text-violet-400">
+                <span className="text-xs font-bold tracking-widest text-primary uppercase">
                   Question
                 </span>
                 <div className="text-foreground mt-1 text-sm font-semibold">
@@ -319,9 +319,9 @@ export default function LessonFlowPage() {
                   return (
                     <div
                       key={idx}
-                      className="animate-fade-in flex gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-xs font-medium text-amber-800 dark:text-amber-300"
+                      className="animate-fade-in flex gap-3 rounded-xl border border-warning/20 bg-warning/10 p-3.5 text-xs font-medium text-warning"
                     >
-                      <Lightbulb className="h-4.5 w-4.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <Lightbulb className="h-4.5 w-4.5 shrink-0 text-warning" />
                       <div>
                         <span className="font-bold">Hint {idx + 1}:</span> {hintText}
                       </div>
@@ -332,7 +332,7 @@ export default function LessonFlowPage() {
                 {hintIndex < currentCard.question.hints.length - 1 && (
                   <button
                     onClick={() => dispatch(revealNextHint())}
-                    className="flex items-center gap-1.5 py-1 text-xs font-bold text-amber-600 transition-colors hover:text-amber-500 focus:outline-none dark:text-amber-400 dark:hover:text-amber-300"
+                    className="flex items-center gap-1.5 py-1 text-xs font-bold text-warning transition-colors hover:text-warning focus:outline-none"
                   >
                     <Lightbulb className="h-4 w-4" /> Get Hint
                   </button>
@@ -348,7 +348,7 @@ export default function LessonFlowPage() {
               // Conceptual card navigation
               <button
                 onClick={handleContinue}
-                className="flex cursor-pointer items-center gap-1.5 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3 text-xs font-bold text-white shadow-lg shadow-violet-500/20 transition-all hover:opacity-90"
+                className="flex cursor-pointer items-center gap-1.5 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3 text-xs font-bold text-white shadow-lg shadow-primary/20 transition-all hover:opacity-90"
               >
                 Continue <ArrowRight className="h-4 w-4" />
               </button>
@@ -360,7 +360,7 @@ export default function LessonFlowPage() {
                 className={[
                   "cursor-pointer rounded-2xl px-6 py-3 text-xs font-bold text-white shadow-lg transition-all",
                   currentWidgetState
-                    ? "bg-violet-600 shadow-violet-500/20 hover:bg-violet-500"
+                    ? "bg-primary shadow-primary/20 hover:bg-primary/90"
                     : "bg-muted text-muted-foreground cursor-not-allowed",
                 ]
                   .filter(Boolean)
@@ -378,7 +378,7 @@ export default function LessonFlowPage() {
               // Question state after submission
               <button
                 onClick={handleContinue}
-                className="flex cursor-pointer items-center gap-1.5 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3 text-xs font-bold text-white shadow-lg shadow-violet-500/20 transition-all hover:opacity-90"
+                className="flex cursor-pointer items-center gap-1.5 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3 text-xs font-bold text-white shadow-lg shadow-primary/20 transition-all hover:opacity-90"
               >
                 Continue <ArrowRight className="h-4 w-4" />
               </button>
@@ -395,7 +395,7 @@ export default function LessonFlowPage() {
             <div className="border-border bg-background absolute -bottom-2 left-6 h-4 w-4 rotate-45 border-r border-b md:hidden" />
 
             <div className="flex items-start gap-2.5">
-              <Sparkles className="mt-0.5 h-4.5 w-4.5 shrink-0 animate-pulse text-violet-600 dark:text-violet-400" />
+              <Sparkles className="mt-0.5 h-4.5 w-4.5 shrink-0 animate-pulse text-primary" />
               <p className="text-foreground/90 text-xs leading-relaxed font-medium">
                 {getMascotSpeech()}
               </p>
@@ -417,8 +417,8 @@ export default function LessonFlowPage() {
             className={[
               "absolute right-0 bottom-0 left-0 z-30 flex flex-col items-start justify-between gap-4 border-t px-6 py-5 shadow-2xl backdrop-blur-md transition-transform duration-300 select-text md:flex-row md:items-center md:py-6",
               isCorrectAnswer
-                ? "border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/90 dark:text-emerald-200"
-                : "border-rose-500/30 bg-rose-50 text-rose-800 dark:bg-rose-950/90 dark:text-rose-200",
+                ? "border-success/30 bg-success/10 text-success"
+                : "border-destructive/30 bg-destructive/10 text-destructive",
             ]
               .filter(Boolean)
               .join(" ")}
@@ -426,15 +426,15 @@ export default function LessonFlowPage() {
             <div className="max-w-2xl space-y-2">
               <div className="flex items-center gap-2">
                 {isCorrectAnswer ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  <CheckCircle2 className="h-5 w-5 text-success" />
                 ) : (
-                  <AlertCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                  <AlertCircle className="h-5 w-5 text-destructive" />
                 )}
                 <span className="text-sm font-bold tracking-wider uppercase">
                   {isCorrectAnswer ? "Correct! Well Done!" : "Not Quite, but keep trying!"}
                 </span>
                 {isCorrectAnswer && (
-                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-300">
+                  <span className="rounded-full bg-success/20 px-2 py-0.5 text-[10px] font-bold text-success">
                     +{lastResult.xpEarned} XP
                   </span>
                 )}
@@ -451,8 +451,8 @@ export default function LessonFlowPage() {
               className={[
                 "shrink-0 cursor-pointer rounded-2xl px-6 py-3 text-xs font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-98",
                 isCorrectAnswer
-                  ? "bg-emerald-600 shadow-emerald-950/40 hover:bg-emerald-500"
-                  : "bg-rose-600 shadow-rose-950/40 hover:bg-rose-500",
+                  ? "bg-success shadow-success/40 hover:bg-success"
+                  : "bg-destructive shadow-destructive/40 hover:bg-destructive",
               ]
                 .filter(Boolean)
                 .join(" ")}

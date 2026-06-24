@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { CalendarDays, GraduationCap, Landmark,Users2 } from "lucide-react";
 import * as React from "react";
@@ -63,15 +63,15 @@ export function ScheduleFilterBar({
   }, [selectedYearId, setSelectedTermId]);
 
   return (
-    <div className="flex w-full flex-wrap items-end gap-6 rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="flex w-full flex-wrap items-end gap-6 rounded-3xl border border-border bg-card p-6 shadow-sm">
       {/* Academic Year */}
       <div className="min-w-[200px] flex-1 space-y-2">
-        <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Landmark className="h-4 w-4" />
           <Label className="text-xs font-semibold tracking-wider uppercase">Academic Year</Label>
         </div>
         <Select value={selectedYearId} onValueChange={setSelectedYearId}>
-          <SelectTrigger className="h-11 w-full rounded-xl border-neutral-200 bg-neutral-50/50 text-xs font-medium dark:border-zinc-800 dark:bg-zinc-900/50">
+          <SelectTrigger className="h-11 w-full rounded-xl border-border bg-muted/30 text-xs font-medium">
             <SelectValue placeholder="Select Academic Year" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -87,7 +87,7 @@ export function ScheduleFilterBar({
 
       {/* Term */}
       <div className="min-w-[200px] flex-1 space-y-2">
-        <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <CalendarDays className="h-4 w-4" />
           <Label className="text-xs font-semibold tracking-wider uppercase">Term</Label>
         </div>
@@ -96,7 +96,7 @@ export function ScheduleFilterBar({
           onValueChange={setSelectedTermId}
           disabled={selectedYearId === "all" || termsLoading}
         >
-          <SelectTrigger className="h-11 w-full rounded-xl border-neutral-200 bg-neutral-50/50 text-xs font-medium dark:border-zinc-800 dark:bg-zinc-900/50">
+          <SelectTrigger className="h-11 w-full rounded-xl border-border bg-muted/30 text-xs font-medium">
             <SelectValue
               placeholder={selectedYearId === "all" ? "Select Academic Year first" : "Select Term"}
             />
@@ -114,12 +114,12 @@ export function ScheduleFilterBar({
 
       {/* Class Section */}
       <div className="min-w-[200px] flex-1 space-y-2">
-        <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <GraduationCap className="h-4 w-4" />
           <Label className="text-xs font-semibold tracking-wider uppercase">Class Section</Label>
         </div>
         <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-          <SelectTrigger className="h-11 w-full rounded-xl border-neutral-200 bg-neutral-50/50 text-xs font-medium dark:border-zinc-800 dark:bg-zinc-900/50">
+          <SelectTrigger className="h-11 w-full rounded-xl border-border bg-muted/30 text-xs font-medium">
             <SelectValue placeholder="Select Class Section" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -136,12 +136,12 @@ export function ScheduleFilterBar({
       {/* Teacher Profile */}
       {showTeacherFilter && (
         <div className="min-w-[200px] flex-1 space-y-2">
-          <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Users2 className="h-4 w-4" />
             <Label className="text-xs font-semibold tracking-wider uppercase">Teacher</Label>
           </div>
           <Select value={selectedTeacherId} onValueChange={setSelectedTeacherId}>
-            <SelectTrigger className="h-11 w-full rounded-xl border-neutral-200 bg-neutral-50/50 text-xs font-medium dark:border-zinc-800 dark:bg-zinc-900/50">
+            <SelectTrigger className="h-11 w-full rounded-xl border-border bg-muted/30 text-xs font-medium">
               <SelectValue placeholder="Select Teacher" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
@@ -158,3 +158,4 @@ export function ScheduleFilterBar({
     </div>
   );
 }
+

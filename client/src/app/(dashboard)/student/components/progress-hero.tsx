@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { Flame, Star, Trophy, Award, BookOpen } from "lucide-react";
@@ -12,8 +12,8 @@ interface ProgressHeroProps {
 export function ProgressHero({ data, isLoading }: ProgressHeroProps) {
   if (isLoading || !data) {
     return (
-      <div className="h-48 rounded-3xl border border-zinc-200/50 bg-white/40 dark:border-zinc-800/50 dark:bg-zinc-950/20 backdrop-blur-md flex items-center justify-center">
-        <div className="text-sm font-medium text-zinc-400">Loading your progress...</div>
+      <div className="h-48 rounded-3xl border border-border/50 bg-card/40/50/20 backdrop-blur-md flex items-center justify-center">
+        <div className="text-sm font-medium text-muted-foreground">Loading your progress...</div>
       </div>
     );
   }
@@ -38,10 +38,10 @@ export function ProgressHero({ data, isLoading }: ProgressHeroProps) {
   const strokeDashoffset = circumference - (percent / 100) * circumference;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-zinc-200/50 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent p-6 shadow-xl shadow-indigo-500/5 dark:border-zinc-800/50 dark:from-indigo-500/10 dark:via-zinc-950/20 backdrop-blur-md">
+    <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 shadow-xl shadow-primary/5 backdrop-blur-md">
       {/* Background ambient glows */}
-      <div className="absolute -right-16 -top-16 h-36 w-36 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-      <div className="absolute -left-16 -bottom-16 h-36 w-36 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+      <div className="absolute -right-16 -top-16 h-36 w-36 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+      <div className="absolute -left-16 -bottom-16 h-36 w-36 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
       <div className="flex flex-col md:flex-row items-center gap-6 justify-between">
         {/* Level Ring Left */}
@@ -71,25 +71,25 @@ export function ProgressHero({ data, isLoading }: ProgressHeroProps) {
               />
             </svg>
             <div className="flex flex-col items-center justify-center text-center">
-              <span className="text-2xl font-black text-zinc-900 dark:text-zinc-50 leading-none">
+              <span className="text-2xl font-black text-foreground leading-none">
                 Lvl {level}
               </span>
-              <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mt-1 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-wider">
                 {percent}%
               </span>
             </div>
           </div>
 
           <div>
-            <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
+            <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-primary/15 text-primary uppercase tracking-wide">
               <Star className="h-3 w-3 fill-indigo-500" />
               XP Rank Ready
             </span>
-            <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-2">
+            <h2 className="text-xl font-black text-foreground mt-2">
               Keep Up the Great Work!
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              You are at <span className="font-extrabold text-indigo-600 dark:text-indigo-400">{totalXp} XP</span>. You need{" "}
+            <p className="text-xs text-muted-foreground mt-1">
+              You are at <span className="font-extrabold text-primary">{totalXp} XP</span>. You need{" "}
               <span className="font-bold">{nextLevelXp - totalXp} XP</span> to reach Level {level + 1}.
             </p>
           </div>
@@ -98,45 +98,45 @@ export function ProgressHero({ data, isLoading }: ProgressHeroProps) {
         {/* Streaks & Lessons Right */}
         <div className="flex flex-wrap items-center gap-4 justify-center md:justify-end w-full md:w-auto">
           {/* Active Streak */}
-          <div className="flex items-center gap-3 p-4 px-5 rounded-2xl border border-zinc-200/50 bg-white/30 dark:border-zinc-800/40 dark:bg-zinc-900/20 backdrop-blur-sm shadow-sm min-w-[130px]">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 animate-pulse">
+          <div className="flex items-center gap-3 p-4 px-5 rounded-2xl border border-border/50 bg-card/30/40/20 backdrop-blur-sm shadow-sm min-w-[130px]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10 text-warning animate-pulse">
               <Flame className="h-6 w-6 fill-amber-500" />
             </div>
             <div>
-              <div className="text-2xl font-black text-zinc-900 dark:text-zinc-50">
+              <div className="text-2xl font-black text-foreground">
                 {currentStreak}
               </div>
-              <div className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
                 Day Streak
               </div>
             </div>
           </div>
 
           {/* Lessons completed */}
-          <div className="flex items-center gap-3 p-4 px-5 rounded-2xl border border-zinc-200/50 bg-white/30 dark:border-zinc-800/40 dark:bg-zinc-900/20 backdrop-blur-sm shadow-sm min-w-[130px]">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
+          <div className="flex items-center gap-3 p-4 px-5 rounded-2xl border border-border/50 bg-card/30/40/20 backdrop-blur-sm shadow-sm min-w-[130px]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <BookOpen className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-2xl font-black text-zinc-900 dark:text-zinc-50">
+              <div className="text-2xl font-black text-foreground">
                 {lessonsCompleted}
               </div>
-              <div className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
                 Lessons Done
               </div>
             </div>
           </div>
 
           {/* Max Streak */}
-          <div className="flex items-center gap-3 p-4 px-5 rounded-2xl border border-zinc-200/50 bg-white/30 dark:border-zinc-800/40 dark:bg-zinc-900/20 backdrop-blur-sm shadow-sm min-w-[130px]">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+          <div className="flex items-center gap-3 p-4 px-5 rounded-2xl border border-border/50 bg-card/30/40/20 backdrop-blur-sm shadow-sm min-w-[130px]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success">
               <Trophy className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-2xl font-black text-zinc-900 dark:text-zinc-50">
+              <div className="text-2xl font-black text-foreground">
                 {longestStreak}
               </div>
-              <div className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
                 Record Streak
               </div>
             </div>

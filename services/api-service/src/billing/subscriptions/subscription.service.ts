@@ -57,6 +57,9 @@ export class SubscriptionService {
     let stripeCustomerId: string | undefined;
     let stripeSubscriptionId: string | undefined;
     let currentPeriodEnd: Date;
+    // Client secret for the initial PaymentIntent — the frontend uses this to
+    // collect a payment method and confirm the first payment.
+    let clientSecret: string | undefined;
 
     const isFree =
       Number(plan.priceMonthly) === 0 && Number(plan.priceAnnual) === 0;
@@ -77,10 +80,13 @@ export class SubscriptionService {
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
         expand: ['latest_invoice.payment_intent'],
+        metadata: { campusId: campus.id, planId: plan.id },
       });
 
       stripeSubscriptionId = stripeSub.id;
-      currentPeriodEnd = new Date(stripeSub.current_period_end * 1000);
+      currentPeriodEnd = this.resolvePeriodEnd(stripeSub);
+      clientSecret =
+        stripeSub.latest_invoice?.payment_intent?.client_secret ?? undefined;
     } else {
       // Free plan or no Stripe price — set period manually
       currentPeriodEnd = new Date();
@@ -90,7 +96,7 @@ export class SubscriptionService {
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + this.TRIAL_DAYS);
 
-    return this.prisma.subscription.create({
+    const subscription = await this.prisma.subscription.create({
       data: {
         campusId: dto.campusId,
         planId: dto.planId,
@@ -106,6 +112,24 @@ export class SubscriptionService {
       },
       include: { plan: true, campus: true },
     });
+
+    // `clientSecret` is returned (not persisted) so the client can confirm the
+    // initial payment for paid plans.
+    return { ...subscription, clientSecret };
+  }
+
+  /**
+   * Reads the current period end from a Stripe subscription, tolerating both
+   * the legacy top-level field and the newer per-item placement.
+   */
+  private resolvePeriodEnd(stripeSub: any): Date {
+    const ts =
+      stripeSub.current_period_end ??
+      stripeSub.items?.data?.[0]?.current_period_end;
+    if (ts) return new Date(ts * 1000);
+    const fallback = new Date();
+    fallback.setMonth(fallback.getMonth() + 1);
+    return fallback;
   }
 
   // ─── Get Campus Subscription ─────────────────────────────────────────────────

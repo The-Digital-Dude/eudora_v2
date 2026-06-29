@@ -10,8 +10,29 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Starting database seeding...');
 
-  const subjects = ['User', 'Role', 'Permission', 'Teacher', 'Student', 'Assessment', 'Timetable', 'Attendance', 'Homework', 'Gradebook', 'ReportCard'];
-  const actions = ['create', 'read', 'update', 'delete', 'manage', 'attempt', 'mark', 'assign'];
+  const subjects = [
+    'User',
+    'Role',
+    'Permission',
+    'Teacher',
+    'Student',
+    'Assessment',
+    'Timetable',
+    'Attendance',
+    'Homework',
+    'Gradebook',
+    'ReportCard',
+  ];
+  const actions = [
+    'create',
+    'read',
+    'update',
+    'delete',
+    'manage',
+    'attempt',
+    'mark',
+    'assign',
+  ];
 
   const permissionIds: Record<string, string> = {};
 
@@ -65,7 +86,8 @@ async function main() {
     update: {},
     create: {
       name: 'GUARDIAN',
-      description: 'Guardian with read-only dashboard access to their linked students',
+      description:
+        'Guardian with read-only dashboard access to their linked students',
     },
   });
 
@@ -74,7 +96,8 @@ async function main() {
     update: {},
     create: {
       name: 'TEACHER',
-      description: 'Teacher with class management and assessment scoring permissions',
+      description:
+        'Teacher with class management and assessment scoring permissions',
     },
   });
   console.log('✅ Created roles');
@@ -96,17 +119,53 @@ async function main() {
   }
 
   const adminPermissions = [
-    'create:User', 'read:User', 'update:User', 'delete:User',
-    'create:Role', 'read:Role', 'update:Role', 'delete:Role',
+    'create:User',
+    'read:User',
+    'update:User',
+    'delete:User',
+    'create:Role',
+    'read:Role',
+    'update:Role',
+    'delete:Role',
     'read:Permission',
-    'create:Teacher', 'read:Teacher', 'update:Teacher', 'delete:Teacher', 'manage:Teacher',
-    'create:Student', 'read:Student', 'update:Student', 'delete:Student', 'manage:Student',
-    'read:Assessment', 'manage:Assessment', 'assign:Assessment',
-    'create:Timetable', 'read:Timetable', 'update:Timetable', 'delete:Timetable', 'manage:Timetable',
-    'create:Attendance', 'read:Attendance', 'update:Attendance', 'delete:Attendance', 'manage:Attendance',
-    'create:Homework', 'read:Homework', 'update:Homework', 'delete:Homework', 'manage:Homework',
-    'create:Gradebook', 'read:Gradebook', 'update:Gradebook', 'delete:Gradebook', 'manage:Gradebook',
-    'create:ReportCard', 'read:ReportCard', 'update:ReportCard', 'delete:ReportCard', 'manage:ReportCard'
+    'create:Teacher',
+    'read:Teacher',
+    'update:Teacher',
+    'delete:Teacher',
+    'manage:Teacher',
+    'create:Student',
+    'read:Student',
+    'update:Student',
+    'delete:Student',
+    'manage:Student',
+    'read:Assessment',
+    'manage:Assessment',
+    'assign:Assessment',
+    'create:Timetable',
+    'read:Timetable',
+    'update:Timetable',
+    'delete:Timetable',
+    'manage:Timetable',
+    'create:Attendance',
+    'read:Attendance',
+    'update:Attendance',
+    'delete:Attendance',
+    'manage:Attendance',
+    'create:Homework',
+    'read:Homework',
+    'update:Homework',
+    'delete:Homework',
+    'manage:Homework',
+    'create:Gradebook',
+    'read:Gradebook',
+    'update:Gradebook',
+    'delete:Gradebook',
+    'manage:Gradebook',
+    'create:ReportCard',
+    'read:ReportCard',
+    'update:ReportCard',
+    'delete:ReportCard',
+    'manage:ReportCard',
   ];
 
   for (const permKey of adminPermissions) {
@@ -131,12 +190,13 @@ async function main() {
   const userPermissions = [
     'read:User',
     'read:Student',
-    'read:Assessment', 'attempt:Assessment',
+    'read:Assessment',
+    'attempt:Assessment',
     'read:Timetable',
     'read:Attendance',
     'read:Homework',
     'read:Gradebook',
-    'read:ReportCard'
+    'read:ReportCard',
   ];
   for (const permKey of userPermissions) {
     const permissionId = permissionIds[permKey];
@@ -160,12 +220,27 @@ async function main() {
   const teacherPermissions = [
     'read:User',
     'read:Teacher',
-    'read:Student', 'update:Student', 'manage:Student',
-    'read:Assessment', 'attempt:Assessment', 'mark:Assessment', 'assign:Assessment',
+    'read:Student',
+    'update:Student',
+    'manage:Student',
+    'read:Assessment',
+    'attempt:Assessment',
+    'mark:Assessment',
+    'assign:Assessment',
     'read:Timetable',
-    'create:Attendance', 'read:Attendance', 'update:Attendance', 'manage:Attendance',
-    'create:Homework', 'read:Homework', 'update:Homework', 'delete:Homework', 'manage:Homework',
-    'create:Gradebook', 'read:Gradebook', 'update:Gradebook', 'manage:Gradebook'
+    'create:Attendance',
+    'read:Attendance',
+    'update:Attendance',
+    'manage:Attendance',
+    'create:Homework',
+    'read:Homework',
+    'update:Homework',
+    'delete:Homework',
+    'manage:Homework',
+    'create:Gradebook',
+    'read:Gradebook',
+    'update:Gradebook',
+    'manage:Gradebook',
   ];
   for (const permKey of teacherPermissions) {
     const permissionId = permissionIds[permKey];
@@ -192,7 +267,7 @@ async function main() {
     'read:Timetable',
     'read:Attendance',
     'read:Homework',
-    'read:ReportCard'
+    'read:ReportCard',
   ];
   for (const permKey of guardianPermissions) {
     const permissionId = permissionIds[permKey];
@@ -312,8 +387,20 @@ async function main() {
   const teacherPassword = await bcrypt.hash('Teacher@123', 10);
 
   const teacherData = [
-    { email: 'prof.turing@eudora.app', firstName: 'Alan', lastName: 'Turing', specialization: 'Computer Science', employeeCode: 'EMP-TURING' },
-    { email: 'prof.lovelace@eudora.app', firstName: 'Ada', lastName: 'Lovelace', specialization: 'Mathematics', employeeCode: 'EMP-LOVELACE' },
+    {
+      email: 'prof.turing@eudora.app',
+      firstName: 'Alan',
+      lastName: 'Turing',
+      specialization: 'Computer Science',
+      employeeCode: 'EMP-TURING',
+    },
+    {
+      email: 'prof.lovelace@eudora.app',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      specialization: 'Mathematics',
+      employeeCode: 'EMP-LOVELACE',
+    },
   ];
 
   for (const t of teacherData) {
@@ -388,8 +475,8 @@ async function main() {
     {
       name: 'Free',
       description: 'Free tier for small campuses',
-      priceMonthly: 0.00,
-      priceAnnual: 0.00,
+      priceMonthly: 0.0,
+      priceAnnual: 0.0,
       currency: 'USD',
       stripePriceIdMonthly: null,
       stripePriceIdAnnual: null,
@@ -403,8 +490,8 @@ async function main() {
     {
       name: 'Starter',
       description: 'Starter tier for growing educational institutions',
-      priceMonthly: 29.00,
-      priceAnnual: 290.00,
+      priceMonthly: 29.0,
+      priceAnnual: 290.0,
       currency: 'USD',
       stripePriceIdMonthly: 'price_starter_monthly_placeholder',
       stripePriceIdAnnual: 'price_starter_annual_placeholder',
@@ -418,8 +505,8 @@ async function main() {
     {
       name: 'Pro',
       description: 'Advanced features for established schools',
-      priceMonthly: 79.00,
-      priceAnnual: 790.00,
+      priceMonthly: 79.0,
+      priceAnnual: 790.0,
       currency: 'USD',
       stripePriceIdMonthly: 'price_pro_monthly_placeholder',
       stripePriceIdAnnual: 'price_pro_annual_placeholder',
@@ -433,15 +520,20 @@ async function main() {
     {
       name: 'Enterprise',
       description: 'Custom limits and dedicated support for large networks',
-      priceMonthly: 299.00,
-      priceAnnual: 2990.00,
+      priceMonthly: 299.0,
+      priceAnnual: 2990.0,
       currency: 'USD',
       stripePriceIdMonthly: 'price_enterprise_monthly_placeholder',
       stripePriceIdAnnual: 'price_enterprise_annual_placeholder',
       maxStudents: null,
       maxCampuses: null,
       maxPrograms: null,
-      features: ['basic_analytics', 'advanced_reports', 'api_access', 'dedicated_support'],
+      features: [
+        'basic_analytics',
+        'advanced_reports',
+        'api_access',
+        'dedicated_support',
+      ],
       isActive: true,
       isPublic: true,
     },
@@ -499,7 +591,8 @@ async function main() {
     update: {},
     create: {
       name: 'Fractions',
-      description: 'Understanding fraction concepts, operations, and applications',
+      description:
+        'Understanding fraction concepts, operations, and applications',
     },
   });
 
@@ -511,7 +604,8 @@ async function main() {
       data: {
         conceptId: concept.id,
         name: 'Compare Fractions',
-        description: 'Ability to compare and order fractions with like and unlike denominators',
+        description:
+          'Ability to compare and order fractions with like and unlike denominators',
       },
     });
   }
@@ -526,7 +620,8 @@ async function main() {
       data: {
         conceptId: concept.id,
         title: 'Intro to Comparing Fractions',
-        description: 'Visualizing and understanding how different fractions compare.',
+        description:
+          'Visualizing and understanding how different fractions compare.',
         sortOrder: 1,
         xpReward: 50,
       },
@@ -549,11 +644,13 @@ async function main() {
         subjectId: mathSubject.id,
         levelId: gradeLevel.id,
         questionType: 'interactive',
-        prompt: 'Slide the dial to increase the numerator and see how the shaded area changes.',
+        prompt:
+          'Slide the dial to increase the numerator and see how the shaded area changes.',
         correctAnswer: '5',
         widgetType: 'SLIDER_MANIPULATIVE',
         isGraded: false,
-        explanation: 'As the numerator increases, you shade more parts of the whole, meaning the value of the fraction grows!',
+        explanation:
+          'As the numerator increases, you shade more parts of the whole, meaning the value of the fraction grows!',
         hints: ['Try moving the slider all the way to 5 parts.'],
         widgetConfig: {
           min: 1,
@@ -574,7 +671,8 @@ async function main() {
         title: 'Shading the Whole',
         sortOrder: 1,
         cardType: 'CONCEPTUAL',
-        content: 'Fractions represent parts of a whole. Let us visualize $$\\frac{x}{10}$$ dynamically. Drag the slider to observe how the value changes relative to 1.',
+        content:
+          'Fractions represent parts of a whole. Let us visualize $$\\frac{x}{10}$$ dynamically. Drag the slider to observe how the value changes relative to 1.',
         questionId: q1.id,
       },
     });
@@ -584,11 +682,13 @@ async function main() {
         subjectId: mathSubject.id,
         levelId: gradeLevel.id,
         questionType: 'mcq',
-        prompt: 'Which fraction is larger: $$\\frac{3}{5}$$ or $$\\frac{3}{7}$$?',
+        prompt:
+          'Which fraction is larger: $$\\frac{3}{5}$$ or $$\\frac{3}{7}$$?',
         correctAnswer: null,
         widgetType: 'STANDARD_MCQ',
         isGraded: true,
-        explanation: 'When numerators are equal, the fraction with the smaller denominator is larger because the whole is divided into fewer, larger pieces!',
+        explanation:
+          'When numerators are equal, the fraction with the smaller denominator is larger because the whole is divided into fewer, larger pieces!',
         hints: ['Think about sharing a pizza with 5 people versus 7 people.'],
       },
     });
@@ -617,7 +717,8 @@ async function main() {
         title: 'Comparing Equal Numerators',
         sortOrder: 2,
         cardType: 'INTERACTIVE',
-        content: 'Now, let us compare two fractions that have the same numerator but different denominators. Make a prediction!',
+        content:
+          'Now, let us compare two fractions that have the same numerator but different denominators. Make a prediction!',
         questionId: q2.id,
       },
     });
@@ -632,7 +733,8 @@ async function main() {
       data: {
         competencyId: competency.id,
         name: 'Comparing Fractions Rubric',
-        description: 'Evaluates correctness and mathematical reasoning when comparing fractions',
+        description:
+          'Evaluates correctness and mathematical reasoning when comparing fractions',
       },
     });
   }
@@ -651,11 +753,36 @@ async function main() {
     });
 
     const correctnessLevels = [
-      { level: 0, title: 'Not Demonstrated', score: 0.0, description: 'Cannot compare fractions' },
-      { level: 1, title: 'Emerging', score: 1.0, description: 'Needs substantial support' },
-      { level: 2, title: 'Developing', score: 2.0, description: 'Can compare simple fractions with common denominators' },
-      { level: 3, title: 'Proficient', score: 3.0, description: 'Can compare fractions with different denominators' },
-      { level: 4, title: 'Advanced', score: 4.0, description: 'Can compare and simplify complex fractions' },
+      {
+        level: 0,
+        title: 'Not Demonstrated',
+        score: 0.0,
+        description: 'Cannot compare fractions',
+      },
+      {
+        level: 1,
+        title: 'Emerging',
+        score: 1.0,
+        description: 'Needs substantial support',
+      },
+      {
+        level: 2,
+        title: 'Developing',
+        score: 2.0,
+        description: 'Can compare simple fractions with common denominators',
+      },
+      {
+        level: 3,
+        title: 'Proficient',
+        score: 3.0,
+        description: 'Can compare fractions with different denominators',
+      },
+      {
+        level: 4,
+        title: 'Advanced',
+        score: 4.0,
+        description: 'Can compare and simplify complex fractions',
+      },
     ];
 
     for (const lvl of correctnessLevels) {
@@ -685,11 +812,36 @@ async function main() {
     });
 
     const reasoningLevels = [
-      { level: 0, title: 'Not Demonstrated', score: 0.0, description: 'No reasoning provided' },
-      { level: 1, title: 'Emerging', score: 1.0, description: 'Lists steps without explanation' },
-      { level: 2, title: 'Developing', score: 2.0, description: 'Explains steps but lacks deep justification' },
-      { level: 3, title: 'Proficient', score: 3.0, description: 'Explains and justifies comparison logic clearly' },
-      { level: 4, title: 'Advanced', score: 4.0, description: 'Exemplary explanation with visual/algebraic proof' },
+      {
+        level: 0,
+        title: 'Not Demonstrated',
+        score: 0.0,
+        description: 'No reasoning provided',
+      },
+      {
+        level: 1,
+        title: 'Emerging',
+        score: 1.0,
+        description: 'Lists steps without explanation',
+      },
+      {
+        level: 2,
+        title: 'Developing',
+        score: 2.0,
+        description: 'Explains steps but lacks deep justification',
+      },
+      {
+        level: 3,
+        title: 'Proficient',
+        score: 3.0,
+        description: 'Explains and justifies comparison logic clearly',
+      },
+      {
+        level: 4,
+        title: 'Advanced',
+        score: 4.0,
+        description: 'Exemplary explanation with visual/algebraic proof',
+      },
     ];
 
     for (const lvl of reasoningLevels) {
@@ -709,14 +861,36 @@ async function main() {
 
   console.log('🌱 Seeding student users and profiles...');
   const studentData = [
-    { email: 'charlotte@example.com', firstName: 'Charlotte', lastName: 'Harris', gender: 'FEMALE' },
-    { email: 'elijah.m@example.com', firstName: 'Elijah', lastName: 'Miller', gender: 'MALE' },
-    { email: 'aria.w@example.com', firstName: 'Aria', lastName: 'Watson', gender: 'FEMALE' },
-    { email: 'lucas.b@example.com', firstName: 'Lucas', lastName: 'Brooks', gender: 'MALE' },
+    {
+      email: 'charlotte@example.com',
+      firstName: 'Charlotte',
+      lastName: 'Harris',
+      gender: 'FEMALE',
+    },
+    {
+      email: 'elijah.m@example.com',
+      firstName: 'Elijah',
+      lastName: 'Miller',
+      gender: 'MALE',
+    },
+    {
+      email: 'aria.w@example.com',
+      firstName: 'Aria',
+      lastName: 'Watson',
+      gender: 'FEMALE',
+    },
+    {
+      email: 'lucas.b@example.com',
+      firstName: 'Lucas',
+      lastName: 'Brooks',
+      gender: 'MALE',
+    },
   ];
 
   const studentProfiles = [];
-  const classSection = await prisma.classSection.findUnique({ where: { code: 'CS-2026-A' } });
+  const classSection = await prisma.classSection.findUnique({
+    where: { code: 'CS-2026-A' },
+  });
 
   for (const s of studentData) {
     const user = await prisma.user.upsert({
@@ -796,7 +970,9 @@ async function main() {
 
     for (const profile of studentProfiles) {
       for (const d of dates) {
-        const isAbsent = profile.fullName === 'Charlotte Harris' && d.getTime() === new Date('2026-06-12').getTime();
+        const isAbsent =
+          profile.fullName === 'Charlotte Harris' &&
+          d.getTime() === new Date('2026-06-12').getTime();
         const status = isAbsent ? 'ABSENT' : 'PRESENT';
         const remarks = isAbsent ? 'Medical Leave' : 'On time';
 
@@ -875,7 +1051,8 @@ async function main() {
       {
         type: 'Announcement',
         title: 'Fall Semester 2026 Registration Open',
-        content: 'Registration is now open for all programs in the Fall 2026 term.',
+        content:
+          'Registration is now open for all programs in the Fall 2026 term.',
         sender: 'System',
         status: 'SENT',
         recipientCount: 120,
@@ -903,9 +1080,15 @@ async function main() {
   // Seed makeup requests
   console.log('🌱 Seeding makeup requests...');
   await prisma.makeupRequest.deleteMany();
-  const charlotteProfile = studentProfiles.find((p) => p.fullName === 'Charlotte Harris');
-  const elijahProfile = studentProfiles.find((p) => p.fullName === 'Elijah Miller');
-  const dsaClass = await prisma.courseClass.findUnique({ where: { code: 'CS-DSA-2026' } });
+  const charlotteProfile = studentProfiles.find(
+    (p) => p.fullName === 'Charlotte Harris',
+  );
+  const elijahProfile = studentProfiles.find(
+    (p) => p.fullName === 'Elijah Miller',
+  );
+  const dsaClass = await prisma.courseClass.findUnique({
+    where: { code: 'CS-DSA-2026' },
+  });
 
   if (charlotteProfile && elijahProfile && dsaClass) {
     await prisma.makeupRequest.createMany({
@@ -955,7 +1138,7 @@ async function main() {
         title: 'Backup Successful',
         body: 'System database backup completed successfully.',
         readAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      }
+      },
     ],
   });
   console.log('✅ Seeded notifications');

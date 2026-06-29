@@ -5,6 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import {
   InvoiceStatus,
   PaymentStatus,
+  PlanInterval,
   SubscriptionStatus,
 } from '@prisma/client';
 
@@ -32,6 +33,10 @@ export class StripeWebhookService {
     this.logger.log(`Processing Stripe event: ${event.type} [${event.id}]`);
 
     switch (event.type) {
+      case 'checkout.session.completed':
+        await this.handleCheckoutCompleted(event.data.object);
+        break;
+
       case 'customer.subscription.updated':
         await this.handleSubscriptionUpdated(event.data.object);
         break;
@@ -59,6 +64,98 @@ export class StripeWebhookService {
 
   // ─── Handlers ─────────────────────────────────────────────────────────────────
 
+  /**
+   * Fired when a customer completes payment on a hosted Checkout page.
+   * Creates the local Subscription record (idempotently) now that Stripe has
+   * confirmed the subscription and customer.
+   */
+  private async handleCheckoutCompleted(session: any) {
+    if (session.mode !== 'subscription') return;
+
+    const stripeSubscriptionId =
+      typeof session.subscription === 'string'
+        ? session.subscription
+        : session.subscription?.id;
+    const stripeCustomerId =
+      typeof session.customer === 'string'
+        ? session.customer
+        : session.customer?.id;
+
+    if (!stripeSubscriptionId) {
+      this.logger.warn('Checkout session completed without a subscription id');
+      return;
+    }
+
+    // Idempotency — webhooks may be delivered more than once.
+    const existing = await this.prisma.subscription.findUnique({
+      where: { stripeSubscriptionId },
+    });
+    if (existing) {
+      this.logger.log(
+        `Subscription already exists for ${stripeSubscriptionId}, skipping`,
+      );
+      return;
+    }
+
+    const meta = session.metadata ?? {};
+    const campusId = meta.campusId as string | undefined;
+    const planId = meta.planId as string | undefined;
+    if (!campusId || !planId) {
+      this.logger.warn(
+        `Checkout session ${session.id} missing campusId/planId metadata`,
+      );
+      return;
+    }
+
+    // A subscription may have been created for this campus in the meantime.
+    const campusSub = await this.prisma.subscription.findUnique({
+      where: { campusId },
+    });
+    if (campusSub) {
+      this.logger.log(
+        `Campus ${campusId} already has a subscription, skipping checkout`,
+      );
+      return;
+    }
+
+    const interval =
+      meta.interval === PlanInterval.ANNUAL
+        ? PlanInterval.ANNUAL
+        : PlanInterval.MONTHLY;
+
+    const stripeSub = await this.stripe.subscriptions.retrieve(
+      stripeSubscriptionId,
+    );
+
+    const statusMap: Record<string, SubscriptionStatus> = {
+      trialing: SubscriptionStatus.TRIALING,
+      active: SubscriptionStatus.ACTIVE,
+      past_due: SubscriptionStatus.PAST_DUE,
+      canceled: SubscriptionStatus.CANCELED,
+      unpaid: SubscriptionStatus.UNPAID,
+    };
+
+    await this.prisma.subscription.create({
+      data: {
+        campusId,
+        planId,
+        stripeCustomerId,
+        stripeSubscriptionId,
+        status: statusMap[stripeSub.status] ?? SubscriptionStatus.ACTIVE,
+        interval,
+        currentPeriodStart: this.periodStart(stripeSub),
+        currentPeriodEnd: this.periodEnd(stripeSub),
+        trialEndsAt: stripeSub.trial_end
+          ? new Date(stripeSub.trial_end * 1000)
+          : undefined,
+      },
+    });
+
+    this.logger.log(
+      `Created subscription for campus ${campusId} from checkout ${session.id}`,
+    );
+  }
+
   private async handleSubscriptionUpdated(stripeSub: any) {
     const local = await this.prisma.subscription.findUnique({
       where: { stripeSubscriptionId: stripeSub.id },
@@ -80,12 +177,36 @@ export class StripeWebhookService {
       where: { id: local.id },
       data: {
         status: statusMap[stripeSub.status] ?? SubscriptionStatus.ACTIVE,
-        currentPeriodStart: new Date(stripeSub.current_period_start * 1000),
-        currentPeriodEnd: new Date(stripeSub.current_period_end * 1000),
+        currentPeriodStart: this.periodStart(stripeSub),
+        currentPeriodEnd: this.periodEnd(stripeSub),
       },
     });
 
     this.logger.log(`Subscription ${local.id} updated to ${stripeSub.status}`);
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+  /**
+   * Reads the current period start from a Stripe subscription, tolerating both
+   * the legacy top-level field and the newer per-item placement.
+   */
+  private periodStart(stripeSub: any): Date {
+    const ts =
+      stripeSub.current_period_start ??
+      stripeSub.items?.data?.[0]?.current_period_start;
+    return ts ? new Date(ts * 1000) : new Date();
+  }
+
+  private periodEnd(stripeSub: any): Date {
+    const ts =
+      stripeSub.current_period_end ??
+      stripeSub.items?.data?.[0]?.current_period_end;
+    if (ts) return new Date(ts * 1000);
+    // Fall back to one month out so we never persist an Invalid Date.
+    const fallback = new Date();
+    fallback.setMonth(fallback.getMonth() + 1);
+    return fallback;
   }
 
   private async handleSubscriptionDeleted(stripeSub: any) {

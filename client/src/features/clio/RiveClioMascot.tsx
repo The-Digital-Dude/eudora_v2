@@ -5,27 +5,27 @@ import React, { useEffect } from "react";
 
 interface ClioMascotProps {
   state:
-    | "idle"
-    | "thinking"
-    | "celebrate"
-    | "encourage"
-    | "wrong"
-    | "greeting"
-    | "confused"
-    | "hint"
-    | "milestone";
+  | "idle"
+  | "thinking"
+  | "celebrate"
+  | "encourage"
+  | "wrong"
+  | "greeting"
+  | "confused"
+  | "hint"
+  | "milestone";
   size?: number;
 }
 
 export function RiveClioMascot({ state, size = 120 }: ClioMascotProps) {
   const { rive, RiveComponent } = useRive({
     src: "/rive/clio-mascot.riv",
-    stateMachines: "State Machine 1",
+    stateMachines: "bumpy",
     autoplay: true,
   });
 
   // Try to bind to state machine input named after the requested state state
-  const stateInput = useStateMachineInput(rive, "State Machine 1", state);
+  const stateInput = useStateMachineInput(rive, "bumpy", state);
 
   useEffect(() => {
     if (!rive) return;

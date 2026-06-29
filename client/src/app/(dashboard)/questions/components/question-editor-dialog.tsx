@@ -35,8 +35,8 @@ export function QuestionEditorDialog({
   const { data: subjectsData } = useGetSubjectsQuery();
   const { data: levelsData } = useGetLevelsQuery();
 
-  const subjects = subjectsData?.items || [];
-  const levels = levelsData?.items || [];
+  const subjects = React.useMemo(() => subjectsData?.items || [], [subjectsData]);
+  const levels = React.useMemo(() => levelsData?.items || [], [levelsData]);
 
   const [createQuestion, { isLoading: isCreating }] = useCreateQuestionMutation();
   const [updateQuestion, { isLoading: isUpdating }] = useUpdateQuestionMutation();
@@ -57,9 +57,11 @@ export function QuestionEditorDialog({
 
   const [activePane, setActivePane] = useState<"edit" | "preview">("edit");
 
+  const prevOpenRef = React.useRef(false);
+
   // Load initial values on edit
   useEffect(() => {
-    if (open) {
+    if (open && !prevOpenRef.current) {
       if (questionId && initialQuestion) {
         setSubjectId(initialQuestion.subjectId || "");
         setLevelId(initialQuestion.levelId || "");
@@ -92,12 +94,13 @@ export function QuestionEditorDialog({
         setWidgetConfig(null);
       }
     }
+    prevOpenRef.current = open;
   }, [open, questionId, initialQuestion, subjects, levels]);
 
   // Adjust widget defaults when widgetType changes
   const handleWidgetTypeChange = (type: string) => {
     setWidgetType(type);
-    
+
     // Seed initial sensible widget configurations
     if (type === "SLIDER_MANIPULATIVE") {
       setWidgetConfig({ min: 0, max: 100, step: 1, unit: "", correctValue: 50 });
@@ -185,7 +188,10 @@ export function QuestionEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[88vh] rounded-3xl border border-neutral-200 bg-white p-0 shadow-2xl flex flex-col overflow-hidden dark:border-zinc-800 dark:bg-zinc-900">
+      <DialogContent 
+        onPointerDownOutside={(e) => e.preventDefault()}
+        className="max-w-5xl h-[88vh] rounded-3xl border border-neutral-200 bg-white p-0 shadow-2xl flex flex-col overflow-hidden dark:border-zinc-800 dark:bg-zinc-900"
+      >
         {/* Header */}
         <DialogHeader className="p-6 pb-4 border-b border-neutral-150 dark:border-zinc-800 flex flex-row items-center justify-between">
           <div>
@@ -199,17 +205,15 @@ export function QuestionEditorDialog({
           <div className="flex rounded-xl bg-neutral-100 p-0.5 md:hidden dark:bg-zinc-800 mr-8">
             <button
               onClick={() => setActivePane("edit")}
-              className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                activePane === "edit" ? "bg-white shadow dark:bg-zinc-900" : "text-neutral-500"
-              }`}
+              className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${activePane === "edit" ? "bg-white shadow dark:bg-zinc-900" : "text-neutral-500"
+                }`}
             >
               <Edit3 className="h-3.5 w-3.5" /> Edit
             </button>
             <button
               onClick={() => setActivePane("preview")}
-              className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                activePane === "preview" ? "bg-white shadow dark:bg-zinc-900" : "text-neutral-500"
-              }`}
+              className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${activePane === "preview" ? "bg-white shadow dark:bg-zinc-900" : "text-neutral-500"
+                }`}
             >
               <Eye className="h-3.5 w-3.5" /> Preview
             </button>
@@ -221,9 +225,8 @@ export function QuestionEditorDialog({
           {/* Left Editor Pane */}
           <form
             onSubmit={handleSave}
-            className={`flex-1 overflow-y-auto p-6 space-y-6 md:block ${
-              activePane === "edit" ? "block" : "hidden"
-            } md:border-r border-neutral-150 dark:border-zinc-800`}
+            className={`flex-1 overflow-y-auto p-6 space-y-6 md:block ${activePane === "edit" ? "block" : "hidden"
+              } md:border-r border-neutral-150 dark:border-zinc-800`}
           >
             <div className="grid grid-cols-2 gap-4">
               {/* Subject */}
@@ -420,16 +423,15 @@ export function QuestionEditorDialog({
                 ))}
               </div>
             </div>
-            
+
             {/* Form submission placeholder */}
             <button type="submit" className="hidden" id="editor-submit-btn" />
           </form>
 
           {/* Right Live Preview Pane */}
           <div
-            className={`flex-1 overflow-y-auto p-6 bg-neutral-50/50 md:block ${
-              activePane === "preview" ? "block" : "hidden"
-            } dark:bg-zinc-950/20`}
+            className={`flex-1 overflow-y-auto p-6 bg-neutral-50/50 md:block ${activePane === "preview" ? "block" : "hidden"
+              } dark:bg-zinc-950/20`}
           >
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-2">
               <Eye className="h-4 w-4 text-violet-500" /> Live Editor Preview

@@ -116,6 +116,7 @@ export const authApi = createApi({
     "Gamification",
     "Leaderboard",
     "TeacherPortal",
+    "LiveClasses",
   ],
   endpoints: (builder) => ({
     login: builder.mutation({

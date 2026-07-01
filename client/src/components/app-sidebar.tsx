@@ -14,6 +14,7 @@ import {
   NotebookPen,
   PencilRuler,
   Presentation,
+  Radio,
   School,
   Sparkles,
   SquareStack,
@@ -76,6 +77,12 @@ const data = {
           url: "/timetable",
           icon: CalendarDays,
           roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
+        },
+        {
+          title: "Live Classes",
+          url: "/live-classes",
+          icon: Radio,
+          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER"],
         },
         {
           title: "Attendance",

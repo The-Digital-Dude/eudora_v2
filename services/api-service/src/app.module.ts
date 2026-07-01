@@ -20,6 +20,8 @@ import { BillingModule } from './billing/billing.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { HomeworkModule } from './homework/homework.module';
 import { EvaluationModule } from './evaluation/evaluation.module';
+import { DiagnosticsModule } from './diagnostics/diagnostics.module';
+import { LiveClassesModule } from './live-classes/live-classes.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { LeadsModule } from './leads/leads.module';
@@ -59,6 +61,8 @@ import { AuditModule } from './common/audit/audit.module';
     AttendanceModule,
     HomeworkModule,
     EvaluationModule,
+    DiagnosticsModule,
+    LiveClassesModule,
     AssessmentsModule,
     LessonsModule,
     LeadsModule,

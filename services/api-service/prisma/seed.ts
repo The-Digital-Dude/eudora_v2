@@ -11,7 +11,7 @@ async function main() {
   console.log('🌱 Starting database seeding...');
 
   // ─── Permissions & Roles ─────────────────────────────────────────────────────
-  const subjects = ['User', 'Role', 'Permission', 'Teacher', 'Student', 'Assessment', 'Timetable', 'Attendance', 'Homework', 'Gradebook', 'ReportCard'];
+  const subjects = ['User', 'Role', 'Permission', 'Teacher', 'Student', 'Assessment', 'Timetable', 'Attendance', 'Homework', 'Gradebook', 'ReportCard', 'LearningGap', 'NextAction', 'Diagnostic', 'Placement', 'LiveClass'];
   const actions = ['create', 'read', 'update', 'delete', 'manage', 'attempt', 'mark', 'assign'];
   const permissionIds: Record<string, string> = {};
 
@@ -52,6 +52,11 @@ async function main() {
     'create:Homework','read:Homework','update:Homework','delete:Homework','manage:Homework',
     'create:Gradebook','read:Gradebook','update:Gradebook','delete:Gradebook','manage:Gradebook',
     'create:ReportCard','read:ReportCard','update:ReportCard','delete:ReportCard','manage:ReportCard',
+    'create:LearningGap','read:LearningGap','update:LearningGap','delete:LearningGap','manage:LearningGap',
+    'create:NextAction','read:NextAction','update:NextAction','delete:NextAction','manage:NextAction',
+    'create:Diagnostic','read:Diagnostic','update:Diagnostic','delete:Diagnostic','manage:Diagnostic',
+    'create:Placement','read:Placement','update:Placement','delete:Placement','manage:Placement',
+    'create:LiveClass','read:LiveClass','update:LiveClass','delete:LiveClass','manage:LiveClass',
   ];
   for (const k of adminPerms) {
     const pid = permissionIds[k];
@@ -61,7 +66,7 @@ async function main() {
     const pid = permissionIds[k];
     if (pid) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: userRole.id, permissionId: pid } }, update: {}, create: { roleId: userRole.id, permissionId: pid } });
   }
-  for (const k of ['read:User','read:Teacher','read:Student','update:Student','manage:Student','read:Assessment','attempt:Assessment','mark:Assessment','assign:Assessment','read:Timetable','create:Attendance','read:Attendance','update:Attendance','manage:Attendance','create:Homework','read:Homework','update:Homework','delete:Homework','manage:Homework','create:Gradebook','read:Gradebook','update:Gradebook','manage:Gradebook']) {
+  for (const k of ['read:User','read:Teacher','read:Student','update:Student','manage:Student','read:Assessment','attempt:Assessment','mark:Assessment','assign:Assessment','read:Timetable','create:Attendance','read:Attendance','update:Attendance','manage:Attendance','create:Homework','read:Homework','update:Homework','delete:Homework','manage:Homework','create:Gradebook','read:Gradebook','update:Gradebook','manage:Gradebook','read:LearningGap','update:LearningGap','create:NextAction','read:NextAction','update:NextAction','create:Diagnostic','read:Diagnostic','update:Diagnostic','create:Placement','read:Placement','update:Placement','create:LiveClass','read:LiveClass','update:LiveClass']) {
     const pid = permissionIds[k];
     if (pid) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: teacherRole.id, permissionId: pid } }, update: {}, create: { roleId: teacherRole.id, permissionId: pid } });
   }
@@ -318,6 +323,7 @@ async function main() {
   const midtermType = await prisma.assessmentType.upsert({ where: { code: 'MIDTERM' }, update: {}, create: { code: 'MIDTERM', name: 'Midterm Exam' } });
   const finalType = await prisma.assessmentType.upsert({ where: { code: 'FINAL' }, update: {}, create: { code: 'FINAL', name: 'Final Exam' } });
   const hwType = await prisma.assessmentType.upsert({ where: { code: 'HW' }, update: {}, create: { code: 'HW', name: 'Homework Assessment' } });
+  await prisma.assessmentType.upsert({ where: { code: 'DIAGNOSTIC' }, update: {}, create: { code: 'DIAGNOSTIC', name: 'Diagnostic Assessment' } });
 
   // Questions for assessments
   const makeQ = async (subjectId: string, levelId: string, prompt: string, options: { label: string; text: string; correct: boolean }[], explanation: string) => {

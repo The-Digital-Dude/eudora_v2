@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
@@ -8,7 +8,7 @@ import type { CodePlaygroundConfig } from "../../assessments/widgetConfigSchemas
 const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-60 w-full items-center justify-center bg-zinc-950 text-xs text-zinc-500 font-mono rounded-xl border border-zinc-800">
+    <div className="flex h-60 w-full items-center justify-center bg-background text-xs text-foreground0 font-mono rounded-xl border border-border">
       Loading Monaco Editor...
     </div>
   ),
@@ -159,11 +159,11 @@ export function CodePlaygroundWidget({
     <div className="border-border bg-card flex flex-col gap-4 rounded-3xl border p-5 transition-all duration-300">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-md bg-zinc-800 px-2.5 py-0.5 text-xs font-semibold text-zinc-300 font-mono capitalize">
+          <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground font-mono capitalize">
             {language}
           </span>
           {locked && isCorrect !== undefined && (
-            <span className={isCorrect ? "text-xs font-bold text-emerald-500" : "text-xs font-bold text-rose-500"}>
+            <span className={isCorrect ? "text-xs font-bold text-success" : "text-xs font-bold text-destructive"}>
               {isCorrect ? "● Marked Correct" : "● Marked Incorrect"}
             </span>
           )}
@@ -173,7 +173,7 @@ export function CodePlaygroundWidget({
           <button
             onClick={handleRunCode}
             disabled={isRunning}
-            className="h-8 cursor-pointer rounded-xl bg-violet-600 px-4 text-xs font-bold text-white shadow-md hover:bg-violet-500 disabled:opacity-50"
+            className="h-8 cursor-pointer rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary disabled:opacity-50"
           >
             {isRunning ? "Running..." : "Run Code"}
           </button>
@@ -181,7 +181,7 @@ export function CodePlaygroundWidget({
       </div>
 
       {/* Monaco Editor Container */}
-      <div className="relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 p-2 shadow-inner">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-background p-2 shadow-inner">
         <Editor
           height="240px"
           language={language === "typescript" ? "typescript" : "javascript"}
@@ -218,18 +218,18 @@ export function CodePlaygroundWidget({
 
       {/* Results / Console logs tab panel */}
       {(consoleMsgs.length > 0 || testResults.length > 0) && (
-        <div className="flex flex-col gap-3 rounded-xl bg-zinc-900/50 p-4 border border-zinc-800">
+        <div className="flex flex-col gap-3 rounded-xl bg-muted/50 p-4 border border-border">
           {/* Console logs */}
           {consoleMsgs.length > 0 && (
             <div className="space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-foreground0">
                 Console Output
               </span>
               <div className="max-h-24 overflow-y-auto rounded-lg bg-black/40 p-2.5 font-mono text-[11px] leading-relaxed">
                 {consoleMsgs.map((msg, idx) => (
                   <div
                     key={idx}
-                    className={msg.type === "error" ? "text-rose-400" : "text-zinc-300"}
+                    className={msg.type === "error" ? "text-destructive" : "text-muted-foreground"}
                   >
                     {msg.type === "error" ? "✖ " : "> "}
                     {msg.text}
@@ -242,32 +242,32 @@ export function CodePlaygroundWidget({
           {/* Test cases results */}
           {testResults.length > 0 && (
             <div className="space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-foreground0">
                 Test Results
               </span>
               <div className="space-y-1.5">
                 {testResults.map((res, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between rounded-lg bg-black/20 px-3 py-2 text-xs border border-zinc-800/40"
+                    className="flex items-center justify-between rounded-lg bg-black/20 px-3 py-2 text-xs border border-border/40"
                   >
                     <div className="flex flex-col gap-0.5">
-                      <span className="font-mono text-zinc-400 text-[10px]">
-                        Expr: <code className="text-zinc-200">{res.input}</code>
+                      <span className="font-mono text-muted-foreground text-[10px]">
+                        Expr: <code className="text-foreground">{res.input}</code>
                       </span>
-                      <span className="text-[10px] text-zinc-500">
-                        Expected: <code className="text-zinc-400">{JSON.stringify(res.expected)}</code>
+                      <span className="text-[10px] text-foreground0">
+                        Expected: <code className="text-muted-foreground">{JSON.stringify(res.expected)}</code>
                       </span>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-[10px] text-zinc-400">
-                        Got: <code className={res.passed ? "text-emerald-400" : "text-rose-400"}>{JSON.stringify(res.actual)}</code>
+                      <span className="font-mono text-[10px] text-muted-foreground">
+                        Got: <code className={res.passed ? "text-success" : "text-destructive"}>{JSON.stringify(res.actual)}</code>
                       </span>
                       <span
                         className={[
                           "inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold",
-                          res.passed ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400",
+                          res.passed ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive",
                         ].join(" ")}
                       >
                         {res.passed ? "✓" : "✗"}

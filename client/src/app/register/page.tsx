@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ArrowRight, Eye, EyeOff, Lock, Mail, Sparkles, User } from "lucide-react";
 import Link from "next/link";
@@ -70,30 +70,30 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="dot-grid relative flex min-h-screen flex-col items-center justify-center bg-neutral-50 px-4 py-12 font-sans text-neutral-900 select-none dark:bg-zinc-950 dark:text-zinc-50">
+    <div className="dot-grid relative flex min-h-screen flex-col items-center justify-center bg-muted/50 px-4 py-12 font-sans text-foreground select-none">
       {/* Slide-up entrance animated container */}
       <div className="animate-fade-in-up w-full max-w-[440px] space-y-8">
         {/* Brand Logo and Title */}
         <div className="flex flex-col items-center space-y-3">
           <Link
             href="/"
-            className="flex items-center justify-center rounded-xl bg-neutral-900 p-2.5 text-white shadow-sm transition-transform hover:scale-105 dark:bg-zinc-100 dark:text-neutral-900"
+            className="flex items-center justify-center rounded-xl bg-foreground p-2.5 text-background shadow-sm transition-transform hover:scale-105"
           >
             <Sparkles className="h-5 w-5" />
           </Link>
-          <span className="font-display text-xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50">
+          <span className="font-display text-xl font-bold tracking-tight text-foreground">
             Eudora
           </span>
         </div>
 
         {/* Clean Cupertino Card */}
-        <div className="rounded-[24px] border border-neutral-200/80 bg-white p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-[24px] border border-border/60 bg-card p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10">
           {/* Header */}
           <div className="mb-6 space-y-2 text-center">
-            <h1 className="font-display text-2xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Create your account
             </h1>
-            <p className="mx-auto max-w-[280px] text-xs leading-normal text-neutral-400 dark:text-zinc-500">
+            <p className="mx-auto max-w-[280px] text-xs leading-normal text-muted-foreground">
               Sign up to start designing student learning paths and curriculums.
             </p>
           </div>
@@ -102,7 +102,7 @@ export default function RegisterPage() {
           <div className="mb-6 grid grid-cols-2 gap-3">
             <button
               type="button"
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-xs font-semibold text-neutral-700 shadow-sm transition-all hover:border-neutral-300 hover:bg-neutral-50 active:scale-98 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-sm transition-all hover:border-border hover:bg-muted active:scale-98"
             >
               {/* Google SVG */}
               <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -127,7 +127,7 @@ export default function RegisterPage() {
             </button>
             <button
               type="button"
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-xs font-semibold text-neutral-700 shadow-sm transition-all hover:border-neutral-300 hover:bg-neutral-50 active:scale-98 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-sm transition-all hover:border-border hover:bg-muted active:scale-98"
             >
               {/* GitHub SVG */}
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -144,16 +144,16 @@ export default function RegisterPage() {
           {/* Separator */}
           <div className="relative mb-6 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-100 dark:border-zinc-800"></div>
+              <div className="w-full border-t border-border"></div>
             </div>
-            <span className="relative bg-white px-3 text-[10px] font-semibold tracking-widest text-neutral-400 uppercase dark:bg-zinc-900 dark:text-zinc-500">
+            <span className="relative bg-card px-3 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase0">
               Or sign up with
             </span>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 rounded-xl border border-rose-100 bg-rose-50 p-3 text-xs font-semibold text-rose-500 dark:border-rose-900/30 dark:bg-rose-950/20">
+            <div className="mb-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
               {error}
             </div>
           )}
@@ -162,18 +162,18 @@ export default function RegisterPage() {
           <form className="space-y-4" onSubmit={handleRegister}>
             {/* Full Name */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-zinc-500">
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
                 Full Name
               </Label>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-neutral-400">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
                   <User className="h-4 w-4" />
                 </span>
                 <Input
                   id="name"
                   type="text"
                   placeholder="John Doe"
-                  className="cupertino-input h-11 rounded-xl border-neutral-200 bg-neutral-50/50 pl-10 text-neutral-900 placeholder:text-neutral-300 focus:border-neutral-900 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-50 dark:placeholder:text-zinc-700 dark:focus:border-zinc-300"
+                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -184,18 +184,18 @@ export default function RegisterPage() {
 
             {/* Email Address */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-zinc-500">
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
                 Email Address
               </Label>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-neutral-400">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
                   <Mail className="h-4 w-4" />
                 </span>
                 <Input
                   id="email"
                   type="email"
                   placeholder="name@school.edu"
-                  className="cupertino-input h-11 rounded-xl border-neutral-200 bg-neutral-50/50 pl-10 text-neutral-900 placeholder:text-neutral-300 focus:border-neutral-900 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-50 dark:placeholder:text-zinc-700 dark:focus:border-zinc-300"
+                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -206,18 +206,18 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-zinc-500">
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
                 Password
               </Label>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-neutral-400">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
                   <Lock className="h-4 w-4" />
                 </span>
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="cupertino-input h-11 rounded-xl border-neutral-200 bg-neutral-50/50 pr-10 pl-10 text-neutral-900 placeholder:text-neutral-300 focus:border-neutral-900 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-50 dark:placeholder:text-zinc-700 dark:focus:border-zinc-300"
+                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pr-10 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -226,7 +226,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 transition-colors hover:text-neutral-600"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-muted-foreground"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -235,18 +235,18 @@ export default function RegisterPage() {
 
             {/* Confirm Password */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-zinc-500">
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
                 Confirm Password
               </Label>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-neutral-400">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
                   <Lock className="h-4 w-4" />
                 </span>
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="cupertino-input h-11 rounded-xl border-neutral-200 bg-neutral-50/50 pr-10 pl-10 text-neutral-900 placeholder:text-neutral-300 focus:border-neutral-900 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-50 dark:placeholder:text-zinc-700 dark:focus:border-zinc-300"
+                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pr-10 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -255,7 +255,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 transition-colors hover:text-neutral-600"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-muted-foreground"
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -268,20 +268,20 @@ export default function RegisterPage() {
 
             {/* Terms and Conditions Option */}
             <div className="flex items-start py-1">
-              <label className="group flex cursor-pointer items-start gap-2.5 text-xs text-neutral-500 select-none hover:text-neutral-800 dark:text-zinc-400 dark:hover:text-zinc-200">
+              <label className="group flex cursor-pointer items-start gap-2.5 text-xs text-muted-foreground select-none hover:text-foreground">
                 <input
                   type="checkbox"
                   checked={agree}
                   onChange={(e) => setAgree(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-neutral-200 bg-white text-neutral-900 transition-all focus:ring-neutral-900/20 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-border bg-card text-foreground transition-all focus:ring-ring/20"
                 />
                 <span className="leading-normal">
                   I agree to the{" "}
-                  <a className="underline hover:text-neutral-900 dark:hover:text-zinc-50">
+                  <a className="underline hover:text-foreground hover:text-foreground">
                     Terms of Service
                   </a>{" "}
                   and{" "}
-                  <a className="underline hover:text-neutral-900 dark:hover:text-zinc-50">
+                  <a className="underline hover:text-foreground hover:text-foreground">
                     Privacy Policy
                   </a>
                   .
@@ -292,7 +292,7 @@ export default function RegisterPage() {
             {/* Primary Action Button */}
             <Button
               type="submit"
-              className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-neutral-900 font-semibold text-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all hover:bg-neutral-800 active:scale-98 disabled:pointer-events-none disabled:opacity-75 disabled:active:scale-100 dark:bg-zinc-100 dark:text-neutral-900 dark:hover:bg-zinc-200"
+              className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all hover:bg-foreground/90 active:scale-98 disabled:pointer-events-none disabled:opacity-75 disabled:active:scale-100"
               disabled={loading}
             >
               {loading ? (
@@ -329,11 +329,11 @@ export default function RegisterPage() {
         </div>
 
         {/* Footer Sign-In Link */}
-        <div className="text-center text-xs text-neutral-400 dark:text-zinc-500">
+        <div className="text-center text-xs text-muted-foreground">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-semibold text-neutral-900 transition-colors hover:underline dark:text-zinc-50"
+            className="font-semibold text-foreground transition-colors hover:underline"
           >
             Sign in
           </Link>

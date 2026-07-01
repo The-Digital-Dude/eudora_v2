@@ -15,8 +15,16 @@ async function bootstrap() {
   // Global route prefix  →  /api/health, /api/...
   app.setGlobalPrefix('api');
 
-  // Enable CORS (configure origins as needed in production)
-  app.enableCors();
+  // Restrict CORS to an explicit allowlist. Wildcard origins are unsafe for a
+  // cookie-based auth scheme; set CORS_ORIGINS (comma-separated) in each env.
+  const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:3000')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  app.enableCors({
+    origin: corsOrigins,
+    credentials: true,
+  });
 
   // Global validation pipe
   app.useGlobalPipes(

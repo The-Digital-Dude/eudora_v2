@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -93,8 +93,8 @@ export default function AssessmentBuilderPage() {
     return (
       <div className="flex h-screen items-center justify-center bg-background text-foreground">
         <div className="text-center space-y-4">
-          <div className="h-10 w-10 border-4 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs text-neutral-400 font-medium">Loading builder workspace...</p>
+          <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-xs text-muted-foreground font-medium">Loading builder workspace...</p>
         </div>
       </div>
     );
@@ -104,9 +104,9 @@ export default function AssessmentBuilderPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <HelpCircle className="h-12 w-12 text-rose-500 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-neutral-800 dark:text-neutral-200">Assessment Not Found</h3>
-          <Button onClick={() => router.push("/assessments")} className="mt-4 bg-violet-600">
+          <HelpCircle className="h-12 w-12 text-destructive mx-auto mb-3" />
+          <h3 className="text-base font-bold text-foreground">Assessment Not Found</h3>
+          <Button onClick={() => router.push("/assessments")} className="mt-4 bg-primary">
             Back to Assessments
           </Button>
         </div>
@@ -343,23 +343,23 @@ export default function AssessmentBuilderPage() {
   const totalQuestionsMarks = assessment.questions?.reduce((acc, q) => acc + q.marksAvailable, 0) || 0;
 
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-neutral-50/50 dark:bg-zinc-950/20">
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-muted/20">
       {/* Workspace Header */}
-      <div className="h-16 border-b border-neutral-150 bg-white px-6 flex items-center justify-between dark:border-zinc-800 dark:bg-zinc-900/90 backdrop-blur-md shrink-0">
+      <div className="h-16 border-b border-border/50 bg-card px-6 flex items-center justify-between backdrop-blur-md shrink-0">
         <div className="flex items-center gap-3">
           <Link href="/assessments">
-            <button className="h-9 w-9 rounded-xl border border-neutral-200 hover:bg-neutral-50 flex items-center justify-center dark:border-zinc-800 dark:hover:bg-zinc-800">
-              <ArrowLeft className="h-4 w-4 text-neutral-600 dark:text-neutral-300" />
+            <button className="h-9 w-9 rounded-xl border border-border hover:bg-muted/50 flex items-center justify-center">
+              <ArrowLeft className="h-4 w-4 text-muted-foreground" />
             </button>
           </Link>
           <div>
-            <h1 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+            <h1 className="text-sm font-bold text-foreground dark:text-white flex items-center gap-2">
               {assessment.title}
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-primary/10 text-primary">
                 {assessment.status}
               </span>
             </h1>
-            <p className="text-[10px] text-neutral-400 font-medium">
+            <p className="text-[10px] text-muted-foreground font-medium">
               Subject: {assessment.subject?.name} • Grade: {assessment.level?.name}
             </p>
           </div>
@@ -371,7 +371,7 @@ export default function AssessmentBuilderPage() {
             <Button
               onClick={handleSaveSections}
               disabled={isUpdating}
-              className="h-9 rounded-xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-500"
+              className="h-9 rounded-xl bg-success text-xs font-bold text-white hover:bg-success"
             >
               <Save className="mr-1.5 h-3.5 w-3.5" /> Save Sections
             </Button>
@@ -381,14 +381,14 @@ export default function AssessmentBuilderPage() {
             <Button
               onClick={handlePublish}
               disabled={isPublishing}
-              className="h-9 rounded-xl bg-violet-600 text-xs font-bold text-white hover:bg-violet-500 shadow-md shadow-violet-500/10"
+              className="h-9 rounded-xl bg-primary text-xs font-bold text-white hover:bg-primary/90 shadow-md shadow-primary/10"
             >
               <Play className="mr-1.5 h-3.5 w-3.5 fill-current" /> Publish Paper
             </Button>
           ) : (
             <Button
               onClick={() => setAssignDialogOpen(true)}
-              className="h-9 rounded-xl bg-violet-600 text-xs font-bold text-white hover:bg-violet-500"
+              className="h-9 rounded-xl bg-primary text-xs font-bold text-white hover:bg-primary/90"
             >
               Assign Assessment
             </Button>
@@ -399,24 +399,24 @@ export default function AssessmentBuilderPage() {
       {/* Main Workspace Workspace */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar: Sections Management */}
-        <div className="w-80 border-r border-neutral-150 bg-white p-5 flex flex-col dark:border-zinc-800 dark:bg-zinc-900/50 overflow-y-auto shrink-0">
+        <div className="w-80 border-r border-border/50 bg-card p-5 flex flex-col overflow-y-auto shrink-0">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-              <Layers className="h-4 w-4 text-violet-500" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Layers className="h-4 w-4 text-primary" />
               Paper Sections
             </h2>
             <button
               onClick={handleAddSection}
-              className="flex items-center gap-1 text-[11px] font-bold text-violet-600 dark:text-violet-400 hover:underline"
+              className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
             >
               <Plus className="h-3.5 w-3.5" /> Add
             </button>
           </div>
 
           {localSections.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-4 border border-dashed border-neutral-200 rounded-2xl dark:border-zinc-800">
-              <FolderPlus className="h-8 w-8 text-neutral-300 mb-2" />
-              <p className="text-[10px] text-neutral-400 font-medium leading-relaxed">
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-4 border border-dashed border-border rounded-2xl">
+              <FolderPlus className="h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
                 No sections created yet. Click "Add" to start grouping your questions.
               </p>
             </div>
@@ -425,45 +425,45 @@ export default function AssessmentBuilderPage() {
               {localSections.map((sec, idx) => (
                 <div
                   key={sec.id}
-                  className="rounded-2xl border border-neutral-150 p-3 bg-neutral-50/50 hover:bg-white dark:border-zinc-850 dark:bg-zinc-900/30 flex flex-col gap-2 transition-all"
+                  className="rounded-2xl border border-border/50 p-3 bg-muted/50 hover:bg-card/30 flex flex-col gap-2 transition-all"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <Input
                       value={sec.title}
                       onChange={(e) => handleRenameSection(sec.id, e.target.value)}
-                      className="h-8 text-xs font-bold border-none bg-transparent hover:bg-neutral-100 focus:bg-white px-1.5 py-0.5 rounded-lg dark:hover:bg-zinc-800"
+                      className="h-8 text-xs font-bold border-none bg-transparent hover:bg-muted focus:bg-card px-1.5 py-0.5 rounded-lg"
                     />
                     <div className="flex gap-0.5 shrink-0">
                       <button
                         onClick={() => handleMoveSection(idx, "up")}
                         disabled={idx === 0}
-                        className="h-6 w-6 rounded hover:bg-neutral-200 flex items-center justify-center text-neutral-400 disabled:opacity-30 dark:hover:bg-zinc-800"
+                        className="h-6 w-6 rounded hover:bg-muted flex items-center justify-center text-muted-foreground disabled:opacity-30"
                       >
                         <ChevronUp className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleMoveSection(idx, "down")}
                         disabled={idx === localSections.length - 1}
-                        className="h-6 w-6 rounded hover:bg-neutral-200 flex items-center justify-center text-neutral-400 disabled:opacity-30 dark:hover:bg-zinc-800"
+                        className="h-6 w-6 rounded hover:bg-muted flex items-center justify-center text-muted-foreground disabled:opacity-30"
                       >
                         <ChevronDown className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteSection(sec.id)}
-                        className="h-6 w-6 rounded hover:bg-rose-100 flex items-center justify-center text-neutral-400 hover:text-rose-500 dark:hover:bg-rose-950/30"
+                        className="h-6 w-6 rounded hover:bg-destructive/20 flex items-center justify-center text-muted-foreground hover:text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center text-[10px] text-neutral-400 font-medium mt-1">
+                  <div className="flex justify-between items-center text-[10px] text-muted-foreground font-medium mt-1">
                     <span>{getSectionQuestions(sec.id).length} Questions</span>
                     <button
                       onClick={() => {
                         setSelectedSectionId(sec.id);
                         setPickerOpen(true);
                       }}
-                      className="text-violet-600 font-bold dark:text-violet-400 hover:underline flex items-center gap-0.5"
+                      className="text-primary font-bold hover:underline flex items-center gap-0.5"
                     >
                       <Plus className="h-3 w-3" /> Add Question
                     </button>
@@ -473,15 +473,15 @@ export default function AssessmentBuilderPage() {
             </div>
           )}
 
-          <div className="mt-auto pt-4 border-t border-neutral-100 dark:border-zinc-800/60">
-            <div className="rounded-2xl bg-neutral-100 p-3 dark:bg-zinc-805 space-y-1.5">
-              <div className="flex justify-between text-[11px] font-semibold text-neutral-500">
+          <div className="mt-auto pt-4 border-t border-border/60">
+            <div className="rounded-2xl bg-muted p-3 dark:bg-muted space-y-1.5">
+              <div className="flex justify-between text-[11px] font-semibold text-muted-foreground">
                 <span>Total Questions</span>
-                <span className="text-neutral-900 dark:text-neutral-150 font-bold">{assessment.questions?.length || 0}</span>
+                <span className="text-foreground font-bold">{assessment.questions?.length || 0}</span>
               </div>
-              <div className="flex justify-between text-[11px] font-semibold text-neutral-500">
+              <div className="flex justify-between text-[11px] font-semibold text-muted-foreground">
                 <span>Sum of Marks</span>
-                <span className="text-neutral-900 dark:text-neutral-150 font-bold">{totalQuestionsMarks} / {assessment.totalMarks}</span>
+                <span className="text-foreground font-bold">{totalQuestionsMarks} / {assessment.totalMarks}</span>
               </div>
             </div>
           </div>
@@ -491,12 +491,12 @@ export default function AssessmentBuilderPage() {
         <div className="flex-1 p-6 overflow-y-auto space-y-6">
           {localSections.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <Layers className="h-16 w-16 text-neutral-300 mb-4 animate-bounce" />
-              <h3 className="text-base font-bold text-neutral-800 dark:text-neutral-200">Start with a Section</h3>
-              <p className="text-xs text-neutral-500 mt-1 max-w-xs leading-relaxed">
+              <Layers className="h-16 w-16 text-muted-foreground mb-4 animate-bounce" />
+              <h3 className="text-base font-bold text-foreground">Start with a Section</h3>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs leading-relaxed">
                 Add assessment sections in the left sidebar first. You can then populate them with items from your Question Bank.
               </p>
-              <Button onClick={handleAddSection} className="mt-4 bg-violet-600">
+              <Button onClick={handleAddSection} className="mt-4 bg-primary">
                 Create First Section
               </Button>
             </div>
@@ -504,13 +504,13 @@ export default function AssessmentBuilderPage() {
             localSections.map((section) => {
               const sQuestions = getSectionQuestions(section.id);
               return (
-                <Card key={section.id} className="rounded-3xl border border-neutral-150 dark:border-zinc-850 shadow-sm overflow-hidden bg-white dark:bg-zinc-900/20">
-                  <CardHeader className="bg-neutral-50/50 border-b border-neutral-100 dark:bg-zinc-900/40 dark:border-zinc-800/80 px-6 py-4 flex flex-row items-center justify-between">
+                <Card key={section.id} className="rounded-3xl border border-border/50 shadow-sm overflow-hidden bg-card/20">
+                  <CardHeader className="bg-muted/50 border-b border-border/40/80 px-6 py-4 flex flex-row items-center justify-between">
                     <div>
-                      <CardTitle className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                      <CardTitle className="text-sm font-bold text-foreground">
                         {section.title}
                       </CardTitle>
-                      <CardDescription className="text-[10px] text-neutral-400">
+                      <CardDescription className="text-[10px] text-muted-foreground">
                         Contains {sQuestions.length} assessment question items
                       </CardDescription>
                     </div>
@@ -521,7 +521,7 @@ export default function AssessmentBuilderPage() {
                         setSelectedSectionId(section.id);
                         setPickerOpen(true);
                       }}
-                      className="h-8 rounded-xl text-[10px] font-bold border-neutral-200 dark:border-zinc-850"
+                      className="h-8 rounded-xl text-[10px] font-bold border-border"
                     >
                       <Plus className="mr-1 h-3.5 w-3.5" /> Bind Question
                     </Button>
@@ -529,35 +529,35 @@ export default function AssessmentBuilderPage() {
                   <CardContent className="p-0 divide-y divide-neutral-100 dark:divide-zinc-850">
                     {sQuestions.length === 0 ? (
                       <div className="p-8 text-center">
-                        <HelpCircle className="h-8 w-8 text-neutral-300 mx-auto mb-2" />
-                        <p className="text-[11px] text-neutral-400">This section is currently empty.</p>
+                        <HelpCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-[11px] text-muted-foreground">This section is currently empty.</p>
                       </div>
                     ) : (
                       sQuestions.map((sq, sIdx) => (
-                        <div key={sq.id} className="p-5 flex items-start gap-4 hover:bg-neutral-50/30 transition-all dark:hover:bg-zinc-900/10">
+                        <div key={sq.id} className="p-5 flex items-start gap-4 hover:bg-muted/20 transition-all/10">
                           {/* Question Index Control */}
-                          <div className="flex flex-col items-center justify-center bg-neutral-100 dark:bg-zinc-800 h-9 w-9 rounded-xl shrink-0">
-                            <span className="text-xs font-bold text-neutral-600 dark:text-neutral-300">Q{sq.questionNumber}</span>
+                          <div className="flex flex-col items-center justify-center bg-muted h-9 w-9 rounded-xl shrink-0">
+                            <span className="text-xs font-bold text-muted-foreground">Q{sq.questionNumber}</span>
                           </div>
 
                           {/* Content Preview */}
                           <div className="flex-1 min-w-0">
                             <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-violet-100 text-violet-700 dark:bg-violet-950/20 dark:text-violet-400">
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-primary/10 text-primary">
                                 {sq.question.questionType}
                               </span>
                               {sq.question.widgetType && (
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-warning/20 text-warning">
                                   {sq.question.widgetType}
                                 </span>
                               )}
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-neutral-100 text-neutral-500 dark:bg-zinc-800 dark:text-zinc-400">
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-muted text-muted-foreground">
                                 {sq.question.difficulty}
                               </span>
                             </div>
 
                             {/* Question Stem Renderer */}
-                            <div className="text-xs text-neutral-800 dark:text-neutral-200 line-clamp-3 bg-neutral-50/20 p-2.5 rounded-xl border border-neutral-100 dark:border-zinc-850">
+                            <div className="text-xs text-foreground line-clamp-3 bg-muted/20 p-2.5 rounded-xl border border-border">
                               <QuestionPreview question={sq.question} />
                             </div>
                           </div>
@@ -568,14 +568,14 @@ export default function AssessmentBuilderPage() {
                               <button
                                 onClick={() => handleMoveQuestionOrder(sq, "up")}
                                 disabled={sIdx === 0}
-                                className="h-6 w-6 rounded border border-neutral-200 hover:bg-neutral-100 flex items-center justify-center disabled:opacity-30 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                                className="h-6 w-6 rounded border border-border hover:bg-muted flex items-center justify-center disabled:opacity-30"
                               >
                                 <ChevronUp className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => handleMoveQuestionOrder(sq, "down")}
                                 disabled={sIdx === sQuestions.length - 1}
-                                className="h-6 w-6 rounded border border-neutral-200 hover:bg-neutral-100 flex items-center justify-center disabled:opacity-30 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                                className="h-6 w-6 rounded border border-border hover:bg-muted flex items-center justify-center disabled:opacity-30"
                               >
                                 <ChevronDown className="h-3.5 w-3.5" />
                               </button>
@@ -588,12 +588,12 @@ export default function AssessmentBuilderPage() {
                                 onChange={(e) => handleUpdateQuestionMarks(sq.questionId, parseInt(e.target.value) || 1)}
                                 className="w-14 h-9 rounded-xl text-center text-xs font-bold"
                               />
-                              <span className="text-[10px] font-bold text-neutral-400">Marks</span>
+                              <span className="text-[10px] font-bold text-muted-foreground">Marks</span>
                             </div>
 
                             <button
                               onClick={() => handleRemoveQuestion(sq.questionId)}
-                              className="h-9 w-9 rounded-xl border border-neutral-200 hover:bg-rose-50 hover:border-rose-200 flex items-center justify-center text-neutral-400 hover:text-rose-500 transition-all dark:border-zinc-800 dark:hover:bg-rose-950/20"
+                              className="h-9 w-9 rounded-xl border border-border hover:bg-destructive/10 hover:border-destructive/20 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -611,18 +611,18 @@ export default function AssessmentBuilderPage() {
 
       {/* Slide-out Question Picker Drawer */}
       <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
-        <SheetContent side="right" className="w-[600px] sm:max-w-xl flex flex-col p-0 dark:border-zinc-800 dark:bg-zinc-900">
-          <SheetHeader className="p-6 pb-4 border-b border-neutral-150 dark:border-zinc-800 flex flex-row items-center justify-between">
-            <SheetTitle className="text-base font-extrabold text-neutral-900 dark:text-neutral-50 flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-violet-500" />
+        <SheetContent side="right" className="w-[600px] sm:max-w-xl flex flex-col p-0">
+          <SheetHeader className="p-6 pb-4 border-b border-border/50 flex flex-row items-center justify-between">
+            <SheetTitle className="text-base font-extrabold text-foreground flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
               Bind Questions from Bank
             </SheetTitle>
           </SheetHeader>
 
           {/* Quick Filters */}
-          <div className="p-4 bg-neutral-50 border-b border-neutral-150 dark:bg-zinc-950/30 dark:border-zinc-800/80 flex gap-2">
+          <div className="p-4 bg-muted/50 border-b border-border/50/30/80 flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-neutral-400" />
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Search stem prompt..."
                 value={searchQuery}
@@ -635,8 +635,8 @@ export default function AssessmentBuilderPage() {
           {/* Picker List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {questionsBank.length === 0 ? (
-              <div className="p-12 text-center text-neutral-400">
-                <HelpCircle className="h-10 w-10 text-neutral-300 mx-auto mb-2" />
+              <div className="p-12 text-center text-muted-foreground">
+                <HelpCircle className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
                 <p className="text-xs">No questions matched the filters.</p>
               </div>
             ) : (
@@ -647,25 +647,25 @@ export default function AssessmentBuilderPage() {
                     key={q.id}
                     className={`rounded-2xl border p-4 flex gap-3 transition-all ${
                       isAlreadyAdded
-                        ? "border-neutral-200 bg-neutral-50/50 opacity-60 dark:border-zinc-800"
-                        : "border-neutral-200 bg-white hover:border-violet-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50"
+                        ? "border-border bg-muted/50 opacity-60"
+                        : "border-border bg-card hover:border-primary/40 hover:shadow-sm"
                     }`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-neutral-100 text-neutral-600 dark:bg-zinc-800 dark:text-zinc-400">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-muted text-muted-foreground">
                           {q.questionType}
                         </span>
                         {q.widgetType && (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-amber-100 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400">
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-warning/20 text-warning">
                             {q.widgetType}
                           </span>
                         )}
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-violet-50 text-violet-600 dark:bg-violet-950/10 dark:text-violet-400">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-primary/10 text-primary">
                           {q.difficulty}
                         </span>
                       </div>
-                      <div className="text-[11px] text-neutral-700 dark:text-neutral-300 line-clamp-2">
+                      <div className="text-[11px] text-foreground line-clamp-2">
                         <QuestionPreview question={q} />
                       </div>
                     </div>
@@ -675,8 +675,8 @@ export default function AssessmentBuilderPage() {
                       disabled={isAlreadyAdded}
                       className={`h-8.5 rounded-xl text-[10px] font-bold px-3 ${
                         isAlreadyAdded
-                          ? "bg-neutral-100 text-neutral-400"
-                          : "bg-violet-600 text-white hover:bg-violet-500"
+                          ? "bg-muted text-muted-foreground"
+                          : "bg-primary text-primary-foreground hover:bg-primary/90"
                       }`}
                     >
                       {isAlreadyAdded ? (

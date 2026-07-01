@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { UserCheck, CheckCircle2, AlertTriangle, HelpCircle } from "lucide-react";
@@ -22,8 +22,8 @@ interface AttendanceMiniProps {
 export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
   if (isLoading) {
     return (
-      <div className="rounded-3xl border border-zinc-200/50 bg-white/40 p-6 shadow-xl dark:border-zinc-800/50 dark:bg-zinc-950/20 backdrop-blur-md">
-        <div className="flex items-center justify-center py-12 text-zinc-400 text-sm">
+      <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl/50/20 backdrop-blur-md">
+        <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
           Loading attendance summary...
         </div>
       </div>
@@ -39,9 +39,9 @@ export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
   const strokeDashoffset = circumference - (rate / 100) * circumference;
 
   return (
-    <div className="rounded-3xl border border-zinc-200/50 bg-white/40 p-6 shadow-xl shadow-zinc-200/5 dark:border-zinc-800/50 dark:bg-zinc-950/20 backdrop-blur-md flex flex-col h-[350px]">
-      <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 mb-4">
-        <UserCheck className="h-4. w-4 text-indigo-500" />
+    <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5/50/20 backdrop-blur-md flex flex-col h-[350px]">
+      <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
+        <UserCheck className="h-4. w-4 text-primary" />
         Attendance Rate
       </h3>
 
@@ -79,10 +79,10 @@ export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
             <div className="text-center">
               <span className={`text-lg font-black ${
                 rate >= 90
-                  ? "text-emerald-600 dark:text-emerald-400"
+                  ? "text-success"
                   : rate >= 85
-                  ? "text-amber-600 dark:text-amber-400"
-                  : "text-rose-600 dark:text-rose-400"
+                  ? "text-warning"
+                  : "text-destructive"
               }`}>
                 {rate}%
               </span>
@@ -91,10 +91,10 @@ export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
 
           {/* Rate status label */}
           <div className="min-w-0">
-            <h4 className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+            <h4 className="text-xs font-bold text-foreground">
               {rate >= 90 ? "Excellent standing" : rate >= 85 ? "Average attendance" : "Below target"}
             </h4>
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
+            <p className="text-[10px] text-muted-foreground mt-1">
               Class session attendance is critical for keeping up with streaks and XP.
             </p>
           </div>
@@ -102,49 +102,49 @@ export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
 
         {/* Attendance Breakdown Grid */}
         <div className="grid grid-cols-2 gap-2.5 w-full mt-6">
-          <div className="flex items-center gap-2 p-2 rounded-xl bg-zinc-50/50 border border-zinc-100 dark:bg-zinc-900/10 dark:border-zinc-800/40">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/10/40">
+            <div className="h-2 w-2 rounded-full bg-success shrink-0" />
             <div className="min-w-0">
-              <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider leading-none">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
                 Present
               </div>
-              <div className="text-xs font-extrabold text-zinc-800 dark:text-zinc-200 mt-1">
+              <div className="text-xs font-extrabold text-foreground mt-1">
                 {breakdown.PRESENT} days
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-2 rounded-xl bg-zinc-50/50 border border-zinc-100 dark:bg-zinc-900/10 dark:border-zinc-800/40">
-            <div className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/10/40">
+            <div className="h-2 w-2 rounded-full bg-warning shrink-0" />
             <div className="min-w-0">
-              <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider leading-none">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
                 Late
               </div>
-              <div className="text-xs font-extrabold text-zinc-800 dark:text-zinc-200 mt-1">
+              <div className="text-xs font-extrabold text-foreground mt-1">
                 {breakdown.LATE} days
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-2 rounded-xl bg-zinc-50/50 border border-zinc-100 dark:bg-zinc-900/10 dark:border-zinc-800/40">
-            <div className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/10/40">
+            <div className="h-2 w-2 rounded-full bg-destructive shrink-0" />
             <div className="min-w-0">
-              <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider leading-none">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
                 Absent
               </div>
-              <div className="text-xs font-extrabold text-zinc-800 dark:text-zinc-200 mt-1">
+              <div className="text-xs font-extrabold text-foreground mt-1">
                 {breakdown.ABSENT} days
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-2 rounded-xl bg-zinc-50/50 border border-zinc-100 dark:bg-zinc-900/10 dark:border-zinc-800/40">
-            <div className="h-2 w-2 rounded-full bg-sky-500 shrink-0" />
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/10/40">
+            <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
             <div className="min-w-0">
-              <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider leading-none">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
                 Excused
               </div>
-              <div className="text-xs font-extrabold text-zinc-800 dark:text-zinc-200 mt-1">
+              <div className="text-xs font-extrabold text-foreground mt-1">
                 {breakdown.EXCUSED} days
               </div>
             </div>

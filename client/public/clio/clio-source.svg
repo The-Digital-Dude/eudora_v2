@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Clio mascot — LAYERED SOURCE ART for Rive import.
+  Pose: neutral "idle". Every animatable part is its own <g id="..."> so the
+  Rive rig can deform / move it independently. Do NOT flatten on import.
+
+  Layer contract (must match RiveClioMascot + ClioBrain state machine):
+    arm_left, arm_right  -> swing / raise (bones)
+    body                 -> mesh + bones for squash/stretch/jiggle
+    belly, belly_sheen   -> parented to body
+    cheeks               -> opacity/scale accents
+    eye_L / eye_R        -> contain eye_white, pupil (free for look tracking),
+                            glint, eyelid (drives blink: rest = open crescent,
+                            animate down to cover for blink/squint)
+    nose, mouth          -> mouth is swappable (see CLIO_MASCOT_SPEC.md mouth set)
+    brows                -> small emotion accents
+    fx_anchor            -> empty marker; confetti / sparkle / thought-dots attach here
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+     width="512" height="480" viewBox="0 0 512 480">
+  <defs>
+    <radialGradient id="bodyShade" cx="42%" cy="34%" r="72%">
+      <stop offset="0%" stop-color="#F8A24E"/>
+      <stop offset="62%" stop-color="#F4923B"/>
+      <stop offset="100%" stop-color="#E07B22"/>
+    </radialGradient>
+    <radialGradient id="bellyShade" cx="50%" cy="38%" r="70%">
+      <stop offset="0%" stop-color="#FFE4BC"/>
+      <stop offset="100%" stop-color="#FBC685"/>
+    </radialGradient>
+    <clipPath id="clipEyeL"><circle cx="205" cy="235" r="48"/></clipPath>
+    <clipPath id="clipEyeR"><circle cx="307" cy="235" r="48"/></clipPath>
+  </defs>
+
+  <g id="arm_left" inkscape:label="arm_left">
+    <ellipse cx="84" cy="372" rx="33" ry="56" transform="rotate(-24 84 372)"
+             fill="#EE8326" stroke="#B8530D" stroke-width="6"/>
+  </g>
+
+  <g id="arm_right" inkscape:label="arm_right">
+    <ellipse cx="428" cy="372" rx="33" ry="56" transform="rotate(24 428 372)"
+             fill="#EE8326" stroke="#B8530D" stroke-width="6"/>
+  </g>
+
+  <g id="body" inkscape:label="body">
+    <path d="M256,95 C355,95 412,165 418,255 C423,330 388,400 305,425
+             C285,431 227,431 207,425 C124,400 89,330 94,255
+             C100,165 157,95 256,95 Z"
+          fill="url(#bodyShade)" stroke="#B8530D" stroke-width="6"/>
+  </g>
+
+  <g id="belly" inkscape:label="belly">
+    <ellipse cx="256" cy="296" rx="98" ry="88" fill="url(#bellyShade)"/>
+  </g>
+
+  <g id="belly_sheen" inkscape:label="belly_sheen">
+    <ellipse cx="182" cy="172" rx="40" ry="56" transform="rotate(-22 182 172)"
+             fill="#FFF0DB" opacity="0.55"/>
+  </g>
+
+  <g id="cheeks" inkscape:label="cheeks">
+    <ellipse cx="150" cy="296" rx="24" ry="17" fill="#F2926A" opacity="0.5"/>
+    <ellipse cx="362" cy="296" rx="24" ry="17" fill="#F2926A" opacity="0.5"/>
+  </g>
+
+  <g id="brows" inkscape:label="brows">
+    <path d="M168,176 Q205,162 240,174" fill="none" stroke="#B8530D" stroke-width="6" stroke-linecap="round"/>
+    <path d="M272,174 Q307,162 344,176" fill="none" stroke="#B8530D" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <g id="eye_L" inkscape:label="eye_L">
+    <circle id="eye_white_L" cx="205" cy="235" r="48" fill="#FFFFFF" stroke="#B8530D" stroke-width="3"/>
+    <circle id="pupil_L" cx="208" cy="240" r="24" fill="#241A10"/>
+    <circle id="glint_L" cx="198" cy="228" r="8" fill="#FFFFFF"/>
+    <rect id="eyelid_L" x="155" y="118" width="100" height="69" fill="#F08A3A" clip-path="url(#clipEyeL)"/>
+  </g>
+
+  <g id="eye_R" inkscape:label="eye_R">
+    <circle id="eye_white_R" cx="307" cy="235" r="48" fill="#FFFFFF" stroke="#B8530D" stroke-width="3"/>
+    <circle id="pupil_R" cx="304" cy="240" r="24" fill="#241A10"/>
+    <circle id="glint_R" cx="297" cy="228" r="8" fill="#FFFFFF"/>
+    <rect id="eyelid_R" x="257" y="118" width="100" height="69" fill="#F08A3A" clip-path="url(#clipEyeR)"/>
+  </g>
+
+  <g id="nose" inkscape:label="nose">
+    <ellipse cx="256" cy="290" rx="14" ry="10" fill="#7A3406"/>
+  </g>
+
+  <g id="mouth" inkscape:label="mouth">
+    <path d="M222,310 Q256,348 290,310" fill="none" stroke="#7A3406" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <g id="fx_anchor" inkscape:label="fx_anchor">
+    <circle cx="256" cy="70" r="1" fill="none"/>
+  </g>
+</svg>

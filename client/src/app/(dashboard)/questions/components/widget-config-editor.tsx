@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Code } from "lucide-react";
@@ -58,7 +58,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
         return (
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-neutral-400">Min Value</Label>
+              <Label className="text-xs font-semibold text-muted-foreground">Min Value</Label>
               <Input
                 type="number"
                 value={min}
@@ -67,7 +67,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-neutral-400">Max Value</Label>
+              <Label className="text-xs font-semibold text-muted-foreground">Max Value</Label>
               <Input
                 type="number"
                 value={max}
@@ -76,7 +76,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-neutral-400">Step Interval</Label>
+              <Label className="text-xs font-semibold text-muted-foreground">Step Interval</Label>
               <Input
                 type="number"
                 value={step}
@@ -85,7 +85,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-neutral-400">Unit (e.g. %, cm)</Label>
+              <Label className="text-xs font-semibold text-muted-foreground">Unit (e.g. %, cm)</Label>
               <Input
                 type="text"
                 placeholder="unit label..."
@@ -94,8 +94,8 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                 className="h-10 rounded-xl text-xs"
               />
             </div>
-            <div className="col-span-2 space-y-1.5 border-t border-neutral-100 pt-3 dark:border-zinc-800">
-              <Label className="text-xs font-semibold text-neutral-400">Target Value (correctAnswer)</Label>
+            <div className="col-span-2 space-y-1.5 border-t border-border pt-3">
+              <Label className="text-xs font-semibold text-muted-foreground">Target Value (correctAnswer)</Label>
               <Input
                 type="number"
                 value={correctValue}
@@ -148,29 +148,29 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
             {/* Labels Bank */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-neutral-400">Labels Pool (Draggables)</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">Labels Pool (Draggables)</Label>
                 <button
                   type="button"
                   onClick={handleAddLabel}
-                  className="flex items-center gap-1 text-[11px] font-bold text-violet-600 dark:text-violet-400"
+                  className="flex items-center gap-1 text-[11px] font-bold text-primary"
                 >
                   <Plus className="h-3 w-3" /> Add Label
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {labels.map((lbl, idx) => (
-                  <div key={idx} className="flex items-center gap-1 rounded-xl border border-neutral-200 bg-white p-1 pl-2 dark:border-zinc-800 dark:bg-zinc-950">
+                  <div key={idx} className="flex items-center gap-1 rounded-xl border border-border bg-card p-1 pl-2">
                     <input
                       type="text"
                       value={lbl}
                       placeholder={`Label ${idx + 1}...`}
                       onChange={(e) => handleUpdateLabel(idx, e.target.value)}
-                      className="border-none bg-transparent font-sans text-xs font-semibold text-neutral-800 focus:outline-none dark:text-zinc-200 w-20"
+                      className="border-none bg-transparent font-sans text-xs font-semibold text-foreground focus:outline-none w-20"
                     />
                     <button
                       type="button"
                       onClick={() => handleRemoveLabel(idx)}
-                      className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-rose-500 dark:hover:bg-zinc-800"
+                      className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -180,13 +180,13 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
             </div>
 
             {/* Target Slots */}
-            <div className="space-y-2 border-t border-neutral-100 pt-3 dark:border-zinc-800">
+            <div className="space-y-2 border-t border-border pt-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-neutral-400">Drop Targets (Slots)</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">Drop Targets (Slots)</Label>
                 <button
                   type="button"
                   onClick={handleAddTarget}
-                  className="flex items-center gap-1 text-[11px] font-bold text-violet-600 dark:text-violet-400"
+                  className="flex items-center gap-1 text-[11px] font-bold text-primary"
                 >
                   <Plus className="h-3 w-3" /> Add Slot
                 </button>
@@ -205,7 +205,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                       value={t.correctLabel || ""}
                       onValueChange={(val) => handleUpdateTarget(idx, "correctLabel", val)}
                     >
-                      <SelectTrigger className="h-9 w-40 rounded-xl text-xs border-neutral-200 dark:border-zinc-800 bg-neutral-50/50">
+                      <SelectTrigger className="h-9 w-40 rounded-xl text-xs border-border bg-muted/50">
                         <SelectValue placeholder="Correct label..." />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -219,7 +219,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                     <button
                       type="button"
                       onClick={() => handleRemoveTarget(idx)}
-                      className="rounded-xl border border-neutral-200 bg-white p-2 text-neutral-400 hover:bg-neutral-100 hover:text-rose-500 dark:border-zinc-800 dark:bg-zinc-950"
+                      className="rounded-xl border border-border bg-card p-2 text-muted-foreground hover:bg-muted hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -248,7 +248,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-neutral-400">X-Range Min</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">X-Range Min</Label>
                 <Input
                   type="number"
                   value={xMin}
@@ -257,7 +257,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-neutral-400">X-Range Max</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">X-Range Max</Label>
                 <Input
                   type="number"
                   value={xMax}
@@ -266,7 +266,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-neutral-400">Y-Range Min</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">Y-Range Min</Label>
                 <Input
                   type="number"
                   value={yMin}
@@ -275,7 +275,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-neutral-400">Y-Range Max</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">Y-Range Max</Label>
                 <Input
                   type="number"
                   value={yMax}
@@ -284,7 +284,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-neutral-400">Grid Step</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">Grid Step</Label>
                 <Input
                   type="number"
                   value={gridStep}
@@ -293,7 +293,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-neutral-400">Tolerance Margin</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">Tolerance Margin</Label>
                 <Input
                   type="number"
                   step="0.05"
@@ -305,14 +305,14 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
             </div>
 
             {/* Visual Point Selector for correctPoints */}
-            <div className="border-t border-neutral-100 pt-4 space-y-2 dark:border-zinc-800">
-              <Label className="text-xs font-semibold text-neutral-400 block">
+            <div className="border-t border-border pt-4 space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground block">
                 Visual Coordinates Target Selector
               </Label>
-              <p className="text-[10px] text-neutral-400 mb-2">
+              <p className="text-[10px] text-muted-foreground mb-2">
                 Click intersections on the grid below to plot coordinates expected as the correct answer.
               </p>
-              <div className="flex justify-center bg-neutral-50/50 p-4 rounded-2xl dark:bg-zinc-950">
+              <div className="flex justify-center bg-muted/50 p-4 rounded-2xl">
                 <CoordinatePlotterWidget
                   config={{
                     xRange: [xMin, xMax],
@@ -390,11 +390,11 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
               {/* Left Column Items */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-neutral-400">Left Column</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground">Left Column</Label>
                   <button
                     type="button"
                     onClick={handleAddLeft}
-                    className="flex items-center gap-1 text-[11px] font-bold text-violet-600 dark:text-violet-400"
+                    className="flex items-center gap-1 text-[11px] font-bold text-primary"
                   >
                     <Plus className="h-3 w-3" /> Add Item
                   </button>
@@ -412,7 +412,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                       <button
                         type="button"
                         onClick={() => handleRemoveItem("left", idx)}
-                        className="rounded-xl border border-neutral-200 bg-white p-2.5 text-neutral-400 hover:bg-neutral-100 hover:text-rose-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="rounded-xl border border-border bg-card p-2.5 text-muted-foreground hover:bg-muted hover:text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -424,11 +424,11 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
               {/* Right Column Items */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-neutral-400">Right Column</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground">Right Column</Label>
                   <button
                     type="button"
                     onClick={handleAddRight}
-                    className="flex items-center gap-1 text-[11px] font-bold text-violet-600 dark:text-violet-400"
+                    className="flex items-center gap-1 text-[11px] font-bold text-primary"
                   >
                     <Plus className="h-3 w-3" /> Add Item
                   </button>
@@ -446,7 +446,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                       <button
                         type="button"
                         onClick={() => handleRemoveItem("right", idx)}
-                        className="rounded-xl border border-neutral-200 bg-white p-2.5 text-neutral-400 hover:bg-neutral-100 hover:text-rose-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="rounded-xl border border-border bg-card p-2.5 text-muted-foreground hover:bg-muted hover:text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -457,13 +457,13 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
             </div>
 
             {/* Correct Pairs Linker */}
-            <div className="space-y-2 border-t border-neutral-100 pt-3 dark:border-zinc-800">
+            <div className="space-y-2 border-t border-border pt-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-neutral-400">Correct Pairings Map</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">Correct Pairings Map</Label>
                 <button
                   type="button"
                   onClick={handleAddPair}
-                  className="flex items-center gap-1 text-[11px] font-bold text-violet-600 dark:text-violet-400"
+                  className="flex items-center gap-1 text-[11px] font-bold text-primary"
                 >
                   <Plus className="h-3 w-3" /> Link Pair
                   </button>
@@ -475,7 +475,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                       value={pair[0] || ""}
                       onValueChange={(val) => handleUpdatePair(idx, 0, val)}
                     >
-                      <SelectTrigger className="h-9 flex-1 rounded-xl text-xs bg-neutral-50/50">
+                      <SelectTrigger className="h-9 flex-1 rounded-xl text-xs bg-muted/50">
                         <SelectValue placeholder="Select Left..." />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -487,13 +487,13 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                       </SelectContent>
                     </Select>
 
-                    <span className="text-neutral-400 text-xs font-bold">⇔</span>
+                    <span className="text-muted-foreground text-xs font-bold">⇔</span>
 
                     <Select
                       value={pair[1] || ""}
                       onValueChange={(val) => handleUpdatePair(idx, 1, val)}
                     >
-                      <SelectTrigger className="h-9 flex-1 rounded-xl text-xs bg-neutral-50/50">
+                      <SelectTrigger className="h-9 flex-1 rounded-xl text-xs bg-muted/50">
                         <SelectValue placeholder="Select Right..." />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -508,7 +508,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                     <button
                       type="button"
                       onClick={() => handleRemovePair(idx)}
-                      className="rounded-xl border border-neutral-200 bg-white p-2.5 text-neutral-400 hover:bg-neutral-100 hover:text-rose-500 dark:border-zinc-800 dark:bg-zinc-950"
+                      className="rounded-xl border border-border bg-card p-2.5 text-muted-foreground hover:bg-muted hover:text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -542,9 +542,9 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
         return (
           <div className="space-y-4">
             <div className="space-y-1.5 col-span-2">
-              <Label className="text-xs font-semibold text-neutral-400">Sandbox Language</Label>
+              <Label className="text-xs font-semibold text-muted-foreground">Sandbox Language</Label>
               <Select value={language} onValueChange={(val) => updateField("language", val)}>
-                <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
                   <SelectValue placeholder="Select language..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -557,23 +557,23 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-neutral-400">Starter Code</Label>
+              <Label className="text-xs font-semibold text-muted-foreground">Starter Code</Label>
               <textarea
                 value={starterCode}
                 onChange={(e) => updateField("starterCode", e.target.value)}
                 placeholder="// Code template for students..."
-                className="h-28 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50/30 p-3 font-mono text-xs focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50"
+                className="h-28 w-full resize-none rounded-xl border border-border bg-muted/20 p-3 font-mono text-xs focus:outline-none/50"
               />
             </div>
 
             {/* Test cases list */}
-            <div className="space-y-2 border-t border-neutral-100 pt-3 dark:border-zinc-800">
+            <div className="space-y-2 border-t border-border pt-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-neutral-400">Test Assertions ({tests.length})</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">Test Assertions ({tests.length})</Label>
                 <button
                   type="button"
                   onClick={handleAddTest}
-                  className="flex items-center gap-1 text-[11px] font-bold text-violet-600 dark:text-violet-400"
+                  className="flex items-center gap-1 text-[11px] font-bold text-primary"
                 >
                   <Plus className="h-3 w-3" /> Add Test Case
                 </button>
@@ -582,7 +582,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                 {tests.map((test, idx) => (
                   <div key={idx} className="flex gap-2 items-start">
                     <div className="flex-1 space-y-1">
-                      <Label className="text-[9px] font-bold text-neutral-400">Execution Call Expression</Label>
+                      <Label className="text-[9px] font-bold text-muted-foreground">Execution Call Expression</Label>
                       <Input
                         type="text"
                         placeholder="e.g. add(2, 3)"
@@ -592,7 +592,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                       />
                     </div>
                     <div className="flex-1 space-y-1">
-                      <Label className="text-[9px] font-bold text-neutral-400">Expected Result Expression</Label>
+                      <Label className="text-[9px] font-bold text-muted-foreground">Expected Result Expression</Label>
                       <Input
                         type="text"
                         placeholder="e.g. 5"
@@ -604,7 +604,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                     <button
                       type="button"
                       onClick={() => handleRemoveTest(idx)}
-                      className="mt-5 rounded-xl border border-neutral-200 bg-white p-2.5 text-neutral-400 hover:bg-neutral-100 hover:text-rose-500 dark:border-zinc-800 dark:bg-zinc-950"
+                      className="mt-5 rounded-xl border border-border bg-card p-2.5 text-muted-foreground hover:bg-muted hover:text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -618,7 +618,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
 
       default:
         return (
-          <div className="text-center py-6 text-xs text-neutral-400 font-medium">
+          <div className="text-center py-6 text-xs text-muted-foreground font-medium">
             This question type does not require a widget configuration.
           </div>
         );
@@ -629,10 +629,10 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
     <div className="space-y-4">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex justify-between items-center mb-2">
-          <Label className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
             Interactive Configuration
           </Label>
-          <TabsList className="h-8 rounded-xl bg-neutral-100 p-0.5 dark:bg-zinc-800">
+          <TabsList className="h-8 rounded-xl bg-muted p-0.5">
             <TabsTrigger value="form" className="h-7 cursor-pointer rounded-lg px-3 text-xs font-semibold">
               Form Builder
             </TabsTrigger>
@@ -643,20 +643,20 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
         </div>
 
         <TabsContent value="form" className="mt-0 focus-visible:outline-none">
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm/40">
             {renderFormEditor()}
           </div>
         </TabsContent>
 
         <TabsContent value="json" className="mt-0 focus-visible:outline-none">
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 space-y-2">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm/40 space-y-2">
             <textarea
               value={rawJsonText}
               onChange={(e) => handleJsonChange(e.target.value)}
-              className="h-60 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 font-mono text-xs focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-200"
+              className="h-60 w-full resize-none rounded-xl border border-border bg-muted/50 p-3 font-mono text-xs focus:outline-none/60"
             />
             {jsonError && (
-              <span className="text-[10px] font-bold text-rose-500 block">
+              <span className="text-[10px] font-bold text-destructive block">
                 {jsonError}
               </span>
             )}

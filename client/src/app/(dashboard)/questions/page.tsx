@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { Plus, HelpCircle, Loader2 } from "lucide-react";
@@ -82,16 +82,16 @@ export default function QuestionsPage() {
       {/* Title Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="font-display text-2xl font-bold text-neutral-900 dark:text-neutral-50">
+          <h1 className="font-display text-2xl font-bold text-foreground">
             Question Bank
           </h1>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Build and manage reusable standard or interactive active learning questions.
           </p>
         </div>
         <button
           onClick={handleCreateClick}
-          className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-xs font-bold text-white shadow-md hover:bg-violet-500 transition-all sm:w-auto"
+          className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary transition-all sm:w-auto"
         >
           <Plus className="h-4 w-4" /> Create Question
         </button>
@@ -106,10 +106,10 @@ export default function QuestionsPage() {
 
       {/* Main Table view */}
       {isLoading ? (
-        <div className="flex h-60 w-full items-center justify-center bg-white border border-neutral-200 rounded-3xl dark:border-zinc-800 dark:bg-zinc-900/50">
+        <div className="flex h-60 w-full items-center justify-center bg-card border border-border rounded-3xl/50">
           <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-7 w-7 animate-spin text-violet-600" />
-            <span className="text-xs font-medium text-neutral-500">Loading question bank...</span>
+            <Loader2 className="h-7 w-7 animate-spin text-primary" />
+            <span className="text-xs font-medium text-muted-foreground">Loading question bank...</span>
           </div>
         </div>
       ) : (
@@ -123,7 +123,7 @@ export default function QuestionsPage() {
           {/* Pagination Controls */}
           {total > pageSize && (
             <div className="mt-4 flex items-center justify-between px-2">
-              <span className="text-xs text-neutral-500 font-semibold">
+              <span className="text-xs text-muted-foreground font-semibold">
                 Showing {Math.min((page - 1) * pageSize + 1, total)} to{" "}
                 {Math.min(page * pageSize, total)} of {total} questions
               </span>
@@ -132,17 +132,17 @@ export default function QuestionsPage() {
                 <button
                   onClick={() => setPage((p) => Math.max(p - 1, 1))}
                   disabled={page === 1}
-                  className="h-9 cursor-pointer rounded-xl border border-neutral-200 bg-white px-3 text-xs font-semibold hover:bg-neutral-50 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                  className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs font-semibold hover:bg-muted/50 disabled:opacity-50"
                 >
                   Previous
                 </button>
-                <span className="text-xs font-bold text-neutral-800 dark:text-zinc-200 px-2 select-none">
+                <span className="text-xs font-bold text-foreground px-2 select-none">
                   Page {page} of {totalPages}
                 </span>
                 <button
                   onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
                   disabled={page === totalPages}
-                  className="h-9 cursor-pointer rounded-xl border border-neutral-200 bg-white px-3 text-xs font-semibold hover:bg-neutral-50 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                  className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs font-semibold hover:bg-muted/50 disabled:opacity-50"
                 >
                   Next
                 </button>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -185,22 +185,22 @@ export function QuestionEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[88vh] rounded-3xl border border-neutral-200 bg-white p-0 shadow-2xl flex flex-col overflow-hidden dark:border-zinc-800 dark:bg-zinc-900">
+      <DialogContent className="max-w-5xl h-[88vh] rounded-3xl border border-border bg-card p-0 shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <DialogHeader className="p-6 pb-4 border-b border-neutral-150 dark:border-zinc-800 flex flex-row items-center justify-between">
+        <DialogHeader className="p-6 pb-4 border-b border-border/50 flex flex-row items-center justify-between">
           <div>
-            <DialogTitle className="text-lg font-bold text-neutral-900 dark:text-neutral-50 flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-violet-500" />
+            <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-primary" />
               {questionId ? "Edit Question" : "Create New Question"}
             </DialogTitle>
           </div>
 
           {/* Toggle buttons for Mobile split preview */}
-          <div className="flex rounded-xl bg-neutral-100 p-0.5 md:hidden dark:bg-zinc-800 mr-8">
+          <div className="flex rounded-xl bg-muted p-0.5 md:hidden mr-8">
             <button
               onClick={() => setActivePane("edit")}
               className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                activePane === "edit" ? "bg-white shadow dark:bg-zinc-900" : "text-neutral-500"
+                activePane === "edit" ? "bg-card shadow" : "text-muted-foreground"
               }`}
             >
               <Edit3 className="h-3.5 w-3.5" /> Edit
@@ -208,7 +208,7 @@ export function QuestionEditorDialog({
             <button
               onClick={() => setActivePane("preview")}
               className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                activePane === "preview" ? "bg-white shadow dark:bg-zinc-900" : "text-neutral-500"
+                activePane === "preview" ? "bg-card shadow" : "text-muted-foreground"
               }`}
             >
               <Eye className="h-3.5 w-3.5" /> Preview
@@ -223,16 +223,16 @@ export function QuestionEditorDialog({
             onSubmit={handleSave}
             className={`flex-1 overflow-y-auto p-6 space-y-6 md:block ${
               activePane === "edit" ? "block" : "hidden"
-            } md:border-r border-neutral-150 dark:border-zinc-800`}
+            } md:border-r border-border/50`}
           >
             <div className="grid grid-cols-2 gap-4">
               {/* Subject */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Subject
                 </Label>
                 <Select value={subjectId} onValueChange={setSubjectId}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
                     <SelectValue placeholder="Select subject..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -247,11 +247,11 @@ export function QuestionEditorDialog({
 
               {/* Level */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Grade Level
                 </Label>
                 <Select value={levelId} onValueChange={setLevelId}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
                     <SelectValue placeholder="Select level..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -266,11 +266,11 @@ export function QuestionEditorDialog({
 
               {/* Type */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Question Type
                 </Label>
                 <Select value={questionType} onValueChange={setQuestionType}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
                     <SelectValue placeholder="Select type..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -284,11 +284,11 @@ export function QuestionEditorDialog({
 
               {/* Difficulty */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Difficulty
                 </Label>
                 <Select value={difficulty} onValueChange={setDifficulty}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
                     <SelectValue placeholder="Select difficulty..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -302,11 +302,11 @@ export function QuestionEditorDialog({
 
               {/* Status */}
               <div className="space-y-1.5 col-span-2">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Status
                 </Label>
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
                     <SelectValue placeholder="Select status..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -320,14 +320,14 @@ export function QuestionEditorDialog({
 
             {/* Prompt Stem */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Question Prompt (Supports LaTeX via $inline$ or $$block$$)
               </Label>
               <textarea
                 placeholder="Write the question prompt here..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="h-28 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 text-xs text-neutral-800 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
+                className="h-28 w-full resize-none rounded-xl border border-border bg-muted/50 p-3 text-xs text-foreground focus:outline-none/50"
                 required
               />
             </div>
@@ -343,11 +343,11 @@ export function QuestionEditorDialog({
 
             {/* Interactive Widget Selector */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Bind Interactive Widget (Optional)
               </Label>
               <Select value={widgetType} onValueChange={handleWidgetTypeChange}>
-                <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
                   <SelectValue placeholder="None (Standard Question)" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -373,27 +373,27 @@ export function QuestionEditorDialog({
 
             {/* Explanation */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Solution Explanation (Supports LaTeX)
               </Label>
               <textarea
                 placeholder="Explain the solution details..."
                 value={explanation}
                 onChange={(e) => setExplanation(e.target.value)}
-                className="h-24 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 text-xs text-neutral-800 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
+                className="h-24 w-full resize-none rounded-xl border border-border bg-muted/50 p-3 text-xs text-foreground focus:outline-none/50"
               />
             </div>
 
             {/* Hints List */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Hints / Clues
                 </Label>
                 <button
                   type="button"
                   onClick={handleAddHint}
-                  className="flex items-center gap-1 text-xs font-bold text-violet-600 dark:text-violet-400"
+                  className="flex items-center gap-1 text-xs font-bold text-primary"
                 >
                   <Plus className="h-4 w-4" /> Add Hint
                 </button>
@@ -401,7 +401,7 @@ export function QuestionEditorDialog({
               <div className="space-y-2">
                 {hints.map((hint, idx) => (
                   <div key={idx} className="flex gap-2 items-center">
-                    <span className="text-xs font-bold text-neutral-400">{idx + 1}.</span>
+                    <span className="text-xs font-bold text-muted-foreground">{idx + 1}.</span>
                     <Input
                       type="text"
                       placeholder={`Hint details...`}
@@ -412,7 +412,7 @@ export function QuestionEditorDialog({
                     <button
                       type="button"
                       onClick={() => handleRemoveHint(idx)}
-                      className="rounded-xl border border-neutral-200 bg-white p-2.5 text-neutral-400 hover:bg-neutral-100 hover:text-rose-500 dark:border-zinc-800 dark:bg-zinc-950"
+                      className="rounded-xl border border-border bg-card p-2.5 text-muted-foreground hover:bg-muted hover:text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -427,19 +427,19 @@ export function QuestionEditorDialog({
 
           {/* Right Live Preview Pane */}
           <div
-            className={`flex-1 overflow-y-auto p-6 bg-neutral-50/50 md:block ${
+            className={`flex-1 overflow-y-auto p-6 bg-muted/50 md:block ${
               activePane === "preview" ? "block" : "hidden"
-            } dark:bg-zinc-950/20`}
+            }/20`}
           >
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-2">
-              <Eye className="h-4 w-4 text-violet-500" /> Live Editor Preview
+            <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Eye className="h-4 w-4 text-primary" /> Live Editor Preview
             </h3>
             <QuestionPreview question={draftQuestion} />
           </div>
         </div>
 
         {/* Footer */}
-        <DialogFooter className="p-6 border-t border-neutral-150 dark:border-zinc-800 flex gap-2">
+        <DialogFooter className="p-6 border-t border-border/50 flex gap-2">
           <Button
             type="button"
             variant="ghost"
@@ -451,7 +451,7 @@ export function QuestionEditorDialog({
           <Button
             onClick={() => document.getElementById("editor-submit-btn")?.click()}
             disabled={isCreating || isUpdating}
-            className="h-10 cursor-pointer rounded-xl bg-violet-600 px-5 text-xs font-semibold text-white hover:bg-violet-500"
+            className="h-10 cursor-pointer rounded-xl bg-primary px-5 text-xs font-semibold text-white hover:bg-primary"
           >
             {isCreating || isUpdating ? "Saving..." : "Save Question"}
           </Button>

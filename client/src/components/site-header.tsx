@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Check, Globe, LogOut, Sparkles, Trash } from "lucide-react";
+import { Bell, Check, Globe, LogOut, Trash } from "lucide-react";
 import * as React from "react";
 
 import { CommandSearch, SearchTrigger } from "@/components/command-search";
@@ -15,6 +15,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
@@ -25,11 +32,20 @@ import {
   useMarkNotificationAsReadMutation,
 } from "@/features/dashboard/dashboardApi";
 
+interface Campus {
+  id: string;
+  name: string;
+}
+
 interface SiteHeaderProps {
   selectedCampusId: string;
   setSelectedCampusId: (id: string) => void;
-  campuses: any[];
-  user: any;
+  campuses: Campus[];
+  user: {
+    name?: string;
+    email?: string;
+    role?: string;
+  };
   onLogout: () => void;
 }
 
@@ -72,26 +88,32 @@ export function SiteHeader({
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-white/70 backdrop-blur-md transition-[width,height] ease-linear dark:bg-zinc-950/70">
+      <header
+        data-slot="site-header"
+        className="sticky top-0 z-40 flex h-(--header-height) shrink-0 items-center gap-2 border-b border-border bg-background/70 backdrop-blur-md transition-[width,height] ease-linear"
+      >
         <div className="flex w-full items-center gap-2 px-4 py-3 lg:px-6">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
 
           {/* Global Campus Scope Selector */}
           <div className="mr-2 flex items-center gap-1.5">
-            <Globe className="h-3.5 w-3.5 text-neutral-400" />
-            <select
-              value={selectedCampusId}
-              onChange={(e) => setSelectedCampusId(e.target.value)}
-              className="h-8 cursor-pointer rounded-xl border border-neutral-200 bg-white px-2 text-[11px] font-semibold text-neutral-700 shadow-xs transition-colors hover:bg-neutral-50 focus:border-neutral-900 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-neutral-300 dark:hover:bg-zinc-800"
-            >
-              <option value="all">Global Scope (All Centres)</option>
-              {campuses.map((c: any) => (
-                <option key={c.id} value={c.id}>
-                  Centre: {c.name}
-                </option>
-              ))}
-            </select>
+            <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+            <Select value={selectedCampusId} onValueChange={setSelectedCampusId}>
+              <SelectTrigger className="h-8 cursor-pointer rounded-xl border-border bg-background px-2 text-[11px] font-semibold text-foreground shadow-xs w-auto min-w-[160px]">
+                <SelectValue placeholder="Global Scope" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-[11px]">
+                  Global Scope (All Centres)
+                </SelectItem>
+                {campuses.map((c) => (
+                  <SelectItem key={c.id} value={c.id} className="text-[11px]">
+                    Centre: {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <Separator
@@ -109,44 +131,46 @@ export function SiteHeader({
             {/* Notifications Bell */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="relative cursor-pointer rounded-full p-2 text-neutral-500 transition-colors outline-none hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-zinc-800 dark:hover:text-neutral-100">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative cursor-pointer"
+                  aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+                >
                   <Bell className="h-4 w-4" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-white dark:ring-zinc-950">
+                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground ring-2 ring-background">
                       {unreadCount}
                     </span>
                   )}
-                </button>
+                </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="z-50 w-80 rounded-2xl border border-neutral-200 bg-white p-2 shadow-lg dark:border-zinc-800 dark:bg-zinc-950"
-              >
+              <DropdownMenuContent align="end" className="z-50 w-80 rounded-2xl p-2">
                 <div className="flex items-center justify-between px-2 py-1.5">
-                  <DropdownMenuLabel className="font-display text-xs text-neutral-500">
+                  <DropdownMenuLabel className="font-display text-xs text-muted-foreground">
                     Notifications
                   </DropdownMenuLabel>
                   {unreadCount > 0 && (
                     <button
                       onClick={() => markAllAsRead()}
-                      className="cursor-pointer text-[10px] font-semibold text-neutral-900 hover:underline dark:text-neutral-100"
+                      className="cursor-pointer text-[10px] font-semibold text-foreground hover:underline"
                     >
                       Mark all as read
                     </button>
                   )}
                 </div>
-                <DropdownMenuSeparator className="bg-neutral-100 dark:bg-zinc-800" />
+                <DropdownMenuSeparator />
                 <div className="max-h-64 overflow-y-auto">
                   {notifications.length === 0 ? (
-                    <div className="py-6 text-center text-xs text-neutral-400 dark:text-neutral-500">
+                    <div className="py-6 text-center text-xs text-muted-foreground">
                       No notifications
                     </div>
                   ) : (
-                    notifications.map((n: any) => (
+                    (notifications as any[]).map((n) => (
                       <div
                         key={n.id}
-                        className={`group flex gap-2 rounded-xl border-b border-neutral-50 p-2 text-left transition-colors last:border-0 hover:bg-neutral-50 dark:border-zinc-900 dark:hover:bg-zinc-900 ${
-                          !n.readAt ? "bg-blue-50/30 dark:bg-blue-950/10" : ""
+                        className={`group flex gap-2 rounded-xl border-b border-border/50 p-2 text-left transition-colors last:border-0 hover:bg-accent ${
+                          !n.readAt ? "bg-primary/5" : ""
                         }`}
                       >
                         <div className="min-w-0 flex-1">
@@ -154,15 +178,15 @@ export function SiteHeader({
                             <span
                               className={`text-[9px] font-bold tracking-wider uppercase ${
                                 n.type === "WARNING"
-                                  ? "text-amber-600 dark:text-amber-500"
+                                  ? "text-warning"
                                   : n.type === "SYSTEM"
-                                    ? "text-purple-600 dark:text-purple-500"
-                                    : "text-blue-600 dark:text-blue-500"
+                                    ? "text-primary"
+                                    : "text-primary"
                               }`}
                             >
                               {n.type}
                             </span>
-                            <span className="text-[9px] text-neutral-400">
+                            <span className="text-[9px] text-muted-foreground">
                               {new Date(n.createdAt).toLocaleDateString([], {
                                 month: "short",
                                 day: "numeric",
@@ -172,11 +196,11 @@ export function SiteHeader({
                             </span>
                           </div>
                           <p
-                            className={`mt-0.5 text-xs font-semibold ${!n.readAt ? "text-neutral-900 dark:text-white" : "text-neutral-500 dark:text-neutral-400"}`}
+                            className={`mt-0.5 text-xs font-semibold ${!n.readAt ? "text-foreground" : "text-muted-foreground"}`}
                           >
                             {n.title}
                           </p>
-                          <p className="mt-0.5 line-clamp-2 text-[11px] text-neutral-500 dark:text-neutral-400">
+                          <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">
                             {n.body}
                           </p>
                         </div>
@@ -184,16 +208,16 @@ export function SiteHeader({
                           {!n.readAt && (
                             <button
                               onClick={() => markAsRead(n.id)}
-                              title="Mark as read"
-                              className="cursor-pointer rounded-md p-1 text-neutral-400 shadow-xs hover:bg-white hover:text-blue-500 dark:hover:bg-zinc-800"
+                              aria-label="Mark as read"
+                              className="cursor-pointer rounded-md p-1 text-muted-foreground shadow-xs hover:bg-background hover:text-primary"
                             >
                               <Check className="h-3.5 w-3.5" />
                             </button>
                           )}
                           <button
                             onClick={() => deleteNotification(n.id)}
-                            title="Delete"
-                            className="cursor-pointer rounded-md p-1 text-neutral-400 shadow-xs hover:bg-white hover:text-rose-500 dark:hover:bg-zinc-800"
+                            aria-label="Delete notification"
+                            className="cursor-pointer rounded-md p-1 text-muted-foreground shadow-xs hover:bg-background hover:text-destructive"
                           >
                             <Trash className="h-3.5 w-3.5" />
                           </button>
@@ -211,40 +235,37 @@ export function SiteHeader({
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex cursor-pointer items-center gap-2 outline-none select-none hover:opacity-90">
-                    <Avatar className="h-8 w-8 border border-neutral-200 shadow-xs dark:border-zinc-800">
-                      <AvatarFallback className="font-display bg-neutral-900 text-xs font-bold text-white dark:bg-white dark:text-neutral-900">
+                  <Button
+                    variant="ghost"
+                    className="flex cursor-pointer items-center gap-2 px-2 select-none"
+                    aria-label={`User menu for ${user.name ?? "account"}`}
+                  >
+                    <Avatar className="h-8 w-8 border border-border shadow-xs">
+                      <AvatarFallback className="font-display bg-foreground text-xs font-bold text-background">
                         {userInitials}
                       </AvatarFallback>
                     </Avatar>
                     <div className="hidden max-w-[120px] text-left md:block">
-                      <p className="truncate text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                        {user.name}
-                      </p>
-                      <p className="truncate text-[10px] text-neutral-400 dark:text-neutral-500">
-                        {user.email}
-                      </p>
+                      <p className="truncate text-xs font-semibold text-foreground">{user.name}</p>
+                      <p className="truncate text-[10px] text-muted-foreground">{user.email}</p>
                     </div>
-                  </button>
+                  </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-56 rounded-2xl border border-neutral-200 bg-white p-2 shadow-lg dark:border-zinc-800 dark:bg-zinc-950"
-                >
-                  <DropdownMenuLabel className="font-display px-2 py-1.5 text-xs text-neutral-500">
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
+                  <DropdownMenuLabel className="font-display px-2 py-1.5 text-xs text-muted-foreground">
                     My Account
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-neutral-100 dark:bg-zinc-800" />
-                  <DropdownMenuItem className="cursor-pointer rounded-xl p-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-zinc-900">
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer rounded-xl p-2 text-xs font-semibold">
                     {user.name} ({user.role || "Admin"})
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="rounded-xl p-2 text-xs font-medium text-neutral-500 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-zinc-900">
+                  <DropdownMenuItem className="rounded-xl p-2 text-xs font-medium text-muted-foreground">
                     {user.email}
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-neutral-100 dark:bg-zinc-800" />
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={onLogout}
-                    className="flex cursor-pointer items-center gap-2 rounded-xl p-2 text-xs font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                    className="flex cursor-pointer items-center gap-2 rounded-xl p-2 text-xs font-semibold text-destructive focus:text-destructive"
                   >
                     <LogOut className="h-3.5 w-3.5" />
                     Sign Out

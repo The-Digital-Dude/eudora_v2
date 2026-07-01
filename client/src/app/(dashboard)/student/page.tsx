@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { useGetGamificationMeQuery, useGetBadgesQuery } from "@/features/student/studentApi";
@@ -29,8 +29,8 @@ export default function StudentPage() {
   if (isLoading) {
     return (
       <div className="flex h-[400px] flex-col items-center justify-center gap-4 text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Loading your Student Portal...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm font-medium text-muted-foreground">Loading your Student Portal...</p>
       </div>
     );
   }
@@ -43,10 +43,10 @@ export default function StudentPage() {
     <div className="space-y-6">
       {/* Welcome Banner */}
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-2xl font-black tracking-tight text-foreground">
           Student Dashboard
         </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-muted-foreground">
           Welcome back, {user?.name || "Student"}. Here is your learning overview, XP progression, and upcoming tasks.
         </p>
       </div>

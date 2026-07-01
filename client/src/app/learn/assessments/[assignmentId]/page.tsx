@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -122,8 +122,8 @@ export default function StudentAssessmentPlayerPage() {
     return (
       <div className="flex h-screen items-center justify-center bg-background text-foreground">
         <div className="text-center space-y-4">
-          <div className="h-10 w-10 border-4 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs text-neutral-400 font-medium">Entering assessment portal...</p>
+          <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-xs text-muted-foreground font-medium">Entering assessment portal...</p>
         </div>
       </div>
     );
@@ -133,9 +133,9 @@ export default function StudentAssessmentPlayerPage() {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <HelpCircle className="h-12 w-12 text-rose-500 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-neutral-800 dark:text-neutral-200">Assignment Not Found</h3>
-          <Button onClick={() => router.push("/learn")} className="mt-4 bg-violet-600">
+          <HelpCircle className="h-12 w-12 text-destructive mx-auto mb-3" />
+          <h3 className="text-base font-bold text-foreground">Assignment Not Found</h3>
+          <Button onClick={() => router.push("/learn")} className="mt-4 bg-primary">
             Back to Student Portal
           </Button>
         </div>
@@ -234,40 +234,40 @@ export default function StudentAssessmentPlayerPage() {
   if (latestCompletedAttempt) {
     const isMarked = latestCompletedAttempt.resultStatus === "marked";
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-neutral-900 text-white min-h-screen">
-        <Card className="max-w-md w-full rounded-3xl border border-zinc-800 bg-zinc-950 p-6 text-center shadow-2xl">
-          <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 mb-4" />
-          <h2 className="text-xl font-bold text-neutral-50 mb-1">Assessment Submitted</h2>
-          <p className="text-xs text-neutral-400">
+      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-foreground text-background min-h-screen">
+        <Card className="max-w-md w-full rounded-3xl border border-border bg-background p-6 text-center shadow-2xl">
+          <CheckCircle className="mx-auto h-16 w-16 text-success mb-4" />
+          <h2 className="text-xl font-bold text-foreground mb-1">Assessment Submitted</h2>
+          <p className="text-xs text-muted-foreground">
             You completed: <span className="font-semibold">{assessment.title}</span>
           </p>
 
-          <div className="my-6 p-4 rounded-2xl bg-zinc-900 border border-zinc-850/80 space-y-3">
-            <div className="flex justify-between items-center text-xs text-neutral-400 font-medium">
+          <div className="my-6 p-4 rounded-2xl bg-muted border border-border/80 space-y-3">
+            <div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
               <span>Time Taken</span>
-              <span className="text-neutral-100 font-semibold">
+              <span className="text-foreground font-semibold">
                 {Math.ceil(latestCompletedAttempt.timeSpentSeconds / 60)} minutes
               </span>
             </div>
             {isMarked ? (
               <>
-                <div className="flex justify-between items-center text-xs text-neutral-400 font-medium">
+                <div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
                   <span>Score Awarded</span>
-                  <span className="text-emerald-400 font-bold text-sm">
+                  <span className="text-success font-bold text-sm">
                     {latestCompletedAttempt.rawScore} / {latestCompletedAttempt.maxScore} ({latestCompletedAttempt.percentageScore}%)
                   </span>
                 </div>
                 {latestCompletedAttempt.teacherComment && (
-                  <div className="text-left pt-2 border-t border-zinc-800/80">
-                    <p className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider mb-1">Teacher Feedback</p>
-                    <p className="text-xs text-neutral-300 bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800/50 italic">
+                  <div className="text-left pt-2 border-t border-border/80">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">Teacher Feedback</p>
+                    <p className="text-xs text-muted-foreground bg-background/60 p-2.5 rounded-xl border border-border/50 italic">
                       "{latestCompletedAttempt.teacherComment}"
                     </p>
                   </div>
                 )}
               </>
             ) : (
-              <div className="flex items-center gap-1.5 justify-center text-xs text-amber-400 py-1 font-semibold">
+              <div className="flex items-center gap-1.5 justify-center text-xs text-warning py-1 font-semibold">
                 <Clock className="h-4 w-4" />
                 Awaiting manual review / grading.
               </div>
@@ -276,7 +276,7 @@ export default function StudentAssessmentPlayerPage() {
 
           <Button
             onClick={() => router.push("/learn")}
-            className="w-full h-11 rounded-xl bg-zinc-850 text-xs font-semibold text-neutral-200 border border-zinc-800 hover:bg-zinc-800"
+            className="w-full h-11 rounded-xl bg-muted text-xs font-semibold text-foreground border border-border hover:bg-muted"
           >
             Return to Dashboard
           </Button>
@@ -288,37 +288,37 @@ export default function StudentAssessmentPlayerPage() {
   // --- STATE 2: Rules / Welcome Screen (Not Started) ---
   if (!attemptDetails) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-neutral-900 text-white min-h-screen">
-        <Card className="max-w-lg w-full rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-2xl">
+      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-foreground text-background min-h-screen">
+        <Card className="max-w-lg w-full rounded-3xl border border-border bg-background p-8 shadow-2xl">
           <div className="flex items-center gap-2 mb-2">
-            <GraduationCap className="h-6 w-6 text-violet-500" />
-            <span className="text-[10px] uppercase font-bold tracking-widest text-violet-400">Assignment Portal</span>
+            <GraduationCap className="h-6 w-6 text-primary" />
+            <span className="text-[10px] uppercase font-bold tracking-widest text-primary">Assignment Portal</span>
           </div>
-          <h1 className="text-2xl font-extrabold text-neutral-50 mb-1">{assessment.title}</h1>
-          <p className="text-xs text-neutral-400">
+          <h1 className="text-2xl font-extrabold text-foreground mb-1">{assessment.title}</h1>
+          <p className="text-xs text-muted-foreground">
             Subject: {assessment.subject?.name} • Grade: {assessment.level?.name}
           </p>
 
           <div className="grid grid-cols-3 gap-3 my-6">
-            <div className="rounded-2xl bg-zinc-900 border border-zinc-850 p-3 text-center">
-              <Clock className="h-5 w-5 text-neutral-400 mx-auto mb-1.5" />
-              <p className="text-[10px] text-neutral-400 font-semibold">Duration</p>
-              <p className="text-sm font-bold text-neutral-100 mt-0.5">{assessment.estimatedDurationMinutes}m</p>
+            <div className="rounded-2xl bg-muted border border-border p-3 text-center">
+              <Clock className="h-5 w-5 text-muted-foreground mx-auto mb-1.5" />
+              <p className="text-[10px] text-muted-foreground font-semibold">Duration</p>
+              <p className="text-sm font-bold text-foreground mt-0.5">{assessment.estimatedDurationMinutes}m</p>
             </div>
-            <div className="rounded-2xl bg-zinc-900 border border-zinc-850 p-3 text-center">
-              <Award className="h-5 w-5 text-neutral-400 mx-auto mb-1.5" />
-              <p className="text-[10px] text-neutral-400 font-semibold">Max Score</p>
-              <p className="text-sm font-bold text-neutral-100 mt-0.5">{assessment.totalMarks} Marks</p>
+            <div className="rounded-2xl bg-muted border border-border p-3 text-center">
+              <Award className="h-5 w-5 text-muted-foreground mx-auto mb-1.5" />
+              <p className="text-[10px] text-muted-foreground font-semibold">Max Score</p>
+              <p className="text-sm font-bold text-foreground mt-0.5">{assessment.totalMarks} Marks</p>
             </div>
-            <div className="rounded-2xl bg-zinc-900 border border-zinc-850 p-3 text-center">
-              <BookOpen className="h-5 w-5 text-neutral-400 mx-auto mb-1.5" />
-              <p className="text-[10px] text-neutral-400 font-semibold">Questions</p>
-              <p className="text-sm font-bold text-neutral-100 mt-0.5">{questions.length} Items</p>
+            <div className="rounded-2xl bg-muted border border-border p-3 text-center">
+              <BookOpen className="h-5 w-5 text-muted-foreground mx-auto mb-1.5" />
+              <p className="text-[10px] text-muted-foreground font-semibold">Questions</p>
+              <p className="text-sm font-bold text-foreground mt-0.5">{questions.length} Items</p>
             </div>
           </div>
 
-          <div className="space-y-3 mb-8 text-neutral-400 text-xs leading-relaxed bg-zinc-900/40 p-4 border border-zinc-850 rounded-2xl">
-            <h3 className="font-bold text-neutral-200">Important Rules:</h3>
+          <div className="space-y-3 mb-8 text-muted-foreground text-xs leading-relaxed bg-muted/40 p-4 border border-border rounded-2xl">
+            <h3 className="font-bold text-foreground">Important Rules:</h3>
             <ul className="list-disc pl-4 space-y-1.5 text-[11px]">
               <li>Once you start, the timer cannot be paused or stopped.</li>
               <li>Your answers are autosaved in real-time as you progress.</li>
@@ -330,7 +330,7 @@ export default function StudentAssessmentPlayerPage() {
           <Button
             onClick={handleStartAttempt}
             disabled={isStarting}
-            className="w-full h-12 rounded-2xl bg-violet-600 hover:bg-violet-500 font-bold text-xs text-white shadow-lg shadow-violet-500/25 transition-all flex items-center justify-center gap-2"
+            className="w-full h-12 rounded-2xl bg-primary hover:bg-primary/90 font-bold text-xs text-white shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2"
           >
             <Play className="h-4 w-4 fill-current" />
             {isStarting ? "Initializing..." : "Start Assessment Now"}
@@ -348,25 +348,25 @@ export default function StudentAssessmentPlayerPage() {
   const currentSaving = savingState[currentQuestion?.questionId] || "idle";
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-neutral-900 text-white select-none">
+    <div className="flex flex-col h-screen overflow-hidden bg-foreground text-background select-none">
       {/* Test Player Header */}
-      <div className="h-16 border-b border-zinc-850 bg-zinc-950 px-6 flex items-center justify-between shrink-0">
+      <div className="h-16 border-b border-border bg-background px-6 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-violet-500" />
-            <h1 className="text-sm font-bold tracking-tight text-neutral-50 truncate max-w-[200px]">
+            <FileText className="h-5 w-5 text-primary" />
+            <h1 className="text-sm font-bold tracking-tight text-foreground truncate max-w-[200px]">
               {assessment.title}
             </h1>
           </div>
           {/* Progress Indicator */}
           <div className="hidden sm:flex items-center gap-2.5">
-            <div className="w-24 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+            <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full bg-violet-500 transition-all duration-300"
+                className="h-full bg-primary/100 transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
               ></div>
             </div>
-            <span className="text-[10px] text-neutral-400 font-bold">
+            <span className="text-[10px] text-muted-foreground font-bold">
               {answeredCount}/{questions.length} Answered
             </span>
           </div>
@@ -376,9 +376,9 @@ export default function StudentAssessmentPlayerPage() {
         <div className="flex items-center gap-4">
           {/* Saving Status Tag */}
           <div className="text-[10px] font-bold">
-            {currentSaving === "saving" && <span className="text-neutral-400">Saving...</span>}
-            {currentSaving === "saved" && <span className="text-emerald-400">Saved</span>}
-            {currentSaving === "error" && <span className="text-rose-500">Save Error</span>}
+            {currentSaving === "saving" && <span className="text-muted-foreground">Saving...</span>}
+            {currentSaving === "saved" && <span className="text-success">Saved</span>}
+            {currentSaving === "error" && <span className="text-destructive">Save Error</span>}
           </div>
 
           {/* Countdown Clock */}
@@ -386,8 +386,8 @@ export default function StudentAssessmentPlayerPage() {
             <div
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-bold text-xs ${
                 timeLeft < 300
-                  ? "bg-rose-500/10 text-rose-500 border-rose-500/20 animate-pulse"
-                  : "bg-zinc-900 text-zinc-300 border-zinc-800"
+                  ? "bg-destructive/10 text-destructive border-destructive/20 animate-pulse"
+                  : "bg-muted text-muted-foreground border-border"
               }`}
             >
               <Clock className="h-4 w-4" />
@@ -397,7 +397,7 @@ export default function StudentAssessmentPlayerPage() {
 
           <Button
             onClick={() => setConfirmSubmitOpen(true)}
-            className="h-9 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white px-4 shrink-0 shadow-md shadow-violet-500/10"
+            className="h-9 rounded-xl bg-primary hover:bg-primary/90 text-xs font-bold text-white px-4 shrink-0 shadow-md shadow-primary/10"
           >
             <Send className="mr-1.5 h-3.5 w-3.5" /> Submit Test
           </Button>
@@ -407,8 +407,8 @@ export default function StudentAssessmentPlayerPage() {
       {/* Workspace Area split */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Question Navigation panel */}
-        <div className="w-64 border-r border-zinc-850 bg-zinc-950/60 p-5 flex flex-col overflow-y-auto shrink-0">
-          <h2 className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-4">
+        <div className="w-64 border-r border-border bg-background/60 p-5 flex flex-col overflow-y-auto shrink-0">
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-4">
             Navigation Grid
           </h2>
 
@@ -419,7 +419,7 @@ export default function StudentAssessmentPlayerPage() {
 
               return (
                 <div key={section.id} className="space-y-2">
-                  <p className="text-[10px] font-bold text-neutral-400">{section.title}</p>
+                  <p className="text-[10px] font-bold text-muted-foreground">{section.title}</p>
                   <div className="grid grid-cols-4 gap-2">
                     {secQuestions.map((q) => {
                       const absoluteIdx = questions.findIndex((item) => item.id === q.id);
@@ -432,10 +432,10 @@ export default function StudentAssessmentPlayerPage() {
                           onClick={() => setCurrentIndex(absoluteIdx)}
                           className={`h-9 w-9 rounded-xl text-xs font-bold flex items-center justify-center border transition-all ${
                             isCurrent
-                              ? "bg-zinc-900 border-violet-500 text-violet-400 shadow-md shadow-violet-500/5"
+                              ? "bg-muted border-primary text-primary shadow-md shadow-primary/5"
                               : isAnswered
-                              ? "bg-violet-600 border-violet-600 text-white"
-                              : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                              ? "bg-primary border-primary text-white"
+                              : "bg-muted border-border text-muted-foreground hover:border-border"
                           }`}
                         >
                           {q.questionNumber}
@@ -450,21 +450,21 @@ export default function StudentAssessmentPlayerPage() {
         </div>
 
         {/* Center Main area: Current Question Panel */}
-        <div className="flex-1 overflow-y-auto p-8 flex flex-col justify-between bg-zinc-950/20">
+        <div className="flex-1 overflow-y-auto p-8 flex flex-col justify-between bg-card/10">
           {currentQuestion ? (
             <div className="max-w-3xl w-full mx-auto space-y-6">
               {/* Question Meta Header */}
-              <div className="flex justify-between items-center pb-4 border-b border-zinc-850">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+              <div className="flex justify-between items-center pb-4 border-b border-border">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
                   Question {currentQuestion.questionNumber} • {currentQuestion.marksAvailable} Marks
                 </span>
-                <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-zinc-800 text-zinc-400">
+                <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-muted text-muted-foreground">
                   {currentQuestion.question.questionType.toUpperCase()}
                 </span>
               </div>
 
               {/* Prompt Stem Text */}
-              <div className="text-sm font-medium leading-relaxed text-zinc-100 select-text">
+              <div className="text-sm font-medium leading-relaxed text-foreground select-text">
                 <MathRenderer text={currentQuestion.question.prompt} />
               </div>
 
@@ -472,7 +472,7 @@ export default function StudentAssessmentPlayerPage() {
               <div className="pt-4">
                 {currentQuestion.question.widgetType ? (
                   /* Render Interactive Widget */
-                  <div className="border border-zinc-800 rounded-3xl bg-zinc-900/30 p-6">
+                  <div className="border border-border rounded-3xl bg-muted/30 p-6">
                     <WidgetSelector
                       question={currentQuestion.question as any}
                       currentState={currentResponse.interactionState || null}
@@ -498,15 +498,15 @@ export default function StudentAssessmentPlayerPage() {
                               }
                               className={`p-4 rounded-2xl border text-left text-xs font-semibold flex items-center gap-3 transition-all ${
                                 isSelected
-                                  ? "bg-violet-600/10 border-violet-500 text-violet-400 shadow-md shadow-violet-500/5"
-                                  : "bg-zinc-900 border-zinc-800/80 text-zinc-300 hover:border-zinc-700"
+                                  ? "bg-primary/10 border-primary text-primary shadow-md shadow-primary/5"
+                                  : "bg-muted border-border/80 text-muted-foreground hover:border-border"
                               }`}
                             >
                               <div
                                 className={`h-5 w-5 rounded-full border flex items-center justify-center text-[10px] font-bold ${
                                   isSelected
-                                    ? "border-violet-400 bg-violet-500 text-white"
-                                    : "border-zinc-700 text-zinc-400"
+                                    ? "border-primary bg-primary/100 text-white"
+                                    : "border-border text-muted-foreground"
                                 }`}
                               >
                                 {opt.optionLabel}
@@ -523,7 +523,7 @@ export default function StudentAssessmentPlayerPage() {
                     {/* Numeric Answer Interface */}
                     {currentQuestion.question.questionType === "numeric" && (
                       <div className="space-y-1.5 max-w-sm">
-                        <Label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                        <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                           Numeric Answer
                         </Label>
                         <Input
@@ -542,7 +542,7 @@ export default function StudentAssessmentPlayerPage() {
                           onBlur={(e) =>
                             handleSaveResponse(currentQuestion.questionId, { responseText: e.target.value })
                           }
-                          className="h-11 rounded-xl text-xs bg-zinc-900 border-zinc-800 text-white"
+                          className="h-11 rounded-xl text-xs bg-muted border-border text-white"
                         />
                       </div>
                     )}
@@ -550,7 +550,7 @@ export default function StudentAssessmentPlayerPage() {
                     {/* Short Answer Interface */}
                     {currentQuestion.question.questionType === "short_answer" && (
                       <div className="space-y-1.5 max-w-md">
-                        <Label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                        <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                           Short Answer Text
                         </Label>
                         <Input
@@ -568,7 +568,7 @@ export default function StudentAssessmentPlayerPage() {
                           onBlur={(e) =>
                             handleSaveResponse(currentQuestion.questionId, { responseText: e.target.value })
                           }
-                          className="h-11 rounded-xl text-xs bg-zinc-900 border-zinc-800 text-white"
+                          className="h-11 rounded-xl text-xs bg-muted border-border text-white"
                         />
                       </div>
                     )}
@@ -576,7 +576,7 @@ export default function StudentAssessmentPlayerPage() {
                     {/* Written / Free Text Essay Interface */}
                     {currentQuestion.question.questionType === "written" && (
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                        <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                           Essay / Written Response
                         </Label>
                         <textarea
@@ -594,7 +594,7 @@ export default function StudentAssessmentPlayerPage() {
                           onBlur={(e) =>
                             handleSaveResponse(currentQuestion.questionId, { responseText: e.target.value })
                           }
-                          className="h-48 w-full resize-none rounded-2xl border border-zinc-800 bg-zinc-900 p-4 text-xs text-white focus:outline-none"
+                          className="h-48 w-full resize-none rounded-2xl border border-border bg-muted p-4 text-xs text-white focus:outline-none"
                         />
                       </div>
                     )}
@@ -604,18 +604,18 @@ export default function StudentAssessmentPlayerPage() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <HelpCircle className="h-10 w-10 text-neutral-400 mx-auto mb-2 animate-bounce" />
-              <p className="text-xs text-neutral-400">No active question to display.</p>
+              <HelpCircle className="h-10 w-10 text-muted-foreground mx-auto mb-2 animate-bounce" />
+              <p className="text-xs text-muted-foreground">No active question to display.</p>
             </div>
           )}
 
           {/* Bottom Navigation Toolbar */}
-          <div className="max-w-3xl w-full mx-auto flex justify-between pt-6 border-t border-zinc-850/60 mt-12 shrink-0">
+          <div className="max-w-3xl w-full mx-auto flex justify-between pt-6 border-t border-border/60 mt-12 shrink-0">
             <Button
               variant="ghost"
               disabled={currentIndex === 0}
               onClick={() => setCurrentIndex(currentIndex - 1)}
-              className="h-10 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white"
+              className="h-10 rounded-xl text-xs font-semibold text-muted-foreground hover:text-white"
             >
               <ChevronLeft className="mr-1 h-4 w-4" /> Previous
             </Button>
@@ -623,14 +623,14 @@ export default function StudentAssessmentPlayerPage() {
             {currentIndex === questions.length - 1 ? (
               <Button
                 onClick={() => setConfirmSubmitOpen(true)}
-                className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white px-5"
+                className="h-10 rounded-xl bg-success hover:bg-success font-bold text-xs text-white px-5"
               >
                 Submit Paper <Send className="ml-1.5 h-3.5 w-3.5" />
               </Button>
             ) : (
               <Button
                 onClick={() => setCurrentIndex(currentIndex + 1)}
-                className="h-10 rounded-xl bg-zinc-850 hover:bg-zinc-800 text-xs font-semibold text-zinc-300 border border-zinc-800"
+                className="h-10 rounded-xl bg-muted hover:bg-muted text-xs font-semibold text-muted-foreground border border-border"
               >
                 Next <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
@@ -642,24 +642,24 @@ export default function StudentAssessmentPlayerPage() {
       {/* Confirmation Submit Modal */}
       {confirmSubmitOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="max-w-md w-full rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl text-center text-white">
-            <AlertTriangle className="mx-auto h-12 w-12 text-amber-500 mb-3 animate-pulse" />
-            <h3 className="text-base font-bold text-neutral-50 mb-1">Submit Assessment?</h3>
-            <p className="text-xs text-neutral-400 mb-5 leading-relaxed">
+          <Card className="max-w-md w-full rounded-3xl border border-border bg-background p-6 shadow-2xl text-center text-white">
+            <AlertTriangle className="mx-auto h-12 w-12 text-warning mb-3 animate-pulse" />
+            <h3 className="text-base font-bold text-foreground mb-1">Submit Assessment?</h3>
+            <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
               Are you sure you want to finalize and submit your assessment paper? You have answered {answeredCount} out of {questions.length} questions. You cannot undo this action.
             </p>
 
             <div className="flex gap-3">
               <Button
                 onClick={() => setConfirmSubmitOpen(false)}
-                className="flex-1 h-10 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-300 hover:bg-zinc-850"
+                className="flex-1 h-10 rounded-xl bg-muted border border-border text-xs font-semibold text-muted-foreground hover:bg-muted"
               >
                 Back to Test
               </Button>
               <Button
                 onClick={handleSubmitTest}
                 disabled={isSubmitting}
-                className="flex-1 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-semibold text-white"
+                className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-xs font-semibold text-white"
               >
                 {isSubmitting ? "Submitting..." : "Yes, Submit"}
               </Button>

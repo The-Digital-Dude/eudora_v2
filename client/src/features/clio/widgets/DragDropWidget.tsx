@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 
@@ -133,9 +133,9 @@ export function DragDropWidget({ config, placements, onChange, locked }: DragDro
               className={[
                 "flex min-h-[64px] items-center justify-between gap-4 rounded-xl border p-4 transition-all duration-200",
                 placedLabel
-                  ? "cursor-pointer border-violet-500/35 bg-violet-500/5"
-                  : "border-border bg-muted/20 hover:bg-muted/40 border-dashed hover:border-violet-500/40",
-                isOver ? "scale-[1.01] border-violet-400 bg-violet-500/10" : "",
+                  ? "cursor-pointer border-primary/35 bg-primary/5"
+                  : "border-border bg-muted/20 hover:bg-muted/40 border-dashed hover:border-primary/40",
+                isOver ? "scale-[1.01] border-primary bg-primary/10" : "",
                 locked ? "cursor-not-allowed opacity-80" : "",
               ]
                 .filter(Boolean)
@@ -148,7 +148,7 @@ export function DragDropWidget({ config, placements, onChange, locked }: DragDro
               {placedLabel ? (
                 <div
                   className={[
-                    "flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-violet-500/10 transition-colors hover:bg-violet-500",
+                    "flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/10 transition-colors hover:bg-primary",
                     locked ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing",
                   ]
                     .filter(Boolean)
@@ -195,7 +195,7 @@ export function DragDropWidget({ config, placements, onChange, locked }: DragDro
                   className={[
                     "rounded-lg px-3 py-2 text-xs font-bold shadow-sm transition-all duration-200",
                     isSelected
-                      ? "scale-[1.05] border border-fuchsia-400 bg-fuchsia-600 text-white ring-2 ring-fuchsia-400/50"
+                      ? "scale-[1.05] border border-primary bg-primary text-primary-foreground ring-2 ring-primary/50"
                       : "bg-muted hover:bg-muted/80 text-foreground border-border border",
                     locked ? "cursor-not-allowed opacity-40" : "cursor-grab active:cursor-grabbing",
                   ]

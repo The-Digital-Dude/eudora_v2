@@ -1,0 +1,12 @@
+import { Module } from '@nestjs/common';
+import { LiveClassesService } from './live-classes.service';
+import { LiveClassesController } from './live-classes.controller';
+import { PrismaModule } from '../prisma/prisma.module';
+
+@Module({
+  imports: [PrismaModule],
+  controllers: [LiveClassesController],
+  providers: [LiveClassesService],
+  exports: [LiveClassesService],
+})
+export class LiveClassesModule {}

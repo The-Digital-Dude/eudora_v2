@@ -15,7 +15,6 @@ import {
   Heading2,
   Undo,
   Redo,
-  Percent,
   Sigma
 } from "lucide-react";
 
@@ -53,7 +52,7 @@ export function RichTextEditor({
 
   if (!editor) {
     return (
-      <div className="h-40 w-full animate-pulse bg-neutral-100 rounded-xl dark:bg-zinc-800" />
+      <div className="h-40 w-full animate-pulse rounded-xl bg-muted" />
     );
   }
 
@@ -67,95 +66,84 @@ export function RichTextEditor({
     editor.commands.focus();
   };
 
+  const toolbarBtn = (active: boolean) =>
+    `p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all ${
+      active ? "bg-muted text-primary" : ""
+    }`;
+
   return (
-    <div className="border border-neutral-200 rounded-2xl overflow-hidden bg-white dark:border-zinc-800 dark:bg-zinc-950/20 flex flex-col min-h-[180px]">
+    <div className="flex min-h-[180px] flex-col overflow-hidden rounded-2xl border border-border bg-card">
       {/* Toolbar */}
-      <div className="bg-neutral-50 px-3 py-1.5 border-b border-neutral-200 dark:bg-zinc-900/40 dark:border-zinc-850 flex flex-wrap gap-1 items-center">
+      <div className="flex flex-wrap items-center gap-1 border-b border-border bg-muted/50 px-3 py-1.5">
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-neutral-500 hover:text-neutral-900 transition-all ${
-            editor.isActive("bold") ? "bg-neutral-250 dark:bg-zinc-800 text-violet-600 dark:text-violet-400" : ""
-          }`}
+          className={toolbarBtn(editor.isActive("bold"))}
         >
           <Bold className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-neutral-500 hover:text-neutral-900 transition-all ${
-            editor.isActive("italic") ? "bg-neutral-250 dark:bg-zinc-800 text-violet-600 dark:text-violet-400" : ""
-          }`}
+          className={toolbarBtn(editor.isActive("italic"))}
         >
           <Italic className="h-3.5 w-3.5" />
         </button>
-        <span className="w-px h-4 bg-neutral-200 dark:bg-zinc-800 mx-1" />
-        
+        <span className="mx-1 h-4 w-px bg-border" />
+
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={`p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-neutral-500 hover:text-neutral-900 transition-all ${
-            editor.isActive("heading", { level: 1 }) ? "bg-neutral-250 dark:bg-zinc-800 text-violet-600 dark:text-violet-400" : ""
-          }`}
+          className={toolbarBtn(editor.isActive("heading", { level: 1 }))}
         >
           <Heading1 className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={`p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-neutral-500 hover:text-neutral-900 transition-all ${
-            editor.isActive("heading", { level: 2 }) ? "bg-neutral-250 dark:bg-zinc-800 text-violet-600 dark:text-violet-400" : ""
-          }`}
+          className={toolbarBtn(editor.isActive("heading", { level: 2 }))}
         >
           <Heading2 className="h-3.5 w-3.5" />
         </button>
-        <span className="w-px h-4 bg-neutral-200 dark:bg-zinc-800 mx-1" />
+        <span className="mx-1 h-4 w-px bg-border" />
 
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-neutral-500 hover:text-neutral-900 transition-all ${
-            editor.isActive("bulletList") ? "bg-neutral-250 dark:bg-zinc-800 text-violet-600 dark:text-violet-400" : ""
-          }`}
+          className={toolbarBtn(editor.isActive("bulletList"))}
         >
           <List className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-neutral-500 hover:text-neutral-900 transition-all ${
-            editor.isActive("orderedList") ? "bg-neutral-250 dark:bg-zinc-800 text-violet-600 dark:text-violet-400" : ""
-          }`}
+          className={toolbarBtn(editor.isActive("orderedList"))}
         >
           <ListOrdered className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={`p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-neutral-500 hover:text-neutral-900 transition-all ${
-            editor.isActive("blockquote") ? "bg-neutral-250 dark:bg-zinc-800 text-violet-600 dark:text-violet-400" : ""
-          }`}
+          className={toolbarBtn(editor.isActive("blockquote"))}
         >
           <Quote className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleCode().run()}
-          className={`p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-neutral-500 hover:text-neutral-900 transition-all ${
-            editor.isActive("code") ? "bg-neutral-250 dark:bg-zinc-800 text-violet-600 dark:text-violet-400" : ""
-          }`}
+          className={toolbarBtn(editor.isActive("code"))}
         >
           <Code className="h-3.5 w-3.5" />
         </button>
 
-        <span className="w-px h-4 bg-neutral-200 dark:bg-zinc-800 mx-1" />
+        <span className="mx-1 h-4 w-px bg-border" />
 
         {/* KaTeX math insertion buttons */}
         <button
           type="button"
           onClick={insertInlineMath}
           title="Insert Inline LaTeX Formula"
-          className="p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-violet-600 dark:text-violet-400 transition-all flex items-center gap-0.5"
+          className="flex items-center gap-0.5 rounded-lg p-1.5 text-primary transition-all hover:bg-muted"
         >
           <Sigma className="h-3.5 w-3.5" />
           <span className="text-[9px] font-bold">Inline</span>
@@ -164,7 +152,7 @@ export function RichTextEditor({
           type="button"
           onClick={insertBlockMath}
           title="Insert Block LaTeX Formula"
-          className="p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-violet-600 dark:text-violet-400 transition-all flex items-center gap-0.5"
+          className="flex items-center gap-0.5 rounded-lg p-1.5 text-primary transition-all hover:bg-muted"
         >
           <Sigma className="h-3.5 w-3.5 font-extrabold" />
           <span className="text-[9px] font-bold">Block</span>
@@ -175,7 +163,7 @@ export function RichTextEditor({
             type="button"
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
-            className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-neutral-400 disabled:opacity-30"
+            className="rounded-lg p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
           >
             <Undo className="h-3 w-3" />
           </button>
@@ -183,7 +171,7 @@ export function RichTextEditor({
             type="button"
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().redo()}
-            className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-zinc-800 text-neutral-400 disabled:opacity-30"
+            className="rounded-lg p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
           >
             <Redo className="h-3 w-3" />
           </button>
@@ -191,7 +179,7 @@ export function RichTextEditor({
       </div>
 
       {/* Editor Content Area */}
-      <div className="flex-1 p-3 text-xs text-neutral-800 focus:outline-none dark:text-neutral-200 select-text prose dark:prose-invert max-w-none">
+      <div className="prose max-w-none flex-1 select-text p-3 text-xs text-foreground focus:outline-none dark:prose-invert">
         <EditorContent editor={editor} className="min-h-[140px] focus:outline-none focus-visible:outline-none [&_.tiptap]:focus:outline-none" />
       </div>
     </div>

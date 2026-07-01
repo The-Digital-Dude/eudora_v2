@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { Search } from "lucide-react";
@@ -29,15 +29,15 @@ export function QuestionFilterBar({ filters, onFilterChange, onReset }: Question
   const levels = levelsData?.items || [];
 
   return (
-    <div className="flex flex-wrap gap-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
+    <div className="flex flex-wrap gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
       {/* Search Input */}
       <div className="relative flex-1 min-w-[200px]">
-        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search questions by prompt..."
           value={filters.search}
           onChange={(e) => onFilterChange("search", e.target.value)}
-          className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 pl-10 text-xs dark:border-zinc-800 dark:bg-zinc-900"
+          className="h-10 rounded-xl border-border bg-muted/50 pl-10 text-xs"
         />
       </div>
 
@@ -47,7 +47,7 @@ export function QuestionFilterBar({ filters, onFilterChange, onReset }: Question
           value={filters.subjectId || "all"}
           onValueChange={(val) => onFilterChange("subjectId", val === "all" ? "" : val)}
         >
-          <SelectTrigger className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900">
+          <SelectTrigger className="h-10 rounded-xl border-border bg-muted/50 text-xs">
             <SelectValue placeholder="All Subjects" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -67,7 +67,7 @@ export function QuestionFilterBar({ filters, onFilterChange, onReset }: Question
           value={filters.levelId || "all"}
           onValueChange={(val) => onFilterChange("levelId", val === "all" ? "" : val)}
         >
-          <SelectTrigger className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900">
+          <SelectTrigger className="h-10 rounded-xl border-border bg-muted/50 text-xs">
             <SelectValue placeholder="All Levels" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -87,7 +87,7 @@ export function QuestionFilterBar({ filters, onFilterChange, onReset }: Question
           value={filters.questionType || "all"}
           onValueChange={(val) => onFilterChange("questionType", val === "all" ? "" : val)}
         >
-          <SelectTrigger className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900">
+          <SelectTrigger className="h-10 rounded-xl border-border bg-muted/50 text-xs">
             <SelectValue placeholder="All Types" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -106,7 +106,7 @@ export function QuestionFilterBar({ filters, onFilterChange, onReset }: Question
           value={filters.difficulty || "all"}
           onValueChange={(val) => onFilterChange("difficulty", val === "all" ? "" : val)}
         >
-          <SelectTrigger className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900">
+          <SelectTrigger className="h-10 rounded-xl border-border bg-muted/50 text-xs">
             <SelectValue placeholder="All Difficulty" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -125,7 +125,7 @@ export function QuestionFilterBar({ filters, onFilterChange, onReset }: Question
           value={filters.status || "all"}
           onValueChange={(val) => onFilterChange("status", val === "all" ? "" : val)}
         >
-          <SelectTrigger className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900">
+          <SelectTrigger className="h-10 rounded-xl border-border bg-muted/50 text-xs">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -140,7 +140,7 @@ export function QuestionFilterBar({ filters, onFilterChange, onReset }: Question
       {/* Clear/Reset Button */}
       <button
         onClick={onReset}
-        className="h-10 cursor-pointer rounded-xl border border-neutral-200 bg-white px-4 text-xs font-semibold hover:bg-neutral-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+        className="h-10 cursor-pointer rounded-xl border border-border bg-card px-4 text-xs font-semibold hover:bg-muted/50"
       >
         Clear Filters
       </button>

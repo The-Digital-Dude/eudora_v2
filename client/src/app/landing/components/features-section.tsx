@@ -1,4 +1,4 @@
-import { BarChart3,Cpu, GitBranch, RefreshCw, ShieldAlert, Zap } from "lucide-react";
+﻿import { BarChart3,Cpu, GitBranch, RefreshCw, ShieldAlert, Zap } from "lucide-react";
 
 export default function FeaturesSection() {
   const items = [
@@ -37,18 +37,18 @@ export default function FeaturesSection() {
   return (
     <section
       id="features"
-      className="border-t border-neutral-200/40 bg-neutral-50 py-20 select-none"
+      className="border-t border-border/40 bg-background py-20 select-none"
     >
       <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
         <div className="mx-auto mb-16 max-w-2xl space-y-3 text-center">
-          <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[10px] font-bold tracking-widest text-neutral-400 uppercase shadow-sm">
+          <span className="rounded-full border border-border bg-background px-3 py-1 text-[10px] font-bold tracking-widest text-muted-foreground uppercase shadow-sm">
             Features
           </span>
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-neutral-900">
+          <h2 className="font-display text-3xl font-extrabold tracking-tight text-foreground">
             Built for learning. Engineered for classrooms.
           </h2>
-          <p className="text-xs leading-normal text-neutral-400 sm:text-sm">
+          <p className="text-xs leading-normal text-muted-foreground sm:text-sm">
             Everything you need to design personalized curriculums, automate grading, and run live
             interactive lectures.
           </p>
@@ -59,13 +59,13 @@ export default function FeaturesSection() {
           {items.map((item, idx) => (
             <div
               key={idx}
-              className="flex flex-col items-start rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm transition-shadow hover:shadow-md md:p-8"
+              className="flex flex-col items-start rounded-2xl border border-border/50 bg-card p-6 shadow-sm transition-shadow hover:shadow-md md:p-8"
             >
-              <div className="mb-6 rounded-xl border border-neutral-100 bg-neutral-50 p-2.5 text-neutral-900">
+              <div className="mb-6 rounded-xl border border-border/50 bg-background p-2.5 text-foreground">
                 {item.icon}
               </div>
-              <h3 className="font-display mb-2 text-sm font-bold text-neutral-900">{item.title}</h3>
-              <p className="text-xs leading-normal text-neutral-400">{item.desc}</p>
+              <h3 className="font-display mb-2 text-sm font-bold text-foreground">{item.title}</h3>
+              <p className="text-xs leading-normal text-muted-foreground">{item.desc}</p>
             </div>
           ))}
         </div>

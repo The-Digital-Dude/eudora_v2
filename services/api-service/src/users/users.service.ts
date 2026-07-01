@@ -5,10 +5,14 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { AuditService } from '../common/audit/audit.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async findAll(page = 1, limit = 10) {
     const skip = (page - 1) * limit;
@@ -98,7 +102,7 @@ export class UsersService {
     };
   }
 
-  async update(id: string, dto: UpdateUserDto) {
+  async update(id: string, dto: UpdateUserDto, actorUserId: string | null = null) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -130,10 +134,18 @@ export class UsersService {
       },
     });
 
+    await this.audit.log({
+      actorUserId,
+      event: 'user.updated',
+      targetType: 'user',
+      targetId: id,
+      metadata: { fields: Object.keys(dto) },
+    });
+
     return updatedUser;
   }
 
-  async softDelete(id: string) {
+  async softDelete(id: string, actorUserId: string | null = null) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -147,10 +159,21 @@ export class UsersService {
       data: { deletedAt: new Date() },
     });
 
+    await this.audit.log({
+      actorUserId,
+      event: 'user.deleted',
+      targetType: 'user',
+      targetId: id,
+    });
+
     return { message: 'User deleted successfully' };
   }
 
-  async assignRole(userId: string, roleId: string) {
+  async assignRole(
+    userId: string,
+    roleId: string,
+    actorUserId: string | null = null,
+  ) {
     const [user, role] = await Promise.all([
       this.prisma.user.findUnique({ where: { id: userId } }),
       this.prisma.role.findUnique({ where: { id: roleId } }),
@@ -177,10 +200,22 @@ export class UsersService {
       data: { userId, roleId },
     });
 
+    await this.audit.log({
+      actorUserId,
+      event: 'user.role.assigned',
+      targetType: 'user',
+      targetId: userId,
+      metadata: { roleId, roleName: role.name },
+    });
+
     return { message: `Role '${role.name}' assigned to user successfully` };
   }
 
-  async removeRole(userId: string, roleId: string) {
+  async removeRole(
+    userId: string,
+    roleId: string,
+    actorUserId: string | null = null,
+  ) {
     const [user, role] = await Promise.all([
       this.prisma.user.findUnique({ where: { id: userId } }),
       this.prisma.role.findUnique({ where: { id: roleId } }),
@@ -207,6 +242,14 @@ export class UsersService {
       where: {
         userId_roleId: { userId, roleId },
       },
+    });
+
+    await this.audit.log({
+      actorUserId,
+      event: 'user.role.removed',
+      targetType: 'user',
+      targetId: userId,
+      metadata: { roleId, roleName: role.name },
     });
 
     return { message: `Role '${role.name}' removed from user successfully` };

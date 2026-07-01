@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Award, BookOpen, Clock, Download,FileText, Paperclip, Send } from "lucide-react";
 import * as React from "react";
@@ -69,11 +69,11 @@ export function StudentHomeworkView() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-50">
-            <BookOpen className="h-6 w-6 text-violet-500" />
+          <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-foreground">
+            <BookOpen className="h-6 w-6 text-primary" />
             My Homework & Tasks
           </h1>
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs font-medium text-muted-foreground">
             {isStudent
               ? "Submit pending class assignments and review scores."
               : "View school assignments completion status and grading feedback."}
@@ -82,7 +82,7 @@ export function StudentHomeworkView() {
       </div>
 
       {isGuardian && linkedStudents.length > 1 && (
-        <div className="flex gap-2 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="flex gap-2 rounded-2xl border border-border bg-card p-4">
           {linkedStudents.map((rel: any) => (
             <Button
               key={rel.studentProfileId}
@@ -97,7 +97,7 @@ export function StudentHomeworkView() {
       )}
 
       {isStudent && (
-        <div className="flex w-fit gap-2 rounded-xl bg-neutral-100 p-1 dark:bg-zinc-900">
+        <div className="flex w-fit gap-2 rounded-xl bg-muted p-1">
           <Button
             size="sm"
             variant={studentTab === "pending" ? "default" : "ghost"}
@@ -120,39 +120,39 @@ export function StudentHomeworkView() {
       {/* List of assignments */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {!listToRender || listToRender.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-neutral-200 bg-neutral-50/50 py-12 text-center text-xs text-neutral-400 dark:border-zinc-800 dark:bg-zinc-900/10 md:col-span-2">
-            <FileText className="mx-auto mb-3 h-12 w-12 text-neutral-300 dark:text-zinc-800" />
+          <div className="rounded-3xl border border-dashed border-border bg-muted/50 py-12 text-center text-xs text-muted-foreground/10 md:col-span-2">
+            <FileText className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
             <p className="font-bold">No assignments found</p>
-            <p className="mt-1 text-[10px] text-neutral-400">All caught up or no tasks posted.</p>
+            <p className="mt-1 text-[10px] text-muted-foreground">All caught up or no tasks posted.</p>
           </div>
         ) : (
           listToRender.map((item: any) => {
             const hw = item.homework || item;
             const isSubmission = !!item.status;
             const statusColors = {
-              PENDING: "bg-neutral-50 text-neutral-500 border-neutral-200",
+              PENDING: "bg-muted/50 text-muted-foreground border-border",
               SUBMITTED:
-                "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400",
-              LATE: "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400",
+                "bg-primary/10 text-primary border-primary/20",
+              LATE: "bg-warning/10 text-warning border-warning/20",
               GRADED:
-                "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400",
+                "bg-success/10 text-success border-success/20",
             };
 
             return (
               <Card
                 key={item.id}
-                className="flex flex-col justify-between overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="flex flex-col justify-between overflow-hidden rounded-3xl border-border bg-card shadow-sm"
               >
                 <CardHeader className="p-5 pb-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <Badge
                         variant="outline"
-                        className="mb-1.5 rounded-lg border-neutral-200 text-[9px] font-bold uppercase tracking-wider text-neutral-400"
+                        className="mb-1.5 rounded-lg border-border text-[9px] font-bold uppercase tracking-wider text-muted-foreground"
                       >
                         {hw.courseClass?.name || "Subject"}
                       </Badge>
-                      <CardTitle className="text-sm font-black text-neutral-800 dark:text-neutral-200">
+                      <CardTitle className="text-sm font-black text-foreground">
                         {hw.title}
                       </CardTitle>
                     </div>
@@ -160,14 +160,14 @@ export function StudentHomeworkView() {
                       className={`rounded-lg border px-2 py-0.5 text-[9px] font-bold uppercase ${
                         isSubmission
                           ? statusColors[item.status as keyof typeof statusColors]
-                          : "bg-violet-50 text-violet-600 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400"
+                          : "bg-primary/10 text-primary border-primary/20"
                       }`}
                     >
                       {isSubmission ? item.status : "Assigned"}
                     </Badge>
                   </div>
                   {hw.description && (
-                    <p className="mt-2 text-[11px] leading-relaxed text-neutral-500 line-clamp-3 dark:text-neutral-400">
+                    <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground line-clamp-3">
                       {hw.description}
                     </p>
                   )}
@@ -176,8 +176,8 @@ export function StudentHomeworkView() {
                 <CardContent className="space-y-4 p-5 pt-0">
                   {/* Attachments from teacher */}
                   {hw.attachmentUrls && hw.attachmentUrls.length > 0 && (
-                    <div className="space-y-1.5 border-t border-neutral-100 pt-2 dark:border-zinc-900">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
+                    <div className="space-y-1.5 border-t border-border pt-2">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                         Teacher Materials
                       </span>
                       <div className="flex flex-wrap gap-1.5">
@@ -187,9 +187,9 @@ export function StudentHomeworkView() {
                             href={url}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-[10px] text-neutral-600 transition-colors hover:bg-neutral-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-neutral-400"
+                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/50 px-2.5 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted"
                           >
-                            <Paperclip className="h-3 w-3 text-neutral-400" />
+                            <Paperclip className="h-3 w-3 text-muted-foreground" />
                             Material {index + 1}
                           </a>
                         ))}
@@ -199,8 +199,8 @@ export function StudentHomeworkView() {
 
                   {/* Grading results details */}
                   {isSubmission && item.status === "GRADED" && (
-                    <div className="space-y-2 rounded-2xl border border-emerald-100/50 bg-emerald-50/30 p-3 dark:border-emerald-500/10 dark:bg-emerald-500/5">
-                      <div className="flex items-center justify-between text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                    <div className="space-y-2 rounded-2xl border border-success/10 bg-success/5 p-3">
+                      <div className="flex items-center justify-between text-[10px] font-bold text-success">
                         <span className="flex items-center gap-1">
                           <Award className="h-3.5 w-3.5" /> Grade Earned
                         </span>
@@ -209,7 +209,7 @@ export function StudentHomeworkView() {
                         </span>
                       </div>
                       {item.feedback && (
-                        <p className="text-[10px] italic text-emerald-800 dark:text-emerald-400">
+                        <p className="text-[10px] italic text-success">
                           &ldquo;{item.feedback}&rdquo;
                         </p>
                       )}
@@ -217,9 +217,9 @@ export function StudentHomeworkView() {
                   )}
 
                   {/* Actions and due dates */}
-                  <div className="flex items-center justify-between border-t border-neutral-100 pt-2 text-[10px] dark:border-zinc-900">
-                    <span className="flex items-center gap-1 font-semibold text-neutral-400">
-                      <Clock className="h-3.5 w-3.5 text-neutral-300" />
+                  <div className="flex items-center justify-between border-t border-border pt-2 text-[10px]">
+                    <span className="flex items-center gap-1 font-semibold text-muted-foreground">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                       Due: {new Date(hw.dueDate).toLocaleString()}
                     </span>
 
@@ -230,7 +230,7 @@ export function StudentHomeworkView() {
                           setSubmitHomeworkId(hw.id);
                           setSubmitDialogOpen(true);
                         }}
-                        className="flex h-8 cursor-pointer items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 text-[10px] font-bold text-white hover:bg-violet-500"
+                        className="flex h-8 cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-3.5 text-[10px] font-bold text-white hover:bg-primary"
                       >
                         <Send className="h-3 w-3" />
                         Submit Task

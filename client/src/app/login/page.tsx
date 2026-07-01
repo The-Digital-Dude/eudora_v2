@@ -1,15 +1,16 @@
 "use client";
 
 import { useGoogleLogin } from "@react-oauth/google";
-import { ArrowRight,Eye, EyeOff, Lock, Mail, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, Mail, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useGoogleLoginMutation,useLoginMutation } from "@/features/auth/authApi";
+import { useGoogleLoginMutation, useLoginMutation } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
@@ -69,7 +70,6 @@ export default function LoginPage() {
     }
   };
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
       checkRedirect(user);
@@ -112,33 +112,32 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="dot-grid relative flex min-h-screen flex-col items-center justify-center bg-neutral-50 px-4 py-12 font-sans text-neutral-900 select-none dark:bg-zinc-950 dark:text-zinc-50">
-      {/* Centered card container with slide-up fade-in animation */}
+    <div className="dot-grid relative flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12 font-sans text-foreground select-none">
       <div className="animate-fade-in-up w-full max-w-[440px] space-y-8">
-        {/* Brand Logo and Name */}
+        {/* Brand Logo */}
         <div className="flex flex-col items-center space-y-3">
-          <div className="rounded-xl bg-neutral-900 p-2.5 text-white shadow-sm">
+          <div className="rounded-xl bg-foreground p-2.5 text-background shadow-sm">
             <Sparkles className="h-5 w-5" />
           </div>
-          <span className="font-display text-xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50">
+          <span className="font-display text-xl font-bold tracking-tight text-foreground">
             Eudora
           </span>
         </div>
 
-        {/* Clean Login Card */}
-        <div className="rounded-[24px] border border-neutral-200/80 bg-white p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10 dark:border-zinc-800 dark:bg-zinc-900">
+        {/* Login Card */}
+        <div className="rounded-[24px] border border-border bg-card p-8 shadow-[0_24px_60px_color-mix(in_oklch,var(--foreground)_4%,transparent),0_4px_12px_color-mix(in_oklch,var(--foreground)_2%,transparent)] md:p-10">
           {/* Header */}
           <div className="mb-8 space-y-2 text-center">
-            <h1 className="font-display text-2xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-card-foreground">
               Sign in to your account
             </h1>
-            <p className="mx-auto max-w-[280px] text-xs leading-normal text-neutral-400 dark:text-zinc-500">
+            <p className="mx-auto max-w-[280px] text-xs leading-normal text-muted-foreground">
               Enter your email and password below to access your classrooms and learning paths.
             </p>
           </div>
 
           {/* Role Switcher */}
-          <div className="mb-6 flex gap-1 rounded-xl bg-neutral-100 p-1 dark:bg-zinc-950">
+          <div className="mb-6 flex gap-1 rounded-xl bg-muted p-1">
             {(["student", "guardian", "admin"] as const).map((role) => (
               <button
                 key={role}
@@ -146,8 +145,8 @@ export default function LoginPage() {
                 onClick={() => setLoginAs(role)}
                 className={`flex-1 cursor-pointer rounded-lg py-1.5 text-center text-xs font-semibold capitalize transition-all select-none ${
                   loginAs === role
-                    ? "bg-white text-neutral-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
-                    : "text-neutral-500 hover:text-neutral-900 dark:hover:text-zinc-200"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {role}
@@ -161,10 +160,9 @@ export default function LoginPage() {
               type="button"
               onClick={() => handleGoogleLogin()}
               disabled={googleLoading || loading}
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-xs font-semibold text-neutral-700 shadow-sm transition-all hover:border-neutral-300 hover:bg-neutral-50 active:scale-98 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-card-foreground shadow-sm transition-all hover:bg-accent active:scale-98 disabled:opacity-50"
             >
-              {/* Google SVG */}
-              <svg className="h-4 w-4" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   fill="currentColor"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -186,10 +184,11 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-xs font-semibold text-neutral-700 shadow-sm transition-all hover:border-neutral-300 hover:bg-neutral-50 active:scale-98 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
+              disabled
+              aria-disabled="true"
+              className="flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-card-foreground shadow-sm opacity-50"
             >
-              {/* GitHub SVG */}
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -200,39 +199,43 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Separator */}
+          {/* Divider */}
           <div className="relative mb-6 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-100 dark:border-zinc-800"></div>
+              <div className="w-full border-t border-border"></div>
             </div>
-            <span className="relative bg-white px-3 text-[10px] font-semibold tracking-widest text-neutral-400 uppercase dark:bg-zinc-900 dark:text-zinc-500">
+            <span className="relative bg-card px-3 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
               Or continue with
             </span>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 rounded-xl border border-rose-100 bg-rose-50 p-3 text-xs font-semibold text-rose-500 dark:border-rose-900/30 dark:bg-rose-950/20">
+            <div
+              role="alert"
+              aria-live="polite"
+              className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs font-semibold text-destructive"
+            >
               {error}
             </div>
           )}
 
           {/* Form */}
           <form className="space-y-5" onSubmit={handleLogin}>
-            {/* Email Address */}
+            {/* Email */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-zinc-500">
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Email Address
               </Label>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-neutral-400">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
                   <Mail className="h-4 w-4" />
                 </span>
                 <Input
                   id="email"
                   type="email"
                   placeholder="name@company.com"
-                  className="cupertino-input h-11 rounded-xl border-neutral-200 bg-neutral-50/50 pl-10 text-neutral-900 placeholder:text-neutral-300 focus:border-neutral-900 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-50 dark:placeholder:text-zinc-700 dark:focus:border-zinc-300"
+                  className="cupertino-input h-11 rounded-xl pl-10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -244,22 +247,28 @@ export default function LoginPage() {
             {/* Password */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-zinc-500">
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Password
                 </Label>
-                <a className="cursor-pointer text-[11px] font-semibold text-neutral-500 transition-colors hover:text-neutral-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200">
+                <button
+                  type="button"
+                  className="cursor-pointer text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground hover:underline"
+                  onClick={() => {
+                    /* TODO: forgot password flow */
+                  }}
+                >
                   Forgot?
-                </a>
+                </button>
               </div>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-neutral-400">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
                   <Lock className="h-4 w-4" />
                 </span>
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="cupertino-input h-11 rounded-xl border-neutral-200 bg-neutral-50/50 pr-10 pl-10 text-neutral-900 placeholder:text-neutral-300 focus:border-neutral-900 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-50 dark:placeholder:text-zinc-700 dark:focus:border-zinc-300"
+                  className="cupertino-input h-11 rounded-xl pr-10 pl-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -268,36 +277,38 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 transition-colors hover:text-neutral-600"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Remember Me Option */}
-            <div className="flex items-center">
-              <label className="group flex cursor-pointer items-center gap-2.5 text-xs text-neutral-500 select-none hover:text-neutral-800 dark:text-zinc-400 dark:hover:text-zinc-200">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 cursor-pointer rounded border-neutral-200 bg-white text-neutral-900 transition-all focus:ring-neutral-900/20 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-                />
+            {/* Keep me signed in */}
+            <div className="flex items-center gap-2.5">
+              <Checkbox id="remember" />
+              <label
+                htmlFor="remember"
+                className="cursor-pointer text-xs text-muted-foreground select-none hover:text-foreground"
+              >
                 Keep me signed in
               </label>
             </div>
 
-            {/* Primary Action Button */}
+            {/* Submit */}
             <Button
               type="submit"
-              className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-neutral-900 font-semibold text-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all hover:bg-neutral-800 active:scale-98 disabled:pointer-events-none disabled:opacity-75 disabled:active:scale-100 dark:bg-zinc-100 dark:text-neutral-900 dark:hover:bg-zinc-200"
+              className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold"
               disabled={loading}
             >
               {loading ? (
                 <>
                   <svg
-                    className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
+                    className="mr-2 -ml-1 h-4 w-4 animate-spin"
                     fill="none"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <circle
                       className="opacity-25"
@@ -325,12 +336,12 @@ export default function LoginPage() {
           </form>
         </div>
 
-        {/* Footer Registration Link */}
-        <div className="text-center text-xs text-neutral-400 dark:text-zinc-500">
-          Don’t have an account?{" "}
+        {/* Footer */}
+        <div className="text-center text-xs text-muted-foreground">
+          Don&apos;t have an account?{" "}
           <Link
             href="/register"
-            className="font-semibold text-neutral-900 transition-colors hover:underline dark:text-zinc-50"
+            className="font-semibold text-foreground transition-colors hover:underline"
           >
             Create an account
           </Link>

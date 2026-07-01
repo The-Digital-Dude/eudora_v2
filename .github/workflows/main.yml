@@ -118,3 +118,80 @@ jobs:
           STRIPE_PUBLISHABLE_KEY: pk_test_REPLACE_WITH_YOUR_KEY
           STRIPE_WEBHOOK_SECRET: whsec_REPLACE_WITH_YOUR_WEBHOOK_SECRET
           GOOGLE_CLIENT_ID: your-google-client-id-placeholder.apps.googleusercontent.com
+
+  deploy:
+    name: Deploy to GCP
+    needs: [frontend, backend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push API Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/api-service
+          push: true
+          tags: |
+            ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/eudora-images/api-service:${{ github.sha }}
+            ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/eudora-images/api-service:latest
+
+      - name: Build and Push Client
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          push: true
+          tags: |
+            ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/eudora-images/client:${{ github.sha }}
+            ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/eudora-images/client:latest
+
+      - name: Deploy API Service to Cloud Run
+        id: deploy-api
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: eudora-api
+          region: ${{ vars.GCP_REGION }}
+          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/eudora-images/api-service:${{ github.sha }}
+          secrets: |
+            DATABASE_URL=DATABASE_URL:latest
+            JWT_SECRET=JWT_SECRET:latest
+          flags: |
+            --port=3000
+            --service-account=eudora-runtime-sa@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+            --add-cloudsql-instances=${{ vars.GCP_PROJECT_ID }}:${{ vars.GCP_REGION }}:eudora-db-instance
+
+      - name: Deploy Client to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: eudora-client
+          region: ${{ vars.GCP_REGION }}
+          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/eudora-images/client:${{ github.sha }}
+          env_vars: |
+            NEXT_PUBLIC_API_URL=${{ steps.deploy-api.outputs.url }}
+          flags: |
+            --port=3000
+            --service-account=eudora-runtime-sa@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+

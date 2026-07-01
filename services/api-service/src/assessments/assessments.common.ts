@@ -1,5 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { WidgetConfig, InteractionState } from './types/widget-config';
 
 export const lookupSelect = {
   id: true,
@@ -52,6 +54,20 @@ export const assessmentSelect = {
           prompt: true,
           difficulty: true,
           status: true,
+          widgetType: true,
+          widgetConfig: true,
+          correctAnswer: true,
+          explanation: true,
+          hints: true,
+          options: {
+            orderBy: { optionLabel: 'asc' as const },
+            select: {
+              id: true,
+              optionLabel: true,
+              optionText: true,
+              isCorrect: true,
+            },
+          },
         },
       },
     },
@@ -67,6 +83,10 @@ export const questionSelect = {
   correctAnswer: true,
   difficulty: true,
   status: true,
+  widgetType: true,
+  widgetConfig: true,
+  explanation: true,
+  hints: true,
   createdAt: true,
   updatedAt: true,
   options: {
@@ -128,6 +148,7 @@ export const attemptSelect = {
       questionId: true,
       selectedOptionId: true,
       responseText: true,
+      interactionState: true,
       isCorrect: true,
       marksAwarded: true,
       marksAvailable: true,
@@ -143,6 +164,7 @@ export const responseSelect = {
   questionId: true,
   selectedOptionId: true,
   responseText: true,
+  interactionState: true,
   isCorrect: true,
   marksAwarded: true,
   marksAvailable: true,
@@ -408,13 +430,19 @@ export function autoMarkResponse(
   question: {
     questionType: string;
     correctAnswer: string | null;
+    widgetType?: string | null;
+    widgetConfig?: WidgetConfig;
     options: { id: string; isCorrect: boolean }[];
   },
   selectedOptionId: string | null | undefined,
   responseText: string | null | undefined,
-  marksAvailable: number,
+  interactionState?: InteractionState,
+  marksAvailable: number = 0,
 ): { isCorrect?: boolean; marksAwarded?: number } {
-  if (question.questionType === 'mcq') {
+  if (
+    question.widgetType === 'STANDARD_MCQ' ||
+    question.questionType === 'mcq'
+  ) {
     const option = question.options.find(
       (candidate) => candidate.id === selectedOptionId,
     );
@@ -424,6 +452,85 @@ export function autoMarkResponse(
     return {
       isCorrect: option.isCorrect,
       marksAwarded: option.isCorrect ? marksAvailable : 0,
+    };
+  }
+
+  if (question.widgetType === 'SLIDER_MANIPULATIVE') {
+    const target = question.correctAnswer
+      ? parseFloat(question.correctAnswer)
+      : null;
+    const inputVal =
+      interactionState?.finalValue !== undefined
+        ? interactionState.finalValue
+        : null;
+
+    if (target !== null && inputVal !== null) {
+      const isCorrect = Math.abs(inputVal - target) <= 0.1;
+      return { isCorrect, marksAwarded: isCorrect ? marksAvailable : 0 };
+    }
+  }
+
+  if (question.widgetType === 'COORDINATE_PLOTTER' && question.widgetConfig) {
+    const config =
+      typeof question.widgetConfig === 'string'
+        ? (JSON.parse(question.widgetConfig) as WidgetConfig)
+        : (question.widgetConfig as WidgetConfig);
+    const coordConfig = config as typeof config & {
+      correctPoints?: Array<{ x: number; y: number }>;
+      tolerance?: number;
+    };
+    const correctPoints = coordConfig?.correctPoints ?? [];
+    const tolerance = coordConfig?.tolerance ?? 0.1;
+    const studentPoints = interactionState?.points ?? [];
+
+    if (correctPoints.length !== studentPoints.length) {
+      return { isCorrect: false, marksAwarded: 0 };
+    }
+
+    const allMatched = correctPoints.every((cp) => {
+      return studentPoints.some((sp) => {
+        const dx = cp.x - sp.x;
+        const dy = cp.y - sp.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        return dist <= tolerance;
+      });
+    });
+
+    return {
+      isCorrect: allMatched,
+      marksAwarded: allMatched ? marksAvailable : 0,
+    };
+  }
+
+  if (question.widgetType === 'GRID_MATCHING' && question.widgetConfig) {
+    const config =
+      typeof question.widgetConfig === 'string'
+        ? (JSON.parse(question.widgetConfig) as WidgetConfig)
+        : (question.widgetConfig as WidgetConfig);
+    const gridConfig = config as typeof config & {
+      correctPairs?: Array<[string, string]>;
+    };
+    const correctPairs = gridConfig?.correctPairs ?? [];
+    const studentPairs = interactionState?.pairs ?? [];
+
+    if (correctPairs.length !== studentPairs.length) {
+      return { isCorrect: false, marksAwarded: 0 };
+    }
+
+    const allMatched = correctPairs.every((cp) => {
+      const cpLeft = cp[0];
+      const cpRight = cp[1];
+      return studentPairs.some((sp) => {
+        return (
+          (sp[0] === cpLeft && sp[1] === cpRight) ||
+          (sp[0] === cpRight && sp[1] === cpLeft)
+        );
+      });
+    });
+
+    return {
+      isCorrect: allMatched,
+      marksAwarded: allMatched ? marksAvailable : 0,
     };
   }
 
@@ -466,7 +573,7 @@ export function requireRecord<T>(
   return record;
 }
 
-function IsInteger(value: any): boolean {
+function IsInteger(value: unknown): boolean {
   return typeof value === 'number' && Number.isInteger(value);
 }
 
@@ -476,7 +583,7 @@ export async function audit(
   event: string,
   targetType?: string | null,
   targetId?: string | null,
-  metadata?: any,
+  metadata?: Record<string, unknown> | null,
 ): Promise<void> {
   await prisma.auditLog.create({
     data: {
@@ -484,7 +591,9 @@ export async function audit(
       event,
       targetType: targetType ?? null,
       targetId: targetId ?? null,
-      metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null,
+      metadata: metadata
+        ? (JSON.parse(JSON.stringify(metadata)) as Prisma.InputJsonValue)
+        : undefined,
     },
   });
 }

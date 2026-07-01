@@ -12,6 +12,7 @@ import { CsrfGuard } from '../auth/guards/csrf.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import {
   CreateLookupDto,
   LookupQueryDto,
@@ -34,7 +35,10 @@ export class SubjectsController {
 
   @Post()
   @RequirePermissions({ action: 'manage', subject: 'Assessment' })
-  async createSubject(@Body() body: CreateLookupDto, @CurrentUser() user: any) {
+  async createSubject(
+    @Body() body: CreateLookupDto,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.subjectsService.createSubject(body, user.id);
   }
 
@@ -43,7 +47,7 @@ export class SubjectsController {
   async updateSubject(
     @Param('id') id: string,
     @Body() body: UpdateLookupDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.subjectsService.updateSubject(id, body, user.id);
   }

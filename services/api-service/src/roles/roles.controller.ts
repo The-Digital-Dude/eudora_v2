@@ -15,6 +15,8 @@ import { AssignPermissionDto } from './dto/assign-permission.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 
 @Roles('SUPER_ADMIN')
 @Controller('roles')
@@ -32,8 +34,8 @@ export class RolesController {
   @Post()
   @Roles('SUPER_ADMIN')
   @RequirePermissions({ action: 'create', subject: 'Role' })
-  async create(@Body() dto: CreateRoleDto) {
-    return this.rolesService.create(dto);
+  async create(@Body() dto: CreateRoleDto, @CurrentUser() actor: CurrentUserDto) {
+    return this.rolesService.create(dto, actor.id);
   }
 
   @Get(':id')
@@ -46,15 +48,19 @@ export class RolesController {
   @Patch(':id')
   @Roles('SUPER_ADMIN')
   @RequirePermissions({ action: 'update', subject: 'Role' })
-  async update(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
-    return this.rolesService.update(id, dto);
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateRoleDto,
+    @CurrentUser() actor: CurrentUserDto,
+  ) {
+    return this.rolesService.update(id, dto, actor.id);
   }
 
   @Delete(':id')
   @Roles('SUPER_ADMIN')
   @RequirePermissions({ action: 'delete', subject: 'Role' })
-  async delete(@Param('id') id: string) {
-    return this.rolesService.delete(id);
+  async delete(@Param('id') id: string, @CurrentUser() actor: CurrentUserDto) {
+    return this.rolesService.delete(id, actor.id);
   }
 
   @Post(':id/permissions')
@@ -63,8 +69,9 @@ export class RolesController {
   async assignPermission(
     @Param('id') id: string,
     @Body() dto: AssignPermissionDto,
+    @CurrentUser() actor: CurrentUserDto,
   ) {
-    return this.rolesService.assignPermission(id, dto.permissionId);
+    return this.rolesService.assignPermission(id, dto.permissionId, actor.id);
   }
 
   @Delete(':id/permissions/:permissionId')
@@ -73,7 +80,8 @@ export class RolesController {
   async removePermission(
     @Param('id') id: string,
     @Param('permissionId') permissionId: string,
+    @CurrentUser() actor: CurrentUserDto,
   ) {
-    return this.rolesService.removePermission(id, permissionId);
+    return this.rolesService.removePermission(id, permissionId, actor.id);
   }
 }

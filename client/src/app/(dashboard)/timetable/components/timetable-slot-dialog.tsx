@@ -1,18 +1,20 @@
-"use client";
+﻿"use client";
 
+import { AlertCircle, Trash } from "lucide-react";
 import * as React from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -20,19 +22,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  useCreateTimetableSlotMutation,
-  useUpdateTimetableSlotMutation,
-  useDeleteTimetableSlotMutation,
   TimetableSlot,
+  useCreateTimetableSlotMutation,
+  useDeleteTimetableSlotMutation,
+  useUpdateTimetableSlotMutation,
 } from "@/features/academic/timetableApi";
 import {
   useGetClassSectionsQuery,
   useGetCourseClassesQuery,
   useGetTeacherProfilesQuery,
 } from "@/features/dashboard/dashboardApi";
-import { toast } from "sonner";
-import { AlertCircle, Trash } from "lucide-react";
 
 interface TimetableSlotDialogProps {
   open: boolean;
@@ -163,7 +164,10 @@ export function TimetableSlotDialog({
       onOpenChange(false);
     } catch (err: any) {
       console.error("Slot save error:", err);
-      const confMsg = err?.data?.conflicts?.[0]?.message || err?.data?.message || "Failed to save timetable slot.";
+      const confMsg =
+        err?.data?.conflicts?.[0]?.message ||
+        err?.data?.message ||
+        "Failed to save timetable slot.";
       setErrorMessage(confMsg);
     }
   };
@@ -186,20 +190,20 @@ export function TimetableSlotDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-3xl p-6 bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 shadow-xl overflow-hidden">
+      <DialogContent className="max-w-md overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold text-neutral-900 dark:text-neutral-50 font-display">
+          <DialogTitle className="font-display text-lg font-bold text-foreground">
             {slot ? "Edit Timetable Slot" : "Add Timetable Slot"}
           </DialogTitle>
-          <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400">
+          <DialogDescription className="text-xs text-muted-foreground">
             Define the weekly scheduling slot details. Conflicts are validated dynamically.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           {errorMessage && (
-            <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-xl p-3 flex gap-3 text-xs text-rose-600 dark:text-rose-400">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="flex gap-3 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
@@ -207,9 +211,11 @@ export function TimetableSlotDialog({
           <div className="grid grid-cols-2 gap-4">
             {/* Day of Week */}
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Day of Week</Label>
+              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                Day of Week
+              </Label>
               <Select value={dayOfWeek} onValueChange={setDayOfWeek}>
-                <SelectTrigger className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50">
+                <SelectTrigger className="h-10 rounded-xl border-border bg-muted/30 text-xs">
                   <SelectValue placeholder="Select Day" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -226,13 +232,15 @@ export function TimetableSlotDialog({
 
             {/* Period Index */}
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Period Index</Label>
+              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                Period Index
+              </Label>
               <Input
                 type="number"
                 min={0}
                 value={periodIndex}
                 onChange={(e) => setPeriodIndex(Number(e.target.value))}
-                className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50"
+                className="h-10 rounded-xl border-border bg-muted/30 text-xs"
               />
             </div>
           </div>
@@ -240,32 +248,38 @@ export function TimetableSlotDialog({
           <div className="grid grid-cols-2 gap-4">
             {/* Start Time */}
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Start Time</Label>
+              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                Start Time
+              </Label>
               <Input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50"
+                className="h-10 rounded-xl border-border bg-muted/30 text-xs"
               />
             </div>
 
             {/* End Time */}
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">End Time</Label>
+              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                End Time
+              </Label>
               <Input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50"
+                className="h-10 rounded-xl border-border bg-muted/30 text-xs"
               />
             </div>
           </div>
 
           {/* Class Section */}
           <div className="space-y-1">
-            <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Class Section</Label>
+            <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              Class Section
+            </Label>
             <Select value={classSectionId} onValueChange={setClassSectionId}>
-              <SelectTrigger className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50">
+              <SelectTrigger className="h-10 rounded-xl border-border bg-muted/30 text-xs">
                 <SelectValue placeholder="Select Class Section" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -280,9 +294,11 @@ export function TimetableSlotDialog({
 
           {/* Course Class */}
           <div className="space-y-1">
-            <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Course Subject (Course Class)</Label>
+            <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              Course Subject (Course Class)
+            </Label>
             <Select value={courseClassId} onValueChange={setCourseClassId}>
-              <SelectTrigger className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50">
+              <SelectTrigger className="h-10 rounded-xl border-border bg-muted/30 text-xs">
                 <SelectValue placeholder="Select Course" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -298,9 +314,11 @@ export function TimetableSlotDialog({
 
           {/* Teacher Profile */}
           <div className="space-y-1">
-            <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Assigned Teacher</Label>
+            <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              Assigned Teacher
+            </Label>
             <Select value={teacherProfileId} onValueChange={setTeacherProfileId}>
-              <SelectTrigger className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50">
+              <SelectTrigger className="h-10 rounded-xl border-border bg-muted/30 text-xs">
                 <SelectValue placeholder="Select Teacher" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -316,37 +334,41 @@ export function TimetableSlotDialog({
 
           {/* Room */}
           <div className="space-y-1">
-            <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Classroom / Room</Label>
+            <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              Classroom / Room
+            </Label>
             <Input
               type="text"
               placeholder="e.g. Room 204, Science Lab A"
               value={room}
               onChange={(e) => setRoom(e.target.value)}
-              className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50"
+              className="h-10 rounded-xl border-border bg-muted/30 text-xs"
             />
           </div>
 
           {/* Notes */}
           <div className="space-y-1">
-            <Label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Notes</Label>
+            <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              Notes
+            </Label>
             <Textarea
               placeholder="Add optional notes or descriptions..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[60px] rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50"
+              className="min-h-[60px] rounded-xl border-border bg-muted/30 text-xs"
             />
           </div>
 
-          <DialogFooter className="pt-4 flex justify-between items-center">
+          <DialogFooter className="flex items-center justify-between pt-4">
             {slot ? (
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="rounded-xl border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 text-rose-600 h-10 text-xs font-semibold gap-2 shrink-0 cursor-pointer"
+                className="h-10 shrink-0 cursor-pointer gap-2 rounded-xl border-destructive/30 text-xs font-semibold text-destructive hover:bg-destructive/10"
               >
-                <Trash className="w-3.5 h-3.5" />
+                <Trash className="h-3.5 w-3.5" />
                 Delete
               </Button>
             ) : (
@@ -357,14 +379,14 @@ export function TimetableSlotDialog({
                 type="button"
                 variant="ghost"
                 onClick={() => onOpenChange(false)}
-                className="rounded-xl h-10 text-xs font-semibold cursor-pointer"
+                className="h-10 cursor-pointer rounded-xl text-xs font-semibold"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isCreating || isUpdating}
-                className="rounded-xl bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 dark:hover:bg-zinc-200 text-white dark:text-neutral-900 h-10 text-xs font-semibold px-4 cursor-pointer"
+                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
               >
                 {slot ? "Save Changes" : "Create Slot"}
               </Button>
@@ -375,3 +397,4 @@ export function TimetableSlotDialog({
     </Dialog>
   );
 }
+

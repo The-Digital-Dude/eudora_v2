@@ -8,7 +8,7 @@ describe('GradebookService', () => {
   let service: GradebookService;
   let prisma: PrismaService;
 
-  const mockPrismaService = {
+  const mockPrismaService: any = {
     studentProfile: {
       findUnique: jest.fn(),
     },
@@ -34,7 +34,7 @@ describe('GradebookService', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
     },
-    $transaction: jest.fn((cb) => cb(mockPrismaService)),
+    $transaction: jest.fn((cb: (tx: any) => any): any => cb(mockPrismaService)),
   };
 
   beforeEach(async () => {
@@ -66,7 +66,9 @@ describe('GradebookService', () => {
     });
 
     it('should throw BadRequestException if pointsPossible is zero or negative', async () => {
-      mockPrismaService.studentProfile.findUnique.mockResolvedValue({ id: 'student-1' });
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue({
+        id: 'student-1',
+      });
       await expect(
         service.createManualGrade(
           {
@@ -81,8 +83,14 @@ describe('GradebookService', () => {
 
     it('should create manual grade successfully', async () => {
       const mockStudent = { id: 'student-1' };
-      const mockEntry = { id: 'entry-1', pointsEarned: 80, pointsPossible: 100 };
-      mockPrismaService.studentProfile.findUnique.mockResolvedValue(mockStudent);
+      const mockEntry = {
+        id: 'entry-1',
+        pointsEarned: 80,
+        pointsPossible: 100,
+      };
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue(
+        mockStudent,
+      );
       mockPrismaService.gradeBookEntry.upsert.mockResolvedValue(mockEntry);
 
       const result = await service.createManualGrade(
@@ -118,13 +126,22 @@ describe('GradebookService', () => {
           courseClass: { termId: 'term-1' },
         },
       };
-      mockPrismaService.homeworkSubmission.findUnique.mockResolvedValue(mockSubmission);
+      mockPrismaService.homeworkSubmission.findUnique.mockResolvedValue(
+        mockSubmission,
+      );
       mockPrismaService.studentClassPlacement.findFirst.mockResolvedValue({
         classSectionId: 'class-sec-1',
       });
-      mockPrismaService.gradeBookEntry.upsert.mockResolvedValue({ id: 'entry-1' });
+      mockPrismaService.gradeBookEntry.upsert.mockResolvedValue({
+        id: 'entry-1',
+      });
 
-      const result = await service.upsertFromHomeworkSubmission('sub-1', 90, 100, new Date());
+      const result = await service.upsertFromHomeworkSubmission(
+        'sub-1',
+        90,
+        100,
+        new Date(),
+      );
       expect(result).toEqual({ id: 'entry-1' });
       expect(mockPrismaService.gradeBookEntry.upsert).toHaveBeenCalled();
     });

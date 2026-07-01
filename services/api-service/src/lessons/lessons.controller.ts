@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -12,10 +14,14 @@ import {
   CreateLessonDto,
   CreateCardDto,
   SubmitCardResponseDto,
+  UpdateLessonDto,
+  UpdateCardDto,
+  ReorderCardsDto,
 } from './dto/lessons.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 
 @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
 @Controller('lessons')
@@ -29,7 +35,10 @@ export class LessonsController {
   }
 
   @Get(':id/flow')
-  async getLessonFlow(@Param('id') id: string, @CurrentUser() user: any) {
+  async getLessonFlow(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.lessonsService.getLessonFlow(id, user.id);
   }
 
@@ -37,7 +46,7 @@ export class LessonsController {
   async submitCardResponse(
     @Param('cardId') cardId: string,
     @Body() body: SubmitCardResponseDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.lessonsService.submitCardResponse(user.id, cardId, body);
   }
@@ -53,5 +62,32 @@ export class LessonsController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   async createCard(@Body() dto: CreateCardDto) {
     return this.lessonsService.createCard(dto);
+  }
+
+  @Patch(':id')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  async updateLesson(@Param('id') id: string, @Body() dto: UpdateLessonDto) {
+    return this.lessonsService.updateLesson(id, dto);
+  }
+
+  @Patch('cards/:cardId')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  async updateCard(
+    @Param('cardId') cardId: string,
+    @Body() dto: UpdateCardDto,
+  ) {
+    return this.lessonsService.updateCard(cardId, dto);
+  }
+
+  @Patch(':id/cards/reorder')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  async reorderCards(@Param('id') id: string, @Body() dto: ReorderCardsDto) {
+    return this.lessonsService.reorderCards(id, dto);
+  }
+
+  @Delete('cards/:cardId')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  async deleteCard(@Param('cardId') cardId: string) {
+    return this.lessonsService.deleteCard(cardId);
   }
 }

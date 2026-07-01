@@ -1,80 +1,90 @@
+﻿import { Activity, ArrowRight, Cpu, Globe,Layers, Play, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { ArrowRight, Play, Sparkles, Activity, Layers, Cpu, Globe } from "lucide-react";
 
 export default function HeroSection() {
   return (
-    <section className="relative pt-20 pb-24 md:pt-28 md:pb-36 bg-neutral-50 overflow-hidden dot-grid">
-      
+    <section className="dot-grid relative overflow-hidden bg-background pt-20 pb-24 md:pt-28 md:pb-36">
       {/* Background Soft Ambient Lights */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[350px] bg-gradient-to-b from-neutral-200/20 to-transparent rounded-full filter blur-[100px] pointer-events-none" />
+      <div className="pointer-events-none absolute top-0 left-1/2 h-[350px] w-full max-w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-b from-neutral-200/20 to-transparent blur-[100px] filter" />
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10 flex flex-col items-center text-center">
-        
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-6 text-center">
         {/* Top Product Badge */}
-        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border border-neutral-200 bg-white text-[10px] font-bold text-neutral-600 uppercase tracking-widest mb-6 animate-fade-in-up select-none shadow-sm">
-          <Sparkles className="w-3.5 h-3.5 text-neutral-900" />
+        <div className="animate-fade-in-up mb-6 inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3.5 py-1 text-[10px] font-bold tracking-widest text-muted-foreground uppercase shadow-sm select-none">
+          <Sparkles className="h-3.5 w-3.5 text-foreground" />
           Introducing Eudora OS v2.0
         </div>
 
         {/* Hero Headings */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-neutral-900 leading-[1.1] mb-6 font-display max-w-3xl animate-fade-in-up">
+        <h1 className="font-display animate-fade-in-up mb-6 max-w-3xl text-4xl leading-[1.1] font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl">
           Learn intelligently. <br className="hidden sm:inline" />
           Teach effortlessly.
         </h1>
 
         {/* Subheader */}
-        <p className="text-sm sm:text-base md:text-lg text-neutral-400 max-w-2xl leading-relaxed mb-8 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-          Eudora is the next-generation learning platform. Personalize student curriculums, automate grading, and coordinate school districts in one unified system.
+        <p
+          className="animate-fade-in-up mb-8 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base md:text-lg"
+          style={{ animationDelay: "0.1s" }}
+        >
+          Eudora is the next-generation learning platform. Personalize student curriculums, automate
+          grading, and coordinate school districts in one unified system.
         </p>
 
         {/* CTA Actions */}
-        <div className="flex flex-col sm:flex-row items-center gap-4.5 mb-16 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+        <div
+          className="animate-fade-in-up mb-16 flex flex-col items-center gap-4.5 sm:flex-row"
+          style={{ animationDelay: "0.2s" }}
+        >
           <Link href="/login">
-            <button className="h-11 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold rounded-xl text-sm px-6 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-neutral-900/10 active:scale-97">
+            <button className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-foreground px-6 text-sm font-semibold text-primary-foreground shadow-md shadow-foreground/10 transition-all hover:bg-foreground/90 active:scale-97">
               Get Started Free
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="h-4 w-4" />
             </button>
           </Link>
           <a href="#features">
-            <button className="h-11 bg-white hover:bg-neutral-50 text-neutral-700 font-semibold rounded-xl text-sm px-6 border border-neutral-200 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-97">
-              <Play className="w-3.5 h-3.5 fill-current text-neutral-600" />
+            <button className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-6 text-sm font-semibold text-foreground shadow-sm transition-all hover:bg-background active:scale-97">
+              <Play className="h-3.5 w-3.5 fill-current text-muted-foreground" />
               Watch Demo
             </button>
           </a>
         </div>
 
         {/* Mockup Dashboard Container */}
-        <div className="w-full max-w-[840px] px-2 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-          <div className="bg-white border border-neutral-200/80 rounded-[24px] shadow-[0_30px_70px_rgba(0,0,0,0.06),0_10px_20px_rgba(0,0,0,0.015)] overflow-hidden relative select-none">
-            
+        <div
+          className="animate-fade-in-up w-full max-w-[840px] px-2"
+          style={{ animationDelay: "0.3s" }}
+        >
+          <div className="relative overflow-hidden rounded-[24px] border border-border/50 bg-card shadow-[0_30px_70px_rgba(0,0,0,0.06),0_10px_20px_rgba(0,0,0,0.015)] select-none">
             {/* Window Title Bar */}
-            <div className="h-11 border-b border-neutral-100 flex items-center px-5 bg-neutral-50/50">
+            <div className="flex h-11 items-center border-b border-border/50 bg-background/50 px-5">
               <div className="flex gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-neutral-200"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-neutral-200"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-neutral-200"></div>
+                <div className="h-2.5 w-2.5 rounded-full bg-muted"></div>
+                <div className="h-2.5 w-2.5 rounded-full bg-muted"></div>
+                <div className="h-2.5 w-2.5 rounded-full bg-muted"></div>
               </div>
-              <div className="mx-auto text-[10px] font-semibold text-neutral-400 tracking-wider">workspace.eudora.edu</div>
+              <div className="mx-auto text-[10px] font-semibold tracking-wider text-muted-foreground">
+                workspace.eudora.edu
+              </div>
             </div>
 
             {/* Window Content */}
-            <div className="grid grid-cols-12 h-[340px] md:h-[400px] text-left">
-              
+            <div className="grid h-[340px] grid-cols-12 text-left md:h-[400px]">
               {/* Sidebar navigation */}
-              <div className="col-span-3 border-r border-neutral-100 p-4 bg-neutral-50/30 hidden md:block">
+              <div className="col-span-3 hidden border-r border-border/50 bg-background/30 p-4 md:block">
                 <div className="space-y-4">
-                  <div className="text-[10px] font-bold text-neutral-450 uppercase tracking-widest px-2.5">Workspace</div>
+                  <div className="text-muted-foreground px-2.5 text-[10px] font-bold tracking-widest uppercase">
+                    Workspace
+                  </div>
                   <div className="space-y-2.5">
-                    <div className="h-7 bg-neutral-100 rounded-lg flex items-center px-2.5 gap-2 text-neutral-900 font-semibold text-xs">
-                      <Layers className="w-3.5 h-3.5 text-neutral-650" />
+                    <div className="flex h-7 items-center gap-2 rounded-lg bg-muted px-2.5 text-xs font-semibold text-foreground">
+                      <Layers className="text-muted-foreground h-3.5 w-3.5" />
                       <span>Student Paths</span>
                     </div>
-                    <div className="h-7 hover:bg-neutral-50 rounded-lg flex items-center px-2.5 gap-2 transition-colors text-neutral-400 text-xs font-medium">
-                      <Cpu className="w-3.5 h-3.5 text-neutral-400" />
+                    <div className="flex h-7 items-center gap-2 rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-background">
+                      <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
                       <span>Curriculum AI</span>
                     </div>
-                    <div className="h-7 hover:bg-neutral-50 rounded-lg flex items-center px-2.5 gap-2 transition-colors text-neutral-400 text-xs font-medium">
-                      <Globe className="w-3.5 h-3.5 text-neutral-400" />
+                    <div className="flex h-7 items-center gap-2 rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-background">
+                      <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                       <span>District Admin</span>
                     </div>
                   </div>
@@ -82,71 +92,85 @@ export default function HeroSection() {
               </div>
 
               {/* Main Content Area */}
-              <div className="col-span-12 md:col-span-9 p-6 space-y-6 flex flex-col justify-between">
-                
+              <div className="col-span-12 flex flex-col justify-between space-y-6 p-6 md:col-span-9">
                 {/* Dashboard Metrics Header */}
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 rounded-xl border border-neutral-100 bg-neutral-50/20">
-                    <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Active Students</div>
-                    <div className="text-xl font-bold text-neutral-900 mt-1">1,248</div>
+                  <div className="rounded-xl border border-border/50 bg-background/20 p-4">
+                    <div className="text-[9px] font-bold tracking-widest text-muted-foreground uppercase">
+                      Active Students
+                    </div>
+                    <div className="mt-1 text-xl font-bold text-foreground">1,248</div>
                   </div>
-                  <div className="p-4 rounded-xl border border-neutral-100 bg-neutral-50/20">
-                    <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Graded Tasks</div>
-                    <div className="text-xl font-bold text-neutral-900 mt-1">12.5k</div>
+                  <div className="rounded-xl border border-border/50 bg-background/20 p-4">
+                    <div className="text-[9px] font-bold tracking-widest text-muted-foreground uppercase">
+                      Graded Tasks
+                    </div>
+                    <div className="mt-1 text-xl font-bold text-foreground">12.5k</div>
                   </div>
-                  <div className="p-4 rounded-xl border border-neutral-100 bg-neutral-50/20">
-                    <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Avg Grade</div>
-                    <div className="text-xl font-bold text-neutral-900 mt-1 flex items-baseline gap-1">
+                  <div className="rounded-xl border border-border/50 bg-background/20 p-4">
+                    <div className="text-[9px] font-bold tracking-widest text-muted-foreground uppercase">
+                      Avg Grade
+                    </div>
+                    <div className="mt-1 flex items-baseline gap-1 text-xl font-bold text-foreground">
                       A-
-                      <span className="text-[9px] text-emerald-500 font-semibold">+2.4%</span>
+                      <span className="text-[9px] font-semibold text-success">+2.4%</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Graph Representation */}
-                <div className="flex-1 min-h-[120px] rounded-xl border border-neutral-100 p-4 flex flex-col justify-between relative overflow-hidden bg-neutral-50/10">
+                <div className="relative flex min-h-[120px] flex-1 flex-col justify-between overflow-hidden rounded-xl border border-border/50 bg-background/10 p-4">
                   <div className="flex items-center justify-between">
-                    <div className="text-[10px] font-semibold text-neutral-400 flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5 text-neutral-600 animate-pulse" />
+                    <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+                      <Activity className="h-3.5 w-3.5 animate-pulse text-muted-foreground" />
                       Live Student Engagement Tracker
                     </div>
                     <div className="flex gap-2">
-                      <span className="w-1.5 h-1.5 bg-neutral-200 rounded-full"></span>
-                      <span className="w-1.5 h-1.5 bg-neutral-200 rounded-full"></span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted"></span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted"></span>
                     </div>
                   </div>
-                  
+
                   {/* SVG Wave */}
-                  <div className="h-[80px] w-full flex items-end">
-                    <svg className="w-full h-full text-neutral-900 overflow-visible" viewBox="0 0 100 40" preserveAspectRatio="none">
+                  <div className="flex h-[80px] w-full items-end">
+                    <svg
+                      className="h-full w-full overflow-visible text-foreground"
+                      viewBox="0 0 100 40"
+                      preserveAspectRatio="none"
+                    >
                       <defs>
                         <linearGradient id="glow-hero" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="#171717" stopOpacity="0.08" />
                           <stop offset="100%" stopColor="#171717" stopOpacity="0" />
                         </linearGradient>
                       </defs>
-                      <path d="M0 40 L0 30 Q10 12 25 25 T50 15 T75 22 T100 8 L100 40 Z" fill="url(#glow-hero)" />
-                      <path d="M0 30 Q10 12 25 25 T50 15 T75 22 T100 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <path
+                        d="M0 40 L0 30 Q10 12 25 25 T50 15 T75 22 T100 8 L100 40 Z"
+                        fill="url(#glow-hero)"
+                      />
+                      <path
+                        d="M0 30 Q10 12 25 25 T50 15 T75 22 T100 8"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
                     </svg>
                   </div>
                 </div>
 
                 {/* Status Bar */}
-                <div className="flex justify-between items-center text-[10px] text-neutral-400 border-t border-neutral-100 pt-4">
+                <div className="flex items-center justify-between border-t border-border/50 pt-4 text-[10px] text-muted-foreground">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
+                    <span className="h-2 w-2 animate-ping rounded-full bg-success"></span>
                     AI grading engine operational
                   </div>
                   <div>Last update: Just now</div>
                 </div>
-
               </div>
-
             </div>
-
           </div>
         </div>
-
       </div>
     </section>
   );

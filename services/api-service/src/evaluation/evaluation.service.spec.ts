@@ -8,7 +8,7 @@ describe('EvaluationService', () => {
   let service: EvaluationService;
   let prisma: PrismaService;
 
-  const mockPrismaService = {
+  const mockPrismaService: any = {
     concept: {
       findUnique: jest.fn(),
       create: jest.fn(),
@@ -54,7 +54,7 @@ describe('EvaluationService', () => {
       findUnique: jest.fn(),
       upsert: jest.fn(),
     },
-    $transaction: jest.fn((cb) => cb(mockPrismaService)),
+    $transaction: jest.fn((cb: (tx: any) => any): any => cb(mockPrismaService)),
   };
 
   beforeEach(async () => {
@@ -286,7 +286,7 @@ describe('EvaluationService', () => {
         'evaluator-1',
       );
 
-      expect(result.overallScore).toBe(3.0);
+      expect(result!.overallScore).toBe(3.0);
       expect(mockPrismaService.rubricAssessment.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -352,7 +352,7 @@ describe('EvaluationService', () => {
         'evaluator-1',
       );
 
-      expect(result.overallScore).toBe(4.0);
+      expect(result!.overallScore).toBe(4.0);
 
       // Decaying average: Mastery(2) = 0.5 * 4.0 (new) + 0.5 * 3.0 (old) = 3.5
       // N=2 -> Confidence = 1 - e^(-1.0) = 0.63212

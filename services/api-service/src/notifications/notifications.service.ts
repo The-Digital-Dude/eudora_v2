@@ -26,13 +26,11 @@ export class NotificationsService {
 
     // Send email notification
     if (notification.user && notification.user.email) {
-      await this.emailService.sendMail(
-        notification.user.email,
-        dto.title,
-        dto.body,
-      ).catch((err) => {
-        console.error('Failed to send notification email', err);
-      });
+      await this.emailService
+        .sendMail(notification.user.email, dto.title, dto.body)
+        .catch((err) => {
+          console.error('Failed to send notification email', err);
+        });
     }
 
     return notification;

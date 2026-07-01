@@ -1,12 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AttendanceService } from './attendance.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
-  let prisma: PrismaService;
 
   const mockPrismaService = {
     classSection: {
@@ -34,7 +33,9 @@ describe('AttendanceService', () => {
     studentProfile: {
       findUnique: jest.fn(),
     },
-    $transaction: jest.fn().mockImplementation((callback) => callback(mockPrismaService)),
+    $transaction: jest
+      .fn()
+      .mockImplementation((callback) => callback(mockPrismaService)),
   };
 
   beforeEach(async () => {
@@ -49,7 +50,6 @@ describe('AttendanceService', () => {
     }).compile();
 
     service = module.get<AttendanceService>(AttendanceService);
-    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 
@@ -143,7 +143,10 @@ describe('AttendanceService', () => {
         { status: AttendanceStatus.PRESENT },
       ]);
 
-      const result = await service.getMonthlyAttendanceSummary('2026-06', 'year-1');
+      const result = await service.getMonthlyAttendanceSummary(
+        '2026-06',
+        'year-1',
+      );
 
       expect(result.month).toBe('2026-06');
       expect(result.total).toBe(2);
@@ -154,9 +157,18 @@ describe('AttendanceService', () => {
   describe('getAbsenceTrends', () => {
     it('should group absences and late entries by date', async () => {
       mockPrismaService.dailyAttendance.findMany.mockResolvedValue([
-        { date: new Date('2026-06-21T00:00:00Z'), status: AttendanceStatus.ABSENT },
-        { date: new Date('2026-06-21T00:00:00Z'), status: AttendanceStatus.LATE },
-        { date: new Date('2026-06-22T00:00:00Z'), status: AttendanceStatus.ABSENT },
+        {
+          date: new Date('2026-06-21T00:00:00Z'),
+          status: AttendanceStatus.ABSENT,
+        },
+        {
+          date: new Date('2026-06-21T00:00:00Z'),
+          status: AttendanceStatus.LATE,
+        },
+        {
+          date: new Date('2026-06-22T00:00:00Z'),
+          status: AttendanceStatus.ABSENT,
+        },
       ]);
 
       const result = await service.getAbsenceTrends('2026-06-20', '2026-06-23');
@@ -204,7 +216,11 @@ describe('AttendanceService', () => {
           { status: AttendanceStatus.PRESENT },
         ]);
 
-      const result = await service.getAtRiskAttendanceStudents(80, 'year-1', 'c1');
+      const result = await service.getAtRiskAttendanceStudents(
+        80,
+        'year-1',
+        'c1',
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].studentProfileId).toBe('s1');

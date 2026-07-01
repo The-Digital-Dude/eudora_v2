@@ -1,22 +1,20 @@
-"use client";
+﻿"use client";
 
-import React, { useState } from "react";
 import {
-  Calendar,
-  Users,
+  AlertCircle,
   AlertTriangle,
+  Calendar,
+  CalendarCheck,
+  Check,
   CheckCircle2,
   Clock,
-  Check,
+  Users,
   X,
-  CalendarCheck,
-  AlertCircle
 } from "lucide-react";
+import React, { useState } from "react";
 
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +23,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   useGetCourseClassesQuery,
   useGetMakeupRequestsQuery,
@@ -90,150 +89,185 @@ export default function ClassesPage() {
   // Metrics calculations
   const classList = classesData?.items || [];
   const activeClassesCount = classList.length;
-  
+
   const makeupList = makeupData?.items || [];
   const pendingMakeupsCount = makeupList.filter((m: any) => m.status === "Awaiting Action").length;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-neutral-900 font-display">
+        <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
           Classes, Attendance & Make-ups
         </h1>
-        <p className="text-xs text-neutral-500 mt-0.5">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           Schedule classrooms, record attendance logs, and manage make-up sessions.
         </p>
       </div>
 
       {/* Metrics Cards */}
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="border border-neutral-200 bg-white p-5 rounded-2xl space-y-2">
-          <div className="flex items-center justify-between text-neutral-400">
-            <span className="text-[10px] font-bold uppercase tracking-wider font-display">Active Classes</span>
-            <Calendar className="w-4 h-4" />
+        <Card className="space-y-2 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="font-display text-[10px] font-bold tracking-wider uppercase">
+              Active Classes
+            </span>
+            <Calendar className="h-4 w-4" />
           </div>
-          <p className="text-2xl font-bold text-neutral-900 font-display">
+          <p className="font-display text-2xl font-bold text-foreground">
             {classesLoading ? "..." : activeClassesCount}
           </p>
-          <p className="text-[10px] text-neutral-400">Scheduled course classes</p>
+          <p className="text-[10px] text-muted-foreground">Scheduled course classes</p>
         </Card>
 
-        <Card className="border border-neutral-200 bg-white p-5 rounded-2xl space-y-2">
-          <div className="flex items-center justify-between text-neutral-400">
-            <span className="text-[10px] font-bold uppercase tracking-wider font-display">Attendance Rate</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+        <Card className="space-y-2 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="font-display text-[10px] font-bold tracking-wider uppercase">
+              Attendance Rate
+            </span>
+            <CheckCircle2 className="h-4 w-4 text-success" />
           </div>
-          <p className="text-2xl font-bold text-neutral-900 font-display">96.8%</p>
-          <p className="text-[10px] text-emerald-600 font-semibold">+0.4% from last term</p>
+          <p className="font-display text-2xl font-bold text-foreground">96.8%</p>
+          <p className="text-[10px] font-semibold text-success">+0.4% from last term</p>
         </Card>
 
-        <Card className="border border-neutral-200 bg-white p-5 rounded-2xl space-y-2">
-          <div className="flex items-center justify-between text-neutral-400">
-            <span className="text-[10px] font-bold uppercase tracking-wider font-display">Make-ups Pending</span>
-            <AlertTriangle className={`w-4 h-4 ${pendingMakeupsCount > 0 ? "text-amber-500 animate-pulse" : "text-neutral-300"}`} />
+        <Card className="space-y-2 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="font-display text-[10px] font-bold tracking-wider uppercase">
+              Make-ups Pending
+            </span>
+            <AlertTriangle
+              className={`h-4 w-4 ${pendingMakeupsCount > 0 ? "animate-pulse text-warning" : "text-muted-foreground/50"}`}
+            />
           </div>
-          <p className="text-2xl font-bold text-neutral-900 font-display">
+          <p className="font-display text-2xl font-bold text-foreground">
             {makeupLoading ? "..." : `${pendingMakeupsCount} Requests`}
           </p>
-          <p className="text-[10px] text-neutral-400">Awaiting schedule matching</p>
+          <p className="text-[10px] text-muted-foreground">Awaiting schedule matching</p>
         </Card>
       </div>
 
       {/* Lists Section */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Classes List */}
-        <Card className="border border-neutral-200 rounded-3xl p-6 bg-white space-y-4">
-          <h2 className="text-sm font-bold text-neutral-900 font-display">Class Schedule Logs</h2>
-          <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+        <Card className="space-y-4 rounded-3xl border border-border bg-card p-6">
+          <h2 className="font-display text-sm font-bold text-foreground">Class Schedule Logs</h2>
+          <div className="max-h-[350px] space-y-3 overflow-y-auto pr-1">
             {classesLoading ? (
               [...Array(3)].map((_, i) => (
-                <div key={i} className="h-16 bg-neutral-50 animate-pulse rounded-2xl border border-neutral-100" />
+                <div
+                  key={i}
+                  className="h-16 animate-pulse rounded-2xl border border-border bg-muted/50"
+                />
               ))
             ) : classList.length > 0 ? (
               classList.map((c: any) => (
-                <div key={c.id} className="flex justify-between items-center p-3.5 bg-neutral-50 rounded-2xl border border-neutral-100 hover:border-neutral-200 transition-all">
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between rounded-2xl border border-border bg-muted/50 p-3.5 transition-all hover:border-border"
+                >
                   <div>
-                    <h3 className="text-xs font-semibold text-neutral-900">{c.name}</h3>
-                    <p className="text-[10px] text-neutral-400 font-mono uppercase mt-0.5">Code: {c.code}</p>
+                    <h3 className="text-xs font-semibold text-foreground">{c.name}</h3>
+                    <p className="mt-0.5 font-mono text-[10px] text-muted-foreground uppercase">
+                      Code: {c.code}
+                    </p>
                     {c.term && (
-                      <p className="text-[9px] text-neutral-400">
-                        Term: {c.term.name} {c.term.academicYear ? `(${c.term.academicYear.name})` : ""}
+                      <p className="text-[9px] text-muted-foreground">
+                        Term: {c.term.name}{" "}
+                        {c.term.academicYear ? `(${c.term.academicYear.name})` : ""}
                       </p>
                     )}
                   </div>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                    c.status === "ACTIVE"
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                      : "bg-neutral-100 text-neutral-400 border border-neutral-200"
-                  }`}>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                      c.status === "ACTIVE"
+                        ? "border border-success/20 bg-success/10 text-success"
+                        : "border border-border bg-muted text-muted-foreground"
+                    }`}
+                  >
                     {c.status}
                   </span>
                 </div>
               ))
             ) : (
-              <p className="text-xs text-neutral-400 text-center py-6 font-medium">No course classes found.</p>
+              <p className="py-6 text-center text-xs font-medium text-muted-foreground">
+                No course classes found.
+              </p>
             )}
           </div>
         </Card>
 
         {/* Make-up Queue */}
-        <Card className="border border-neutral-200 rounded-3xl p-6 bg-white space-y-4">
-          <h2 className="text-sm font-bold text-neutral-900 font-display">Make-up Request Queue</h2>
-          <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+        <Card className="space-y-4 rounded-3xl border border-border bg-card p-6">
+          <h2 className="font-display text-sm font-bold text-foreground">Make-up Request Queue</h2>
+          <div className="max-h-[350px] space-y-3 overflow-y-auto pr-1">
             {makeupLoading ? (
               [...Array(2)].map((_, i) => (
-                <div key={i} className="h-20 bg-neutral-50 animate-pulse rounded-2xl border border-neutral-100" />
+                <div
+                  key={i}
+                  className="h-20 animate-pulse rounded-2xl border border-border bg-muted/50"
+                />
               ))
             ) : makeupList.length > 0 ? (
               makeupList.map((m: any) => (
-                <div key={m.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-neutral-50 rounded-2xl border border-neutral-100 hover:border-neutral-200 transition-all gap-3">
+                <div
+                  key={m.id}
+                  className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-muted/50 p-3.5 transition-all hover:border-border sm:flex-row sm:items-center"
+                >
                   <div>
-                    <h3 className="text-xs font-semibold text-neutral-900">
+                    <h3 className="text-xs font-semibold text-foreground">
                       {m.studentProfile?.fullName || "Student"}
                     </h3>
-                    <p className="text-[10px] text-neutral-400 mt-0.5">
-                      Class: <span className="font-semibold text-neutral-600">{m.courseClass?.name || "N/A"}</span>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      Class:{" "}
+                      <span className="font-semibold text-muted-foreground">
+                        {m.courseClass?.name || "N/A"}
+                      </span>
                     </p>
-                    <p className="text-[9px] text-neutral-400 flex items-center gap-1 mt-0.5">
-                      <Clock className="w-3 h-3 text-neutral-400" /> Missed: {new Date(m.originalDate).toLocaleDateString()}
+                    <p className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground">
+                      <Clock className="h-3 w-3 text-muted-foreground" /> Missed:{" "}
+                      {new Date(m.originalDate).toLocaleDateString()}
                     </p>
                     {m.reason && (
-                      <p className="text-[9px] text-amber-600 font-medium mt-1">Reason: "{m.reason}"</p>
+                      <p className="mt-1 text-[9px] font-medium text-warning">
+                        Reason: "{m.reason}"
+                      </p>
                     )}
                     {m.scheduledDate && (
-                      <p className="text-[9px] text-emerald-600 font-bold mt-1">
+                      <p className="mt-1 text-[9px] font-bold text-success">
                         Scheduled: {new Date(m.scheduledDate).toLocaleDateString()}
                       </p>
                     )}
                   </div>
-                  
-                  <div className="flex sm:flex-col items-end gap-2 shrink-0">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                      m.status === "Scheduled"
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                        : m.status === "Declined"
-                        ? "bg-rose-50 text-rose-700 border border-rose-100"
-                        : "bg-amber-50 text-amber-700 border border-amber-100"
-                    }`}>
+
+                  <div className="flex shrink-0 items-end gap-2 sm:flex-col">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                        m.status === "Scheduled"
+                          ? "border border-success/20 bg-success/10 text-success"
+                          : m.status === "Declined"
+                            ? "border border-destructive/20 bg-destructive/10 text-destructive"
+                            : "border border-warning/20 bg-warning/10 text-warning"
+                      }`}
+                    >
                       {m.status}
                     </span>
 
                     {m.status === "Awaiting Action" && (
-                      <div className="flex gap-1.5 mt-1">
+                      <div className="mt-1 flex gap-1.5">
                         <Button
                           onClick={() => handleOpenApproveDialog(m)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg p-1.5 h-7 w-7 flex items-center justify-center cursor-pointer active:scale-95 shadow-sm"
+                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg bg-success p-1.5 text-success-foreground shadow-sm hover:bg-success/90 active:scale-95"
                           title="Schedule Make-up"
                         >
-                          <Check className="w-3.5 h-3.5" />
+                          <Check className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           onClick={() => handleDeclineRequest(m.id)}
-                          className="bg-rose-600 hover:bg-rose-700 text-white rounded-lg p-1.5 h-7 w-7 flex items-center justify-center cursor-pointer active:scale-95 shadow-sm"
+                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg bg-destructive p-1.5 text-destructive-foreground shadow-sm hover:bg-destructive/90 active:scale-95"
                           title="Decline Make-up"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     )}
@@ -241,7 +275,9 @@ export default function ClassesPage() {
                 </div>
               ))
             ) : (
-              <p className="text-xs text-neutral-400 text-center py-6 font-medium">No make-up requests filed.</p>
+              <p className="py-6 text-center text-xs font-medium text-muted-foreground">
+                No make-up requests filed.
+              </p>
             )}
           </div>
         </Card>
@@ -249,49 +285,52 @@ export default function ClassesPage() {
 
       {/* Schedule Make-up Dialog */}
       <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl p-6 bg-white border border-neutral-200">
+        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-neutral-900 font-display flex items-center gap-1.5">
-              <CalendarCheck className="w-5 h-5 text-neutral-900" />
+            <DialogTitle className="font-display flex items-center gap-1.5 text-base font-bold text-foreground">
+              <CalendarCheck className="h-5 w-5 text-foreground" />
               Schedule Make-up Session
             </DialogTitle>
-            <DialogDescription className="text-xs text-neutral-500">
-              Approve and set the reschedulation date for {selectedRequest?.studentProfile?.fullName || "this student"}.
+            <DialogDescription className="text-xs text-muted-foreground">
+              Approve and set the reschedulation date for{" "}
+              {selectedRequest?.studentProfile?.fullName || "this student"}.
             </DialogDescription>
           </DialogHeader>
 
           {formError && (
-            <div className="text-xs font-semibold text-rose-500 bg-rose-50 border border-rose-100 p-3 rounded-xl flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4" />
+            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
+              <AlertCircle className="h-4 w-4" />
               {formError}
             </div>
           )}
 
           <form onSubmit={handleApproveRequest} className="space-y-4">
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Scheduled Date</Label>
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                Scheduled Date
+              </Label>
               <Input
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="h-10 text-xs border-neutral-200"
+                className="h-10 border-border text-xs"
                 required
               />
             </div>
 
-            <DialogFooter className="pt-4 flex items-center justify-end gap-2 border-t border-neutral-100">
+            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsApproveDialogOpen(false)}
-                className="h-10 text-xs font-semibold rounded-xl"
+                className="h-10 rounded-xl text-xs font-semibold"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={updatingMakeup}
-                className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold h-10 px-4 cursor-pointer"
+                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
               >
                 {updatingMakeup ? "Scheduling..." : "Approve & Schedule"}
               </Button>

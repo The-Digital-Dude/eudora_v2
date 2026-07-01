@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 
@@ -16,12 +16,7 @@ interface SliderWidgetProps {
   locked: boolean;
 }
 
-export function SliderWidget({
-  config,
-  value,
-  onChange,
-  locked,
-}: SliderWidgetProps) {
+export function SliderWidget({ config, value, onChange, locked }: SliderWidgetProps) {
   const { min = 0, max = 100, step = 1, unit = "" } = config;
 
   // Calculate percentage for progress fill
@@ -34,7 +29,7 @@ export function SliderWidget({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-8 select-none transition-all duration-300">
+    <div className="border-border bg-card flex flex-col items-center justify-center rounded-2xl border p-8 transition-all duration-300 select-none">
       <div className="relative w-full max-w-md py-6">
         {/* Floating tooltip/value indicator */}
         <div
@@ -43,15 +38,15 @@ export function SliderWidget({
             left: `calc(${percentage}% - 24px)`,
           }}
         >
-          <div className="rounded-lg bg-violet-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg shadow-violet-500/20">
+          <div className="rounded-lg bg-primary px-2.5 py-1 text-xs font-bold text-white shadow-lg shadow-primary/20">
             {value}
             {unit}
           </div>
-          <div className="h-1.5 w-1.5 rotate-45 bg-violet-600 -mt-1" />
+          <div className="-mt-1 h-1.5 w-1.5 rotate-45 bg-primary" />
         </div>
 
         {/* Custom Range Track Container */}
-        <div className="relative flex h-2 w-full items-center rounded-full bg-muted">
+        <div className="bg-muted relative flex h-2 w-full items-center rounded-full">
           {/* Progress fill */}
           <div
             className="absolute h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
@@ -68,7 +63,7 @@ export function SliderWidget({
             onChange={handleChange}
             disabled={locked}
             className={[
-              "absolute h-full w-full appearance-none bg-transparent cursor-pointer outline-none focus:outline-none",
+              "absolute h-full w-full cursor-pointer appearance-none bg-transparent outline-none focus:outline-none",
               locked ? "cursor-not-allowed opacity-50" : "",
             ]
               .filter(Boolean)
@@ -81,7 +76,7 @@ export function SliderWidget({
         </div>
 
         {/* Custom Min/Max labels */}
-        <div className="mt-4 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+        <div className="text-muted-foreground mt-4 flex items-center justify-between text-xs font-semibold">
           <span>
             {min}
             {unit}
@@ -106,7 +101,9 @@ export function SliderWidget({
           border: 3px solid #8b5cf6;
           box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
           cursor: pointer;
-          transition: transform 0.15s ease-in-out, background-color 0.15s ease-in-out;
+          transition:
+            transform 0.15s ease-in-out,
+            background-color 0.15s ease-in-out;
         }
         input[type="range"]:not(:disabled)::-webkit-slider-thumb:hover {
           transform: scale(1.25);
@@ -120,7 +117,9 @@ export function SliderWidget({
           border: 3px solid #8b5cf6;
           box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
           cursor: pointer;
-          transition: transform 0.15s ease-in-out, background-color 0.15s ease-in-out;
+          transition:
+            transform 0.15s ease-in-out,
+            background-color 0.15s ease-in-out;
         }
         input[type="range"]:not(:disabled)::-moz-range-thumb:hover {
           transform: scale(1.25);

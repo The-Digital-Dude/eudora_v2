@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 
@@ -14,12 +14,7 @@ interface DragDropWidgetProps {
   locked: boolean;
 }
 
-export function DragDropWidget({
-  config,
-  placements,
-  onChange,
-  locked,
-}: DragDropWidgetProps) {
+export function DragDropWidget({ config, placements, onChange, locked }: DragDropWidgetProps) {
   const { labels = [], targets = [] } = config;
 
   // Normalized targets: array of { id, placeholder }
@@ -121,7 +116,7 @@ export function DragDropWidget({
   };
 
   return (
-    <div className="flex flex-col gap-6 rounded-2xl border border-border bg-card p-6 select-none transition-all duration-300">
+    <div className="border-border bg-card flex flex-col gap-6 rounded-2xl border p-6 transition-all duration-300 select-none">
       {/* Target slots grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {normalizedTargets.map((target) => {
@@ -138,22 +133,22 @@ export function DragDropWidget({
               className={[
                 "flex min-h-[64px] items-center justify-between gap-4 rounded-xl border p-4 transition-all duration-200",
                 placedLabel
-                  ? "border-violet-500/35 bg-violet-500/5 cursor-pointer"
-                  : "border-dashed border-border bg-muted/20 hover:border-violet-500/40 hover:bg-muted/40",
-                isOver ? "border-violet-400 bg-violet-500/10 scale-[1.01]" : "",
+                  ? "cursor-pointer border-primary/35 bg-primary/5"
+                  : "border-border bg-muted/20 hover:bg-muted/40 border-dashed hover:border-primary/40",
+                isOver ? "scale-[1.01] border-primary bg-primary/10" : "",
                 locked ? "cursor-not-allowed opacity-80" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
             >
-              <span className="text-xs font-semibold text-muted-foreground">
+              <span className="text-muted-foreground text-xs font-semibold">
                 {target.placeholder}
               </span>
 
               {placedLabel ? (
                 <div
                   className={[
-                    "flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-violet-500/10 hover:bg-violet-500 transition-colors",
+                    "flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/10 transition-colors hover:bg-primary",
                     locked ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing",
                   ]
                     .filter(Boolean)
@@ -164,13 +159,13 @@ export function DragDropWidget({
                 >
                   <span>{placedLabel}</span>
                   {!locked && (
-                    <span className="text-white/60 text-[9px] hover:text-white ml-1 font-bold">
+                    <span className="ml-1 text-[9px] font-bold text-white/60 hover:text-white">
                       ✕
                     </span>
                   )}
                 </div>
               ) : (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/30">
+                <span className="text-muted-foreground/30 text-[10px] font-bold tracking-wider uppercase">
                   Drop Here
                 </span>
               )}
@@ -181,11 +176,9 @@ export function DragDropWidget({
 
       {/* Available items bank */}
       {availableLabels.length > 0 && (
-        <div className="border-t border-border pt-5">
-          <p className="mb-3 text-xs font-semibold text-muted-foreground">
-            {selectedLabel
-              ? "Tap a slot above to place"
-              : "Drag or tap items below to match"}
+        <div className="border-border border-t pt-5">
+          <p className="text-muted-foreground mb-3 text-xs font-semibold">
+            {selectedLabel ? "Tap a slot above to place" : "Drag or tap items below to match"}
           </p>
           <div className="flex flex-wrap gap-2">
             {availableLabels.map((label) => {
@@ -202,8 +195,8 @@ export function DragDropWidget({
                   className={[
                     "rounded-lg px-3 py-2 text-xs font-bold shadow-sm transition-all duration-200",
                     isSelected
-                      ? "bg-fuchsia-600 border border-fuchsia-400 text-white ring-2 ring-fuchsia-400/50 scale-[1.05]"
-                      : "bg-muted hover:bg-muted/80 text-foreground border border-border",
+                      ? "scale-[1.05] border border-primary bg-primary text-primary-foreground ring-2 ring-primary/50"
+                      : "bg-muted hover:bg-muted/80 text-foreground border-border border",
                     locked ? "cursor-not-allowed opacity-40" : "cursor-grab active:cursor-grabbing",
                   ]
                     .filter(Boolean)

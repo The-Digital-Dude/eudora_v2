@@ -1,103 +1,113 @@
-"use client";
+﻿"use client";
 
-import React from "react";
+import { ArrowRight, Award,BookOpen, GraduationCap, Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
+import React from "react";
+
 import { useGetLessonsQuery } from "@/features/clio/clioApi";
-import { Loader2, Sparkles, BookOpen, ArrowRight, GraduationCap, Award } from "lucide-react";
 
 export default function LearnCatalogPage() {
   const { data: lessons, isLoading, error } = useGetLessonsQuery();
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-background text-foreground p-6 md:p-12 overflow-y-auto">
+    <div className="bg-background text-foreground flex min-h-screen flex-1 flex-col overflow-y-auto p-6 md:p-12">
       {/* Header bar */}
-      <header className="mb-12 max-w-4xl mx-auto w-full flex items-center justify-between">
+      <header className="mx-auto mb-12 flex w-full max-w-4xl items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-violet-600 rounded-xl text-white shadow-lg shadow-violet-950/40">
-            <Sparkles className="w-5 h-5 animate-pulse" />
+          <div className="rounded-xl bg-primary p-2 text-white shadow-lg shadow-primary/40">
+            <Sparkles className="h-5 w-5 animate-pulse" />
           </div>
-          <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+          <span className="from-foreground to-muted-foreground bg-gradient-to-r bg-clip-text text-lg font-extrabold tracking-tight text-transparent">
             Clio Active Learning
           </span>
         </div>
         <Link
           href="/dashboard"
-          className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 bg-muted/40 border border-border px-3 py-1.5 rounded-xl hover:bg-muted"
+          className="text-muted-foreground hover:text-foreground bg-muted/40 border-border hover:bg-muted flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors"
         >
           ← Dashboard
         </Link>
       </header>
 
       {/* Hero section */}
-      <section className="text-center max-w-2xl mx-auto mb-16 space-y-4">
-        <span className="text-xs font-bold text-violet-600 dark:text-violet-400 uppercase tracking-widest bg-violet-500/10 px-3 py-1 rounded-full">
+      <section className="mx-auto mb-16 max-w-2xl space-y-4 text-center">
+        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold tracking-widest text-primary uppercase">
           Interactive Journeys
         </span>
-        <h1 className="text-3xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
+        <h1 className="text-foreground text-3xl leading-tight font-black tracking-tight md:text-5xl">
           Master Math Concepts Visually
         </h1>
-        <p className="text-sm md:text-base text-muted-foreground leading-relaxed font-medium">
-          Step into visual classrooms where you drag, slide, and drop to solve math puzzles. Receive instant feedback and guidance from your companion Clio.
+        <p className="text-muted-foreground text-sm leading-relaxed font-medium md:text-base">
+          Step into visual classrooms where you drag, slide, and drop to solve math puzzles. Receive
+          instant feedback and guidance from your companion Clio.
         </p>
       </section>
 
       {/* Catalog Grid */}
-      <main className="max-w-4xl mx-auto w-full flex-1">
+      <main className="mx-auto w-full max-w-4xl flex-1">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-3">
-            <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-            <p className="text-xs font-semibold text-muted-foreground">Fetching learning catalog...</p>
+          <div className="flex flex-col items-center justify-center space-y-3 py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground text-xs font-semibold">
+              Fetching learning catalog...
+            </p>
           </div>
         ) : error ? (
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6 text-center">
-            <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">Failed to load lessons list.</p>
-            <p className="text-xs text-muted-foreground mt-1">Please ensure the backend api service is seeding and online.</p>
+          <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center">
+            <p className="text-sm font-semibold text-destructive">
+              Failed to load lessons list.
+            </p>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Please ensure the backend api service is seeding and online.
+            </p>
           </div>
         ) : !lessons || lessons.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-muted/40 p-12 text-center">
-            <BookOpen className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm font-bold text-foreground/80">No lessons available yet</p>
-            <p className="text-xs text-muted-foreground mt-1">Check back later for new interactive concepts.</p>
+          <div className="border-border bg-muted/40 rounded-2xl border p-12 text-center">
+            <BookOpen className="text-muted-foreground/30 mx-auto mb-3 h-10 w-10" />
+            <p className="text-foreground/80 text-sm font-bold">No lessons available yet</p>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Check back later for new interactive concepts.
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {lessons.map((lesson) => (
               <div
                 key={lesson.id}
-                className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-6 hover:border-violet-500/40 hover:bg-muted/30 hover:shadow-xl hover:shadow-violet-500/5 transition-all duration-300"
+                className="group border-border bg-card hover:bg-muted/30 relative flex flex-col justify-between rounded-2xl border p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5"
               >
                 <div className="space-y-3">
                   {/* Category and Reward */}
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-widest">
-                      <GraduationCap className="w-3.5 h-3.5" />
+                    <span className="flex items-center gap-1 text-[10px] font-bold tracking-widest text-primary uppercase">
+                      <GraduationCap className="h-3.5 w-3.5" />
                       {lesson.concept?.name || "Concept"}
                     </span>
-                    <span className="flex items-center gap-1 rounded-lg bg-amber-500/10 px-2 py-0.5 text-[10px] font-extrabold text-amber-500 dark:text-amber-400 border border-amber-500/20">
-                      <Award className="w-3 h-3" />
-                      +{lesson.xpReward} XP
+                    <span className="flex items-center gap-1 rounded-lg border border-warning/20 bg-warning/10 px-2 py-0.5 text-[10px] font-extrabold text-warning">
+                      <Award className="h-3 w-3" />+{lesson.xpReward} XP
                     </span>
                   </div>
 
                   {/* Title & Description */}
-                  <h3 className="text-base font-bold text-card-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                  <h3 className="text-card-foreground text-base font-bold transition-colors group-hover:text-primary dark:group-hover:text-primary">
                     {lesson.title}
                   </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                    {lesson.description || "Learn this concept dynamically through interactive exercises."}
+                  <p className="text-muted-foreground text-xs leading-relaxed font-medium">
+                    {lesson.description ||
+                      "Learn this concept dynamically through interactive exercises."}
                   </p>
                 </div>
 
                 {/* Bottom CTA */}
-                <div className="mt-6 pt-4 border-t border-border/60 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wide">
+                <div className="border-border/60 mt-6 flex items-center justify-between border-t pt-4">
+                  <span className="text-muted-foreground/60 text-[10px] font-bold tracking-wide uppercase">
                     Level 1 Difficulty
                   </span>
                   <Link
                     href={`/learn/${lesson.id}`}
-                    className="flex items-center gap-1 rounded-xl bg-violet-600 px-4 py-2 text-xs font-bold text-white hover:bg-violet-500 transition-colors"
+                    className="flex items-center gap-1 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-primary"
                   >
-                    Start Journey <ArrowRight className="w-3.5 h-3.5" />
+                    Start Journey <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
               </div>

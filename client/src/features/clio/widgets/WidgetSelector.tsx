@@ -1,11 +1,15 @@
 "use client";
 
 import React from "react";
+
 import type { ClioQuestion } from "../clioApi";
+import { ComingSoonWidget } from "./ComingSoonWidget";
+import { DragDropWidget } from "./DragDropWidget";
 import { MCQWidget } from "./MCQWidget";
 import { SliderWidget } from "./SliderWidget";
-import { DragDropWidget } from "./DragDropWidget";
-import { ComingSoonWidget } from "./ComingSoonWidget";
+import { CoordinatePlotterWidget } from "./CoordinatePlotterWidget";
+import { GridMatchingWidget } from "./GridMatchingWidget";
+import { CodePlaygroundWidget } from "./CodePlaygroundWidget";
 
 export interface WidgetSelectorProps {
   question: ClioQuestion;
@@ -40,7 +44,7 @@ export function WidgetSelector({
       return (
         <SliderWidget
           config={(question.widgetConfig as any) ?? { min: 0, max: 100, step: 1 }}
-          value={currentState?.finalValue ?? (question.widgetConfig?.min ?? 0)}
+          value={currentState?.finalValue ?? question.widgetConfig?.min ?? 0}
           onChange={(val) => onStateChange({ finalValue: val })}
           locked={locked}
         />
@@ -53,6 +57,39 @@ export function WidgetSelector({
           placements={currentState?.placements ?? {}}
           onChange={(placements) => onStateChange({ placements })}
           locked={locked}
+        />
+      );
+
+    case "COORDINATE_PLOTTER":
+      return (
+        <CoordinatePlotterWidget
+          config={(question.widgetConfig as any) ?? { xRange: [-10, 10], yRange: [-10, 10], gridStep: 1, correctPoints: [] }}
+          value={currentState}
+          onChange={(newValue) => onStateChange(newValue)}
+          locked={locked}
+          isCorrect={isCorrect}
+        />
+      );
+
+    case "GRID_MATCHING":
+      return (
+        <GridMatchingWidget
+          config={(question.widgetConfig as any) ?? { left: [], right: [], correctPairs: [] }}
+          value={currentState}
+          onChange={(newValue) => onStateChange(newValue)}
+          locked={locked}
+          isCorrect={isCorrect}
+        />
+      );
+
+    case "CODE_PLAYGROUND":
+      return (
+        <CodePlaygroundWidget
+          config={(question.widgetConfig as any) ?? { language: "javascript", starterCode: "", tests: [] }}
+          value={currentState}
+          onChange={(newValue) => onStateChange(newValue)}
+          locked={locked}
+          isCorrect={isCorrect}
         />
       );
 

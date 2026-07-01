@@ -1,6 +1,6 @@
-import { TrendingDown, TrendingUp } from "lucide-react"
+import { TrendingDown, TrendingUp } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardAction,
@@ -8,11 +8,11 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 
 export function SectionCards() {
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs sm:grid-cols-2 xl:grid-cols-4">
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Total Revenue</CardDescription>
@@ -30,9 +30,7 @@ export function SectionCards() {
           <div className="line-clamp-1 flex gap-2 font-medium">
             Trending up this month <TrendingUp className="size-4" />
           </div>
-          <div className="text-muted-foreground">
-            Visitors for the last 6 months
-          </div>
+          <div className="text-muted-foreground">Visitors for the last 6 months</div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
@@ -52,9 +50,7 @@ export function SectionCards() {
           <div className="line-clamp-1 flex gap-2 font-medium">
             Down 20% this period <TrendingDown className="size-4" />
           </div>
-          <div className="text-muted-foreground">
-            Acquisition needs attention
-          </div>
+          <div className="text-muted-foreground">Acquisition needs attention</div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
@@ -98,5 +94,5 @@ export function SectionCards() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

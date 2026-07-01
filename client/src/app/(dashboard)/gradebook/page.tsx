@@ -1,47 +1,48 @@
-"use client";
+﻿"use client";
 
-import * as React from "react";
-import { useAppSelector } from "@/store/hooks";
-import { useGetCourseClassesQuery } from "@/features/dashboard/dashboardApi";
-import { useGetTermsQuery } from "@/features/academic/timetableApi";
 import {
-  useGetGradebookForClassQuery,
-  useGetStudentGradesQuery,
-  useGetStudentSummaryQuery,
-  useCreateManualGradeMutation,
-  useUpdateGradeEntryMutation,
-  useBulkUpsertGradesMutation,
-  useSyncGradesMutation,
-} from "@/features/academic/gradebookApi";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { toast } from "sonner";
-import {
+  Award,
+  BookOpen,
+  Calendar,
+  ChevronRight,
   ClipboardList,
+  GraduationCap,
+  Info,
   Plus,
   RefreshCw,
   Save,
-  GraduationCap,
+  Sparkles,
   TrendingUp,
   User,
-  Calendar,
-  Sparkles,
-  Info,
-  Award,
-  ChevronRight,
-  BookOpen,
 } from "lucide-react";
+import * as React from "react";
+import { toast } from "sonner";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent,CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  useBulkUpsertGradesMutation,
+  useCreateManualGradeMutation,
+  useGetGradebookForClassQuery,
+  useGetStudentGradesQuery,
+  useGetStudentSummaryQuery,
+  useSyncGradesMutation,
+  useUpdateGradeEntryMutation,
+} from "@/features/academic/gradebookApi";
+import { useGetTermsQuery } from "@/features/academic/timetableApi";
+import { useGetCourseClassesQuery } from "@/features/dashboard/dashboardApi";
+import { useAppSelector } from "@/store/hooks";
 
 export default function GradebookPage() {
   const auth = useAppSelector((state) => state.auth);
@@ -83,12 +84,14 @@ export default function GradebookPage() {
   const [clientColumns, setClientColumns] = React.useState<any[]>([]);
 
   // Local grid edits state: keys are `${studentProfileId}-${sourceType}-${sourceId}`
-  const [editedCells, setEditedCells] = React.useState<Record<string, { pointsEarned?: number; notes?: string }>>({});
+  const [editedCells, setEditedCells] = React.useState<
+    Record<string, { pointsEarned?: number; notes?: string }>
+  >({});
 
   // 2. STUDENT / GUARDIAN VIEW STATES
   const linkedStudents = user?.guardianProfile?.students || [];
   const [selectedStudentId, setSelectedStudentId] = React.useState<string>(
-    linkedStudents[0]?.studentProfileId || ""
+    linkedStudents[0]?.studentProfileId || "",
   );
 
   // Queries
@@ -114,19 +117,19 @@ export default function GradebookPage() {
   // Load Gradebook Sheet Data (Teacher/Admin view)
   const { data: gradebookData, isLoading: isLoadingGradebook } = useGetGradebookForClassQuery(
     { courseClassId: selectedClassId, termId: selectedTermId },
-    { skip: !selectedClassId || !selectedTermId || (!isAdmin && !isTeacher) }
+    { skip: !selectedClassId || !selectedTermId || (!isAdmin && !isTeacher) },
   );
 
   // Load Student Specific Data (Student/Guardian view)
   const studentProfileId = isStudent ? user?.studentProfile?.id : selectedStudentId;
   const { data: studentGrades, isLoading: isLoadingStudentGrades } = useGetStudentGradesQuery(
     { studentProfileId, termId: selectedTermId },
-    { skip: !studentProfileId || !selectedTermId }
+    { skip: !studentProfileId || !selectedTermId },
   );
 
   const { data: studentSummary } = useGetStudentSummaryQuery(
     { studentProfileId, termId: selectedTermId },
-    { skip: !studentProfileId || !selectedTermId }
+    { skip: !studentProfileId || !selectedTermId },
   );
 
   // Mutations
@@ -236,9 +239,8 @@ export default function GradebookPage() {
 
         // If the cell was edited, or if it is a transient client column, compile a save payload
         if (edit !== undefined || col.isTransient) {
-          const pointsEarned = edit?.pointsEarned !== undefined
-            ? edit.pointsEarned
-            : dbEntry?.pointsEarned;
+          const pointsEarned =
+            edit?.pointsEarned !== undefined ? edit.pointsEarned : dbEntry?.pointsEarned;
 
           entriesToSave.push({
             studentProfileId: student.id,
@@ -277,7 +279,9 @@ export default function GradebookPage() {
   const handleSyncSourceGrades = async () => {
     try {
       const res = await syncGrades().unwrap();
-      toast.success(`Grades synchronized! Synced: ${res.homeworkSyncCount} homework entries, ${res.assessmentSyncCount} assessments.`);
+      toast.success(
+        `Grades synchronized! Synced: ${res.homeworkSyncCount} homework entries, ${res.assessmentSyncCount} assessments.`,
+      );
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to sync grades from sources.");
@@ -289,10 +293,13 @@ export default function GradebookPage() {
   // Category Color Resolvers
   const getCategoryBadgeColor = (cat: string) => {
     const c = cat.toUpperCase();
-    if (c === "HOMEWORK") return "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-900";
-    if (c === "ASSESSMENT" || c === "EXAM") return "bg-violet-50 text-violet-600 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-900";
-    if (c === "PROJECT") return "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-900";
-    return "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900";
+    if (c === "HOMEWORK")
+      return "bg-primary/10 text-primary border-primary/20";
+    if (c === "ASSESSMENT" || c === "EXAM")
+      return "bg-primary/10 text-primary border-primary/20";
+    if (c === "PROJECT")
+      return "bg-warning/10 text-warning border-warning/20";
+    return "bg-success/10 text-success border-success/20";
   };
 
   // 1. STUDENT OR GUARDIAN DESK
@@ -310,26 +317,26 @@ export default function GradebookPage() {
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-black text-neutral-900 dark:text-neutral-50 tracking-tight font-display flex items-center gap-2">
-              <GraduationCap className="w-7 h-7 text-violet-500" />
+            <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-foreground">
+              <GraduationCap className="h-7 w-7 text-primary" />
               Report Card & Academic Ledger
             </h1>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">
+            <p className="text-xs font-medium text-muted-foreground">
               {isStudent
                 ? "View your term grades, performance summaries, and GPA records."
                 : "View your child's published coursework grades and evaluations."}
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Guardian Child selector */}
             {isGuardian && linkedStudents.length > 1 && (
               <select
                 value={selectedStudentId}
                 onChange={(e) => setSelectedStudentId(e.target.value)}
-                className="h-10 px-3 rounded-xl border border-neutral-200 dark:border-zinc-800 text-xs bg-white dark:bg-zinc-950 focus:outline-none"
+                className="h-10 rounded-xl border border-border bg-card px-3 text-xs focus:outline-none"
               >
                 {linkedStudents.map((rel: any) => (
                   <option key={rel.studentProfileId} value={rel.studentProfileId}>
@@ -343,7 +350,7 @@ export default function GradebookPage() {
             <select
               value={selectedTermId}
               onChange={(e) => setSelectedTermId(e.target.value)}
-              className="h-10 px-3 rounded-xl border border-neutral-200 dark:border-zinc-800 text-xs bg-white dark:bg-zinc-950 focus:outline-none"
+              className="h-10 rounded-xl border border-border bg-card px-3 text-xs focus:outline-none"
             >
               {termsList.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -355,112 +362,115 @@ export default function GradebookPage() {
         </div>
 
         {/* Dashboard summary widgets */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="rounded-3xl border-neutral-200 bg-white shadow-sm dark:bg-zinc-950 dark:border-zinc-800 overflow-hidden relative">
-            <div className="absolute right-4 top-4 bg-violet-500/10 p-2 rounded-xl text-violet-500">
-              <Award className="w-5 h-5" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="relative overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+            <div className="absolute top-4 right-4 rounded-xl bg-primary/10 p-2 text-primary">
+              <Award className="h-5 w-5" />
             </div>
             <CardHeader className="p-5 pb-2">
-              <CardDescription className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+              <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Cumulative GPA
               </CardDescription>
-              <CardTitle className="text-3xl font-black text-neutral-800 dark:text-neutral-100 mt-1">
+              <CardTitle className="mt-1 text-3xl font-black text-foreground">
                 {summary.gpa !== null ? `${summary.gpa.toFixed(2)}` : "--"}
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-5 pb-5 pt-0">
-              <Badge className="text-[9px] font-bold bg-violet-50 border border-violet-100 text-violet-600 rounded-lg dark:bg-violet-500/10">
+            <CardContent className="px-5 pt-0 pb-5">
+              <Badge className="rounded-lg border border-primary/10 bg-primary/10 text-[9px] font-bold text-primary">
                 Grade: {summary.letterGrade}
               </Badge>
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border-neutral-200 bg-white shadow-sm dark:bg-zinc-950 dark:border-zinc-800 overflow-hidden relative">
-            <div className="absolute right-4 top-4 bg-emerald-500/10 p-2 rounded-xl text-emerald-500">
-              <TrendingUp className="w-5 h-5" />
+          <Card className="relative overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+            <div className="absolute top-4 right-4 rounded-xl bg-success/10 p-2 text-success">
+              <TrendingUp className="h-5 w-5" />
             </div>
             <CardHeader className="p-5 pb-2">
-              <CardDescription className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+              <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Term Average Score
               </CardDescription>
-              <CardTitle className="text-3xl font-black text-neutral-800 dark:text-neutral-100 mt-1">
+              <CardTitle className="mt-1 text-3xl font-black text-foreground">
                 {summary.termAverage !== null ? `${summary.termAverage}%` : "--"}
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-5 pb-5 pt-0">
-              <div className="w-full bg-neutral-100 dark:bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+            <CardContent className="px-5 pt-0 pb-5">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                  className="h-full rounded-full bg-success transition-all duration-500"
                   style={{ width: `${summary.termAverage ?? 0}%` }}
                 />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border-neutral-200 bg-white shadow-sm dark:bg-zinc-950 dark:border-zinc-800 overflow-hidden relative">
-            <div className="absolute right-4 top-4 bg-amber-500/10 p-2 rounded-xl text-amber-500">
-              <User className="w-5 h-5" />
+          <Card className="relative overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+            <div className="absolute top-4 right-4 rounded-xl bg-warning/10 p-2 text-warning">
+              <User className="h-5 w-5" />
             </div>
             <CardHeader className="p-5 pb-2">
-              <CardDescription className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+              <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Class Section Rank
               </CardDescription>
-              <CardTitle className="text-3xl font-black text-neutral-800 dark:text-neutral-100 mt-1">
+              <CardTitle className="mt-1 text-3xl font-black text-foreground">
                 {summary.classRank !== null ? `#${summary.classRank}` : "--"}
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-5 pb-5 pt-0">
-              <span className="text-[10px] text-neutral-400 font-semibold dark:text-neutral-500">
+            <CardContent className="px-5 pt-0 pb-5">
+              <span className="text-[10px] font-semibold text-muted-foreground">
                 In homeroom roster
               </span>
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border-neutral-200 bg-white shadow-sm dark:bg-zinc-950 dark:border-zinc-800 overflow-hidden relative">
-            <div className="absolute right-4 top-4 bg-blue-500/10 p-2 rounded-xl text-blue-500">
-              <Sparkles className="w-5 h-5" />
+          <Card className="relative overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+            <div className="absolute top-4 right-4 rounded-xl bg-primary/10 p-2 text-primary">
+              <Sparkles className="h-5 w-5" />
             </div>
             <CardHeader className="p-5 pb-2">
-              <CardDescription className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+              <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Class Percentile
               </CardDescription>
-              <CardTitle className="text-3xl font-black text-neutral-800 dark:text-neutral-100 mt-1">
+              <CardTitle className="mt-1 text-3xl font-black text-foreground">
                 {summary.classPercentile !== null ? `${summary.classPercentile}%` : "--"}
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-5 pb-5 pt-0">
-              <Badge className="text-[9px] font-bold bg-blue-50 border border-blue-100 text-blue-600 rounded-lg dark:bg-blue-500/10">
-                Top {summary.classPercentile !== null ? 100 - summary.classPercentile : "--"}% of class
+            <CardContent className="px-5 pt-0 pb-5">
+              <Badge className="rounded-lg border border-primary/20 bg-primary/10 text-[9px] font-bold text-primary">
+                Top {summary.classPercentile !== null ? 100 - summary.classPercentile : "--"}% of
+                class
               </Badge>
             </CardContent>
           </Card>
         </div>
 
         {/* Categories performance list */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="rounded-3xl border-neutral-200 bg-white shadow-sm dark:bg-zinc-950 dark:border-zinc-800 p-5 space-y-4">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <Card className="space-y-4 rounded-3xl border-border bg-card p-5 shadow-sm">
             <div>
-              <h2 className="text-xs font-black text-neutral-900 dark:text-neutral-50 uppercase tracking-wider">
+              <h2 className="text-xs font-black tracking-wider text-foreground uppercase">
                 Category Performances
               </h2>
-              <p className="text-[10px] text-neutral-400 mt-0.5">Average scores mapped across coursework types.</p>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">
+                Average scores mapped across coursework types.
+              </p>
             </div>
 
             <div className="space-y-4 pt-2">
               {Object.keys(summary.categoryAverages).length === 0 ? (
-                <div className="text-center py-8 text-[11px] text-neutral-400">
+                <div className="py-8 text-center text-[11px] text-muted-foreground">
                   No records compiled yet.
                 </div>
               ) : (
                 Object.entries(summary.categoryAverages).map(([cat, val]) => (
                   <div key={cat} className="space-y-1">
                     <div className="flex justify-between text-[11px] font-bold">
-                      <span className="text-neutral-500 uppercase">{cat}</span>
-                      <span className="text-neutral-800 dark:text-neutral-100">{val}%</span>
+                      <span className="text-muted-foreground uppercase">{cat}</span>
+                      <span className="text-foreground">{val}%</span>
                     </div>
-                    <div className="w-full bg-neutral-100 dark:bg-zinc-900 h-2 rounded-full overflow-hidden">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
-                        className="bg-violet-600 h-full rounded-full"
+                        className="h-full rounded-full bg-primary"
                         style={{ width: `${val}%` }}
                       />
                     </div>
@@ -471,50 +481,59 @@ export default function GradebookPage() {
           </Card>
 
           {/* Graded elements list */}
-          <div className="lg:col-span-2 space-y-4">
-            <Card className="rounded-3xl border-neutral-200 bg-white shadow-sm dark:bg-zinc-950 dark:border-zinc-800 overflow-hidden">
-              <div className="p-5 border-b border-neutral-100 dark:border-zinc-900">
-                <h2 className="text-xs font-black text-neutral-900 dark:text-neutral-50 uppercase tracking-wider">
+          <div className="space-y-4 lg:col-span-2">
+            <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+              <div className="border-b border-border p-5">
+                <h2 className="text-xs font-black tracking-wider text-foreground uppercase">
                   Coursework Ledger
                 </h2>
-                <p className="text-[10px] text-neutral-400 mt-0.5">Individual course tasks and scores.</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">
+                  Individual course tasks and scores.
+                </p>
               </div>
 
               {isLoadingStudentGrades ? (
-                <div className="text-center py-8 text-xs text-neutral-400">
+                <div className="py-8 text-center text-xs text-muted-foreground">
                   Loading grade history...
                 </div>
               ) : listToRender.length === 0 ? (
-                <div className="text-center py-16 text-xs text-neutral-400">
+                <div className="py-16 text-center text-xs text-muted-foreground">
                   No published grades found for this term.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full border-collapse text-left">
                     <thead>
-                      <tr className="bg-neutral-50/50 dark:bg-zinc-900/40 border-b border-neutral-100 dark:border-zinc-800 text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
-                        <th className="py-3 px-6">Task Title</th>
-                        <th className="py-3 px-6">Category</th>
-                        <th className="py-3 px-6 text-center">Percentage</th>
-                        <th className="py-3 px-6 text-right">Points</th>
+                      <tr className="border-b border-border bg-muted/50 text-[10px] font-bold tracking-wider text-muted-foreground uppercase/40">
+                        <th className="px-6 py-3">Task Title</th>
+                        <th className="px-6 py-3">Category</th>
+                        <th className="px-6 py-3 text-center">Percentage</th>
+                        <th className="px-6 py-3 text-right">Points</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-neutral-100 dark:divide-zinc-800 text-xs text-neutral-700 dark:text-neutral-300">
+                    <tbody className="divide-y divide-neutral-100 text-xs text-foreground">
                       {listToRender.map((entry) => (
-                        <tr key={entry.id} className="hover:bg-neutral-50/20 dark:hover:bg-zinc-900/10">
-                          <td className="py-4 px-6 font-bold text-neutral-800 dark:text-neutral-200">
+                        <tr
+                          key={entry.id}
+                          className="hover:bg-muted/20/10"
+                        >
+                          <td className="px-6 py-4 font-bold text-foreground">
                             {entry.title}
                           </td>
-                          <td className="py-4 px-6">
-                            <Badge variant="outline" className={`text-[9px] font-bold py-0.5 px-2 rounded-lg border uppercase ${getCategoryBadgeColor(entry.category)}`}>
+                          <td className="px-6 py-4">
+                            <Badge
+                              variant="outline"
+                              className={`rounded-lg border px-2 py-0.5 text-[9px] font-bold uppercase ${getCategoryBadgeColor(entry.category)}`}
+                            >
                               {entry.category}
                             </Badge>
                           </td>
-                          <td className="py-4 px-6 text-center font-bold text-neutral-800 dark:text-neutral-200">
+                          <td className="px-6 py-4 text-center font-bold text-foreground">
                             {entry.percentage !== null ? `${Math.round(entry.percentage)}%` : "--"}
                           </td>
-                          <td className="py-4 px-6 text-right font-semibold text-neutral-500 dark:text-neutral-400">
-                            {entry.pointsEarned !== null ? entry.pointsEarned : "--"} / {entry.pointsPossible}
+                          <td className="px-6 py-4 text-right font-semibold text-muted-foreground">
+                            {entry.pointsEarned !== null ? entry.pointsEarned : "--"} /{" "}
+                            {entry.pointsPossible}
                           </td>
                         </tr>
                       ))}
@@ -533,13 +552,13 @@ export default function GradebookPage() {
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-2xl font-black text-neutral-900 dark:text-neutral-50 tracking-tight font-display flex items-center gap-2">
-            <ClipboardList className="w-7 h-7 text-rose-500" />
+          <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-foreground">
+            <ClipboardList className="h-7 w-7 text-destructive" />
             Class Gradebook Workspace
           </h1>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">
+          <p className="text-xs font-medium text-muted-foreground">
             Review coursework ledgers, enter manual points, and sync grades.
           </p>
         </div>
@@ -549,18 +568,18 @@ export default function GradebookPage() {
             size="sm"
             onClick={handleSyncSourceGrades}
             disabled={isSyncing}
-            className="rounded-xl h-10 text-xs font-semibold px-4 cursor-pointer bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 dark:bg-zinc-900 dark:border-zinc-800 dark:text-neutral-200 flex items-center gap-1.5"
+            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-muted px-4 text-xs font-semibold text-foreground hover:bg-muted"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />
             Sync Grades
           </Button>
 
           <Button
             size="sm"
             onClick={() => setAddColumnDialogOpen(true)}
-            className="rounded-xl h-10 text-xs font-semibold px-4 cursor-pointer bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 dark:bg-zinc-900 dark:border-zinc-800 dark:text-neutral-200 flex items-center gap-1.5"
+            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-muted px-4 text-xs font-semibold text-foreground hover:bg-muted"
           >
-            <Plus className="w-3.5 h-3.5 text-rose-500" />
+            <Plus className="h-3.5 w-3.5 text-destructive" />
             Add Manual Column
           </Button>
 
@@ -568,22 +587,24 @@ export default function GradebookPage() {
             size="sm"
             onClick={handleSaveGrid}
             disabled={isSavingBulk}
-            className="rounded-xl bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 dark:hover:bg-zinc-200 text-white dark:text-neutral-900 text-xs font-semibold h-10 px-4 flex items-center gap-1.5 cursor-pointer"
+            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
           >
-            <Save className="w-3.5 h-3.5" />
+            <Save className="h-3.5 w-3.5" />
             {isSavingBulk ? "Saving..." : "Save Gradebook"}
           </Button>
         </div>
       </div>
 
       {/* Control panel toolbar filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white dark:bg-zinc-950 border border-neutral-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm">
+      <div className="grid grid-cols-1 gap-4 rounded-3xl border border-border bg-card p-5 shadow-sm md:grid-cols-2">
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Subject Course Class</Label>
+          <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+            Subject Course Class
+          </Label>
           <select
             value={selectedClassId}
             onChange={(e) => setSelectedClassId(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50 text-neutral-800 dark:text-neutral-200 focus:outline-none"
+            className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-xs text-foreground focus:outline-none/50"
           >
             {isLoadingClasses ? (
               <option>Loading course classes...</option>
@@ -598,11 +619,13 @@ export default function GradebookPage() {
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Semester Term</Label>
+          <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+            Semester Term
+          </Label>
           <select
             value={selectedTermId}
             onChange={(e) => setSelectedTermId(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50 text-neutral-800 dark:text-neutral-200 focus:outline-none"
+            className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-xs text-foreground focus:outline-none/50"
           >
             {termsList.map((t) => (
               <option key={t.id} value={t.id}>
@@ -614,44 +637,52 @@ export default function GradebookPage() {
       </div>
 
       {/* Spreadsheet Grid */}
-      <Card className="rounded-3xl border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm overflow-hidden">
+      <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-sm">
         {isLoadingGradebook ? (
-          <div className="text-center py-16 text-xs text-neutral-400">
+          <div className="py-16 text-center text-xs text-muted-foreground">
             Loading gradebook sheet...
           </div>
         ) : !gradebookData || gradebookData.students.length === 0 ? (
-          <div className="text-center py-16 text-xs text-neutral-400">
+          <div className="py-16 text-center text-xs text-muted-foreground">
             No students enrolled in this course class.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs text-neutral-800 dark:text-neutral-200">
+            <table className="w-full border-collapse text-left text-xs text-foreground">
               <thead>
-                <tr className="bg-neutral-50/60 dark:bg-zinc-900/40 border-b border-neutral-100 dark:border-zinc-800 text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
-                  <th className="py-3 px-6 border-r border-neutral-100 dark:border-zinc-800 bg-neutral-100/40 dark:bg-zinc-900/40 sticky left-0 min-w-[200px] z-10">
+                <tr className="border-b border-border bg-muted/50/60 text-[10px] font-bold tracking-wider text-muted-foreground uppercase/40">
+                  <th className="sticky left-0 z-10 min-w-[200px] border-r border-border bg-muted/40 px-6 py-3/40">
                     Student Profile
                   </th>
                   {allColumns.map((col) => (
-                    <th key={col.colKey} className="py-3 px-4 border-r border-neutral-100 dark:border-zinc-800 text-center min-w-[150px]">
-                      <span className="block truncate font-bold text-neutral-800 dark:text-neutral-200">{col.title}</span>
-                      <span className="block text-[8px] text-neutral-400 dark:text-neutral-500 font-semibold mt-1">
+                    <th
+                      key={col.colKey}
+                      className="min-w-[150px] border-r border-border px-4 py-3 text-center"
+                    >
+                      <span className="block truncate font-bold text-foreground">
+                        {col.title}
+                      </span>
+                      <span className="mt-1 block text-[8px] font-semibold text-muted-foreground">
                         {col.category} ({col.pointsPossible} pts)
                       </span>
                     </th>
                   ))}
                   {allColumns.length === 0 && (
-                    <th className="py-3 px-4 text-center text-neutral-400">
+                    <th className="px-4 py-3 text-center text-muted-foreground">
                       No coursework records found. Add a column or click sync to populate.
                     </th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-zinc-800">
+              <tbody className="divide-y divide-neutral-100">
                 {gradebookData.students.map((student) => {
                   return (
-                    <tr key={student.id} className="hover:bg-neutral-50/40 dark:hover:bg-zinc-900/10">
+                    <tr
+                      key={student.id}
+                      className="hover:bg-muted/30/10"
+                    >
                       {/* Left student frozen column */}
-                      <td className="py-3 px-6 border-r border-neutral-100 dark:border-zinc-800 font-bold sticky left-0 bg-white dark:bg-zinc-950 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                      <td className="sticky left-0 z-10 border-r border-border bg-card px-6 py-3 font-bold shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                         {student.fullName}
                       </td>
 
@@ -668,25 +699,35 @@ export default function GradebookPage() {
                         const isManual = col.sourceType === "MANUAL";
 
                         return (
-                          <td key={col.colKey} className="py-2.5 px-4 border-r border-neutral-100 dark:border-zinc-800 text-center">
+                          <td
+                            key={col.colKey}
+                            className="border-r border-border px-4 py-2.5 text-center"
+                          >
                             {isManual ? (
-                              <div className="flex justify-center items-center">
+                              <div className="flex items-center justify-center">
                                 <Input
                                   type="number"
                                   min={0}
                                   max={col.pointsPossible}
                                   placeholder="--"
-                                  value={pointsEarned !== undefined && pointsEarned !== null ? pointsEarned : ""}
-                                  onChange={(e) => handleCellChange(student.id, col, e.target.value)}
-                                  className="w-16 h-8 text-center text-xs font-bold rounded-lg border-neutral-200 dark:border-zinc-800 focus:ring-rose-500"
+                                  value={
+                                    pointsEarned !== undefined && pointsEarned !== null
+                                      ? pointsEarned
+                                      : ""
+                                  }
+                                  onChange={(e) =>
+                                    handleCellChange(student.id, col, e.target.value)
+                                  }
+                                  className="h-8 w-16 rounded-lg border-border text-center text-xs font-bold focus:ring-destructive"
                                 />
-                                <span className="text-[10px] text-neutral-400 font-semibold ml-1.5">
+                                <span className="ml-1.5 text-[10px] font-semibold text-muted-foreground">
                                   / {col.pointsPossible}
                                 </span>
                               </div>
                             ) : (
-                              <span className="font-semibold text-neutral-600 dark:text-neutral-400">
-                                {dbEntry?.pointsEarned !== undefined && dbEntry?.pointsEarned !== null
+                              <span className="font-semibold text-muted-foreground">
+                                {dbEntry?.pointsEarned !== undefined &&
+                                dbEntry?.pointsEarned !== null
                                   ? `${dbEntry.pointsEarned} / ${col.pointsPossible}`
                                   : "--"}
                               </span>
@@ -695,9 +736,7 @@ export default function GradebookPage() {
                         );
                       })}
                       {allColumns.length === 0 && (
-                        <td className="py-4 px-4 text-center text-neutral-400 italic">
-                          --
-                        </td>
+                        <td className="px-4 py-4 text-center text-muted-foreground italic">--</td>
                       )}
                     </tr>
                   );
@@ -710,36 +749,41 @@ export default function GradebookPage() {
 
       {/* Manual Column Creation Dialog */}
       <Dialog open={addColumnDialogOpen} onOpenChange={setAddColumnDialogOpen}>
-        <DialogContent className="max-w-sm rounded-3xl p-6 bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 shadow-xl">
+        <DialogContent className="max-w-sm rounded-3xl border border-border bg-card p-6 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-neutral-900 dark:text-neutral-50 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-rose-500" />
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+              <Plus className="h-5 w-5 text-destructive" />
               Add Manual Grade Item
             </DialogTitle>
-            <DialogDescription className="text-xs text-neutral-500">
-              Create a custom manual gradebook column for items like midterms, finals, or participation.
+            <DialogDescription className="text-xs text-muted-foreground">
+              Create a custom manual gradebook column for items like midterms, finals, or
+              participation.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleAddColumn} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Column Header Name</Label>
+              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                Column Header Name
+              </Label>
               <Input
                 type="text"
                 placeholder="e.g. Midterm Presentation"
                 value={newColTitle}
                 onChange={(e) => setNewColTitle(e.target.value)}
-                className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50"
+                className="h-10 rounded-xl border-border bg-muted/50 text-xs/50"
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Category</Label>
+              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                Category
+              </Label>
               <select
                 value={newColCategory}
                 onChange={(e) => setNewColCategory(e.target.value)}
-                className="w-full h-10 px-3 rounded-xl border border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50 text-neutral-800 dark:text-neutral-200 focus:outline-none"
+                className="h-10 w-full rounded-xl border border-border bg-muted/50 px-3 text-xs text-foreground focus:outline-none/50"
               >
                 <option value="GENERAL">General</option>
                 <option value="HOMEWORK">Homework</option>
@@ -751,55 +795,61 @@ export default function GradebookPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Max Points</Label>
+                <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                  Max Points
+                </Label>
                 <Input
                   type="number"
                   min={1}
                   value={newColPointsPossible}
                   onChange={(e) => setNewColPointsPossible(Number(e.target.value))}
-                  className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50"
+                  className="h-10 rounded-xl border-border bg-muted/50 text-xs/50"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Weight Factor</Label>
+                <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                  Weight Factor
+                </Label>
                 <Input
                   type="number"
                   step={0.1}
                   min={0.1}
                   value={newColWeight}
                   onChange={(e) => setNewColWeight(Number(e.target.value))}
-                  className="h-10 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50"
+                  className="h-10 rounded-xl border-border bg-muted/50 text-xs/50"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Student Visibility Status</Label>
+              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                Student Visibility Status
+              </Label>
               <select
                 value={newColStatus}
                 onChange={(e) => setNewColStatus(e.target.value as any)}
-                className="w-full h-10 px-3 rounded-xl border border-neutral-200 dark:border-zinc-800 text-xs bg-neutral-50/50 dark:bg-zinc-900/50 text-neutral-800 dark:text-neutral-200 focus:outline-none"
+                className="h-10 w-full rounded-xl border border-border bg-muted/50 px-3 text-xs text-foreground focus:outline-none/50"
               >
                 <option value="DRAFT">Draft (Hidden from students)</option>
                 <option value="PUBLISHED">Published (Visible on report cards)</option>
               </select>
             </div>
 
-            <DialogFooter className="pt-4 flex gap-2">
+            <DialogFooter className="flex gap-2 pt-4">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setAddColumnDialogOpen(false)}
-                className="rounded-xl h-10 text-xs font-semibold cursor-pointer"
+                className="h-10 cursor-pointer rounded-xl text-xs font-semibold"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="rounded-xl bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 dark:hover:bg-zinc-200 text-white dark:text-neutral-900 h-10 text-xs font-semibold px-4 cursor-pointer"
+                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
               >
                 Add Column
               </Button>

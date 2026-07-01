@@ -1,12 +1,8 @@
-"use client";
+﻿"use client";
 
+import { CalendarDays, GraduationCap, Landmark,Users2 } from "lucide-react";
 import * as React from "react";
-import {
-  useGetAcademicYearsQuery,
-  useGetClassSectionsQuery,
-  useGetTeacherProfilesQuery,
-} from "@/features/dashboard/dashboardApi";
-import { useGetTermsQuery } from "@/features/academic/timetableApi";
+
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -15,7 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarDays, GraduationCap, Users2, Landmark } from "lucide-react";
+import { useGetTermsQuery } from "@/features/academic/timetableApi";
+import {
+  useGetAcademicYearsQuery,
+  useGetClassSectionsQuery,
+  useGetTeacherProfilesQuery,
+} from "@/features/dashboard/dashboardApi";
 
 interface ScheduleFilterBarProps {
   selectedYearId: string;
@@ -46,7 +47,7 @@ export function ScheduleFilterBar({
 
   const { data: termsData, isLoading: termsLoading } = useGetTermsQuery(
     selectedYearId !== "all" ? { academicYearId: selectedYearId } : undefined,
-    { skip: selectedYearId === "all" }
+    { skip: selectedYearId === "all" },
   );
 
   const years = yearsData?.items || [];
@@ -62,15 +63,15 @@ export function ScheduleFilterBar({
   }, [selectedYearId, setSelectedTermId]);
 
   return (
-    <div className="w-full bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm flex flex-wrap gap-6 items-end">
+    <div className="flex w-full flex-wrap items-end gap-6 rounded-3xl border border-border bg-card p-6 shadow-sm">
       {/* Academic Year */}
-      <div className="flex-1 min-w-[200px] space-y-2">
-        <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
-          <Landmark className="w-4 h-4" />
-          <Label className="text-xs font-semibold uppercase tracking-wider">Academic Year</Label>
+      <div className="min-w-[200px] flex-1 space-y-2">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Landmark className="h-4 w-4" />
+          <Label className="text-xs font-semibold tracking-wider uppercase">Academic Year</Label>
         </div>
         <Select value={selectedYearId} onValueChange={setSelectedYearId}>
-          <SelectTrigger className="w-full h-11 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs font-medium bg-neutral-50/50 dark:bg-zinc-900/50">
+          <SelectTrigger className="h-11 w-full rounded-xl border-border bg-muted/30 text-xs font-medium">
             <SelectValue placeholder="Select Academic Year" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -85,18 +86,20 @@ export function ScheduleFilterBar({
       </div>
 
       {/* Term */}
-      <div className="flex-1 min-w-[200px] space-y-2">
-        <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
-          <CalendarDays className="w-4 h-4" />
-          <Label className="text-xs font-semibold uppercase tracking-wider">Term</Label>
+      <div className="min-w-[200px] flex-1 space-y-2">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <CalendarDays className="h-4 w-4" />
+          <Label className="text-xs font-semibold tracking-wider uppercase">Term</Label>
         </div>
         <Select
           value={selectedTermId}
           onValueChange={setSelectedTermId}
           disabled={selectedYearId === "all" || termsLoading}
         >
-          <SelectTrigger className="w-full h-11 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs font-medium bg-neutral-50/50 dark:bg-zinc-900/50">
-            <SelectValue placeholder={selectedYearId === "all" ? "Select Academic Year first" : "Select Term"} />
+          <SelectTrigger className="h-11 w-full rounded-xl border-border bg-muted/30 text-xs font-medium">
+            <SelectValue
+              placeholder={selectedYearId === "all" ? "Select Academic Year first" : "Select Term"}
+            />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="all">All Terms</SelectItem>
@@ -110,13 +113,13 @@ export function ScheduleFilterBar({
       </div>
 
       {/* Class Section */}
-      <div className="flex-1 min-w-[200px] space-y-2">
-        <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
-          <GraduationCap className="w-4 h-4" />
-          <Label className="text-xs font-semibold uppercase tracking-wider">Class Section</Label>
+      <div className="min-w-[200px] flex-1 space-y-2">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <GraduationCap className="h-4 w-4" />
+          <Label className="text-xs font-semibold tracking-wider uppercase">Class Section</Label>
         </div>
         <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-          <SelectTrigger className="w-full h-11 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs font-medium bg-neutral-50/50 dark:bg-zinc-900/50">
+          <SelectTrigger className="h-11 w-full rounded-xl border-border bg-muted/30 text-xs font-medium">
             <SelectValue placeholder="Select Class Section" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -132,13 +135,13 @@ export function ScheduleFilterBar({
 
       {/* Teacher Profile */}
       {showTeacherFilter && (
-        <div className="flex-1 min-w-[200px] space-y-2">
-          <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
-            <Users2 className="w-4 h-4" />
-            <Label className="text-xs font-semibold uppercase tracking-wider">Teacher</Label>
+        <div className="min-w-[200px] flex-1 space-y-2">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Users2 className="h-4 w-4" />
+            <Label className="text-xs font-semibold tracking-wider uppercase">Teacher</Label>
           </div>
           <Select value={selectedTeacherId} onValueChange={setSelectedTeacherId}>
-            <SelectTrigger className="w-full h-11 rounded-xl border-neutral-200 dark:border-zinc-800 text-xs font-medium bg-neutral-50/50 dark:bg-zinc-900/50">
+            <SelectTrigger className="h-11 w-full rounded-xl border-border bg-muted/30 text-xs font-medium">
               <SelectValue placeholder="Select Teacher" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
@@ -155,3 +158,4 @@ export function ScheduleFilterBar({
     </div>
   );
 }
+

@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
-import katex from "katex";
 import "katex/dist/katex.min.css";
+
+import katex from "katex";
+import React from "react";
 
 interface MathRendererProps {
   text: string;
@@ -28,7 +29,7 @@ export function MathRenderer({ text, className = "" }: MathRendererProps) {
             return (
               <span
                 key={index}
-                className="block my-3 overflow-x-auto text-center py-1"
+                className="my-3 block overflow-x-auto py-1 text-center"
                 dangerouslySetInnerHTML={{ __html: html }}
               />
             );
@@ -55,7 +56,11 @@ export function MathRenderer({ text, className = "" }: MathRendererProps) {
             return <code key={index}>{part}</code>;
           }
         }
-        return <span key={index} className="whitespace-pre-wrap">{part}</span>;
+        return (
+          <span key={index} className="whitespace-pre-wrap">
+            {part}
+          </span>
+        );
       })}
     </span>
   );

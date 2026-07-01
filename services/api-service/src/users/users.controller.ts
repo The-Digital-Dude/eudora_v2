@@ -15,6 +15,8 @@ import { AssignRoleDto } from './dto/assign-role.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 
 @Roles('SUPER_ADMIN')
 @Controller('users')
@@ -41,28 +43,40 @@ export class UsersController {
   @Patch(':id')
   @Roles('ADMIN', 'SUPER_ADMIN')
   @RequirePermissions({ action: 'update', subject: 'User' })
-  async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(id, dto);
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+    @CurrentUser() actor: CurrentUserDto,
+  ) {
+    return this.usersService.update(id, dto, actor.id);
   }
 
   @Delete(':id')
   @Roles('SUPER_ADMIN')
   @RequirePermissions({ action: 'delete', subject: 'User' })
-  async delete(@Param('id') id: string) {
-    return this.usersService.softDelete(id);
+  async delete(@Param('id') id: string, @CurrentUser() actor: CurrentUserDto) {
+    return this.usersService.softDelete(id, actor.id);
   }
 
   @Post(':id/roles')
   @Roles('SUPER_ADMIN')
   @RequirePermissions({ action: 'update', subject: 'User' })
-  async assignRole(@Param('id') id: string, @Body() dto: AssignRoleDto) {
-    return this.usersService.assignRole(id, dto.roleId);
+  async assignRole(
+    @Param('id') id: string,
+    @Body() dto: AssignRoleDto,
+    @CurrentUser() actor: CurrentUserDto,
+  ) {
+    return this.usersService.assignRole(id, dto.roleId, actor.id);
   }
 
   @Delete(':id/roles/:roleId')
   @Roles('SUPER_ADMIN')
   @RequirePermissions({ action: 'update', subject: 'User' })
-  async removeRole(@Param('id') id: string, @Param('roleId') roleId: string) {
-    return this.usersService.removeRole(id, roleId);
+  async removeRole(
+    @Param('id') id: string,
+    @Param('roleId') roleId: string,
+    @CurrentUser() actor: CurrentUserDto,
+  ) {
+    return this.usersService.removeRole(id, roleId, actor.id);
   }
 }

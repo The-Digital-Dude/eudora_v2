@@ -12,7 +12,6 @@ describe('RBAC Verification (e2e)', () => {
   let testUserToken: string;
   let testUserId: string;
   let adminRoleId: string;
-  let userRoleId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -35,9 +34,7 @@ describe('RBAC Verification (e2e)', () => {
     const adminRole = await prisma.role.findUnique({
       where: { name: 'ADMIN' },
     });
-    const userRole = await prisma.role.findUnique({ where: { name: 'USER' } });
     adminRoleId = adminRole!.id;
-    userRoleId = userRole!.id;
 
     // Login as Super Admin to perform admin operations
     const loginRes = await request(app.getHttpServer())
@@ -48,9 +45,18 @@ describe('RBAC Verification (e2e)', () => {
       })
       .expect(200);
 
-    const cookies = loginRes.headers['set-cookie'] || [];
-    const accessTokenCookie = cookies.find((cookie: string) => cookie.startsWith('access_token='));
-    superAdminToken = accessTokenCookie ? accessTokenCookie.split(';')[0].split('=')[1] : '';
+    const rawCookies = loginRes.headers['set-cookie'];
+    const cookies = Array.isArray(rawCookies)
+      ? rawCookies
+      : rawCookies
+        ? [rawCookies]
+        : [];
+    const accessTokenCookie = cookies.find((cookie: string) =>
+      cookie.startsWith('access_token='),
+    );
+    superAdminToken = accessTokenCookie
+      ? accessTokenCookie.split(';')[0].split('=')[1]
+      : '';
     expect(superAdminToken).toBeDefined();
   });
 
@@ -75,9 +81,18 @@ describe('RBAC Verification (e2e)', () => {
       })
       .expect(201);
 
-    const regCookies = registerRes.headers['set-cookie'] || [];
-    const regAccessTokenCookie = regCookies.find((cookie: string) => cookie.startsWith('access_token='));
-    testUserToken = regAccessTokenCookie ? regAccessTokenCookie.split(';')[0].split('=')[1] : '';
+    const rawRegCookies = registerRes.headers['set-cookie'];
+    const regCookies = Array.isArray(rawRegCookies)
+      ? rawRegCookies
+      : rawRegCookies
+        ? [rawRegCookies]
+        : [];
+    const regAccessTokenCookie = regCookies.find((cookie: string) =>
+      cookie.startsWith('access_token='),
+    );
+    testUserToken = regAccessTokenCookie
+      ? regAccessTokenCookie.split(';')[0].split('=')[1]
+      : '';
     expect(testUserToken).toBeDefined();
 
     // Verify user role in database is USER
@@ -103,9 +118,10 @@ describe('RBAC Verification (e2e)', () => {
       .get('/api/users')
       .set('Authorization', `Bearer ${superAdminToken}`)
       .expect(200);
-    
-    expect(res.body).toHaveProperty('data');
-    expect(Array.isArray(res.body.data.data)).toBe(true);
+
+    const body = res.body as { data: { data: unknown[] } };
+    expect(body).toHaveProperty('data');
+    expect(Array.isArray(body.data.data)).toBe(true);
   });
 
   it('should allow Super Admin to assign the ADMIN role to the test user', async () => {

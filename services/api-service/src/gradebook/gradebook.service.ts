@@ -1,14 +1,29 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { GradeBookEntry, GradeSourceType, GradeBookEntryStatus } from '@prisma/client';
-import { CreateManualGradeDto, UpdateGradeEntryDto, BulkUpsertGradesDto } from './dto/gradebook.dto';
+import {
+  GradeBookEntry,
+  GradeSourceType,
+  GradeBookEntryStatus,
+} from '@prisma/client';
+import {
+  CreateManualGradeDto,
+  UpdateGradeEntryDto,
+  BulkUpsertGradesDto,
+} from './dto/gradebook.dto';
 import { randomUUID } from 'crypto';
 
 @Injectable()
 export class GradebookService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createManualGrade(dto: CreateManualGradeDto, creatorUserId: string): Promise<GradeBookEntry> {
+  async createManualGrade(
+    dto: CreateManualGradeDto,
+    creatorUserId: string,
+  ): Promise<GradeBookEntry> {
     const {
       studentProfileId,
       courseClassId,
@@ -25,12 +40,15 @@ export class GradebookService {
     } = dto;
 
     if (pointsPossible <= 0) {
-      throw new BadRequestException('Points possible must be greater than zero');
+      throw new BadRequestException(
+        'Points possible must be greater than zero',
+      );
     }
 
-    const percentage = pointsEarned !== undefined && pointsEarned !== null
-      ? (pointsEarned / pointsPossible) * 100
-      : null;
+    const percentage =
+      pointsEarned !== undefined && pointsEarned !== null
+        ? (pointsEarned / pointsPossible) * 100
+        : null;
 
     const finalSourceId = sourceId || randomUUID();
 
@@ -97,16 +115,23 @@ export class GradebookService {
       throw new NotFoundException('Gradebook entry not found');
     }
 
-    const pointsEarned = dto.pointsEarned !== undefined ? dto.pointsEarned : entry.pointsEarned;
-    const pointsPossible = dto.pointsPossible !== undefined ? dto.pointsPossible : entry.pointsPossible;
+    const pointsEarned =
+      dto.pointsEarned !== undefined ? dto.pointsEarned : entry.pointsEarned;
+    const pointsPossible =
+      dto.pointsPossible !== undefined
+        ? dto.pointsPossible
+        : entry.pointsPossible;
 
     if (pointsPossible !== null && pointsPossible <= 0) {
-      throw new BadRequestException('Points possible must be greater than zero');
+      throw new BadRequestException(
+        'Points possible must be greater than zero',
+      );
     }
 
-    const percentage = pointsEarned !== null && pointsEarned !== undefined && pointsPossible
-      ? (pointsEarned / pointsPossible) * 100
-      : null;
+    const percentage =
+      pointsEarned !== null && pointsEarned !== undefined && pointsPossible
+        ? (pointsEarned / pointsPossible) * 100
+        : null;
 
     return this.prisma.gradeBookEntry.update({
       where: { id },
@@ -132,7 +157,10 @@ export class GradebookService {
     return this.prisma.gradeBookEntry.delete({ where: { id } });
   }
 
-  async bulkUpsertGrades(dto: BulkUpsertGradesDto, creatorUserId: string): Promise<GradeBookEntry[]> {
+  async bulkUpsertGrades(
+    dto: BulkUpsertGradesDto,
+    creatorUserId: string,
+  ): Promise<GradeBookEntry[]> {
     const results: GradeBookEntry[] = [];
     const sourceIdForBulk = randomUUID();
 
@@ -154,12 +182,15 @@ export class GradebookService {
         } = entry;
 
         if (pointsPossible <= 0) {
-          throw new BadRequestException('Points possible must be greater than zero');
+          throw new BadRequestException(
+            'Points possible must be greater than zero',
+          );
         }
 
-        const percentage = pointsEarned !== undefined && pointsEarned !== null
-          ? (pointsEarned / pointsPossible) * 100
-          : null;
+        const percentage =
+          pointsEarned !== undefined && pointsEarned !== null
+            ? (pointsEarned / pointsPossible) * 100
+            : null;
 
         const finalSourceId = sourceId || sourceIdForBulk;
 
@@ -394,7 +425,10 @@ export class GradebookService {
     };
   }
 
-  async getStudentGrades(studentProfileId: string, termId?: string): Promise<GradeBookEntry[]> {
+  async getStudentGrades(
+    studentProfileId: string,
+    termId?: string,
+  ): Promise<GradeBookEntry[]> {
     const where: any = {
       studentProfileId,
       status: GradeBookEntryStatus.PUBLISHED,
@@ -431,7 +465,11 @@ export class GradebookService {
     }
 
     const attempts = await this.prisma.assessmentAttempt.findMany({
-      where: { resultStatus: 'marked', rawScore: { not: null }, maxScore: { not: null } },
+      where: {
+        resultStatus: 'marked',
+        rawScore: { not: null },
+        maxScore: { not: null },
+      },
     });
 
     let assessmentSyncCount = 0;

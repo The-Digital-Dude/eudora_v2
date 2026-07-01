@@ -1,5 +1,6 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
 import { login, logout } from "./authSlice";
 
 // Helper to extract a cookie value from the browser on client-side
@@ -27,32 +28,38 @@ const baseQuery = fetchBaseQuery({
 });
 
 // Wrapper to intercept 401 Unauthorized errors and perform token rotation
-const baseQueryWithReauth: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
-> = async (args, api, extraOptions) => {
+const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
+  args,
+  api,
+  extraOptions,
+) => {
   let result = await baseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 401) {
     const url = typeof args === "string" ? args : args.url;
-    
+
     // Do not attempt refresh on registration, login, logout, or session verification itself
-    const bypassPaths = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/me", "/auth/google"];
+    const bypassPaths = [
+      "/auth/login",
+      "/auth/register",
+      "/auth/refresh",
+      "/auth/me",
+      "/auth/google",
+    ];
     const isBypass = bypassPaths.some((p) => url.includes(p));
 
     if (!isBypass) {
       const refreshResult = await baseQuery(
         { url: "/auth/refresh", method: "POST" },
         api,
-        extraOptions
+        extraOptions,
       );
 
       if (refreshResult.data) {
         // Rotated successfully, store new user session details in Redux state
         const user = (refreshResult.data as any).data ?? refreshResult.data;
         api.dispatch(login({ user, token: null }));
-        
+
         // Retry the original request
         result = await baseQuery(args, api, extraOptions);
       } else {
@@ -101,6 +108,15 @@ export const authApi = createApi({
     "Attendance",
     "Homework",
     "Gradebook",
+    "Questions",
+    "Assessments",
+    "Assignments",
+    "Messages",
+    "ParentPortal",
+    "Gamification",
+    "Leaderboard",
+    "TeacherPortal",
+    "LiveClasses",
   ],
   endpoints: (builder) => ({
     login: builder.mutation({

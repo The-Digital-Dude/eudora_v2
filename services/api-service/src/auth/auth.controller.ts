@@ -16,6 +16,7 @@ import { LoginDto } from './dto/login.dto';
 import { GoogleLoginDto } from './dto/google.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { Public } from './decorators/public.decorator';
 import { CsrfGuard } from './guards/csrf.guard';
 import {
@@ -74,7 +75,7 @@ export class AuthController {
   }
 
   @Get('me')
-  async getMe(@CurrentUser() user: any) {
+  async getMe(@CurrentUser() user: CurrentUserDto) {
     return user;
   }
 
@@ -118,7 +119,7 @@ export class AuthController {
   @Post('change-password')
   @HttpCode(HttpStatus.OK)
   async changePassword(
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
     @Body() dto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(

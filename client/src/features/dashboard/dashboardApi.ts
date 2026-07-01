@@ -272,7 +272,10 @@ export interface FileUpload {
 export const dashboardApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
-    getCampuses: builder.query<{ items: Campus[]; total: number }, { page?: number; limit?: number } | void>({
+    getCampuses: builder.query<
+      { items: Campus[]; total: number },
+      { page?: number; limit?: number } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
@@ -280,7 +283,7 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["Campuses"],
     } as any),
@@ -308,7 +311,10 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["Campuses"],
     } as any),
 
-    getPrograms: builder.query<{ items: Program[]; total: number }, { page?: number; limit?: number; campusId?: string } | void>({
+    getPrograms: builder.query<
+      { items: Program[]; total: number },
+      { page?: number; limit?: number; campusId?: string } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
@@ -317,7 +323,7 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["Programs"],
     } as any),
@@ -345,7 +351,10 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["Programs"],
     } as any),
 
-    getUsers: builder.query<{ items: User[]; total: number }, { page?: number; limit?: number } | void>({
+    getUsers: builder.query<
+      { items: User[]; total: number },
+      { page?: number; limit?: number } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
@@ -353,7 +362,7 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["Users"],
     } as any),
@@ -401,7 +410,10 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["BillingPlans"],
     } as any),
 
-    getLeads: builder.query<{ items: Lead[]; total: number }, { page?: number; limit?: number } | void>({
+    getLeads: builder.query<
+      { items: Lead[]; total: number },
+      { page?: number; limit?: number } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
@@ -409,7 +421,7 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["Leads"],
     } as any),
@@ -437,7 +449,10 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["Leads"],
     } as any),
 
-    getCourseClasses: builder.query<{ items: CourseClass[]; total: number }, { page?: number; limit?: number } | void>({
+    getCourseClasses: builder.query<
+      { items: CourseClass[]; total: number },
+      { page?: number; limit?: number } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
@@ -445,12 +460,15 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["CourseClasses"],
     } as any),
 
-    getClassSections: builder.query<{ items: ClassSection[]; total: number }, { page?: number; limit?: number } | void>({
+    getClassSections: builder.query<
+      { items: ClassSection[]; total: number },
+      { page?: number; limit?: number } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
@@ -458,12 +476,15 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["ClassSections"],
     } as any),
 
-    getAcademicYears: builder.query<{ items: AcademicYear[]; total: number }, { page?: number; limit?: number } | void>({
+    getAcademicYears: builder.query<
+      { items: AcademicYear[]; total: number },
+      { page?: number; limit?: number } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
@@ -471,11 +492,14 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
     } as any),
 
-    getMakeupRequests: builder.query<{ items: MakeupRequest[]; total: number }, { page?: number; limit?: number } | void>({
+    getMakeupRequests: builder.query<
+      { items: MakeupRequest[]; total: number },
+      { page?: number; limit?: number } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
@@ -483,11 +507,14 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["MakeupRequests"],
     } as any),
-    updateMakeupRequest: builder.mutation<MakeupRequest, { id: string; body: { status: string; scheduledDate?: string } }>({
+    updateMakeupRequest: builder.mutation<
+      MakeupRequest,
+      { id: string; body: { status: string; scheduledDate?: string } }
+    >({
       query: ({ id, body }: any) => ({
         url: `/makeup-requests/${id}`,
         method: "PATCH",
@@ -496,7 +523,10 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["MakeupRequests"],
     } as any),
 
-    getAssessmentAttempts: builder.query<{ items: AssessmentAttempt[]; total: number }, { page?: number; limit?: number } | void>({
+    getAssessmentAttempts: builder.query<
+      { items: AssessmentAttempt[]; total: number },
+      { page?: number; limit?: number } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
@@ -504,12 +534,15 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["Attempts"],
     } as any),
 
-    getBroadcasts: builder.query<{ items: Broadcast[]; total: number }, { page?: number; limit?: number } | void>({
+    getBroadcasts: builder.query<
+      { items: Broadcast[]; total: number },
+      { page?: number; limit?: number } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
@@ -517,7 +550,7 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["Broadcasts"],
     } as any),
@@ -530,7 +563,10 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["Broadcasts"],
     } as any),
 
-    getStudentProfiles: builder.query<{ items: StudentProfile[]; total: number }, { page?: number; limit?: number; status?: string } | void>({
+    getStudentProfiles: builder.query<
+      { items: StudentProfile[]; total: number },
+      { page?: number; limit?: number; status?: string } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
@@ -539,7 +575,7 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["Students"],
     } as any),
@@ -551,7 +587,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       invalidatesTags: ["Students"],
     } as any),
-    updateStudentProfile: builder.mutation<StudentProfile, { id: string; body: Partial<StudentProfile> }>({
+    updateStudentProfile: builder.mutation<
+      StudentProfile,
+      { id: string; body: Partial<StudentProfile> }
+    >({
       query: ({ id, body }: any) => ({
         url: `/student-profiles/${id}`,
         method: "PATCH",
@@ -567,7 +606,10 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["Students"],
     } as any),
 
-    createStudentPlacement: builder.mutation<StudentPlacement, { studentProfileId: string; classSectionId: string; academicYearId: string }>({
+    createStudentPlacement: builder.mutation<
+      StudentPlacement,
+      { studentProfileId: string; classSectionId: string; academicYearId: string }
+    >({
       query: (body: any) => ({
         url: "/student-placements",
         method: "POST",
@@ -575,7 +617,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       invalidatesTags: ["Students", "Placements"],
     } as any),
-    deleteStudentPlacement: builder.mutation<void, { studentProfileId: string; classSectionId: string }>({
+    deleteStudentPlacement: builder.mutation<
+      void,
+      { studentProfileId: string; classSectionId: string }
+    >({
       query: ({ studentProfileId, classSectionId }: any) => ({
         url: `/student-placements/${studentProfileId}/${classSectionId}`,
         method: "DELETE",
@@ -583,7 +628,10 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["Students", "Placements"],
     } as any),
 
-    createStudentEnrollment: builder.mutation<StudentEnrollment, { studentProfileId: string; courseClassId: string }>({
+    createStudentEnrollment: builder.mutation<
+      StudentEnrollment,
+      { studentProfileId: string; courseClassId: string }
+    >({
       query: (body: any) => ({
         url: "/student-enrollments",
         method: "POST",
@@ -598,7 +646,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       invalidatesTags: ["Students", "Enrollments"],
     } as any),
-    createGuardianProfile: builder.mutation<any, { fullName: string; phone?: string; email?: string }>({
+    createGuardianProfile: builder.mutation<
+      any,
+      { fullName: string; phone?: string; email?: string }
+    >({
       query: (body: any) => ({
         url: "/guardian-profiles",
         method: "POST",
@@ -613,7 +664,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
     } as any),
 
-    getTeacherProfiles: builder.query<{ items: TeacherProfile[]; total: number }, { page?: number; limit?: number; status?: string; search?: string } | void>({
+    getTeacherProfiles: builder.query<
+      { items: TeacherProfile[]; total: number },
+      { page?: number; limit?: number; status?: string; search?: string } | void
+    >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 10;
@@ -623,7 +677,7 @@ export const dashboardApi = authApi.injectEndpoints({
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
-        total: response.meta?.total ?? (response.data?.length ?? 0),
+        total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["Teachers"],
     } as any),
@@ -635,7 +689,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       invalidatesTags: ["Teachers"],
     } as any),
-    updateTeacherProfile: builder.mutation<TeacherProfile, { id: string; body: Partial<TeacherProfile> }>({
+    updateTeacherProfile: builder.mutation<
+      TeacherProfile,
+      { id: string; body: Partial<TeacherProfile> }
+    >({
       query: ({ id, body }: any) => ({
         url: `/teacher-profiles/${id}`,
         method: "PATCH",
@@ -650,7 +707,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       invalidatesTags: ["Teachers"],
     } as any),
-    assignTeacherClass: builder.mutation<void, { id: string; classSectionId: string; role?: string }>({
+    assignTeacherClass: builder.mutation<
+      void,
+      { id: string; classSectionId: string; role?: string }
+    >({
       query: ({ id, classSectionId, role }: any) => ({
         url: `/teacher-profiles/${id}/classes`,
         method: "POST",
@@ -702,6 +762,12 @@ export const dashboardApi = authApi.injectEndpoints({
         body: formData,
       }),
     } as any),
+    getDashboardSnapshot: builder.query<any, { date?: string } | void>({
+      query: (params) => ({
+        url: "/dashboard/snapshot",
+        params: params || {},
+      }),
+    }),
   }),
 });
 
@@ -755,4 +821,5 @@ export const {
   useMarkAllNotificationsAsReadMutation,
   useDeleteNotificationMutation,
   useUploadFileMutation,
+  useGetDashboardSnapshotQuery,
 } = dashboardApi;

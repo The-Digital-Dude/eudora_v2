@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateAcademicYearDto,
@@ -295,7 +296,7 @@ export class AcademicService {
     programId?: string,
   ) {
     const skip = (page - 1) * limit;
-    const where: any = {};
+    const where: Prisma.ClassSectionWhereInput = {};
     if (academicYearId) where.academicYearId = academicYearId;
     if (programId) where.programId = programId;
 
@@ -439,7 +440,10 @@ export class AcademicService {
   async findCourseClassById(id: string) {
     const cls = await this.prisma.courseClass.findUnique({
       where: { id },
-      include: { term: { include: { academicYear: true } }, enrollments: true },
+      include: {
+        term: { include: { academicYear: true } },
+        enrollments: { include: { studentProfile: true } },
+      },
     });
     if (!cls) {
       throw new NotFoundException('Course class not found');

@@ -1,22 +1,13 @@
-"use client";
+﻿"use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { ArrowRight, Eye, EyeOff, Lock, Mail, Sparkles, User } from "lucide-react";
 import Link from "next/link";
-import { 
-  Sparkles, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  ArrowRight,
-  User
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect,useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import { useRegisterMutation } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -79,42 +70,42 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 py-12 dot-grid relative select-none font-sans bg-neutral-50 dark:bg-zinc-950 text-neutral-900 dark:text-zinc-50">
-      
+    <div className="dot-grid relative flex min-h-screen flex-col items-center justify-center bg-muted/50 px-4 py-12 font-sans text-foreground select-none">
       {/* Slide-up entrance animated container */}
-      <div className="w-full max-w-[440px] space-y-8 animate-fade-in-up">
-        
+      <div className="animate-fade-in-up w-full max-w-[440px] space-y-8">
         {/* Brand Logo and Title */}
         <div className="flex flex-col items-center space-y-3">
-          <Link href="/" className="p-2.5 bg-neutral-900 dark:bg-zinc-100 text-white dark:text-neutral-900 rounded-xl shadow-sm hover:scale-105 transition-transform flex items-center justify-center">
-            <Sparkles className="w-5 h-5" />
+          <Link
+            href="/"
+            className="flex items-center justify-center rounded-xl bg-foreground p-2.5 text-background shadow-sm transition-transform hover:scale-105"
+          >
+            <Sparkles className="h-5 w-5" />
           </Link>
-          <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50 font-display">
+          <span className="font-display text-xl font-bold tracking-tight text-foreground">
             Eudora
           </span>
         </div>
 
         {/* Clean Cupertino Card */}
-        <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-zinc-800 rounded-[24px] p-8 md:p-10 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)]">
-          
+        <div className="rounded-[24px] border border-border/60 bg-card p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10">
           {/* Header */}
-          <div className="text-center space-y-2 mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50 font-display">
+          <div className="mb-6 space-y-2 text-center">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Create your account
             </h1>
-            <p className="text-xs text-neutral-400 dark:text-zinc-500 max-w-[280px] mx-auto leading-normal">
+            <p className="mx-auto max-w-[280px] text-xs leading-normal text-muted-foreground">
               Sign up to start designing student learning paths and curriculums.
             </p>
           </div>
 
           {/* Social Registrations */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="mb-6 grid grid-cols-2 gap-3">
             <button
               type="button"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-neutral-50 dark:hover:bg-zinc-800 hover:border-neutral-300 dark:hover:border-zinc-700 text-neutral-700 dark:text-zinc-300 transition-all text-xs font-semibold cursor-pointer active:scale-98 shadow-sm"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-sm transition-all hover:border-border hover:bg-muted active:scale-98"
             >
               {/* Google SVG */}
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -136,48 +127,53 @@ export default function RegisterPage() {
             </button>
             <button
               type="button"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-neutral-50 dark:hover:bg-zinc-800 hover:border-neutral-300 dark:hover:border-zinc-700 text-neutral-700 dark:text-zinc-300 transition-all text-xs font-semibold cursor-pointer active:scale-98 shadow-sm"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-sm transition-all hover:border-border hover:bg-muted active:scale-98"
             >
               {/* GitHub SVG */}
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.164 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.164 22 16.418 22 12c0-5.523-4.477-10-10-10z"
+                />
               </svg>
               GitHub
             </button>
           </div>
 
           {/* Separator */}
-          <div className="relative flex items-center justify-center mb-6">
+          <div className="relative mb-6 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-100 dark:border-zinc-800"></div>
+              <div className="w-full border-t border-border"></div>
             </div>
-            <span className="relative px-3 text-[10px] text-neutral-400 dark:text-zinc-500 uppercase tracking-widest bg-white dark:bg-zinc-900 font-semibold">
+            <span className="relative bg-card px-3 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase0">
               Or sign up with
             </span>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 text-xs font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 p-3 rounded-xl">
+            <div className="mb-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
               {error}
             </div>
           )}
 
           {/* Registration Form */}
           <form className="space-y-4" onSubmit={handleRegister}>
-            
             {/* Full Name */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Full Name</Label>
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                Full Name
+              </Label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
-                  <User className="w-4 h-4" />
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
+                  <User className="h-4 w-4" />
                 </span>
                 <Input
                   id="name"
                   type="text"
                   placeholder="John Doe"
-                  className="pl-10 h-11 border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50 rounded-xl focus:border-neutral-900 dark:focus:border-zinc-300 placeholder:text-neutral-300 dark:placeholder:text-zinc-700 cupertino-input"
+                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -188,16 +184,18 @@ export default function RegisterPage() {
 
             {/* Email Address */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Email Address</Label>
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                Email Address
+              </Label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
-                  <Mail className="w-4 h-4" />
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
+                  <Mail className="h-4 w-4" />
                 </span>
                 <Input
                   id="email"
                   type="email"
                   placeholder="name@school.edu"
-                  className="pl-10 h-11 border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50 rounded-xl focus:border-neutral-900 dark:focus:border-zinc-300 placeholder:text-neutral-300 dark:placeholder:text-zinc-700 cupertino-input"
+                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -208,16 +206,18 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Password</Label>
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                Password
+              </Label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
-                  <Lock className="w-4 h-4" />
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
+                  <Lock className="h-4 w-4" />
                 </span>
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10 pr-10 h-11 border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50 rounded-xl focus:border-neutral-900 dark:focus:border-zinc-300 placeholder:text-neutral-300 dark:placeholder:text-zinc-700 cupertino-input"
+                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pr-10 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -226,25 +226,27 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 hover:text-neutral-600 transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-muted-foreground"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
             {/* Confirm Password */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Confirm Password</Label>
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                Confirm Password
+              </Label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400">
-                  <Lock className="w-4 h-4" />
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
+                  <Lock className="h-4 w-4" />
                 </span>
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10 pr-10 h-11 border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50 rounded-xl focus:border-neutral-900 dark:focus:border-zinc-300 placeholder:text-neutral-300 dark:placeholder:text-zinc-700 cupertino-input"
+                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pr-10 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -253,27 +255,36 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 hover:text-neutral-600 transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-muted-foreground"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </div>
 
             {/* Terms and Conditions Option */}
             <div className="flex items-start py-1">
-              <label className="flex items-start gap-2.5 cursor-pointer group text-xs text-neutral-500 dark:text-zinc-400 hover:text-neutral-800 dark:hover:text-zinc-200 select-none">
+              <label className="group flex cursor-pointer items-start gap-2.5 text-xs text-muted-foreground select-none hover:text-foreground">
                 <input
                   type="checkbox"
                   checked={agree}
                   onChange={(e) => setAgree(e.target.checked)}
-                  className="w-4 h-4 rounded border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-50 focus:ring-neutral-900/20 transition-all cursor-pointer mt-0.5"
+                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-border bg-card text-foreground transition-all focus:ring-ring/20"
                 />
                 <span className="leading-normal">
                   I agree to the{" "}
-                  <a className="underline hover:text-neutral-900 dark:hover:text-zinc-50">Terms of Service</a>{" "}
+                  <a className="underline hover:text-foreground hover:text-foreground">
+                    Terms of Service
+                  </a>{" "}
                   and{" "}
-                  <a className="underline hover:text-neutral-900 dark:hover:text-zinc-50">Privacy Policy</a>.
+                  <a className="underline hover:text-foreground hover:text-foreground">
+                    Privacy Policy
+                  </a>
+                  .
                 </span>
               </label>
             </div>
@@ -281,38 +292,53 @@ export default function RegisterPage() {
             {/* Primary Action Button */}
             <Button
               type="submit"
-              className="w-full h-11 bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 dark:hover:bg-zinc-200 text-white dark:text-neutral-900 font-semibold rounded-xl transition-all shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-75 disabled:pointer-events-none disabled:active:scale-100"
+              className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all hover:bg-foreground/90 active:scale-98 disabled:pointer-events-none disabled:opacity-75 disabled:active:scale-100"
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <svg
+                    className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Creating Account...
                 </>
               ) : (
                 <>
                   Create Account
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
           </form>
-
         </div>
 
         {/* Footer Sign-In Link */}
-        <div className="text-center text-xs text-neutral-400 dark:text-zinc-500">
+        <div className="text-center text-xs text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/login" className="text-neutral-900 dark:text-zinc-50 hover:underline font-semibold transition-colors">
+          <Link
+            href="/login"
+            className="font-semibold text-foreground transition-colors hover:underline"
+          >
             Sign in
           </Link>
         </div>
-
       </div>
-
     </div>
   );
 }

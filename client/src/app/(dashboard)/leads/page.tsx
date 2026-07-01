@@ -1,24 +1,22 @@
-"use client";
+﻿"use client";
 
-import React, { useState } from "react";
 import {
-  Search,
-  Phone,
-  Mail,
-  ArrowRight,
-  TrendingUp,
-  Plus,
-  Edit2,
-  Trash2,
   AlertCircle,
+  ArrowRight,
+  Edit2,
   FileText,
-  UserCheck
+  Mail,
+  Phone,
+  Plus,
+  Search,
+  Trash2,
+  TrendingUp,
+  UserCheck,
 } from "lucide-react";
+import React, { useState } from "react";
 
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -27,17 +25,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  useGetLeadsQuery,
   useCreateLeadMutation,
-  useUpdateLeadMutation,
   useDeleteLeadMutation,
+  useGetLeadsQuery,
+  useUpdateLeadMutation,
 } from "@/features/dashboard/dashboardApi";
 
 export default function LeadsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // RTK Queries & Mutations
   const { data: leadsData, isLoading } = useGetLeadsQuery();
   const [createLead, { isLoading: creating }] = useCreateLeadMutation();
@@ -120,7 +119,9 @@ export default function LeadsPage() {
   // Metrics calculation
   const leadsList = leadsData?.items || [];
   const totalLeads = leadsList.length;
-  const diagnosticsBooked = leadsList.filter((l: any) => l.status === "Diagnostic Scheduled").length;
+  const diagnosticsBooked = leadsList.filter(
+    (l: any) => l.status === "Diagnostic Scheduled",
+  ).length;
   const enrolledCount = leadsList.filter((l: any) => l.status === "Enrolled").length;
   const conversionRate = totalLeads > 0 ? Math.round((enrolledCount / totalLeads) * 100) : 0;
 
@@ -134,122 +135,143 @@ export default function LeadsPage() {
   });
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-neutral-900 font-display">
+          <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
             Leads & Enrolments
           </h1>
-          <p className="text-xs text-neutral-500 mt-0.5">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Track interest, onboard prospective students, and coordinate enroled classes.
           </p>
         </div>
         <Button
           onClick={() => handleOpenDialog()}
-          className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold h-10 px-4 flex items-center gap-1.5 cursor-pointer active:scale-98 shadow-sm w-fit"
+          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90 active:scale-98"
         >
-          <Plus className="w-4 h-4" /> Add Lead
+          <Plus className="h-4 w-4" /> Add Lead
         </Button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="border border-neutral-200 bg-white p-4 rounded-2xl">
-          <CardDescription className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+        <Card className="rounded-2xl border border-border bg-card p-4">
+          <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
             Total Leads
           </CardDescription>
-          <CardTitle className="text-2xl font-bold text-neutral-900 font-display mt-1">
+          <CardTitle className="font-display mt-1 text-2xl font-bold text-foreground">
             {isLoading ? "..." : totalLeads}
           </CardTitle>
-          <p className="text-[10px] text-neutral-400 mt-1 flex items-center gap-0.5">
+          <p className="mt-1 flex items-center gap-0.5 text-[10px] text-muted-foreground">
             Registered interest list
           </p>
         </Card>
-        <Card className="border border-neutral-200 bg-white p-4 rounded-2xl">
-          <CardDescription className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+        <Card className="rounded-2xl border border-border bg-card p-4">
+          <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
             Diagnostics Booked
           </CardDescription>
-          <CardTitle className="text-2xl font-bold text-neutral-900 font-display mt-1">
+          <CardTitle className="font-display mt-1 text-2xl font-bold text-foreground">
             {isLoading ? "..." : diagnosticsBooked}
           </CardTitle>
-          <p className="text-[10px] text-neutral-400 mt-1">Awaiting academic assessment</p>
+          <p className="mt-1 text-[10px] text-muted-foreground">Awaiting academic assessment</p>
         </Card>
-        <Card className="border border-neutral-200 bg-white p-4 rounded-2xl">
-          <CardDescription className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+        <Card className="rounded-2xl border border-border bg-card p-4">
+          <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
             Conversion Rate
           </CardDescription>
-          <CardTitle className="text-2xl font-bold text-neutral-900 font-display mt-1">
+          <CardTitle className="font-display mt-1 text-2xl font-bold text-foreground">
             {isLoading ? "..." : `${conversionRate}%`}
           </CardTitle>
-          <p className="text-[10px] text-emerald-600 font-semibold mt-1 flex items-center gap-0.5">
-            <TrendingUp className="w-3.5 h-3.5" /> {enrolledCount} enrolled students
+          <p className="mt-1 flex items-center gap-0.5 text-[10px] font-semibold text-success">
+            <TrendingUp className="h-3.5 w-3.5" /> {enrolledCount} enrolled students
           </p>
         </Card>
       </div>
 
       {/* Leads Table Card */}
-      <Card className="border border-neutral-200 rounded-3xl p-6 bg-white space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h2 className="text-sm font-bold text-neutral-900 font-display">Active Interest Pipelines</h2>
+      <Card className="space-y-4 rounded-3xl border border-border bg-card p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-display text-sm font-bold text-foreground">
+            Active Interest Pipelines
+          </h2>
           <div className="relative w-full sm:w-64">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-neutral-400">
-              <Search className="w-3.5 h-3.5" />
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+              <Search className="h-3.5 w-3.5" />
             </span>
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-xs"
+              className="h-9 pl-9 text-xs"
               placeholder="Search leads..."
             />
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-neutral-100">
-                <th className="pb-3 text-[10px] font-bold uppercase text-neutral-400">Name</th>
-                <th className="pb-3 text-[10px] font-bold uppercase text-neutral-400">Source</th>
-                <th className="pb-3 text-[10px] font-bold uppercase text-neutral-400">Status</th>
-                <th className="pb-3 text-[10px] font-bold uppercase text-neutral-400 text-right">Actions</th>
+              <tr className="border-b border-border">
+                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">Name</th>
+                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">Source</th>
+                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">Status</th>
+                <th className="pb-3 text-right text-[10px] font-bold text-muted-foreground uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 [...Array(3)].map((_, i) => (
-                  <tr key={i} className="border-b border-neutral-50">
-                    <td className="py-3"><div className="h-4 w-32 bg-neutral-100 animate-pulse rounded" /></td>
-                    <td className="py-3"><div className="h-4 w-16 bg-neutral-100 animate-pulse rounded" /></td>
-                    <td className="py-3"><div className="h-4 w-12 bg-neutral-100 animate-pulse rounded" /></td>
-                    <td className="py-3"><div className="h-4 w-10 bg-neutral-100 animate-pulse rounded ml-auto" /></td>
+                  <tr key={i} className="border-b border-border/30">
+                    <td className="py-3">
+                      <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+                    </td>
+                    <td className="py-3">
+                      <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+                    </td>
+                    <td className="py-3">
+                      <div className="h-4 w-12 animate-pulse rounded bg-muted" />
+                    </td>
+                    <td className="py-3">
+                      <div className="ml-auto h-4 w-10 animate-pulse rounded bg-muted" />
+                    </td>
                   </tr>
                 ))
               ) : filteredLeads.length > 0 ? (
                 filteredLeads.map((lead: any) => (
-                  <tr key={lead.id} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50 transition-colors">
+                  <tr
+                    key={lead.id}
+                    className="border-b border-border/30 transition-colors last:border-0 hover:bg-muted/50"
+                  >
                     <td className="py-3">
                       <div>
-                        <p className="text-xs font-semibold text-neutral-900">{lead.name}</p>
-                        <p className="text-[10px] text-neutral-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
-                          <span className="flex items-center gap-0.5"><Mail className="w-3 h-3" /> {lead.email}</span>
+                        <p className="text-xs font-semibold text-foreground">{lead.name}</p>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-0.5">
+                            <Mail className="h-3 w-3" /> {lead.email}
+                          </span>
                           {lead.phone && (
-                            <span className="flex items-center gap-0.5">| <Phone className="w-3 h-3" /> {lead.phone}</span>
+                            <span className="flex items-center gap-0.5">
+                              | <Phone className="h-3 w-3" /> {lead.phone}
+                            </span>
                           )}
                         </p>
                       </div>
                     </td>
-                    <td className="py-3 text-xs text-neutral-500">{lead.source}</td>
+                    <td className="py-3 text-xs text-muted-foreground">{lead.source}</td>
                     <td className="py-3 text-xs">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        lead.status === "Enrolled"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                          : lead.status === "New"
-                          ? "bg-blue-50 text-blue-700 border border-blue-100"
-                          : lead.status === "Diagnostic Scheduled"
-                          ? "bg-amber-50 text-amber-700 border border-amber-100"
-                          : "bg-neutral-100 text-neutral-600 border border-neutral-200"
-                      }`}>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          lead.status === "Enrolled"
+                            ? "border border-success/20 bg-success/10 text-success"
+                            : lead.status === "New"
+                              ? "border border-primary/20 bg-primary/10 text-primary"
+                              : lead.status === "Diagnostic Scheduled"
+                                ? "border border-warning/20 bg-warning/10 text-warning"
+                                : "border border-border bg-muted text-muted-foreground"
+                        }`}
+                      >
                         {lead.status}
                       </span>
                     </td>
@@ -258,16 +280,16 @@ export default function LeadsPage() {
                         <Button
                           onClick={() => handleOpenDialog(lead)}
                           variant="outline"
-                          className="p-2 h-8 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                          className="h-8 rounded-lg p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           onClick={() => handleDeleteLead(lead.id)}
                           variant="outline"
-                          className="p-2 h-8 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 border-rose-100"
+                          className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </td>
@@ -275,7 +297,7 @@ export default function LeadsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-xs text-neutral-400 font-medium">
+                  <td colSpan={4} className="py-8 text-center text-xs font-medium text-muted-foreground">
                     No leads listed. Click "Add Lead" to register prospective interests.
                   </td>
                 </tr>
@@ -287,19 +309,19 @@ export default function LeadsPage() {
 
       {/* Add / Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl p-6 bg-white border border-neutral-200">
+        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-neutral-900 font-display">
+            <DialogTitle className="font-display text-base font-bold text-foreground">
               {selectedLead ? "Edit Lead Information" : "Add Prospective Lead"}
             </DialogTitle>
-            <DialogDescription className="text-xs text-neutral-500">
+            <DialogDescription className="text-xs text-muted-foreground">
               Enter the student details and prospective entry route.
             </DialogDescription>
           </DialogHeader>
 
           {formError && (
-            <div className="text-xs font-semibold text-rose-500 bg-rose-50 border border-rose-100 p-3 rounded-xl flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4" />
+            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
+              <AlertCircle className="h-4 w-4" />
               {formError}
             </div>
           )}
@@ -307,23 +329,27 @@ export default function LeadsPage() {
           <form onSubmit={handleSaveLead} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Full Name</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  Full Name
+                </Label>
                 <Input
                   value={leadName}
                   onChange={(e) => setLeadName(e.target.value)}
                   placeholder="Charlotte Harris"
-                  className="h-10 text-xs border-neutral-200"
+                  className="h-10 border-border text-xs"
                   required
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Email</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  Email
+                </Label>
                 <Input
                   type="email"
                   value={leadEmail}
                   onChange={(e) => setLeadEmail(e.target.value)}
                   placeholder="charlotte@example.com"
-                  className="h-10 text-xs border-neutral-200"
+                  className="h-10 border-border text-xs"
                   required
                 />
               </div>
@@ -331,20 +357,24 @@ export default function LeadsPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Phone</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  Phone
+                </Label>
                 <Input
                   value={leadPhone}
                   onChange={(e) => setLeadPhone(e.target.value)}
                   placeholder="(555) 019-8832"
-                  className="h-10 text-xs border-neutral-200"
+                  className="h-10 border-border text-xs"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Status</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  Status
+                </Label>
                 <select
                   value={leadStatus}
                   onChange={(e: any) => setLeadStatus(e.target.value)}
-                  className="w-full h-10 border border-neutral-200 rounded-xl px-3 text-xs bg-white text-neutral-900 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900/10"
+                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
                 >
                   <option value="New">New</option>
                   <option value="Diagnostic Scheduled">Diagnostic Scheduled</option>
@@ -356,11 +386,13 @@ export default function LeadsPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Source</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  Source
+                </Label>
                 <select
                   value={leadSource}
                   onChange={(e: any) => setLeadSource(e.target.value)}
-                  className="w-full h-10 border border-neutral-200 rounded-xl px-3 text-xs bg-white text-neutral-900 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900/10"
+                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
                 >
                   <option value="Website Form">Website Form</option>
                   <option value="Referral">Referral</option>
@@ -372,28 +404,30 @@ export default function LeadsPage() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Internal Notes</Label>
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                Internal Notes
+              </Label>
               <textarea
                 value={leadNotes}
                 onChange={(e) => setLeadNotes(e.target.value)}
                 placeholder="Awaiting parent confirmation for diagnostic slot."
-                className="w-full min-h-[70px] border border-neutral-200 rounded-xl p-3 text-xs bg-white text-neutral-900 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900/10 placeholder:text-neutral-300"
+                className="min-h-[70px] w-full rounded-xl border border-border bg-card p-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
               />
             </div>
 
-            <DialogFooter className="pt-4 flex items-center justify-end gap-2 border-t border-neutral-100">
+            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
-                className="h-10 text-xs font-semibold rounded-xl"
+                className="h-10 rounded-xl text-xs font-semibold"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={creating || updating}
-                className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold h-10 px-4 flex items-center gap-1 cursor-pointer"
+                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
               >
                 {creating || updating ? "Saving..." : "Save Lead"}
               </Button>

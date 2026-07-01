@@ -13,6 +13,7 @@ import { CsrfGuard } from '../auth/guards/csrf.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import {
   AddAssessmentQuestionDto,
   CreateQuestionDto,
@@ -45,7 +46,7 @@ export class QuestionsController {
   @RequirePermissions({ action: 'manage', subject: 'Assessment' })
   async createQuestion(
     @Body() body: CreateQuestionDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.questionsService.createQuestion(body, user.id);
   }
@@ -55,14 +56,17 @@ export class QuestionsController {
   async updateQuestion(
     @Param('id') id: string,
     @Body() body: UpdateQuestionDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.questionsService.updateQuestion(id, body, user.id);
   }
 
   @Delete('questions/:id')
   @RequirePermissions({ action: 'manage', subject: 'Assessment' })
-  async archiveQuestion(@Param('id') id: string, @CurrentUser() user: any) {
+  async archiveQuestion(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     return this.questionsService.archiveQuestion(id, user.id);
   }
 
@@ -71,7 +75,7 @@ export class QuestionsController {
   async addQuestionToAssessment(
     @Param('id') id: string,
     @Body() body: AddAssessmentQuestionDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.questionsService.addQuestionToAssessment(id, body, user.id);
   }
@@ -81,7 +85,7 @@ export class QuestionsController {
   async removeQuestionFromAssessment(
     @Param('assessmentId') assessmentId: string,
     @Param('questionId') questionId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.questionsService.removeQuestionFromAssessment(
       assessmentId,
@@ -96,7 +100,7 @@ export class QuestionsController {
     @Param('assessmentId') assessmentId: string,
     @Param('questionId') questionId: string,
     @Body() body: UpdateAssessmentQuestionDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.questionsService.updateAssessmentQuestion(
       assessmentId,

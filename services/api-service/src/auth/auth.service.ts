@@ -75,7 +75,7 @@ export class AuthService {
     const tokens = await this.createSessionTokens(user, null, null);
     await this.audit(user.id, 'auth.signup.created', 'user', user.id);
 
-    const { password, ...result } = user;
+    const { password: _, ...result } = user;
     return {
       user: result,
       tokens,
@@ -239,6 +239,9 @@ export class AuthService {
   ) {
     const { token, role } = dto;
     const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+    if (!googleClientId) {
+      throw new BadRequestException('Google sign-in is not configured');
+    }
     const client = new OAuth2Client(googleClientId);
 
     let email: string | undefined;
@@ -268,21 +271,38 @@ export class AuthService {
       firstName = payload.given_name;
       lastName = payload.family_name;
     } else {
-      // Access Token
+      // Access Token — verify the token was issued for THIS application before
+      // trusting any claims. Without this check, an access token minted for a
+      // different Google client (e.g. a malicious third-party app the victim
+      // signed into) would be accepted, allowing account takeover.
+      let tokenInfo;
+      try {
+        tokenInfo = await client.getTokenInfo(token);
+      } catch (err) {
+        throw new UnauthorizedException('Invalid Google access token');
+      }
+
+      if (tokenInfo.aud !== googleClientId) {
+        throw new UnauthorizedException(
+          'Google access token was not issued for this application',
+        );
+      }
+
+      email = tokenInfo.email;
+      googleId = tokenInfo.sub;
+
+      // Names are not returned by tokeninfo; enrich from userinfo best-effort.
       try {
         const response = await fetch(
           `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`,
         );
         const payload = await response.json();
-        if (!payload || payload.error || payload.error_description) {
-          throw new UnauthorizedException('Invalid Google access token');
+        if (payload && !payload.error && !payload.error_description) {
+          firstName = payload.given_name;
+          lastName = payload.family_name;
         }
-        email = payload.email;
-        googleId = payload.sub;
-        firstName = payload.given_name;
-        lastName = payload.family_name;
       } catch (err) {
-        throw new UnauthorizedException('Failed to verify Google access token');
+        // Profile enrichment is optional; ignore failures here.
       }
     }
 
@@ -416,7 +436,7 @@ export class AuthService {
       ipAddress ?? null,
     );
 
-    const { password, ...result } = user;
+    const { password: _, ...result } = user;
     return {
       user: result,
       tokens,
@@ -473,7 +493,31 @@ export class AuthService {
       },
     });
 
-    if (!session || session.revokedAt || session.expiresAt <= new Date()) {
+    if (!session) {
+      // The token is validly signed (verified above) but its hash matches no
+      // stored session — it was already rotated out. This is a strong signal
+      // of refresh-token reuse (theft), so revoke every active session for the
+      // user as a containment measure. Only genuinely-issued tokens can reach
+      // here, since an attacker cannot sign a token without the secret.
+      await this.prisma.authSession.updateMany({
+        where: { userId: payload.sub, revokedAt: null },
+        data: {
+          revokedAt: new Date(),
+          revokedReason: 'refresh_reuse_detected',
+        },
+      });
+      await this.audit(
+        payload.sub,
+        'auth.refresh.reuse_detected',
+        'user',
+        payload.sub,
+        ipAddress,
+        userAgent,
+      );
+      throw new UnauthorizedException('Refresh session is not active');
+    }
+
+    if (session.revokedAt || session.expiresAt <= new Date()) {
       throw new UnauthorizedException('Refresh session is not active');
     }
 
@@ -482,18 +526,11 @@ export class AuthService {
     }
 
     const roles = session.user.roles.map((ur: any) => ur.role.name);
-    const permissions = session.user.roles.flatMap((ur: any) =>
-      ur.role.permissions.map((rp: any) => ({
-        action: rp.permission.action,
-        subject: rp.permission.subject,
-      })),
-    );
 
     const accessPayload = {
       sub: session.user.id,
       email: session.user.email,
       roles,
-      permissions,
       typ: 'access',
     };
 
@@ -636,6 +673,13 @@ export class AuthService {
       },
     });
 
+    // Invalidate every existing session so a hijacked session cannot outlive
+    // the password change.
+    await this.prisma.authSession.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date(), revokedReason: 'password_changed' },
+    });
+
     await this.audit(userId, 'auth.password.changed', 'user', userId);
 
     const { password, ...result } = updatedUser;
@@ -670,18 +714,11 @@ export class AuthService {
     ipAddress: string | null,
   ) {
     const roles = user.roles.map((ur: any) => ur.role.name);
-    const permissions = user.roles.flatMap((ur: any) =>
-      ur.role.permissions.map((rp: any) => ({
-        action: rp.permission.action,
-        subject: rp.permission.subject,
-      })),
-    );
 
     const accessPayload = {
       sub: user.id,
       email: user.email,
       roles,
-      permissions,
       typ: 'access',
     };
 

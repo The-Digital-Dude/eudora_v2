@@ -12,6 +12,7 @@ import { HomeworkService } from './homework.service';
 import { CreateHomeworkDto, UpdateHomeworkDto } from './dto/homework.dto';
 import { SubmitHomeworkDto, GradeSubmissionDto } from './dto/submission.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { PrismaService } from '../prisma/prisma.service';
@@ -31,7 +32,7 @@ export class HomeworkController {
    */
   @Post()
   @RequirePermissions({ action: 'create', subject: 'Homework' })
-  create(@Body() dto: CreateHomeworkDto, @CurrentUser() user: any) {
+  create(@Body() dto: CreateHomeworkDto, @CurrentUser() user: CurrentUserDto) {
     return this.homeworkService.createHomework(dto, user.id);
   }
 
@@ -60,7 +61,10 @@ export class HomeworkController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Post('submit')
   @RequirePermissions({ action: 'create', subject: 'Homework' })
-  async submit(@Body() dto: SubmitHomeworkDto, @CurrentUser() user: any) {
+  async submit(
+    @Body() dto: SubmitHomeworkDto,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
     const student = await this.prisma.studentProfile.findUnique({
       where: { userId: user.id },
     });
@@ -89,7 +93,7 @@ export class HomeworkController {
   grade(
     @Param('id') id: string,
     @Body() dto: GradeSubmissionDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.homeworkService.gradeSubmission(id, dto, user.id);
   }
@@ -110,7 +114,9 @@ export class HomeworkController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('student/:studentProfileId/pending')
   @RequirePermissions({ action: 'read', subject: 'Homework' })
-  getStudentPendingHomework(@Param('studentProfileId') studentProfileId: string) {
+  getStudentPendingHomework(
+    @Param('studentProfileId') studentProfileId: string,
+  ) {
     return this.homeworkService.getStudentPendingHomework(studentProfileId);
   }
 
@@ -120,7 +126,7 @@ export class HomeworkController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('me/pending')
   @RequirePermissions({ action: 'read', subject: 'Homework' })
-  async getMyPendingHomework(@CurrentUser() user: any) {
+  async getMyPendingHomework(@CurrentUser() user: CurrentUserDto) {
     const student = await this.prisma.studentProfile.findUnique({
       where: { userId: user.id },
     });

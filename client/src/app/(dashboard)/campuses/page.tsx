@@ -1,28 +1,25 @@
-"use client";
+﻿"use client";
 
-import React, { useState } from "react";
 import {
-  School,
-  GraduationCap,
-  Plus,
-  Edit2,
-  Trash2,
-  Search,
-  Globe,
-  Mail,
-  Phone,
+  AlertCircle,
   Calendar,
-  Layers,
-  MapPin,
-  Clock,
   CheckCircle,
-  AlertCircle
+  Clock,
+  Edit2,
+  Globe,
+  GraduationCap,
+  Layers,
+  Mail,
+  MapPin,
+  Phone,
+  Plus,
+  School,
+  Search,
+  Trash2,
 } from "lucide-react";
+import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -31,15 +28,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  useGetCampusesQuery,
   useCreateCampusMutation,
-  useUpdateCampusMutation,
-  useDeleteCampusMutation,
-  useGetProgramsQuery,
   useCreateProgramMutation,
-  useUpdateProgramMutation,
+  useDeleteCampusMutation,
   useDeleteProgramMutation,
+  useGetCampusesQuery,
+  useGetProgramsQuery,
+  useUpdateCampusMutation,
+  useUpdateProgramMutation,
 } from "@/features/dashboard/dashboardApi";
 
 export default function CampusesPage() {
@@ -114,7 +114,7 @@ export default function CampusesPage() {
   const handleOpenProgramDialog = (program: any = null) => {
     setFormError("");
     // Pre-populate campus selection to first active campus if none selected
-    const activeCampuses = campusesData?.items?.filter(c => c.status === "ACTIVE") || [];
+    const activeCampuses = campusesData?.items?.filter((c) => c.status === "ACTIVE") || [];
     if (program) {
       setSelectedProgram(program);
       setProgramName(program.name || "");
@@ -196,7 +196,11 @@ export default function CampusesPage() {
   };
 
   const handleDeleteCampus = async (id: string) => {
-    if (confirm("Are you sure you want to delete this campus? This will delete associated programs and classrooms.")) {
+    if (
+      confirm(
+        "Are you sure you want to delete this campus? This will delete associated programs and classrooms.",
+      )
+    ) {
       try {
         await deleteCampus(id).unwrap();
       } catch (err: any) {
@@ -216,34 +220,40 @@ export default function CampusesPage() {
   };
 
   // Filters
-  const filteredCampuses = campusesData?.items?.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.code.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredCampuses =
+    campusesData?.items?.filter(
+      (c) =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.code.toLowerCase().includes(searchQuery.toLowerCase()),
+    ) || [];
 
-  const filteredPrograms = programsData?.items?.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.code.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredPrograms =
+    programsData?.items?.filter(
+      (p) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.code.toLowerCase().includes(searchQuery.toLowerCase()),
+    ) || [];
 
   return (
-    <div className="space-y-6 animate-fade-in text-neutral-900 dark:text-zinc-50">
+    <div className="animate-fade-in space-y-6 text-foreground">
       {/* Header Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-zinc-50 font-display">
+          <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
             Campuses & Programs
           </h1>
-          <p className="text-xs text-neutral-500 dark:text-zinc-400 mt-0.5">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Configure regional campuses and educational programs.
           </p>
         </div>
         <div>
           <Button
-            onClick={() => activeTab === "campuses" ? handleOpenCampusDialog() : handleOpenProgramDialog()}
-            className="bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 dark:hover:bg-zinc-200 text-white dark:text-neutral-900 rounded-xl text-xs font-semibold h-10 px-4 flex items-center gap-1.5 cursor-pointer active:scale-98 shadow-sm"
+            onClick={() =>
+              activeTab === "campuses" ? handleOpenCampusDialog() : handleOpenProgramDialog()
+            }
+            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90 active:scale-98"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="h-4 w-4" />
             {activeTab === "campuses" ? "Add Campus" : "Add Program"}
           </Button>
         </div>
@@ -251,34 +261,34 @@ export default function CampusesPage() {
 
       {/* Tabs list with Search Input */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-zinc-800">
-          <TabsList className="bg-neutral-100 dark:bg-zinc-950 rounded-xl p-1 h-11 w-fit">
+        <div className="flex flex-col gap-4 border-b border-border pb-4 md:flex-row md:items-center md:justify-between">
+          <TabsList className="h-11 w-fit rounded-xl bg-muted p-1">
             <TabsTrigger
               value="campuses"
-              className="text-xs font-semibold rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:dark:bg-zinc-800 data-[state=active]:shadow-sm"
+              className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:dark:bg-muted"
             >
-              <School className="w-3.5 h-3.5 mr-2 inline" />
+              <School className="mr-2 inline h-3.5 w-3.5" />
               Campuses
             </TabsTrigger>
             <TabsTrigger
               value="programs"
-              className="text-xs font-semibold rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:dark:bg-zinc-800 data-[state=active]:shadow-sm"
+              className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:dark:bg-muted"
             >
-              <GraduationCap className="w-3.5 h-3.5 mr-2 inline" />
+              <GraduationCap className="mr-2 inline h-3.5 w-3.5" />
               Academic Programs
             </TabsTrigger>
           </TabsList>
 
           <div className="relative w-full md:w-72">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-neutral-400">
-              <Search className="w-4 h-4" />
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+              <Search className="h-4 w-4" />
             </span>
             <Input
               type="text"
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-neutral-900 dark:text-zinc-50 rounded-xl text-xs"
+              className="h-10 rounded-xl border-border bg-card pl-9 text-xs text-foreground"
             />
           </div>
         </div>
@@ -288,7 +298,10 @@ export default function CampusesPage() {
           {campusesLoading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[...Array(3)].map((_, idx) => (
-                <div key={idx} className="h-44 border border-neutral-200 dark:border-zinc-800 rounded-3xl bg-neutral-100 dark:bg-zinc-900 animate-pulse" />
+                <div
+                  key={idx}
+                  className="h-44 animate-pulse rounded-3xl border border-border bg-muted"
+                />
               ))}
             </div>
           ) : filteredCampuses.length > 0 ? (
@@ -296,77 +309,85 @@ export default function CampusesPage() {
               {filteredCampuses.map((campus) => (
                 <div
                   key={campus.id}
-                  className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-zinc-800 rounded-3xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.015)] hover:shadow-md transition-all flex flex-col justify-between group"
+                  className="group flex flex-col justify-between rounded-3xl border border-border/80 bg-card p-5 shadow-[0_4px_12px_rgba(0,0,0,0.015)] transition-all hover:shadow-md"
                 >
                   <div className="space-y-3">
-                    <div className="flex justify-between items-start">
+                    <div className="flex items-start justify-between">
                       <div className="space-y-1">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-neutral-100 dark:bg-zinc-800 text-neutral-500 dark:text-zinc-400 font-mono">
+                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] font-bold text-muted-foreground">
                           {campus.code}
                         </span>
-                        <h3 className="text-sm font-bold text-neutral-900 dark:text-zinc-50 font-display">{campus.name}</h3>
+                        <h3 className="font-display text-sm font-bold text-foreground">
+                          {campus.name}
+                        </h3>
                       </div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        campus.status === "ACTIVE"
-                          ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30"
-                          : "bg-neutral-100 dark:bg-zinc-800 text-neutral-500 dark:text-zinc-400 border border-neutral-200 dark:border-zinc-700"
-                      }`}>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          campus.status === "ACTIVE"
+                            ? "border border-success/20 bg-success/10 text-success"
+                            : "border border-border bg-muted text-muted-foreground"
+                        }`}
+                      >
                         {campus.status}
                       </span>
                     </div>
 
                     {campus.description && (
-                      <p className="text-[11px] text-neutral-400 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                      <p className="line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
                         {campus.description}
                       </p>
                     )}
 
-                    <div className="pt-2 space-y-1.5 border-t border-neutral-50 dark:border-zinc-850">
+                    <div className="space-y-1.5 border-t border-border/30 pt-2">
                       {campus.email && (
-                        <div className="flex items-center gap-2 text-[10px] text-neutral-500 dark:text-zinc-400">
-                          <Mail className="w-3.5 h-3.5 text-neutral-400" />
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                           {campus.email}
                         </div>
                       )}
                       {campus.phoneNumber && (
-                        <div className="flex items-center gap-2 text-[10px] text-neutral-500 dark:text-zinc-400">
-                          <Phone className="w-3.5 h-3.5 text-neutral-400" />
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                          <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                           {campus.phoneNumber}
                         </div>
                       )}
                       {campus.address && (
-                        <div className="flex items-center gap-2 text-[10px] text-neutral-500 dark:text-zinc-400">
-                          <MapPin className="w-3.5 h-3.5 text-neutral-400" />
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                           {campus.address}
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-neutral-50 dark:border-zinc-850">
+                  <div className="mt-5 flex items-center justify-end gap-2 border-t border-border/30 pt-3">
                     <Button
                       onClick={() => handleOpenCampusDialog(campus)}
                       variant="outline"
-                      className="p-2 h-8 rounded-lg text-neutral-500 hover:text-neutral-900 dark:hover:text-zinc-200 hover:bg-neutral-50 dark:hover:bg-zinc-800 border-neutral-200 dark:border-zinc-800"
+                      className="h-8 rounded-lg border-border p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:hover:text-foreground"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
+                      <Edit2 className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                       onClick={() => handleDeleteCampus(campus.id)}
                       variant="outline"
-                      className="p-2 h-8 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 border-rose-100 dark:border-rose-900/30"
+                      className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 border border-dashed border-neutral-200 dark:border-zinc-800 rounded-3xl bg-white dark:bg-zinc-900 space-y-2">
-              <School className="w-8 h-8 text-neutral-300 dark:text-zinc-700 mx-auto" />
-              <p className="text-xs text-neutral-500 dark:text-zinc-400 font-semibold">No campuses found</p>
-              <p className="text-[10px] text-neutral-400 dark:text-zinc-500">Try refining your search or add a new campus branch.</p>
+            <div className="space-y-2 rounded-3xl border border-dashed border-border bg-card py-12 text-center">
+              <School className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="text-xs font-semibold text-muted-foreground">
+                No campuses found
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                Try refining your search or add a new campus branch.
+              </p>
             </div>
           )}
         </TabsContent>
@@ -376,7 +397,10 @@ export default function CampusesPage() {
           {programsLoading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[...Array(3)].map((_, idx) => (
-                <div key={idx} className="h-40 border border-neutral-200 dark:border-zinc-800 rounded-3xl bg-neutral-100 dark:bg-zinc-900 animate-pulse" />
+                <div
+                  key={idx}
+                  className="h-40 animate-pulse rounded-3xl border border-border bg-muted"
+                />
               ))}
             </div>
           ) : filteredPrograms.length > 0 ? (
@@ -384,67 +408,81 @@ export default function CampusesPage() {
               {filteredPrograms.map((program) => (
                 <div
                   key={program.id}
-                  className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-zinc-800 rounded-3xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.015)] hover:shadow-md transition-all flex flex-col justify-between group"
+                  className="group flex flex-col justify-between rounded-3xl border border-border/80 bg-card p-5 shadow-[0_4px_12px_rgba(0,0,0,0.015)] transition-all hover:shadow-md"
                 >
                   <div className="space-y-3">
-                    <div className="flex justify-between items-start">
+                    <div className="flex items-start justify-between">
                       <div className="space-y-1">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-neutral-100 dark:bg-zinc-800 text-neutral-500 dark:text-zinc-400 font-mono">
+                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] font-bold text-muted-foreground">
                           {program.code}
                         </span>
-                        <h3 className="text-sm font-bold text-neutral-900 dark:text-zinc-50 font-display">{program.name}</h3>
+                        <h3 className="font-display text-sm font-bold text-foreground">
+                          {program.name}
+                        </h3>
                       </div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        program.status === "ACTIVE"
-                          ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30"
-                          : "bg-neutral-100 dark:bg-zinc-800 text-neutral-400 dark:text-zinc-500 border border-neutral-200 dark:border-zinc-750"
-                      }`}>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          program.status === "ACTIVE"
+                            ? "border border-success/20 bg-success/10 text-success"
+                            : "border border-border bg-muted text-muted-foreground"
+                        }`}
+                      >
                         {program.status}
                       </span>
                     </div>
 
                     {program.description && (
-                      <p className="text-[11px] text-neutral-400 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                      <p className="line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
                         {program.description}
                       </p>
                     )}
 
-                    <div className="pt-2 space-y-1.5 border-t border-neutral-50 dark:border-zinc-850">
-                      <div className="flex items-center gap-2 text-[10px] text-neutral-500 dark:text-zinc-400">
-                        <School className="w-3.5 h-3.5 text-neutral-400" />
-                        Campus: <span className="font-semibold text-neutral-700 dark:text-zinc-300">{program.campus?.name || "Shared"}</span>
+                    <div className="space-y-1.5 border-t border-border/30 pt-2">
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <School className="h-3.5 w-3.5 text-muted-foreground" />
+                        Campus:{" "}
+                        <span className="font-semibold text-foreground">
+                          {program.campus?.name || "Shared"}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] text-neutral-500 dark:text-zinc-400">
-                        <Clock className="w-3.5 h-3.5 text-neutral-400" />
-                        Duration: <span className="font-semibold text-neutral-700 dark:text-zinc-300">{program.durationYears} Years</span>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                        Duration:{" "}
+                        <span className="font-semibold text-foreground">
+                          {program.durationYears} Years
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-neutral-50 dark:border-zinc-850">
+                  <div className="mt-5 flex items-center justify-end gap-2 border-t border-border/30 pt-3">
                     <Button
                       onClick={() => handleOpenProgramDialog(program)}
                       variant="outline"
-                      className="p-2 h-8 rounded-lg text-neutral-500 hover:text-neutral-900 dark:hover:text-zinc-200 hover:bg-neutral-50 dark:hover:bg-zinc-800 border-neutral-200 dark:border-zinc-800"
+                      className="h-8 rounded-lg border-border p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:hover:text-foreground"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
+                      <Edit2 className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                       onClick={() => handleDeleteProgram(program.id)}
                       variant="outline"
-                      className="p-2 h-8 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 border-rose-100 dark:border-rose-900/30"
+                      className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 border border-dashed border-neutral-200 dark:border-zinc-800 rounded-3xl bg-white dark:bg-zinc-900 space-y-2">
-              <GraduationCap className="w-8 h-8 text-neutral-300 dark:text-zinc-700 mx-auto" />
-              <p className="text-xs text-neutral-500 dark:text-zinc-400 font-semibold">No programs found</p>
-              <p className="text-[10px] text-neutral-400 dark:text-zinc-500">Try refining your search or add a new academic program.</p>
+            <div className="space-y-2 rounded-3xl border border-dashed border-border bg-card py-12 text-center">
+              <GraduationCap className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="text-xs font-semibold text-muted-foreground">
+                No programs found
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                Try refining your search or add a new academic program.
+              </p>
             </div>
           )}
         </TabsContent>
@@ -452,19 +490,19 @@ export default function CampusesPage() {
 
       {/* Campus Form Dialog */}
       <Dialog open={isCampusDialogOpen} onOpenChange={setIsCampusDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 text-neutral-900 dark:text-zinc-50">
+        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 text-foreground">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-neutral-900 dark:text-zinc-50 font-display">
+            <DialogTitle className="font-display text-base font-bold text-foreground">
               {selectedCampus ? "Edit Campus" : "Add Campus Branch"}
             </DialogTitle>
-            <DialogDescription className="text-xs text-neutral-500 dark:text-zinc-400">
+            <DialogDescription className="text-xs text-muted-foreground">
               Configure parameters and contact info for this campus.
             </DialogDescription>
           </DialogHeader>
 
           {formError && (
-            <div className="text-xs font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 p-3 rounded-xl flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4" />
+            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
+              <AlertCircle className="h-4 w-4" />
               {formError}
             </div>
           )}
@@ -472,85 +510,101 @@ export default function CampusesPage() {
           <form onSubmit={handleSaveCampus} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Campus Name</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                  Campus Name
+                </Label>
                 <Input
                   value={campusName}
                   onChange={(e) => setCampusName(e.target.value)}
                   placeholder="e.g. Main Campus"
-                  className="h-10 text-xs border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50"
+                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
                   required
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Code (Unique ID)</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                  Code (Unique ID)
+                </Label>
                 <Input
                   value={campusCode}
                   onChange={(e) => setCampusCode(e.target.value)}
                   placeholder="e.g. MC-01"
-                  className="h-10 text-xs border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50"
+                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Description</Label>
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                Description
+              </Label>
               <textarea
                 value={campusDesc}
                 onChange={(e) => setCampusDesc(e.target.value)}
                 placeholder="Brief information about this campus"
-                className="w-full min-h-[70px] border border-neutral-200 dark:border-zinc-800 rounded-xl p-3 text-xs bg-white dark:bg-zinc-950 text-neutral-900 dark:text-zinc-50 focus:outline-none focus:border-neutral-900 dark:focus:border-zinc-300 focus:ring-1 focus:ring-neutral-900/10 placeholder:text-neutral-300 dark:placeholder:text-zinc-650"
+                className="min-h-[70px] w-full rounded-xl border border-border bg-card p-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Contact Email</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                  Contact Email
+                </Label>
                 <Input
                   type="email"
                   value={campusEmail}
                   onChange={(e) => setCampusEmail(e.target.value)}
                   placeholder="contact@example.edu"
-                  className="h-10 text-xs border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50"
+                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Phone Number</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                  Phone Number
+                </Label>
                 <Input
                   value={campusPhone}
                   onChange={(e) => setCampusPhone(e.target.value)}
                   placeholder="+1 (555) 019-2834"
-                  className="h-10 text-xs border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50"
+                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Address</Label>
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                Address
+              </Label>
               <Input
                 value={campusAddress}
                 onChange={(e) => setCampusAddress(e.target.value)}
                 placeholder="Street address, City, Country"
-                className="h-10 text-xs border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50"
+                className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Website URL</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                  Website URL
+                </Label>
                 <Input
                   value={campusWebsite}
                   onChange={(e) => setCampusWebsite(e.target.value)}
                   placeholder="https://example.edu"
-                  className="h-10 text-xs border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50"
+                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Status</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                  Status
+                </Label>
                 <select
                   value={campusStatus}
                   onChange={(e: any) => setCampusStatus(e.target.value)}
-                  className="w-full h-10 border border-neutral-200 dark:border-zinc-800 rounded-xl px-3 text-xs bg-white dark:bg-zinc-950 text-neutral-900 dark:text-zinc-50 focus:outline-none focus:border-neutral-900 dark:focus:border-zinc-300 focus:ring-1 focus:ring-neutral-900/10"
+                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
                 >
                   <option value="ACTIVE">ACTIVE</option>
                   <option value="INACTIVE">INACTIVE</option>
@@ -558,19 +612,19 @@ export default function CampusesPage() {
               </div>
             </div>
 
-            <DialogFooter className="pt-4 flex items-center justify-end gap-2 border-t border-neutral-100 dark:border-zinc-800">
+            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsCampusDialogOpen(false)}
-                className="h-10 text-xs font-semibold rounded-xl border-neutral-200 dark:border-zinc-800 text-neutral-700 dark:text-zinc-300"
+                className="h-10 rounded-xl border-border text-xs font-semibold text-foreground"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={creatingCampus || updatingCampus}
-                className="bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 dark:hover:bg-zinc-200 text-white dark:text-neutral-900 rounded-xl text-xs font-semibold h-10 px-4 flex items-center gap-1 cursor-pointer"
+                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
               >
                 {creatingCampus || updatingCampus ? "Saving..." : "Save Campus"}
               </Button>
@@ -581,19 +635,19 @@ export default function CampusesPage() {
 
       {/* Program Form Dialog */}
       <Dialog open={isProgramDialogOpen} onOpenChange={setIsProgramDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 text-neutral-900 dark:text-zinc-50">
+        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 text-foreground">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-neutral-900 dark:text-zinc-50 font-display">
+            <DialogTitle className="font-display text-base font-bold text-foreground">
               {selectedProgram ? "Edit Program" : "Add Academic Program"}
             </DialogTitle>
-            <DialogDescription className="text-xs text-neutral-500 dark:text-zinc-400">
+            <DialogDescription className="text-xs text-muted-foreground">
               Create and associate a curriculum/degree course.
             </DialogDescription>
           </DialogHeader>
 
           {formError && (
-            <div className="text-xs font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 p-3 rounded-xl flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4" />
+            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
+              <AlertCircle className="h-4 w-4" />
               {formError}
             </div>
           )}
@@ -601,93 +655,109 @@ export default function CampusesPage() {
           <form onSubmit={handleSaveProgram} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Program Name</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                  Program Name
+                </Label>
                 <Input
                   value={programName}
                   onChange={(e) => setProgramName(e.target.value)}
                   placeholder="e.g. Computer Science"
-                  className="h-10 text-xs border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50"
+                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
                   required
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Program Code</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                  Program Code
+                </Label>
                 <Input
                   value={programCode}
                   onChange={(e) => setProgramCode(e.target.value)}
                   placeholder="e.g. CS-BS"
-                  className="h-10 text-xs border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50"
+                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Description</Label>
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                Description
+              </Label>
               <textarea
                 value={programDesc}
                 onChange={(e) => setProgramDesc(e.target.value)}
                 placeholder="Degree program objectives and details"
-                className="w-full min-h-[70px] border border-neutral-200 dark:border-zinc-800 rounded-xl p-3 text-xs bg-white dark:bg-zinc-950 text-neutral-900 dark:text-zinc-50 focus:outline-none focus:border-neutral-900 dark:focus:border-zinc-300 focus:ring-1 focus:ring-neutral-900/10 placeholder:text-neutral-300 dark:placeholder:text-zinc-655"
+                className="min-h-[70px] w-full rounded-xl border border-border bg-card p-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Campus Branch</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                  Campus Branch
+                </Label>
                 <select
                   value={programCampusId}
                   onChange={(e) => setProgramCampusId(e.target.value)}
-                  className="w-full h-10 border border-neutral-200 dark:border-zinc-800 rounded-xl px-3 text-xs bg-white dark:bg-zinc-950 text-neutral-900 dark:text-zinc-50 focus:outline-none focus:border-neutral-900 dark:focus:border-zinc-300 focus:ring-1 focus:ring-neutral-900/10"
+                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
                   required
                 >
-                  <option value="" disabled>Select Campus</option>
-                  {campusesData?.items?.filter(c => c.status === "ACTIVE").map((campus) => (
-                    <option key={campus.id} value={campus.id}>
-                      {campus.name} ({campus.code})
-                    </option>
-                  ))}
+                  <option value="" disabled>
+                    Select Campus
+                  </option>
+                  {campusesData?.items
+                    ?.filter((c) => c.status === "ACTIVE")
+                    .map((campus) => (
+                      <option key={campus.id} value={campus.id}>
+                        {campus.name} ({campus.code})
+                      </option>
+                    ))}
                 </select>
               </div>
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Duration (Years)</Label>
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                  Duration (Years)
+                </Label>
                 <Input
                   type="number"
                   min="1"
                   max="7"
                   value={programDuration}
                   onChange={(e) => setProgramDuration(e.target.value)}
-                  className="h-10 text-xs border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50 text-neutral-900 dark:text-zinc-50"
+                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">Status</Label>
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
+                Status
+              </Label>
               <select
                 value={programStatus}
                 onChange={(e: any) => setProgramStatus(e.target.value)}
-                className="w-full h-10 border border-neutral-200 dark:border-zinc-800 rounded-xl px-3 text-xs bg-white dark:bg-zinc-950 text-neutral-900 dark:text-zinc-50 focus:outline-none focus:border-neutral-900 dark:focus:border-zinc-300 focus:ring-1 focus:ring-neutral-900/10"
+                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
               >
                 <option value="ACTIVE">ACTIVE</option>
                 <option value="INACTIVE">INACTIVE</option>
               </select>
             </div>
 
-            <DialogFooter className="pt-4 flex items-center justify-end gap-2 border-t border-neutral-100 dark:border-zinc-800">
+            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsProgramDialogOpen(false)}
-                className="h-10 text-xs font-semibold rounded-xl border-neutral-200 dark:border-zinc-800 text-neutral-700 dark:text-zinc-300"
+                className="h-10 rounded-xl border-border text-xs font-semibold text-foreground"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={creatingProgram || updatingProgram}
-                className="bg-neutral-900 dark:bg-zinc-100 hover:bg-neutral-800 dark:hover:bg-zinc-200 text-white dark:text-neutral-900 rounded-xl text-xs font-semibold h-10 px-4 flex items-center gap-1 cursor-pointer"
+                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
               >
                 {creatingProgram || updatingProgram ? "Saving..." : "Save Program"}
               </Button>
@@ -695,7 +765,6 @@ export default function CampusesPage() {
           </form>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }

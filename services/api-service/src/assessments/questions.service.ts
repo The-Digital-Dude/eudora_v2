@@ -95,6 +95,10 @@ export class QuestionsService {
           ['draft', 'active', 'archived'],
           'status',
         ),
+        widgetType: input.widgetType ?? null,
+        widgetConfig: input.widgetConfig ?? null,
+        explanation: emptyToNull((input as any).explanation),
+        hints: (input as any).hints ?? [],
         ...(options.length > 0 ? { options: { create: options } } : {}),
       } as any,
       select: questionSelect,
@@ -172,6 +176,18 @@ export class QuestionsService {
                   'status',
                 ),
               }
+            : {}),
+          ...(input.widgetType !== undefined
+            ? { widgetType: input.widgetType }
+            : {}),
+          ...(input.widgetConfig !== undefined
+            ? { widgetConfig: input.widgetConfig }
+            : {}),
+          ...((input as any).explanation !== undefined
+            ? { explanation: emptyToNull((input as any).explanation) }
+            : {}),
+          ...((input as any).hints !== undefined
+            ? { hints: (input as any).hints }
             : {}),
           ...(options ? { options: { create: options } } : {}),
         } as any,

@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
+import { getJwtSecret } from './utils/jwt-config';
 
 @Module({
   imports: [
@@ -15,9 +16,7 @@ import { PrismaModule } from '../prisma/prisma.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret:
-          configService.get<string>('JWT_SECRET') ||
-          'default-jwt-secret-key-12345',
+        secret: getJwtSecret(configService),
         signOptions: {
           expiresIn: (configService.get<string>('JWT_EXPIRATION') ||
             '1d') as any,

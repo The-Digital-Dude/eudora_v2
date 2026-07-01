@@ -36,6 +36,7 @@ import { MessagingModule } from './messaging/messaging.module';
 import { ParentModule } from './parent/parent.module';
 import { ApiEnvelopeInterceptor } from './common/http/api-envelope.interceptor';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
+import { AuditModule } from './common/audit/audit.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
       envFilePath: '.env',
     }),
     PrismaModule,
+    AuditModule,
     HealthModule,
     AuthModule,
     UsersModule,

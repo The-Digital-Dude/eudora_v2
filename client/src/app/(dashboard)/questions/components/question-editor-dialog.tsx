@@ -352,12 +352,12 @@ export function QuestionEditorDialog({
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Bind Interactive Widget (Optional)
             </Label>
-            <Select value={widgetType} onValueChange={handleWidgetTypeChange}>
+            <Select value={widgetType || "none"} onValueChange={(val) => handleWidgetTypeChange(val === "none" ? "" : val)}>
               <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
                 <SelectValue placeholder="None (Standard Question)" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                <SelectItem value="">None (Standard Question)</SelectItem>
+                <SelectItem value="none">None (Standard Question)</SelectItem>
                 <SelectItem value="STANDARD_MCQ">MCQ Widget</SelectItem>
                 <SelectItem value="SLIDER_MANIPULATIVE">Slider Widget</SelectItem>
                 <SelectItem value="DRAG_AND_DROP_LABELS">Drag and Drop Labels</SelectItem>

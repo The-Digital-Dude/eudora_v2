@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, CalendarCheck } from "lucide-react";
@@ -58,45 +58,45 @@ export function AttendanceCalendar({ records }: AttendanceCalendarProps) {
   // Color mapping
   const statusConfig = {
     PRESENT: {
-      bg: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/10",
-      dot: "bg-emerald-500",
+      bg: "bg-success/10 text-success border-success/20",
+      dot: "bg-success",
     },
     ABSENT: {
-      bg: "bg-rose-500/10 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border-rose-500/20 dark:border-rose-500/10",
-      dot: "bg-rose-500",
+      bg: "bg-destructive/10 text-destructive border-destructive/20",
+      dot: "bg-destructive",
     },
     LATE: {
-      bg: "bg-amber-500/10 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400 border-amber-500/20 dark:border-amber-500/10",
-      dot: "bg-amber-500",
+      bg: "bg-warning/10 text-warning border-warning/20 dark:border-warning/10",
+      dot: "bg-warning",
     },
     EXCUSED: {
-      bg: "bg-sky-500/10 text-sky-600 dark:bg-sky-950/20 dark:text-sky-400 border-sky-500/20 dark:border-sky-500/10",
-      dot: "bg-sky-500",
+      bg: "bg-primary/10 text-primary border-primary/20",
+      dot: "bg-primary",
     },
   };
 
   const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="rounded-3xl border border-zinc-200/50 bg-white/40 p-6 shadow-xl shadow-zinc-200/5 dark:border-zinc-800/50 dark:bg-zinc-950/20 backdrop-blur-md flex flex-col gap-6">
-      <div className="flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40 pb-4">
-        <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 text-base">
-          <CalendarCheck className="h-5 w-5 text-indigo-500" />
+    <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5/50/20 backdrop-blur-md flex flex-col gap-6">
+      <div className="flex items-center justify-between border-b border-border/50/40 pb-4">
+        <h3 className="font-semibold text-foreground flex items-center gap-2 text-base">
+          <CalendarCheck className="h-5 w-5 text-primary" />
           Attendance Calendar
         </h3>
         <div className="flex items-center gap-2">
           <button
             onClick={handlePrevMonth}
-            className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-600 dark:text-zinc-400 cursor-pointer"
+            className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-muted text-muted-foreground cursor-pointer"
           >
             <ChevronLeft className="h-4. w-4" />
           </button>
-          <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 min-w-[100px] text-center">
+          <span className="text-xs font-bold text-foreground min-w-[100px] text-center">
             {format(currentMonth, "MMMM yyyy")}
           </span>
           <button
             onClick={handleNextMonth}
-            className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-600 dark:text-zinc-400 cursor-pointer"
+            className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-muted text-muted-foreground cursor-pointer"
           >
             <ChevronRight className="h-4. w-4" />
           </button>
@@ -106,7 +106,7 @@ export function AttendanceCalendar({ records }: AttendanceCalendarProps) {
       {/* Grid view */}
       <div className="grid grid-cols-7 gap-2">
         {weekdays.map((d) => (
-          <div key={d} className="text-center text-[10px] font-bold tracking-wider text-zinc-400 dark:text-zinc-500 uppercase py-1">
+          <div key={d} className="text-center text-[10px] font-bold tracking-wider text-muted-foreground uppercase py-1">
             {d}
           </div>
         ))}
@@ -127,7 +127,7 @@ export function AttendanceCalendar({ records }: AttendanceCalendarProps) {
               className={`aspect-square flex flex-col items-center justify-between p-2 rounded-2xl border text-xs font-bold transition-all relative ${
                 config
                   ? config.bg
-                  : "bg-zinc-50 border-zinc-100 text-zinc-500 dark:bg-zinc-900/10 dark:border-zinc-800/10 dark:text-zinc-600"
+                  : "bg-muted/50 border-border text-foreground0/10/10"
               }`}
               title={record && record.remarks ? `${record.status}: ${record.remarks}` : record?.status || "Unrecorded"}
             >
@@ -141,26 +141,26 @@ export function AttendanceCalendar({ records }: AttendanceCalendarProps) {
       </div>
 
       {/* Legend & Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-zinc-200/50 dark:border-zinc-800/40 pt-4 text-xs font-semibold">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-border/50/40 pt-4 text-xs font-semibold">
         <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-md bg-emerald-500/25 border border-emerald-500/30" />
-          <span className="text-zinc-500 dark:text-zinc-400">Present:</span>
-          <span className="text-zinc-800 dark:text-zinc-200">{stats.PRESENT}</span>
+          <div className="h-3 w-3 rounded-md bg-success/25 border border-success/30" />
+          <span className="text-muted-foreground">Present:</span>
+          <span className="text-foreground">{stats.PRESENT}</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-md bg-rose-500/25 border border-rose-500/30" />
-          <span className="text-zinc-500 dark:text-zinc-400">Absent:</span>
-          <span className="text-zinc-800 dark:text-zinc-200">{stats.ABSENT}</span>
+          <div className="h-3 w-3 rounded-md bg-destructive/25 border border-destructive/30" />
+          <span className="text-muted-foreground">Absent:</span>
+          <span className="text-foreground">{stats.ABSENT}</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-md bg-amber-500/25 border border-amber-500/30" />
-          <span className="text-zinc-500 dark:text-zinc-400">Late:</span>
-          <span className="text-zinc-800 dark:text-zinc-200">{stats.LATE}</span>
+          <div className="h-3 w-3 rounded-md bg-warning/25 border border-warning/30" />
+          <span className="text-muted-foreground">Late:</span>
+          <span className="text-foreground">{stats.LATE}</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-md bg-sky-500/25 border border-sky-500/30" />
-          <span className="text-zinc-500 dark:text-zinc-400">Excused:</span>
-          <span className="text-zinc-800 dark:text-zinc-200">{stats.EXCUSED}</span>
+          <div className="h-3 w-3 rounded-md bg-primary/25 border border-primary/30" />
+          <span className="text-muted-foreground">Excused:</span>
+          <span className="text-foreground">{stats.EXCUSED}</span>
         </div>
       </div>
     </div>

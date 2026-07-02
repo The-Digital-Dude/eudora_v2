@@ -112,10 +112,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-4 dark:bg-zinc-950">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
         <div className="flex max-w-sm flex-col items-center gap-4 text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-neutral-900 dark:text-neutral-50" />
-          <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
+          <p className="text-sm font-medium text-muted-foreground">
             Checking your session...
           </p>
         </div>
@@ -125,16 +125,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!hasAuthorizedRole || !isRouteAuthorized) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 dark:bg-zinc-950">
-        <div className="w-full max-w-md space-y-6 rounded-3xl border border-neutral-200 bg-white p-8 text-center shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-rose-100 bg-rose-50 text-rose-500 dark:border-rose-900/50 dark:bg-rose-950/20">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
+        <div className="w-full max-w-md space-y-6 rounded-3xl border border-border bg-card p-8 text-center shadow-lg">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/10 text-destructive">
             <ShieldAlert className="h-6 w-6" />
           </div>
           <div className="space-y-2">
-            <h1 className="font-display text-xl font-bold text-neutral-900 dark:text-neutral-50">
+            <h1 className="font-display text-xl font-bold text-card-foreground">
               Access Denied
             </h1>
-            <p className="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs leading-relaxed text-muted-foreground">
               You do not have permission to access this page. Please contact your administrator if
               you believe this is an error.
             </p>
@@ -149,7 +149,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Button>
             <Button
               onClick={handleLogout}
-              className="h-11 w-full cursor-pointer rounded-xl bg-neutral-900 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-zinc-100 dark:text-neutral-900 dark:hover:bg-zinc-200"
+              className="h-11 w-full cursor-pointer rounded-xl text-xs font-semibold"
             >
               Sign Out
             </Button>
@@ -177,13 +177,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         user={user}
         onLogout={handleLogout}
       />
-      <div className="flex min-h-[calc(100vh-var(--header-height)-75px)] flex-1 flex-col">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex min-h-[calc(100vh-var(--header-height)-75px)] flex-1 flex-col outline-none"
+      >
         <div className="flex flex-1 flex-col gap-2">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-6 md:gap-6 lg:px-6">
             {children}
           </div>
         </div>
-      </div>
+      </main>
       <SiteFooter />
     </SidebarInset>
   );
@@ -199,6 +203,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
       className={config.collapsible === "none" ? "sidebar-none-mode" : ""}
     >
+      {/* Skip to main content — screen reader + keyboard navigation */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground focus:outline-none"
+      >
+        Skip to content
+      </a>
       {config.side === "left" ? (
         <>
           {sidebarContent}

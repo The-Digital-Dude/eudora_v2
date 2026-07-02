@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRive } from "@rive-app/react-canvas";
 import React from "react";
@@ -40,19 +40,19 @@ export function LessonCompleteModal({
       )}
 
       {/* Modal Card */}
-      <div className="border-border bg-card animate-fade-in-up relative flex w-full max-w-md flex-col items-center rounded-3xl border p-8 text-center shadow-2xl shadow-violet-500/5 backdrop-blur-xl">
+      <div className="border-border bg-card animate-fade-in-up relative flex w-full max-w-md flex-col items-center rounded-3xl border p-8 text-center shadow-2xl shadow-primary/5 backdrop-blur-xl">
         {/* Glowing aura */}
-        <div className="absolute -top-10 left-1/2 -z-10 h-40 w-40 -translate-x-1/2 rounded-full bg-violet-600/30 blur-3xl" />
+        <div className="absolute -top-10 left-1/2 -z-10 h-40 w-40 -translate-x-1/2 rounded-full bg-primary/30 blur-3xl" />
 
         {/* Mascot companion celebrating */}
         <div className="relative mb-4">
           <RiveClioMascot state="celebrate" size={140} />
           {/* Animated sparkles */}
-          <div className="absolute -top-2 -left-2 h-4 w-4 animate-ping rounded-full bg-amber-400" />
-          <div className="absolute -right-2 -bottom-2 h-3 w-3 animate-ping rounded-full bg-fuchsia-400" />
+          <div className="absolute -top-2 -left-2 h-4 w-4 animate-ping rounded-full bg-warning" />
+          <div className="absolute -right-2 -bottom-2 h-3 w-3 animate-ping rounded-full bg-primary" />
         </div>
 
-        <span className="mb-1 text-xs font-bold tracking-widest text-violet-600 uppercase dark:text-violet-400">
+        <span className="mb-1 text-xs font-bold tracking-widest text-primary uppercase">
           Lesson Complete!
         </span>
         <h2 className="text-foreground mb-6 text-xl leading-tight font-black md:text-2xl">
@@ -66,13 +66,13 @@ export function LessonCompleteModal({
             <span className="text-muted-foreground text-[10px] font-bold tracking-wide uppercase">
               XP Earned
             </span>
-            <span className="mt-1 flex items-center gap-1 text-2xl font-black text-amber-500 dark:text-amber-400">
+            <span className="mt-1 flex items-center gap-1 text-2xl font-black text-warning">
               +{totalXp}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                className="h-5 w-5 text-amber-500 dark:text-amber-400"
+                className="h-5 w-5 text-warning"
               >
                 <path
                   fillRule="evenodd"
@@ -105,7 +105,7 @@ export function LessonCompleteModal({
           {onNextLesson && (
             <button
               onClick={onNextLesson}
-              className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3.5 text-xs font-bold text-white shadow-lg shadow-violet-500/20 transition-all duration-150 hover:opacity-90 active:scale-95"
+              className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3.5 text-xs font-bold text-white shadow-lg shadow-primary/20 transition-all duration-150 hover:opacity-90 active:scale-95"
             >
               Continue to Next Lesson
             </button>

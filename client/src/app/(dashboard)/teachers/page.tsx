@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   AlertCircle,
@@ -240,16 +240,16 @@ export default function TeachersPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-xl font-bold tracking-tight text-neutral-900">
+          <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
             Teachers Registry
           </h1>
-          <p className="mt-0.5 text-xs text-neutral-500">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Administer teacher profiles, academic specializations, and homeroom section assignments.
           </p>
         </div>
         <Button
           onClick={() => handleOpenProfileDialog()}
-          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white shadow-sm hover:bg-neutral-800"
+          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90"
         >
           <Plus className="h-4 w-4" /> Add Teacher
         </Button>
@@ -257,58 +257,58 @@ export default function TeachersPage() {
 
       {/* Metrics Bar */}
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="space-y-2 rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="flex items-center justify-between text-neutral-400">
+        <Card className="space-y-2 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="font-display text-[10px] font-bold tracking-wider uppercase">
               Total Teachers
             </span>
-            <Users2 className="h-4 w-4 text-neutral-400" />
+            <Users2 className="h-4 w-4 text-muted-foreground" />
           </div>
-          <p className="font-display text-2xl font-bold text-neutral-900">
+          <p className="font-display text-2xl font-bold text-foreground">
             {teachersLoading ? "..." : totalCount}
           </p>
-          <p className="text-[10px] text-neutral-400">Registered staff profiles</p>
+          <p className="text-[10px] text-muted-foreground">Registered staff profiles</p>
         </Card>
 
-        <Card className="space-y-2 rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="flex items-center justify-between text-neutral-400">
+        <Card className="space-y-2 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="font-display text-[10px] font-bold tracking-wider uppercase">
               Active Staff
             </span>
-            <Users2 className="h-4 w-4 text-emerald-500" />
+            <Users2 className="h-4 w-4 text-success" />
           </div>
-          <p className="font-display text-2xl font-bold text-neutral-900">
+          <p className="font-display text-2xl font-bold text-foreground">
             {teachersLoading ? "..." : activeCount}
           </p>
-          <p className="text-[10px] font-semibold text-emerald-600">
+          <p className="text-[10px] font-semibold text-success">
             Currently teaching active classes
           </p>
         </Card>
 
-        <Card className="space-y-2 rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="flex items-center justify-between text-neutral-400">
+        <Card className="space-y-2 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="font-display text-[10px] font-bold tracking-wider uppercase">
               On Leave
             </span>
-            <Users2 className="h-4 w-4 text-amber-500" />
+            <Users2 className="h-4 w-4 text-warning" />
           </div>
-          <p className="font-display text-2xl font-bold text-neutral-900">
+          <p className="font-display text-2xl font-bold text-foreground">
             {teachersLoading ? "..." : leaveCount}
           </p>
-          <p className="text-[10px] text-neutral-400">Temporary administrative leave</p>
+          <p className="text-[10px] text-muted-foreground">Temporary administrative leave</p>
         </Card>
       </div>
 
       {/* Teachers Directory Card */}
-      <Card className="space-y-4 rounded-3xl border border-neutral-200 bg-white p-6">
+      <Card className="space-y-4 rounded-3xl border border-border bg-card p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="font-display text-sm font-bold text-neutral-900">Teachers Directory</h2>
+          <h2 className="font-display text-sm font-bold text-foreground">Teachers Directory</h2>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 cursor-pointer rounded-xl border border-neutral-200 bg-white px-3 text-xs text-neutral-700 focus:outline-none"
+              className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
             >
               <option value="all">All Statuses</option>
               <option value="ACTIVE">ACTIVE</option>
@@ -317,7 +317,7 @@ export default function TeachersPage() {
             </select>
 
             <div className="relative w-full sm:w-64">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-neutral-400">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
                 <Search className="h-3.5 w-3.5" />
               </span>
               <Input
@@ -333,21 +333,21 @@ export default function TeachersPage() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-neutral-100">
-                <th className="pb-3 text-[10px] font-bold text-neutral-400 uppercase">
+              <tr className="border-b border-border">
+                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">
                   Teacher Profile
                 </th>
-                <th className="pb-3 text-[10px] font-bold text-neutral-400 uppercase">
+                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">
                   Employee Code
                 </th>
-                <th className="pb-3 text-[10px] font-bold text-neutral-400 uppercase">
+                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">
                   Specialization
                 </th>
-                <th className="pb-3 text-[10px] font-bold text-neutral-400 uppercase">Status</th>
-                <th className="pb-3 text-[10px] font-bold text-neutral-400 uppercase">
+                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">Status</th>
+                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">
                   Assigned Sections
                 </th>
-                <th className="pb-3 text-right text-[10px] font-bold text-neutral-400 uppercase">
+                <th className="pb-3 text-right text-[10px] font-bold text-muted-foreground uppercase">
                   Actions
                 </th>
               </tr>
@@ -355,24 +355,24 @@ export default function TeachersPage() {
             <tbody>
               {teachersLoading ? (
                 [...Array(3)].map((_, i) => (
-                  <tr key={i} className="border-b border-neutral-50">
+                  <tr key={i} className="border-b border-border/30">
                     <td className="py-4">
-                      <div className="h-4 w-32 animate-pulse rounded bg-neutral-100" />
+                      <div className="h-4 w-32 animate-pulse rounded bg-muted" />
                     </td>
                     <td className="py-4">
-                      <div className="h-4 w-12 animate-pulse rounded bg-neutral-100" />
+                      <div className="h-4 w-12 animate-pulse rounded bg-muted" />
                     </td>
                     <td className="py-4">
-                      <div className="h-4 w-20 animate-pulse rounded bg-neutral-100" />
+                      <div className="h-4 w-20 animate-pulse rounded bg-muted" />
                     </td>
                     <td className="py-4">
-                      <div className="h-4 w-16 animate-pulse rounded bg-neutral-100" />
+                      <div className="h-4 w-16 animate-pulse rounded bg-muted" />
                     </td>
                     <td className="py-4">
-                      <div className="h-4 w-24 animate-pulse rounded bg-neutral-100" />
+                      <div className="h-4 w-24 animate-pulse rounded bg-muted" />
                     </td>
                     <td className="py-4">
-                      <div className="ml-auto h-4 w-20 animate-pulse rounded bg-neutral-100" />
+                      <div className="ml-auto h-4 w-20 animate-pulse rounded bg-muted" />
                     </td>
                   </tr>
                 ))
@@ -390,44 +390,44 @@ export default function TeachersPage() {
                   return (
                     <tr
                       key={teacher.id}
-                      className="border-b border-neutral-50 transition-colors last:border-0 hover:bg-neutral-50/50"
+                      className="border-b border-border/30 transition-colors last:border-0 hover:bg-muted/50"
                     >
                       <td className="py-4">
                         <div className="flex items-center gap-3">
-                          <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-xs font-bold text-white">
+                          <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-foreground text-xs font-bold text-white">
                             {initials}
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-neutral-900">
+                            <p className="text-xs font-semibold text-foreground">
                               {teacher.fullName}
                             </p>
-                            <p className="mt-0.5 flex items-center gap-0.5 text-[10px] text-neutral-400">
-                              <Mail className="h-3 w-3 text-neutral-300" /> {teacher.user?.email}
+                            <p className="mt-0.5 flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                              <Mail className="h-3 w-3 text-muted-foreground" /> {teacher.user?.email}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 font-mono text-xs text-neutral-500">
+                      <td className="py-4 font-mono text-xs text-muted-foreground">
                         {teacher.employeeCode || "N/A"}
                       </td>
-                      <td className="py-4 text-xs font-medium text-neutral-700">
+                      <td className="py-4 text-xs font-medium text-foreground">
                         {teacher.specialization ? (
-                          <span className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[10px] font-semibold text-neutral-800">
-                            <Briefcase className="h-3 w-3 text-neutral-400" />{" "}
+                          <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-semibold text-foreground">
+                            <Briefcase className="h-3 w-3 text-muted-foreground" />{" "}
                             {teacher.specialization}
                           </span>
                         ) : (
-                          <span className="text-neutral-400">Not specified</span>
+                          <span className="text-muted-foreground">Not specified</span>
                         )}
                       </td>
                       <td className="py-4 text-xs">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
                             teacher.status === "ACTIVE"
-                              ? "border border-emerald-100 bg-emerald-50 text-emerald-700"
+                              ? "border border-success/20 bg-success/10 text-success"
                               : teacher.status === "ON_LEAVE"
-                                ? "border border-amber-100 bg-amber-50 text-amber-700"
-                                : "border border-neutral-200 bg-neutral-100 text-neutral-600"
+                                ? "border border-warning/20 bg-warning/10 text-warning"
+                                : "border border-border bg-muted text-muted-foreground"
                           }`}
                         >
                           {teacher.status}
@@ -439,13 +439,13 @@ export default function TeachersPage() {
                             teacher.classAssignments.map((a: any) => (
                               <span
                                 key={a.classSectionId}
-                                className="inline-flex items-center rounded-md border border-emerald-100/50 bg-emerald-50/50 px-2 py-0.5 text-[9px] font-semibold text-emerald-800"
+                                className="inline-flex items-center rounded-md border border-success/10 bg-success/10 px-2 py-0.5 text-[9px] font-semibold text-success"
                               >
                                 {a.classSection?.name} ({a.role})
                               </span>
                             ))
                           ) : (
-                            <span className="text-[9px] font-medium text-neutral-400">
+                            <span className="text-[9px] font-medium text-muted-foreground">
                               Unassigned
                             </span>
                           )}
@@ -456,21 +456,21 @@ export default function TeachersPage() {
                           <Button
                             onClick={() => handleOpenClassDialog(teacher)}
                             variant="outline"
-                            className="h-8 rounded-lg px-2.5 text-xs font-semibold text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+                            className="h-8 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                           >
                             Assign Sections
                           </Button>
                           <Button
                             onClick={() => handleOpenProfileDialog(teacher)}
                             variant="outline"
-                            className="h-8 rounded-lg p-2 text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+                            className="h-8 rounded-lg p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
                           </Button>
                           <Button
                             onClick={() => handleDeleteProfile(teacher.id)}
                             variant="outline"
-                            className="h-8 rounded-lg border-rose-100 p-2 text-rose-500 hover:bg-rose-50 hover:text-rose-700"
+                            className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -481,7 +481,7 @@ export default function TeachersPage() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-xs font-medium text-neutral-400">
+                  <td colSpan={6} className="py-8 text-center text-xs font-medium text-muted-foreground">
                     No teacher profiles listed. Add a new teacher profile to get started.
                   </td>
                 </tr>
@@ -493,12 +493,12 @@ export default function TeachersPage() {
 
       {/* Profile Create / Edit Dialog */}
       <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl border border-neutral-200 bg-white p-6">
+        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6">
           <DialogHeader>
-            <DialogTitle className="font-display text-base font-bold text-neutral-900">
+            <DialogTitle className="font-display text-base font-bold text-foreground">
               {selectedTeacher ? "Edit Teacher Profile" : "Register Teacher Profile"}
             </DialogTitle>
-            <DialogDescription className="text-xs text-neutral-500">
+            <DialogDescription className="text-xs text-muted-foreground">
               {selectedTeacher
                 ? "Update profile details for this teacher."
                 : "Create user account and profile demographics for the teacher."}
@@ -506,7 +506,7 @@ export default function TeachersPage() {
           </DialogHeader>
 
           {formError && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-rose-100 bg-rose-50 p-3 text-xs font-semibold text-rose-500">
+            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
               <AlertCircle className="h-4 w-4" />
               {formError}
             </div>
@@ -516,7 +516,7 @@ export default function TeachersPage() {
             {!selectedTeacher ? (
               <>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                  <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                     Email Address
                   </Label>
                   <Input
@@ -524,32 +524,32 @@ export default function TeachersPage() {
                     value={profileEmail}
                     onChange={(e) => setProfileEmail(e.target.value)}
                     placeholder="prof.turing@eudora.app"
-                    className="h-10 border-neutral-200 text-xs"
+                    className="h-10 border-border text-xs"
                     required
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                    <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                       First Name
                     </Label>
                     <Input
                       value={profileFirstName}
                       onChange={(e) => setProfileFirstName(e.target.value)}
                       placeholder="Alan"
-                      className="h-10 border-neutral-200 text-xs"
+                      className="h-10 border-border text-xs"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                    <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                       Last Name
                     </Label>
                     <Input
                       value={profileLastName}
                       onChange={(e) => setProfileLastName(e.target.value)}
                       placeholder="Turing"
-                      className="h-10 border-neutral-200 text-xs"
+                      className="h-10 border-border text-xs"
                       required
                     />
                   </div>
@@ -557,13 +557,13 @@ export default function TeachersPage() {
               </>
             ) : (
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Full Name
                 </Label>
                 <Input
                   value={profileFullName}
                   onChange={(e) => setProfileFullName(e.target.value)}
-                  className="h-10 border-neutral-200 text-xs"
+                  className="h-10 border-border text-xs"
                   required
                 />
               </div>
@@ -571,49 +571,49 @@ export default function TeachersPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Employee Code
                 </Label>
                 <Input
                   value={profileEmployeeCode}
                   onChange={(e) => setProfileEmployeeCode(e.target.value)}
                   placeholder="EMP-012"
-                  className="h-10 border-neutral-200 text-xs"
+                  className="h-10 border-border text-xs"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Contact Number
                 </Label>
                 <Input
                   value={profilePhone}
                   onChange={(e) => setProfilePhone(e.target.value)}
                   placeholder="(555) 019-3832"
-                  className="h-10 border-neutral-200 text-xs"
+                  className="h-10 border-border text-xs"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Academic Specialization
               </Label>
               <Input
                 value={profileSpecialization}
                 onChange={(e) => setProfileSpecialization(e.target.value)}
                 placeholder="Computer Science, Calculus, Chemistry"
-                className="h-10 border-neutral-200 text-xs"
+                className="h-10 border-border text-xs"
               />
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Status
               </Label>
               <select
                 value={profileStatus}
                 onChange={(e: any) => setProfileStatus(e.target.value)}
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs text-neutral-900 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900/10 focus:outline-none"
+                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
               >
                 <option value="ACTIVE">ACTIVE</option>
                 <option value="INACTIVE">INACTIVE</option>
@@ -621,7 +621,7 @@ export default function TeachersPage() {
               </select>
             </div>
 
-            <DialogFooter className="flex items-center justify-end gap-2 border-t border-neutral-100 pt-4">
+            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -633,7 +633,7 @@ export default function TeachersPage() {
               <Button
                 type="submit"
                 disabled={creatingProfile || updatingProfile}
-                className="h-10 cursor-pointer rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white hover:bg-neutral-800"
+                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
               >
                 {creatingProfile || updatingProfile ? "Saving..." : "Save Profile"}
               </Button>
@@ -644,18 +644,18 @@ export default function TeachersPage() {
 
       {/* Class Section Assignment Dialog */}
       <Dialog open={isClassDialogOpen} onOpenChange={setIsClassDialogOpen}>
-        <DialogContent className="max-w-lg rounded-2xl border border-neutral-200 bg-white p-6">
+        <DialogContent className="max-w-lg rounded-2xl border border-border bg-card p-6">
           <DialogHeader>
-            <DialogTitle className="font-display text-base font-bold text-neutral-900">
+            <DialogTitle className="font-display text-base font-bold text-foreground">
               Section Allocations: {assignmentTeacher?.fullName}
             </DialogTitle>
-            <DialogDescription className="text-xs text-neutral-500">
+            <DialogDescription className="text-xs text-muted-foreground">
               Assign or revoke section placements for class homerooms.
             </DialogDescription>
           </DialogHeader>
 
           {assignmentError && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-rose-100 bg-rose-50 p-3 text-xs font-semibold text-rose-500">
+            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
               <AlertCircle className="h-4 w-4" />
               {assignmentError}
             </div>
@@ -664,16 +664,16 @@ export default function TeachersPage() {
           <div className="space-y-6">
             <form
               onSubmit={handleAddAssignment}
-              className="grid grid-cols-3 items-end gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/50 p-4"
+              className="grid grid-cols-3 items-end gap-3 rounded-2xl border border-border bg-muted/50 p-4"
             >
               <div className="col-span-1 space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Class Section
                 </Label>
                 <select
                   value={assignSectionId}
                   onChange={(e) => setAssignSectionId(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs text-neutral-900 focus:outline-none"
+                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
                   required
                 >
                   <option value="" disabled>
@@ -690,13 +690,13 @@ export default function TeachersPage() {
               </div>
 
               <div className="col-span-1 space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Teacher Role
                 </Label>
                 <select
                   value={assignRole}
                   onChange={(e) => setAssignRole(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs text-neutral-900 focus:outline-none"
+                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
                   required
                 >
                   <option value="PRIMARY">PRIMARY</option>
@@ -708,14 +708,14 @@ export default function TeachersPage() {
               <Button
                 type="submit"
                 disabled={assigning}
-                className="h-10 cursor-pointer rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white hover:bg-neutral-800"
+                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
               >
                 {assigning ? "Assigning..." : "Assign Section"}
               </Button>
             </form>
 
             <div className="space-y-2">
-              <h3 className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+              <h3 className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Currently Assigned Sections
               </h3>
               <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
@@ -724,25 +724,25 @@ export default function TeachersPage() {
                   assignmentTeacher.classAssignments.map((a: any) => (
                     <div
                       key={a.classSectionId}
-                      className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-3 shadow-sm"
+                      className="flex items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm"
                     >
                       <div>
-                        <p className="text-xs font-semibold text-neutral-900">
+                        <p className="text-xs font-semibold text-foreground">
                           {a.classSection?.name || "Homeroom Class"}
                         </p>
-                        <p className="text-[9px] font-semibold text-emerald-600">Role: {a.role}</p>
+                        <p className="text-[9px] font-semibold text-success">Role: {a.role}</p>
                       </div>
                       <Button
                         onClick={() => handleRemoveAssignment(a.classSectionId)}
                         variant="outline"
-                        className="animate-fade-in h-8 rounded-lg border-rose-100 p-2 text-rose-500 hover:bg-rose-50 hover:text-rose-700"
+                        className="animate-fade-in h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                       >
                         <Trash className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   ))
                 ) : (
-                  <p className="py-3 text-center text-xs font-medium text-neutral-400">
+                  <p className="py-3 text-center text-xs font-medium text-muted-foreground">
                     No active class section allocations.
                   </p>
                 )}
@@ -750,11 +750,11 @@ export default function TeachersPage() {
             </div>
           </div>
 
-          <DialogFooter className="border-t border-neutral-100 pt-4">
+          <DialogFooter className="border-t border-border pt-4">
             <Button
               type="button"
               onClick={() => setIsClassDialogOpen(false)}
-              className="h-10 rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white hover:bg-neutral-800"
+              className="h-10 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
             >
               Done Setup
             </Button>

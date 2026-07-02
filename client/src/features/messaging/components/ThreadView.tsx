@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useRef } from "react";
 import { format } from "date-fns";
@@ -32,28 +32,28 @@ export function ThreadView({ thread, currentUserId }: ThreadViewProps) {
   const partnerName = partner ? `${partner.firstName} ${partner.lastName}` : "Participant";
 
   return (
-    <div className="flex h-full flex-col bg-zinc-50/50 dark:bg-zinc-950/10">
+    <div className="flex h-full flex-col bg-muted/50/10">
       {/* Header */}
-      <div className="flex flex-col border-b border-zinc-200/50 p-4 bg-white/40 dark:border-zinc-800/50 dark:bg-zinc-950/20 backdrop-blur-md">
+      <div className="flex flex-col border-b border-border/50 p-4 bg-card/40/50/20 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 font-bold text-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary font-bold text-sm">
             {partner ? `${partner.firstName[0]}${partner.lastName[0]}` : "P"}
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            <h3 className="text-sm font-semibold text-foreground">
               {partnerName}
             </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-muted-foreground">
               {isGuardian ? "Teacher" : "Parent/Guardian"}
             </p>
           </div>
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800/40 pt-2">
-          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+        <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2">
+          <span className="text-xs font-semibold text-foreground">
             Subject: {thread.subject}
           </span>
           {thread.studentProfile && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-medium">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 dark:bg-primary/10 text-primary font-medium">
               Regarding: {thread.studentProfile.fullName}
             </span>
           )}
@@ -78,8 +78,8 @@ export function ThreadView({ thread, currentUserId }: ThreadViewProps) {
                   <div
                     className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                       isMe
-                        ? "bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-600/10"
-                        : "bg-white border border-zinc-200/50 text-zinc-900 dark:bg-zinc-900 dark:border-zinc-800/50 dark:text-zinc-100 rounded-tl-none"
+                        ? "bg-primary text-primary-foreground rounded-tr-none shadow-md shadow-primary/10"
+                        : "bg-card border border-border/50 text-foreground/50 rounded-tl-none"
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{message.body}</p>
@@ -94,8 +94,8 @@ export function ThreadView({ thread, currentUserId }: ThreadViewProps) {
                             rel="noopener noreferrer"
                             className={`flex items-center gap-1.5 text-xs p-1.5 rounded-lg border ${
                               isMe
-                                ? "bg-indigo-700/50 hover:bg-indigo-700 border-indigo-500/30 text-white"
-                                : "bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/50 dark:border-zinc-700 dark:text-zinc-300"
+                                ? "bg-primary/70 hover:bg-primary/90 border-primary/30 text-white"
+                                : "bg-muted/50 hover:bg-muted border-border text-foreground"
                             }`}
                           >
                             <FileText className="h-3.5 w-3.5" />
@@ -105,7 +105,7 @@ export function ThreadView({ thread, currentUserId }: ThreadViewProps) {
                       </div>
                     )}
                   </div>
-                  <span className="text-[9px] text-zinc-400 dark:text-zinc-500 px-1">
+                  <span className="text-[9px] text-muted-foreground px-1">
                     {format(new Date(message.createdAt), "hh:mm a")}
                   </span>
                 </div>
@@ -113,7 +113,7 @@ export function ThreadView({ thread, currentUserId }: ThreadViewProps) {
             );
           })
         ) : (
-          <div className="flex items-center justify-center h-full text-zinc-400 text-sm">
+          <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
             No messages in this thread yet.
           </div>
         )}

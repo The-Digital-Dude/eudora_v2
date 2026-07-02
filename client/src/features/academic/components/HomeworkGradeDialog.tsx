@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Award } from "lucide-react";
 import * as React from "react";
@@ -72,20 +72,20 @@ export function HomeworkGradeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm rounded-3xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+      <DialogContent className="max-w-sm rounded-3xl border border-border bg-card p-6 shadow-xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-bold text-neutral-900 dark:text-neutral-50">
-            <Award className="h-5 w-5 text-emerald-500" />
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+            <Award className="h-5 w-5 text-success" />
             Grade Student Submission
           </DialogTitle>
-          <DialogDescription className="text-xs text-neutral-500">
+          <DialogDescription className="text-xs text-muted-foreground">
             Input score points and feedback comments.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleGradeSubmission} className="space-y-4 pt-2">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Points Earned (Max: {maxPoints} pts)
             </Label>
             <Input
@@ -94,20 +94,20 @@ export function HomeworkGradeDialog({
               max={maxPoints}
               value={gradePoints}
               onChange={(e) => setGradePoints(Number(e.target.value))}
-              className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
+              className="h-10 rounded-xl border-border bg-muted/50 text-xs/50"
               required
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Teacher Feedback
             </Label>
             <textarea
               placeholder="Write feedback comments or grading notes..."
               value={gradeFeedback}
               onChange={(e) => setGradeFeedback(e.target.value)}
-              className="h-24 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 text-xs text-neutral-800 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
+              className="h-24 w-full resize-none rounded-xl border border-border bg-muted/50 p-3 text-xs text-foreground focus:outline-none/50"
             />
           </div>
 
@@ -123,7 +123,7 @@ export function HomeworkGradeDialog({
             <Button
               type="submit"
               disabled={isGrading}
-              className="h-10 cursor-pointer rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-500"
+              className="h-10 cursor-pointer rounded-xl bg-success px-4 text-xs font-semibold text-white hover:bg-success"
             >
               {isGrading ? "Submitting..." : "Save Grade"}
             </Button>

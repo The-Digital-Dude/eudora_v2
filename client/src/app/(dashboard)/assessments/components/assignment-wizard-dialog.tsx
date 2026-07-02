@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -106,15 +106,15 @@ export function AssignmentWizardDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-3xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+      <DialogContent className="max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold text-neutral-900 dark:text-neutral-50 flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-violet-500" />
+          <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+            <GraduationCap className="h-5 w-5 text-primary" />
             Assign Assessment
           </DialogTitle>
           {assessment && (
-            <p className="text-xs text-neutral-500 mt-1">
-              Assigning: <span className="font-semibold text-neutral-800 dark:text-neutral-200">{assessment.title}</span>
+            <p className="text-xs text-muted-foreground mt-1">
+              Assigning: <span className="font-semibold text-foreground">{assessment.title}</span>
             </p>
           )}
         </DialogHeader>
@@ -122,17 +122,17 @@ export function AssignmentWizardDialog({
         <form onSubmit={handleAssign} className="space-y-5 mt-4">
           {/* Target toggle */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Assign To
             </Label>
-            <div className="flex rounded-xl bg-neutral-100 p-1 dark:bg-zinc-800">
+            <div className="flex rounded-xl bg-muted p-1">
               <button
                 type="button"
                 onClick={() => setTargetType("class")}
                 className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
                   targetType === "class"
-                    ? "bg-white shadow text-neutral-900 dark:bg-zinc-900 dark:text-neutral-50"
-                    : "text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200"
+                    ? "bg-card shadow text-foreground"
+                    : "text-muted-foreground hover:text-foreground dark:hover:text-foreground"
                 }`}
               >
                 <Users className="h-4 w-4" />
@@ -143,8 +143,8 @@ export function AssignmentWizardDialog({
                 onClick={() => setTargetType("student")}
                 className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
                   targetType === "student"
-                    ? "bg-white shadow text-neutral-900 dark:bg-zinc-900 dark:text-neutral-50"
-                    : "text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200"
+                    ? "bg-card shadow text-foreground"
+                    : "text-muted-foreground hover:text-foreground dark:hover:text-foreground"
                 }`}
               >
                 <User className="h-4 w-4" />
@@ -156,11 +156,11 @@ export function AssignmentWizardDialog({
           {/* Class selector */}
           {targetType === "class" && (
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Class Section
               </Label>
               <Select value={classSectionId} onValueChange={setClassSectionId}>
-                <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
                   <SelectValue placeholder={isLoadingClasses ? "Loading classes..." : "Select class section..."} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -177,11 +177,11 @@ export function AssignmentWizardDialog({
           {/* Student selector */}
           {targetType === "student" && (
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Student Profile
               </Label>
               <Select value={studentProfileId} onValueChange={setStudentProfileId}>
-                <SelectTrigger className="h-10 rounded-xl text-xs bg-neutral-50/50">
+                <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
                   <SelectValue placeholder={isLoadingStudents ? "Loading students..." : "Select student..."} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl max-h-60 overflow-y-auto">
@@ -198,26 +198,26 @@ export function AssignmentWizardDialog({
           {/* Date Picker Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5 text-neutral-400" /> Opens At
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" /> Opens At
               </Label>
               <Input
                 type="datetime-local"
                 value={opensAt}
                 onChange={(e) => setOpensAt(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-neutral-50/50"
+                className="h-10 rounded-xl text-xs bg-muted/50"
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5 text-neutral-400" /> Due At
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" /> Due At
               </Label>
               <Input
                 type="datetime-local"
                 value={dueAt}
                 onChange={(e) => setDueAt(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-neutral-50/50"
+                className="h-10 rounded-xl text-xs bg-muted/50"
                 required
               />
             </div>
@@ -235,7 +235,7 @@ export function AssignmentWizardDialog({
             <Button
               type="submit"
               disabled={isAssigning}
-              className="h-10 flex-1 cursor-pointer rounded-xl bg-violet-600 text-xs font-semibold text-white hover:bg-violet-500"
+              className="h-10 flex-1 cursor-pointer rounded-xl bg-primary text-xs font-semibold text-white hover:bg-primary"
             >
               {isAssigning ? "Assigning..." : "Assign Assessment"}
             </Button>

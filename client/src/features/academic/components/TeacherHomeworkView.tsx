@@ -148,18 +148,18 @@ export function TeacherHomeworkView() {
       {/* Title */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-50">
-            <BookOpen className="h-6 w-6 text-rose-500" />
+          <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-foreground">
+            <BookOpen className="h-6 w-6 text-destructive" />
             Homework Assignments Workspace
           </h1>
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs font-medium text-muted-foreground">
             Distribute coursework tasks, upload resource materials, track submissions, and grade student portfolios.
           </p>
         </div>
 
         <Button
           onClick={() => setCreateDialogOpen(true)}
-          className="h-11 cursor-pointer rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-zinc-100 dark:text-neutral-900 dark:hover:bg-zinc-200"
+          className="h-11 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
         >
           <Plus className="mr-2 h-4 w-4" />
           Distribute Homework
@@ -167,9 +167,9 @@ export function TeacherHomeworkView() {
       </div>
 
       {/* Control panel selector */}
-      <div className="grid grid-cols-1 gap-4 rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 rounded-3xl border border-border bg-card p-5 shadow-sm md:grid-cols-3">
         <div className="space-y-1.5 md:col-span-2">
-          <Label className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
             Subject Course Class
           </Label>
           <select
@@ -178,7 +178,7 @@ export function TeacherHomeworkView() {
               setSelectedClassId(e.target.value);
               setActiveHomeworkId("");
             }}
-            className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/55 px-3 text-xs text-neutral-800 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
+            className="h-11 w-full rounded-xl border border-border bg-muted/40 px-3 text-xs text-foreground focus:outline-none/50"
           >
             {isLoadingClasses ? (
               <option>Loading course classes...</option>
@@ -193,7 +193,7 @@ export function TeacherHomeworkView() {
         </div>
 
         <div className="flex flex-col justify-end">
-          <Badge className="flex h-11 justify-center border border-neutral-200 bg-neutral-50/50 text-[10px] font-bold text-neutral-500 dark:border-zinc-800 dark:bg-zinc-900/50">
+          <Badge className="flex h-11 justify-center border border-border bg-muted/50 text-[10px] font-bold text-muted-foreground/50">
             Total Enrolled: {enrolledStudents.length} Students
           </Badge>
         </div>
@@ -203,16 +203,16 @@ export function TeacherHomeworkView() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Homework list */}
         <div className="space-y-4">
-          <div className="rounded-2xl bg-neutral-50 p-3 dark:bg-zinc-900">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          <div className="rounded-2xl bg-muted/50 p-3">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               Course Homework List
             </span>
           </div>
 
           {isLoadingHomework ? (
-            <div className="py-8 text-center text-xs text-neutral-400">Loading assignments list...</div>
+            <div className="py-8 text-center text-xs text-muted-foreground">Loading assignments list...</div>
           ) : !homeworkList || homeworkList.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-neutral-200 py-12 text-center text-xs text-neutral-400 dark:border-zinc-800">
+            <div className="rounded-3xl border border-dashed border-border py-12 text-center text-xs text-muted-foreground">
               No tasks posted for this course class.
             </div>
           ) : (
@@ -224,22 +224,22 @@ export function TeacherHomeworkView() {
                   onClick={() => setActiveHomeworkId(hw.id)}
                   className={`flex h-32 cursor-pointer flex-col justify-between rounded-2xl border p-4 transition-all ${
                     isActive
-                      ? "border-neutral-900 bg-neutral-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-neutral-900"
-                      : "border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-neutral-200 dark:hover:border-zinc-700"
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border bg-card text-foreground hover:border-border"
                   }`}
                 >
                   <div>
                     <h3 className="line-clamp-1 text-xs font-bold">{hw.title}</h3>
                     <p
                       className={`mt-1.5 line-clamp-2 text-[10px] ${
-                        isActive ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-400 dark:text-neutral-500"
+                        isActive ? "text-muted-foreground" : "text-muted-foreground"
                       }`}
                     >
                       {hw.description || "No description provided."}
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-dashed border-neutral-200/20 pt-2 text-[9px]">
+                  <div className="flex items-center justify-between border-t border-dashed border-border/20 pt-2 text-[9px]">
                     <span className="flex items-center gap-1 font-semibold">
                       <Clock className="h-3 w-3" />
                       Due: {new Date(hw.dueDate).toLocaleDateString()}
@@ -254,26 +254,26 @@ export function TeacherHomeworkView() {
 
         {/* Submissions Grading Workspace */}
         <div className="space-y-4 lg:col-span-2">
-          <div className="flex items-center justify-between rounded-2xl bg-neutral-50 p-3 dark:bg-zinc-900">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          <div className="flex items-center justify-between rounded-2xl bg-muted/50 p-3">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               {activeHomework ? `Grading Panel: ${activeHomework.title}` : "Submissions Workspace"}
             </span>
           </div>
 
           {!activeHomeworkId ? (
-            <div className="flex h-72 flex-col items-center justify-center rounded-3xl border border-dashed border-neutral-200 bg-neutral-50/50 p-12 text-center text-xs text-neutral-400 dark:border-zinc-800 dark:bg-zinc-900/10">
-              <FileText className="mb-3 h-12 w-12 text-neutral-300 dark:text-zinc-800" />
+            <div className="flex h-72 flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-muted/50 p-12 text-center text-xs text-muted-foreground/10">
+              <FileText className="mb-3 h-12 w-12 text-muted-foreground" />
               <p className="font-bold">No Homework Selected</p>
               <p className="mt-1 text-[10px]">
                 Please select an assignment from the left panel to review files and input scores.
               </p>
             </div>
           ) : (
-            <Card className="overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+            <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-neutral-100 bg-neutral-50/60 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-neutral-500">
+                    <tr className="border-b border-border bg-muted/50/60 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/40">
                       <th className="px-6 py-3">Student Profile</th>
                       <th className="px-6 py-3">Status</th>
                       <th className="px-6 py-3">Submitted Date</th>
@@ -281,19 +281,20 @@ export function TeacherHomeworkView() {
                       <th className="px-6 py-3">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-100 text-xs text-neutral-800 dark:divide-zinc-800 dark:text-neutral-200">
+                  <tbody className="divide-y divide-neutral-100 text-xs text-foreground">
                     {enrolledStudents.map((rel: any) => {
                       const student = rel.studentProfile;
+                      if (!student) return null;
                       const sub = studentSubmissionMap.get(student.id);
                       const isSubmitted = !!sub;
 
                       const statusColors = {
-                        PENDING: "bg-neutral-100 text-neutral-500",
+                        PENDING: "bg-muted text-muted-foreground",
                         SUBMITTED:
-                          "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-                        LATE: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+                          "bg-primary/10 text-primary",
+                        LATE: "bg-warning/10 text-warning",
                         GRADED:
-                          "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+                          "bg-success/10 text-success",
                       };
 
                       const displayStatus = (
@@ -302,7 +303,7 @@ export function TeacherHomeworkView() {
 
                       return (
                         <React.Fragment key={student.id}>
-                          <tr className="transition-colors hover:bg-neutral-50/40 dark:hover:bg-zinc-900/10">
+                          <tr className="transition-colors hover:bg-muted/30/10">
                             <td className="px-6 py-4 font-bold">{student.fullName}</td>
                             <td className="px-6 py-4">
                               <Badge
@@ -312,16 +313,16 @@ export function TeacherHomeworkView() {
                                 {displayStatus}
                               </Badge>
                             </td>
-                            <td className="px-6 py-4 text-[10px] font-semibold text-neutral-400">
+                            <td className="px-6 py-4 text-[10px] font-semibold text-muted-foreground">
                               {isSubmitted ? new Date(sub.submissionDate).toLocaleString() : "Unsubmitted"}
                             </td>
                             <td className="px-6 py-4 text-center font-bold">
                               {isSubmitted && sub.status === "GRADED" ? (
-                                <span className="text-emerald-600 dark:text-emerald-400">
+                                <span className="text-success">
                                   {sub.pointsEarned} / {activeHomework?.maxPoints} pts
                                 </span>
                               ) : (
-                                <span className="text-neutral-400">--</span>
+                                <span className="text-muted-foreground">--</span>
                               )}
                             </td>
                             <td className="px-6 py-4">
@@ -334,28 +335,28 @@ export function TeacherHomeworkView() {
                                     setGradeFeedback(sub.feedback || "");
                                     setGradingModalOpen(true);
                                   }}
-                                  className="flex h-8 cursor-pointer items-center gap-1 rounded-xl bg-neutral-900 px-3 text-[10px] font-semibold text-white hover:bg-neutral-800 dark:bg-zinc-100 dark:text-neutral-900"
+                                  className="flex h-8 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-3 text-[10px] font-semibold text-white hover:bg-foreground/90"
                                 >
                                   <Award className="h-3.5 w-3.5" />
                                   Grade
                                 </Button>
                               ) : (
-                                <span className="text-neutral-300 dark:text-zinc-800">--</span>
+                                <span className="text-muted-foreground">--</span>
                               )}
                             </td>
                           </tr>
 
                           {/* Extra info drawer if student submitted */}
                           {isSubmitted && (
-                            <tr className="bg-neutral-50/20 dark:bg-zinc-900/5">
+                            <tr className="bg-muted/20/5">
                               <td
                                 colSpan={5}
-                                className="border-b border-neutral-100/50 px-6 py-2.5 dark:border-zinc-900"
+                                className="border-b border-border/50 px-6 py-2.5"
                               >
-                                <div className="space-y-1.5 text-[10px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+                                <div className="space-y-1.5 text-[10px] leading-relaxed text-muted-foreground">
                                   {sub.content && (
-                                    <div className="rounded-xl border border-neutral-200 bg-white p-2.5 dark:border-zinc-800 dark:bg-zinc-900">
-                                      <span className="mb-1 block text-[8px] font-bold uppercase text-neutral-400">
+                                    <div className="rounded-xl border border-border bg-card p-2.5">
+                                      <span className="mb-1 block text-[8px] font-bold uppercase text-muted-foreground">
                                         Student text submission
                                       </span>
                                       {sub.content}
@@ -364,7 +365,7 @@ export function TeacherHomeworkView() {
 
                                   {sub.attachmentUrls && sub.attachmentUrls.length > 0 && (
                                     <div className="flex flex-wrap items-center gap-1.5">
-                                      <span className="text-[8px] font-bold uppercase text-neutral-400">
+                                      <span className="text-[8px] font-bold uppercase text-muted-foreground">
                                         Student files:
                                       </span>
                                       {sub.attachmentUrls.map((url: string, i: number) => (
@@ -373,9 +374,9 @@ export function TeacherHomeworkView() {
                                           href={url}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-2 py-0.5 text-[9px] text-neutral-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-neutral-400"
+                                          className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-0.5 text-[9px] text-muted-foreground"
                                         >
-                                          <Download className="h-3 w-3 text-neutral-400" />
+                                          <Download className="h-3 w-3 text-muted-foreground" />
                                           Attachment {i + 1}
                                         </a>
                                       ))}
@@ -398,20 +399,20 @@ export function TeacherHomeworkView() {
 
       {/* Teacher Distribute Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-md overflow-hidden rounded-3xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+        <DialogContent className="max-w-md overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-neutral-900 dark:text-neutral-50">
-              <Plus className="h-5 w-5 text-rose-500" />
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+              <Plus className="h-5 w-5 text-destructive" />
               Distribute New Homework Task
             </DialogTitle>
-            <DialogDescription className="text-xs text-neutral-500">
+            <DialogDescription className="text-xs text-muted-foreground">
               Fill in the parameters below to assign homework to the selected class.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleCreateHomework} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Homework Title
               </Label>
               <Input
@@ -419,26 +420,26 @@ export function TeacherHomeworkView() {
                 placeholder="e.g. Algebra Worksheet Week 3"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
+                className="h-10 rounded-xl border-border bg-muted/50 text-xs/50"
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Description / Instructions
               </Label>
               <textarea
                 placeholder="Write worksheet details or book chapter exercises here..."
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
-                className="h-20 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 text-xs text-neutral-800 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
+                className="h-20 w-full resize-none rounded-xl border border-border bg-muted/50 p-3 text-xs text-foreground focus:outline-none/50"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Max Score Points
                 </Label>
                 <Input
@@ -446,27 +447,27 @@ export function TeacherHomeworkView() {
                   min={1}
                   value={newMaxPoints}
                   onChange={(e) => setNewMaxPoints(Number(e.target.value))}
-                  className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
+                  className="h-10 rounded-xl border-border bg-muted/50 text-xs/50"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Due Date & Time
                 </Label>
                 <Input
                   type="datetime-local"
                   value={newDueDate}
                   onChange={(e) => setNewDueDate(e.target.value)}
-                  className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
+                  className="h-10 rounded-xl border-border bg-muted/50 text-xs/50"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Reference Attachments
               </Label>
               <FileUploader
@@ -483,7 +484,7 @@ export function TeacherHomeworkView() {
                     <Badge
                       key={i}
                       variant="secondary"
-                      className="flex items-center gap-1.5 rounded-lg border-none bg-neutral-100 px-2 py-1 text-[9px] text-neutral-700 hover:bg-neutral-200"
+                      className="flex items-center gap-1.5 rounded-lg border-none bg-muted px-2 py-1 text-[9px] text-foreground hover:bg-muted"
                     >
                       <Paperclip className="h-3 w-3" />
                       Attachment {i + 1}
@@ -492,7 +493,7 @@ export function TeacherHomeworkView() {
                         onClick={() =>
                           setNewAttachments((prev) => prev.filter((_, idx) => idx !== i))
                         }
-                        className="ml-1 text-xs font-bold hover:text-rose-500"
+                        className="ml-1 text-xs font-bold hover:text-destructive"
                       >
                         &times;
                       </button>
@@ -514,7 +515,7 @@ export function TeacherHomeworkView() {
               <Button
                 type="submit"
                 disabled={isCreating}
-                className="h-10 cursor-pointer rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-zinc-100 dark:text-neutral-900 dark:hover:bg-zinc-200"
+                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
               >
                 {isCreating ? "Distributing..." : "Assign Tasks"}
               </Button>

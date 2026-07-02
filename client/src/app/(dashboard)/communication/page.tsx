@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { AlertCircle, Info,Mail, MessageSquare, Plus, Radio, Send } from "lucide-react";
 import React, { useState } from "react";
@@ -77,16 +77,16 @@ export default function CommunicationPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-xl font-bold tracking-tight text-neutral-900">
+          <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
             Communication & Broadcasts
           </h1>
-          <p className="mt-0.5 text-xs text-neutral-500">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Announce updates, broadcast reminders, and review communications logs.
           </p>
         </div>
         <Button
           onClick={handleOpenDialog}
-          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white shadow-sm hover:bg-neutral-800 active:scale-98"
+          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90 active:scale-98"
         >
           <Plus className="h-4 w-4" /> New Broadcast
         </Button>
@@ -94,90 +94,90 @@ export default function CommunicationPage() {
 
       {/* Metrics Cards */}
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="space-y-2 rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="flex items-center justify-between text-neutral-400">
+        <Card className="space-y-2 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="font-display text-[10px] font-bold tracking-wider uppercase">
               SMS Dispatched
             </span>
-            <Radio className="h-4 w-4 text-emerald-500" />
+            <Radio className="h-4 w-4 text-success" />
           </div>
-          <p className="font-display text-2xl font-bold text-neutral-900">
+          <p className="font-display text-2xl font-bold text-foreground">
             {isLoading ? "..." : smsCount}
           </p>
-          <p className="text-[10px] font-medium text-neutral-400">Text notifications sent</p>
+          <p className="text-[10px] font-medium text-muted-foreground">Text notifications sent</p>
         </Card>
 
-        <Card className="space-y-2 rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="flex items-center justify-between text-neutral-400">
+        <Card className="space-y-2 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="font-display text-[10px] font-bold tracking-wider uppercase">
               Emails Sent
             </span>
-            <Mail className="h-4 w-4 text-blue-500" />
+            <Mail className="h-4 w-4 text-primary" />
           </div>
-          <p className="font-display text-2xl font-bold text-neutral-900">
+          <p className="font-display text-2xl font-bold text-foreground">
             {isLoading ? "..." : emailCount}
           </p>
-          <p className="text-[10px] font-semibold text-emerald-600">Healthy delivery score</p>
+          <p className="text-[10px] font-semibold text-success">Healthy delivery score</p>
         </Card>
 
-        <Card className="space-y-2 rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="flex items-center justify-between text-neutral-400">
+        <Card className="space-y-2 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="font-display text-[10px] font-bold tracking-wider uppercase">
               Total Alerts
             </span>
-            <MessageSquare className="h-4 w-4 text-purple-500" />
+            <MessageSquare className="h-4 w-4 text-primary" />
           </div>
-          <p className="font-display text-2xl font-bold text-neutral-900">
+          <p className="font-display text-2xl font-bold text-foreground">
             {isLoading ? "..." : totalDispatched}
           </p>
-          <p className="text-[10px] text-neutral-400">Global announcements sent</p>
+          <p className="text-[10px] text-muted-foreground">Global announcements sent</p>
         </Card>
       </div>
 
       {/* Logs Card */}
-      <Card className="space-y-4 rounded-3xl border border-neutral-200 bg-white p-6">
-        <h2 className="font-display text-sm font-bold text-neutral-900">Recent Broadcast Logs</h2>
+      <Card className="space-y-4 rounded-3xl border border-border bg-card p-6">
+        <h2 className="font-display text-sm font-bold text-foreground">Recent Broadcast Logs</h2>
 
         <div className="max-h-[400px] space-y-3 overflow-y-auto pr-1">
           {isLoading ? (
             [...Array(3)].map((_, i) => (
               <div
                 key={i}
-                className="h-20 animate-pulse rounded-2xl border border-neutral-100 bg-neutral-50"
+                className="h-20 animate-pulse rounded-2xl border border-border bg-muted/50"
               />
             ))
           ) : logsList.length > 0 ? (
             logsList.map((log: any) => (
               <div
                 key={log.id}
-                className="flex flex-col justify-between gap-3 rounded-2xl border border-neutral-100 bg-neutral-50 p-4 transition-all hover:border-neutral-200 sm:flex-row sm:items-start"
+                className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-muted/50 p-4 transition-all hover:border-border sm:flex-row sm:items-start"
               >
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span
                       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-extrabold ${
                         log.type === "Announcement"
-                          ? "border-purple-100 bg-purple-50 text-purple-700"
+                          ? "border-primary/10 bg-primary/10 text-primary"
                           : log.type === "SMS Alert"
-                            ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-                            : "border-blue-100 bg-blue-50 text-blue-700"
+                            ? "border-success/20 bg-success/10 text-success"
+                            : "border-primary/20 bg-primary/10 text-primary"
                       }`}
                     >
                       {log.type}
                     </span>
-                    <span className="font-mono text-[9px] text-neutral-400">
+                    <span className="font-mono text-[9px] text-muted-foreground">
                       ({log.recipientCount} recipients)
                     </span>
                   </div>
-                  <h3 className="text-xs font-semibold text-neutral-900">{log.title}</h3>
+                  <h3 className="text-xs font-semibold text-foreground">{log.title}</h3>
                   {log.content && (
-                    <p className="max-w-xl text-[11px] leading-relaxed text-neutral-500">
+                    <p className="max-w-xl text-[11px] leading-relaxed text-muted-foreground">
                       {log.content}
                     </p>
                   )}
-                  <p className="pt-1 text-[9px] font-medium text-neutral-400">
+                  <p className="pt-1 text-[9px] font-medium text-muted-foreground">
                     Dispatched by:{" "}
-                    <span className="font-semibold text-neutral-700">{log.sender}</span> | Sent:{" "}
+                    <span className="font-semibold text-foreground">{log.sender}</span> | Sent:{" "}
                     {new Date(log.createdAt).toLocaleString()}
                   </p>
                 </div>
@@ -185,8 +185,8 @@ export default function CommunicationPage() {
                 <span
                   className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
                     log.status === "SENT"
-                      ? "border border-emerald-100 bg-emerald-50 text-emerald-700"
-                      : "border border-amber-100 bg-amber-50 text-amber-700"
+                      ? "border border-success/20 bg-success/10 text-success"
+                      : "border border-warning/20 bg-warning/10 text-warning"
                   }`}
                 >
                   {log.status}
@@ -194,7 +194,7 @@ export default function CommunicationPage() {
               </div>
             ))
           ) : (
-            <p className="py-8 text-center text-xs font-medium text-neutral-400">
+            <p className="py-8 text-center text-xs font-medium text-muted-foreground">
               No communication broadcasts logged. Click "New Broadcast" to compose an alert.
             </p>
           )}
@@ -203,19 +203,19 @@ export default function CommunicationPage() {
 
       {/* Compose Broadcast Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl border border-neutral-200 bg-white p-6">
+        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6">
           <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-1.5 text-base font-bold text-neutral-900">
-              <Send className="h-5 w-5 text-neutral-900" />
+            <DialogTitle className="font-display flex items-center gap-1.5 text-base font-bold text-foreground">
+              <Send className="h-5 w-5 text-foreground" />
               Compose Communication Broadcast
             </DialogTitle>
-            <DialogDescription className="text-xs text-neutral-500">
+            <DialogDescription className="text-xs text-muted-foreground">
               Draft a notification to dispatch across school communication channels.
             </DialogDescription>
           </DialogHeader>
 
           {formError && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-rose-100 bg-rose-50 p-3 text-xs font-semibold text-rose-500">
+            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
               <AlertCircle className="h-4 w-4" />
               {formError}
             </div>
@@ -224,13 +224,13 @@ export default function CommunicationPage() {
           <form onSubmit={handleSendBroadcast} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Channel Type
                 </Label>
                 <select
                   value={broadcastType}
                   onChange={(e: any) => setBroadcastType(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-xs text-neutral-900 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900/10 focus:outline-none"
+                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
                 >
                   <option value="Announcement">Announcement</option>
                   <option value="SMS Alert">SMS Alert</option>
@@ -239,54 +239,54 @@ export default function CommunicationPage() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                   Sender Name
                 </Label>
                 <Input
                   value={broadcastSender}
                   onChange={(e) => setBroadcastSender(e.target.value)}
                   placeholder="Admin Console"
-                  className="h-10 border-neutral-200 text-xs"
+                  className="h-10 border-border text-xs"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Title / Subject
               </Label>
               <Input
                 value={broadcastTitle}
                 onChange={(e) => setBroadcastTitle(e.target.value)}
                 placeholder="Fall Semester 2026 Registration Open"
-                className="h-10 border-neutral-200 text-xs"
+                className="h-10 border-border text-xs"
                 required
               />
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Content Message
               </Label>
               <textarea
                 value={broadcastContent}
                 onChange={(e) => setBroadcastContent(e.target.value)}
                 placeholder="Registration is now officially open for the new semester. Please review updated program logs."
-                className="min-h-[100px] w-full rounded-xl border border-neutral-200 bg-white p-3 text-xs text-neutral-900 placeholder:text-neutral-300 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900/10 focus:outline-none"
+                className="min-h-[100px] w-full rounded-xl border border-border bg-card p-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
                 required
               />
             </div>
 
-            <div className="flex gap-2 rounded-xl border border-neutral-100 bg-neutral-50 p-3">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" />
-              <p className="text-[9px] leading-normal text-neutral-400">
+            <div className="flex gap-2 rounded-xl border border-border bg-muted/50 p-3">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <p className="text-[9px] leading-normal text-muted-foreground">
                 Triggering this broadcast will store the record in the central databases and queue
                 dispatchers for SMTP email servers and SMS gateway systems.
               </p>
             </div>
 
-            <DialogFooter className="flex items-center justify-end gap-2 border-t border-neutral-100 pt-4">
+            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -298,7 +298,7 @@ export default function CommunicationPage() {
               <Button
                 type="submit"
                 disabled={sending}
-                className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white shadow-sm hover:bg-neutral-800"
+                className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90"
               >
                 <Send className="h-3.5 w-3.5" />
                 {sending ? "Dispatching..." : "Send Broadcast"}

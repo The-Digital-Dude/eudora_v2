@@ -4,6 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { parseCookieHeader } from '../utils/cookies';
+import { getJwtSecret } from '../utils/jwt-config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -23,13 +24,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
-      secretOrKey:
-        configService.get<string>('JWT_SECRET') ||
-        'default-jwt-secret-key-12345',
+      secretOrKey: getJwtSecret(configService),
     });
   }
 
   async validate(payload: any) {
+    // Access and refresh tokens are signed with the same secret and are
+    // distinguished only by the `typ` claim. Reject anything that is not an
+    // access token so a long-lived refresh token cannot be replayed as a
+    // bearer credential against protected routes.
+    if (payload.typ !== 'access') {
+      throw new UnauthorizedException('Invalid access token');
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: {

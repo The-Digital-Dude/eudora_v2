@@ -20,6 +20,8 @@ import { BillingModule } from './billing/billing.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { HomeworkModule } from './homework/homework.module';
 import { EvaluationModule } from './evaluation/evaluation.module';
+import { DiagnosticsModule } from './diagnostics/diagnostics.module';
+import { LiveClassesModule } from './live-classes/live-classes.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { LeadsModule } from './leads/leads.module';
@@ -36,6 +38,7 @@ import { MessagingModule } from './messaging/messaging.module';
 import { ParentModule } from './parent/parent.module';
 import { ApiEnvelopeInterceptor } from './common/http/api-envelope.interceptor';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
+import { AuditModule } from './common/audit/audit.module';
 
 @Module({
   imports: [
@@ -44,6 +47,7 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
       envFilePath: '.env',
     }),
     PrismaModule,
+    AuditModule,
     HealthModule,
     AuthModule,
     UsersModule,
@@ -57,6 +61,8 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
     AttendanceModule,
     HomeworkModule,
     EvaluationModule,
+    DiagnosticsModule,
+    LiveClassesModule,
     AssessmentsModule,
     LessonsModule,
     LeadsModule,

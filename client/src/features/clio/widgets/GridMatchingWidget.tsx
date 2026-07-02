@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import type { GridMatchingConfig } from "../../assessments/widgetConfigSchemas";
@@ -118,13 +118,13 @@ export function GridMatchingWidget({
   return (
     <div className="border-border bg-card flex flex-col gap-6 rounded-3xl border p-6 transition-all duration-300 select-none">
       <div className="text-center">
-        <span className="text-xs text-neutral-500 font-medium">
+        <span className="text-xs text-muted-foreground font-medium">
           {locked ? "Locked" : "Drag left items to right slots, or tap to pair"}
         </span>
         {locked && isCorrect !== undefined && (
           <div className="mt-1 text-xs font-semibold">
             Status:{" "}
-            <span className={isCorrect ? "text-emerald-500" : "text-rose-500"}>
+            <span className={isCorrect ? "text-success" : "text-destructive"}>
               {isCorrect ? "All matches correct!" : "Some matches are incorrect"}
             </span>
           </div>
@@ -134,12 +134,12 @@ export function GridMatchingWidget({
       <div className="flex flex-col md:flex-row gap-6">
         {/* Left Available Items Pool */}
         <div className="flex-1 space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
             Available Items
           </h4>
-          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-neutral-200 bg-neutral-50/50 p-3 min-h-[160px] dark:border-zinc-800 dark:bg-zinc-900/30">
+          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-muted/50 p-3 min-h-[160px]/30">
             {availableLeftItems.length === 0 ? (
-              <div className="flex h-full items-center justify-center py-8 text-center text-xs text-neutral-400 font-medium">
+              <div className="flex h-full items-center justify-center py-8 text-center text-xs text-muted-foreground font-medium">
                 All items matched!
               </div>
             ) : (
@@ -155,8 +155,8 @@ export function GridMatchingWidget({
                     className={[
                       "rounded-xl border p-3 text-xs font-bold shadow-sm transition-all duration-200",
                       isSelected
-                        ? "scale-[1.02] border-violet-400 bg-violet-600 text-white shadow-violet-500/20"
-                        : "border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-50 hover:border-neutral-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200",
+                        ? "scale-[1.02] border-primary bg-primary text-primary-foreground shadow-primary/20"
+                        : "border-border bg-card text-foreground hover:bg-muted/50 hover:border-border",
                       locked ? "cursor-not-allowed opacity-50" : "cursor-grab active:cursor-grabbing",
                     ]
                       .filter(Boolean)
@@ -172,7 +172,7 @@ export function GridMatchingWidget({
 
         {/* Right Target Matches */}
         <div className="flex-[1.5] space-y-3">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
             Pairs Matching
           </h4>
           <div className="space-y-3">
@@ -182,13 +182,13 @@ export function GridMatchingWidget({
               const isOver = activeTargetOver === rItem.id;
 
               // Check if correctness should be marked
-              let slotClass = "border-neutral-200 bg-white dark:border-zinc-800 dark:bg-zinc-900";
+              let slotClass = "border-border bg-card";
               if (locked && matchedLeftId) {
                 const correctLeftForThisRight = correctPairs.find(([_, rightId]) => rightId === rItem.id)?.[0];
                 const isPairCorrect = correctLeftForThisRight === matchedLeftId;
                 slotClass = isPairCorrect
-                  ? "border-emerald-200 bg-emerald-50/20 dark:border-emerald-800 dark:bg-emerald-950/10"
-                  : "border-rose-200 bg-rose-50/20 dark:border-rose-800 dark:bg-rose-950/10";
+                  ? "border-success/20 bg-success/5"
+                  : "border-destructive/20 bg-destructive/5";
               }
 
               return (
@@ -201,14 +201,14 @@ export function GridMatchingWidget({
                     className={[
                       "flex items-center justify-between gap-4 rounded-xl border p-3 transition-all duration-200 min-h-[52px]",
                       slotClass,
-                      isOver ? "scale-[1.01] border-violet-400 bg-violet-500/10" : "",
-                      locked ? "cursor-not-allowed" : "cursor-pointer hover:border-violet-500/20",
+                      isOver ? "scale-[1.01] border-primary bg-primary/10" : "",
+                      locked ? "cursor-not-allowed" : "cursor-pointer hover:border-primary/20",
                     ]
                       .filter(Boolean)
                       .join(" ")}
                   >
                     {/* Right Item Label */}
-                    <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                    <span className="text-xs font-bold text-foreground">
                       {rItem.text}
                     </span>
 
@@ -216,8 +216,8 @@ export function GridMatchingWidget({
                     {leftItem ? (
                       <div
                         className={[
-                          "flex items-center gap-1.5 rounded-lg bg-violet-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm",
-                          locked ? "" : "hover:bg-violet-500",
+                          "flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-bold text-white shadow-sm",
+                          locked ? "" : "hover:bg-primary",
                         ].join(" ")}
                       >
                         <span>{leftItem.text}</span>
@@ -234,7 +234,7 @@ export function GridMatchingWidget({
                         )}
                       </div>
                     ) : (
-                      <span className="text-[10px] font-bold tracking-wider uppercase text-neutral-300 dark:text-neutral-700">
+                      <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground">
                         {selectedLeftId ? "Tap to Match" : "Drop Slot"}
                       </span>
                     )}
@@ -242,9 +242,9 @@ export function GridMatchingWidget({
 
                   {/* Feedback Helper Badge */}
                   {locked && isCorrect === false && (
-                    <div className="pl-1 text-[10px] text-neutral-400 dark:text-zinc-500 font-medium">
+                    <div className="pl-1 text-[10px] text-muted-foreground font-medium">
                       Correct Match:{" "}
-                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                      <span className="text-success font-semibold">
                         {leftItems.find(
                           (l) => l.id === correctPairs.find(([_, rightId]) => rightId === rItem.id)?.[0]
                         )?.text ?? "None"}

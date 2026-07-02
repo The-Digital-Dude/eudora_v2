@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Award,
@@ -294,12 +294,12 @@ export default function GradebookPage() {
   const getCategoryBadgeColor = (cat: string) => {
     const c = cat.toUpperCase();
     if (c === "HOMEWORK")
-      return "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-900";
+      return "bg-primary/10 text-primary border-primary/20";
     if (c === "ASSESSMENT" || c === "EXAM")
-      return "bg-violet-50 text-violet-600 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-900";
+      return "bg-primary/10 text-primary border-primary/20";
     if (c === "PROJECT")
-      return "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-900";
-    return "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900";
+      return "bg-warning/10 text-warning border-warning/20";
+    return "bg-success/10 text-success border-success/20";
   };
 
   // 1. STUDENT OR GUARDIAN DESK
@@ -319,11 +319,11 @@ export default function GradebookPage() {
         {/* Header */}
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-50">
-              <GraduationCap className="h-7 w-7 text-violet-500" />
+            <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-foreground">
+              <GraduationCap className="h-7 w-7 text-primary" />
               Report Card & Academic Ledger
             </h1>
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs font-medium text-muted-foreground">
               {isStudent
                 ? "View your term grades, performance summaries, and GPA records."
                 : "View your child's published coursework grades and evaluations."}
@@ -336,7 +336,7 @@ export default function GradebookPage() {
               <select
                 value={selectedStudentId}
                 onChange={(e) => setSelectedStudentId(e.target.value)}
-                className="h-10 rounded-xl border border-neutral-200 bg-white px-3 text-xs focus:outline-none dark:border-zinc-800 dark:bg-zinc-950"
+                className="h-10 rounded-xl border border-border bg-card px-3 text-xs focus:outline-none"
               >
                 {linkedStudents.map((rel: any) => (
                   <option key={rel.studentProfileId} value={rel.studentProfileId}>
@@ -350,7 +350,7 @@ export default function GradebookPage() {
             <select
               value={selectedTermId}
               onChange={(e) => setSelectedTermId(e.target.value)}
-              className="h-10 rounded-xl border border-neutral-200 bg-white px-3 text-xs focus:outline-none dark:border-zinc-800 dark:bg-zinc-950"
+              className="h-10 rounded-xl border border-border bg-card px-3 text-xs focus:outline-none"
             >
               {termsList.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -363,80 +363,80 @@ export default function GradebookPage() {
 
         {/* Dashboard summary widgets */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="relative overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="absolute top-4 right-4 rounded-xl bg-violet-500/10 p-2 text-violet-500">
+          <Card className="relative overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+            <div className="absolute top-4 right-4 rounded-xl bg-primary/10 p-2 text-primary">
               <Award className="h-5 w-5" />
             </div>
             <CardHeader className="p-5 pb-2">
-              <CardDescription className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+              <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Cumulative GPA
               </CardDescription>
-              <CardTitle className="mt-1 text-3xl font-black text-neutral-800 dark:text-neutral-100">
+              <CardTitle className="mt-1 text-3xl font-black text-foreground">
                 {summary.gpa !== null ? `${summary.gpa.toFixed(2)}` : "--"}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-5 pt-0 pb-5">
-              <Badge className="rounded-lg border border-violet-100 bg-violet-50 text-[9px] font-bold text-violet-600 dark:bg-violet-500/10">
+              <Badge className="rounded-lg border border-primary/10 bg-primary/10 text-[9px] font-bold text-primary">
                 Grade: {summary.letterGrade}
               </Badge>
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="absolute top-4 right-4 rounded-xl bg-emerald-500/10 p-2 text-emerald-500">
+          <Card className="relative overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+            <div className="absolute top-4 right-4 rounded-xl bg-success/10 p-2 text-success">
               <TrendingUp className="h-5 w-5" />
             </div>
             <CardHeader className="p-5 pb-2">
-              <CardDescription className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+              <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Term Average Score
               </CardDescription>
-              <CardTitle className="mt-1 text-3xl font-black text-neutral-800 dark:text-neutral-100">
+              <CardTitle className="mt-1 text-3xl font-black text-foreground">
                 {summary.termAverage !== null ? `${summary.termAverage}%` : "--"}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-5 pt-0 pb-5">
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-zinc-900">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  className="h-full rounded-full bg-success transition-all duration-500"
                   style={{ width: `${summary.termAverage ?? 0}%` }}
                 />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="absolute top-4 right-4 rounded-xl bg-amber-500/10 p-2 text-amber-500">
+          <Card className="relative overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+            <div className="absolute top-4 right-4 rounded-xl bg-warning/10 p-2 text-warning">
               <User className="h-5 w-5" />
             </div>
             <CardHeader className="p-5 pb-2">
-              <CardDescription className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+              <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Class Section Rank
               </CardDescription>
-              <CardTitle className="mt-1 text-3xl font-black text-neutral-800 dark:text-neutral-100">
+              <CardTitle className="mt-1 text-3xl font-black text-foreground">
                 {summary.classRank !== null ? `#${summary.classRank}` : "--"}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-5 pt-0 pb-5">
-              <span className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500">
+              <span className="text-[10px] font-semibold text-muted-foreground">
                 In homeroom roster
               </span>
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="absolute top-4 right-4 rounded-xl bg-blue-500/10 p-2 text-blue-500">
+          <Card className="relative overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+            <div className="absolute top-4 right-4 rounded-xl bg-primary/10 p-2 text-primary">
               <Sparkles className="h-5 w-5" />
             </div>
             <CardHeader className="p-5 pb-2">
-              <CardDescription className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+              <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Class Percentile
               </CardDescription>
-              <CardTitle className="mt-1 text-3xl font-black text-neutral-800 dark:text-neutral-100">
+              <CardTitle className="mt-1 text-3xl font-black text-foreground">
                 {summary.classPercentile !== null ? `${summary.classPercentile}%` : "--"}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-5 pt-0 pb-5">
-              <Badge className="rounded-lg border border-blue-100 bg-blue-50 text-[9px] font-bold text-blue-600 dark:bg-blue-500/10">
+              <Badge className="rounded-lg border border-primary/20 bg-primary/10 text-[9px] font-bold text-primary">
                 Top {summary.classPercentile !== null ? 100 - summary.classPercentile : "--"}% of
                 class
               </Badge>
@@ -446,31 +446,31 @@ export default function GradebookPage() {
 
         {/* Categories performance list */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card className="space-y-4 rounded-3xl border-neutral-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+          <Card className="space-y-4 rounded-3xl border-border bg-card p-5 shadow-sm">
             <div>
-              <h2 className="text-xs font-black tracking-wider text-neutral-900 uppercase dark:text-neutral-50">
+              <h2 className="text-xs font-black tracking-wider text-foreground uppercase">
                 Category Performances
               </h2>
-              <p className="mt-0.5 text-[10px] text-neutral-400">
+              <p className="mt-0.5 text-[10px] text-muted-foreground">
                 Average scores mapped across coursework types.
               </p>
             </div>
 
             <div className="space-y-4 pt-2">
               {Object.keys(summary.categoryAverages).length === 0 ? (
-                <div className="py-8 text-center text-[11px] text-neutral-400">
+                <div className="py-8 text-center text-[11px] text-muted-foreground">
                   No records compiled yet.
                 </div>
               ) : (
                 Object.entries(summary.categoryAverages).map(([cat, val]) => (
                   <div key={cat} className="space-y-1">
                     <div className="flex justify-between text-[11px] font-bold">
-                      <span className="text-neutral-500 uppercase">{cat}</span>
-                      <span className="text-neutral-800 dark:text-neutral-100">{val}%</span>
+                      <span className="text-muted-foreground uppercase">{cat}</span>
+                      <span className="text-foreground">{val}%</span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-zinc-900">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
-                        className="h-full rounded-full bg-violet-600"
+                        className="h-full rounded-full bg-primary"
                         style={{ width: `${val}%` }}
                       />
                     </div>
@@ -482,42 +482,42 @@ export default function GradebookPage() {
 
           {/* Graded elements list */}
           <div className="space-y-4 lg:col-span-2">
-            <Card className="overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-              <div className="border-b border-neutral-100 p-5 dark:border-zinc-900">
-                <h2 className="text-xs font-black tracking-wider text-neutral-900 uppercase dark:text-neutral-50">
+            <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+              <div className="border-b border-border p-5">
+                <h2 className="text-xs font-black tracking-wider text-foreground uppercase">
                   Coursework Ledger
                 </h2>
-                <p className="mt-0.5 text-[10px] text-neutral-400">
+                <p className="mt-0.5 text-[10px] text-muted-foreground">
                   Individual course tasks and scores.
                 </p>
               </div>
 
               {isLoadingStudentGrades ? (
-                <div className="py-8 text-center text-xs text-neutral-400">
+                <div className="py-8 text-center text-xs text-muted-foreground">
                   Loading grade history...
                 </div>
               ) : listToRender.length === 0 ? (
-                <div className="py-16 text-center text-xs text-neutral-400">
+                <div className="py-16 text-center text-xs text-muted-foreground">
                   No published grades found for this term.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left">
                     <thead>
-                      <tr className="border-b border-neutral-100 bg-neutral-50/50 text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-neutral-500">
+                      <tr className="border-b border-border bg-muted/50 text-[10px] font-bold tracking-wider text-muted-foreground uppercase/40">
                         <th className="px-6 py-3">Task Title</th>
                         <th className="px-6 py-3">Category</th>
                         <th className="px-6 py-3 text-center">Percentage</th>
                         <th className="px-6 py-3 text-right">Points</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-neutral-100 text-xs text-neutral-700 dark:divide-zinc-800 dark:text-neutral-300">
+                    <tbody className="divide-y divide-neutral-100 text-xs text-foreground">
                       {listToRender.map((entry) => (
                         <tr
                           key={entry.id}
-                          className="hover:bg-neutral-50/20 dark:hover:bg-zinc-900/10"
+                          className="hover:bg-muted/20/10"
                         >
-                          <td className="px-6 py-4 font-bold text-neutral-800 dark:text-neutral-200">
+                          <td className="px-6 py-4 font-bold text-foreground">
                             {entry.title}
                           </td>
                           <td className="px-6 py-4">
@@ -528,10 +528,10 @@ export default function GradebookPage() {
                               {entry.category}
                             </Badge>
                           </td>
-                          <td className="px-6 py-4 text-center font-bold text-neutral-800 dark:text-neutral-200">
+                          <td className="px-6 py-4 text-center font-bold text-foreground">
                             {entry.percentage !== null ? `${Math.round(entry.percentage)}%` : "--"}
                           </td>
-                          <td className="px-6 py-4 text-right font-semibold text-neutral-500 dark:text-neutral-400">
+                          <td className="px-6 py-4 text-right font-semibold text-muted-foreground">
                             {entry.pointsEarned !== null ? entry.pointsEarned : "--"} /{" "}
                             {entry.pointsPossible}
                           </td>
@@ -554,11 +554,11 @@ export default function GradebookPage() {
       {/* Title */}
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-50">
-            <ClipboardList className="h-7 w-7 text-rose-500" />
+          <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-foreground">
+            <ClipboardList className="h-7 w-7 text-destructive" />
             Class Gradebook Workspace
           </h1>
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs font-medium text-muted-foreground">
             Review coursework ledgers, enter manual points, and sync grades.
           </p>
         </div>
@@ -568,7 +568,7 @@ export default function GradebookPage() {
             size="sm"
             onClick={handleSyncSourceGrades}
             disabled={isSyncing}
-            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-neutral-200 bg-neutral-100 px-4 text-xs font-semibold text-neutral-800 hover:bg-neutral-200 dark:border-zinc-800 dark:bg-zinc-900 dark:text-neutral-200"
+            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-muted px-4 text-xs font-semibold text-foreground hover:bg-muted"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />
             Sync Grades
@@ -577,9 +577,9 @@ export default function GradebookPage() {
           <Button
             size="sm"
             onClick={() => setAddColumnDialogOpen(true)}
-            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-neutral-200 bg-neutral-100 px-4 text-xs font-semibold text-neutral-800 hover:bg-neutral-200 dark:border-zinc-800 dark:bg-zinc-900 dark:text-neutral-200"
+            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-muted px-4 text-xs font-semibold text-foreground hover:bg-muted"
           >
-            <Plus className="h-3.5 w-3.5 text-rose-500" />
+            <Plus className="h-3.5 w-3.5 text-destructive" />
             Add Manual Column
           </Button>
 
@@ -587,7 +587,7 @@ export default function GradebookPage() {
             size="sm"
             onClick={handleSaveGrid}
             disabled={isSavingBulk}
-            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-zinc-100 dark:text-neutral-900 dark:hover:bg-zinc-200"
+            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
           >
             <Save className="h-3.5 w-3.5" />
             {isSavingBulk ? "Saving..." : "Save Gradebook"}
@@ -596,15 +596,15 @@ export default function GradebookPage() {
       </div>
 
       {/* Control panel toolbar filters */}
-      <div className="grid grid-cols-1 gap-4 rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm md:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="grid grid-cols-1 gap-4 rounded-3xl border border-border bg-card p-5 shadow-sm md:grid-cols-2">
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+          <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
             Subject Course Class
           </Label>
           <select
             value={selectedClassId}
             onChange={(e) => setSelectedClassId(e.target.value)}
-            className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-xs text-neutral-800 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
+            className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-xs text-foreground focus:outline-none/50"
           >
             {isLoadingClasses ? (
               <option>Loading course classes...</option>
@@ -619,13 +619,13 @@ export default function GradebookPage() {
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+          <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
             Semester Term
           </Label>
           <select
             value={selectedTermId}
             onChange={(e) => setSelectedTermId(e.target.value)}
-            className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-xs text-neutral-800 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
+            className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-xs text-foreground focus:outline-none/50"
           >
             {termsList.map((t) => (
               <option key={t.id} value={t.id}>
@@ -637,52 +637,52 @@ export default function GradebookPage() {
       </div>
 
       {/* Spreadsheet Grid */}
-      <Card className="overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-sm">
         {isLoadingGradebook ? (
-          <div className="py-16 text-center text-xs text-neutral-400">
+          <div className="py-16 text-center text-xs text-muted-foreground">
             Loading gradebook sheet...
           </div>
         ) : !gradebookData || gradebookData.students.length === 0 ? (
-          <div className="py-16 text-center text-xs text-neutral-400">
+          <div className="py-16 text-center text-xs text-muted-foreground">
             No students enrolled in this course class.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs text-neutral-800 dark:text-neutral-200">
+            <table className="w-full border-collapse text-left text-xs text-foreground">
               <thead>
-                <tr className="border-b border-neutral-100 bg-neutral-50/60 text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-neutral-500">
-                  <th className="sticky left-0 z-10 min-w-[200px] border-r border-neutral-100 bg-neutral-100/40 px-6 py-3 dark:border-zinc-800 dark:bg-zinc-900/40">
+                <tr className="border-b border-border bg-muted/50/60 text-[10px] font-bold tracking-wider text-muted-foreground uppercase/40">
+                  <th className="sticky left-0 z-10 min-w-[200px] border-r border-border bg-muted/40 px-6 py-3/40">
                     Student Profile
                   </th>
                   {allColumns.map((col) => (
                     <th
                       key={col.colKey}
-                      className="min-w-[150px] border-r border-neutral-100 px-4 py-3 text-center dark:border-zinc-800"
+                      className="min-w-[150px] border-r border-border px-4 py-3 text-center"
                     >
-                      <span className="block truncate font-bold text-neutral-800 dark:text-neutral-200">
+                      <span className="block truncate font-bold text-foreground">
                         {col.title}
                       </span>
-                      <span className="mt-1 block text-[8px] font-semibold text-neutral-400 dark:text-neutral-500">
+                      <span className="mt-1 block text-[8px] font-semibold text-muted-foreground">
                         {col.category} ({col.pointsPossible} pts)
                       </span>
                     </th>
                   ))}
                   {allColumns.length === 0 && (
-                    <th className="px-4 py-3 text-center text-neutral-400">
+                    <th className="px-4 py-3 text-center text-muted-foreground">
                       No coursework records found. Add a column or click sync to populate.
                     </th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-zinc-800">
+              <tbody className="divide-y divide-neutral-100">
                 {gradebookData.students.map((student) => {
                   return (
                     <tr
                       key={student.id}
-                      className="hover:bg-neutral-50/40 dark:hover:bg-zinc-900/10"
+                      className="hover:bg-muted/30/10"
                     >
                       {/* Left student frozen column */}
-                      <td className="sticky left-0 z-10 border-r border-neutral-100 bg-white px-6 py-3 font-bold shadow-[2px_0_5px_rgba(0,0,0,0.02)] dark:border-zinc-800 dark:bg-zinc-950">
+                      <td className="sticky left-0 z-10 border-r border-border bg-card px-6 py-3 font-bold shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                         {student.fullName}
                       </td>
 
@@ -701,7 +701,7 @@ export default function GradebookPage() {
                         return (
                           <td
                             key={col.colKey}
-                            className="border-r border-neutral-100 px-4 py-2.5 text-center dark:border-zinc-800"
+                            className="border-r border-border px-4 py-2.5 text-center"
                           >
                             {isManual ? (
                               <div className="flex items-center justify-center">
@@ -718,14 +718,14 @@ export default function GradebookPage() {
                                   onChange={(e) =>
                                     handleCellChange(student.id, col, e.target.value)
                                   }
-                                  className="h-8 w-16 rounded-lg border-neutral-200 text-center text-xs font-bold focus:ring-rose-500 dark:border-zinc-800"
+                                  className="h-8 w-16 rounded-lg border-border text-center text-xs font-bold focus:ring-destructive"
                                 />
-                                <span className="ml-1.5 text-[10px] font-semibold text-neutral-400">
+                                <span className="ml-1.5 text-[10px] font-semibold text-muted-foreground">
                                   / {col.pointsPossible}
                                 </span>
                               </div>
                             ) : (
-                              <span className="font-semibold text-neutral-600 dark:text-neutral-400">
+                              <span className="font-semibold text-muted-foreground">
                                 {dbEntry?.pointsEarned !== undefined &&
                                 dbEntry?.pointsEarned !== null
                                   ? `${dbEntry.pointsEarned} / ${col.pointsPossible}`
@@ -736,7 +736,7 @@ export default function GradebookPage() {
                         );
                       })}
                       {allColumns.length === 0 && (
-                        <td className="px-4 py-4 text-center text-neutral-400 italic">--</td>
+                        <td className="px-4 py-4 text-center text-muted-foreground italic">--</td>
                       )}
                     </tr>
                   );
@@ -749,13 +749,13 @@ export default function GradebookPage() {
 
       {/* Manual Column Creation Dialog */}
       <Dialog open={addColumnDialogOpen} onOpenChange={setAddColumnDialogOpen}>
-        <DialogContent className="max-w-sm rounded-3xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+        <DialogContent className="max-w-sm rounded-3xl border border-border bg-card p-6 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-neutral-900 dark:text-neutral-50">
-              <Plus className="h-5 w-5 text-rose-500" />
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+              <Plus className="h-5 w-5 text-destructive" />
               Add Manual Grade Item
             </DialogTitle>
-            <DialogDescription className="text-xs text-neutral-500">
+            <DialogDescription className="text-xs text-muted-foreground">
               Create a custom manual gradebook column for items like midterms, finals, or
               participation.
             </DialogDescription>
@@ -763,7 +763,7 @@ export default function GradebookPage() {
 
           <form onSubmit={handleAddColumn} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold tracking-wider text-neutral-400 uppercase">
+              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                 Column Header Name
               </Label>
               <Input
@@ -771,19 +771,19 @@ export default function GradebookPage() {
                 placeholder="e.g. Midterm Presentation"
                 value={newColTitle}
                 onChange={(e) => setNewColTitle(e.target.value)}
-                className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
+                className="h-10 rounded-xl border-border bg-muted/50 text-xs/50"
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold tracking-wider text-neutral-400 uppercase">
+              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                 Category
               </Label>
               <select
                 value={newColCategory}
                 onChange={(e) => setNewColCategory(e.target.value)}
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-xs text-neutral-800 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
+                className="h-10 w-full rounded-xl border border-border bg-muted/50 px-3 text-xs text-foreground focus:outline-none/50"
               >
                 <option value="GENERAL">General</option>
                 <option value="HOMEWORK">Homework</option>
@@ -795,7 +795,7 @@ export default function GradebookPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold tracking-wider text-neutral-400 uppercase">
+                <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Max Points
                 </Label>
                 <Input
@@ -803,13 +803,13 @@ export default function GradebookPage() {
                   min={1}
                   value={newColPointsPossible}
                   onChange={(e) => setNewColPointsPossible(Number(e.target.value))}
-                  className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
+                  className="h-10 rounded-xl border-border bg-muted/50 text-xs/50"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold tracking-wider text-neutral-400 uppercase">
+                <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Weight Factor
                 </Label>
                 <Input
@@ -818,20 +818,20 @@ export default function GradebookPage() {
                   min={0.1}
                   value={newColWeight}
                   onChange={(e) => setNewColWeight(Number(e.target.value))}
-                  className="h-10 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
+                  className="h-10 rounded-xl border-border bg-muted/50 text-xs/50"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold tracking-wider text-neutral-400 uppercase">
+              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                 Student Visibility Status
               </Label>
               <select
                 value={newColStatus}
                 onChange={(e) => setNewColStatus(e.target.value as any)}
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-xs text-neutral-800 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
+                className="h-10 w-full rounded-xl border border-border bg-muted/50 px-3 text-xs text-foreground focus:outline-none/50"
               >
                 <option value="DRAFT">Draft (Hidden from students)</option>
                 <option value="PUBLISHED">Published (Visible on report cards)</option>
@@ -849,7 +849,7 @@ export default function GradebookPage() {
               </Button>
               <Button
                 type="submit"
-                className="h-10 cursor-pointer rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white hover:bg-neutral-800 dark:bg-zinc-100 dark:text-neutral-900 dark:hover:bg-zinc-200"
+                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
               >
                 Add Column
               </Button>

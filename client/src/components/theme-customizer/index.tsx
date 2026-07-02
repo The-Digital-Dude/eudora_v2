@@ -12,9 +12,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { tweakcnThemes } from "@/config/theme-data";
 import { useSidebarConfig } from "@/contexts/sidebar-context";
-import { useThemeManager } from "@/hooks/use-theme-manager";
+import { useThemeSettings } from "@/contexts/theme-settings-context";
+import { DEFAULT_THEME_SETTINGS } from "@/lib/theme-settings";
 import { cn } from "@/lib/utils";
 import type { ImportedTheme } from "@/types/theme-customizer";
 
@@ -28,79 +28,32 @@ interface ThemeCustomizerProps {
 }
 
 export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
-  const {
-    applyImportedTheme,
-    isDarkMode,
-    resetTheme,
-    applyRadius,
-    setBrandColorsValues,
-    applyTheme,
-    applyTweakcnTheme,
-  } = useThemeManager();
+  const { update, reset } = useThemeSettings();
   const { config: sidebarConfig, updateConfig: updateSidebarConfig } = useSidebarConfig();
 
   const [activeTab, setActiveTab] = React.useState("theme");
-  const [selectedTheme, setSelectedTheme] = React.useState("default");
-  const [selectedTweakcnTheme, setSelectedTweakcnTheme] = React.useState("");
-  const [selectedRadius, setSelectedRadius] = React.useState("0.5rem");
   const [importModalOpen, setImportModalOpen] = React.useState(false);
-  const [importedTheme, setImportedTheme] = React.useState<ImportedTheme | null>(null);
 
   const handleReset = () => {
-    // Complete reset to application defaults
-
-    // 1. Reset all state variables to initial values
-    setSelectedTheme("default");
-    setSelectedTweakcnTheme("");
-    setSelectedRadius("0.5rem");
-    setImportedTheme(null); // Clear imported theme
-    setBrandColorsValues({}); // Clear brand colors state
-
-    // 2. Completely remove all custom CSS variables
-    resetTheme();
-
-    // 3. Reset the radius to default
-    applyRadius("0.5rem");
-
-    // 4. Reset sidebar to defaults
-    updateSidebarConfig({ variant: "inset", collapsible: "offcanvas", side: "left" });
+    reset();
+    updateSidebarConfig({
+      variant: DEFAULT_THEME_SETTINGS.sidebar.variant,
+      collapsible: DEFAULT_THEME_SETTINGS.sidebar.collapsible,
+      side: DEFAULT_THEME_SETTINGS.sidebar.side,
+    });
   };
 
   const handleImport = (themeData: ImportedTheme) => {
-    setImportedTheme(themeData);
-    // Clear other selections to indicate custom import is active
-    setSelectedTheme("");
-    setSelectedTweakcnTheme("");
-
-    // Apply the imported theme
-    applyImportedTheme(themeData, isDarkMode);
+    update({
+      kind: "imported",
+      importedTheme: themeData,
+      brandColors: {},
+    });
   };
 
   const handleImportClick = () => {
     setImportModalOpen(true);
   };
-
-  // Re-apply themes when theme mode changes
-  React.useEffect(() => {
-    if (importedTheme) {
-      applyImportedTheme(importedTheme, isDarkMode);
-    } else if (selectedTheme) {
-      applyTheme(selectedTheme, isDarkMode);
-    } else if (selectedTweakcnTheme) {
-      const selectedPreset = tweakcnThemes.find((t) => t.value === selectedTweakcnTheme)?.preset;
-      if (selectedPreset) {
-        applyTweakcnTheme(selectedPreset, isDarkMode);
-      }
-    }
-  }, [
-    isDarkMode,
-    importedTheme,
-    selectedTheme,
-    selectedTweakcnTheme,
-    applyImportedTheme,
-    applyTheme,
-    applyTweakcnTheme,
-  ]);
 
   return (
     <>
@@ -126,22 +79,26 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
                   variant="outline"
                   size="icon"
                   onClick={handleReset}
+                  aria-label="Reset to defaults"
                   className="h-8 w-8 cursor-pointer"
                 >
                   <RotateCcw className="h-4 w-4" />
+                  <span className="sr-only">Reset to defaults</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => onOpenChange(false)}
+                  aria-label="Close customizer"
                   className="h-8 w-8 cursor-pointer"
                 >
                   <X className="h-4 w-4" />
+                  <span className="sr-only">Close customizer</span>
                 </Button>
               </div>
             </div>
             <SheetDescription className="text-muted-foreground sr-only text-sm">
-              Customize the them and layout of your dashboard.
+              Customize the theme and layout of your dashboard.
             </SheetDescription>
           </SheetHeader>
 
@@ -162,23 +119,10 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
                     <Layout className="mr-1 h-4 w-4" /> Layout
                   </TabsTrigger>
                 </TabsList>
-                {/* <TabsList className="grid w-full grid-cols-2 rounded-none h-12 p-1.5">
-                  <TabsTrigger value="theme" className="cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Palette className="h-4 w-4 mr-1" /> Theme</TabsTrigger>
-                  <TabsTrigger value="layout" className="cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Layout className="h-4 w-4 mr-1" /> Layout</TabsTrigger>
-                </TabsList> */}
               </div>
 
               <TabsContent value="theme" className="mt-0 flex-1">
-                <ThemeTab
-                  selectedTheme={selectedTheme}
-                  setSelectedTheme={setSelectedTheme}
-                  selectedTweakcnTheme={selectedTweakcnTheme}
-                  setSelectedTweakcnTheme={setSelectedTweakcnTheme}
-                  selectedRadius={selectedRadius}
-                  setSelectedRadius={setSelectedRadius}
-                  setImportedTheme={setImportedTheme}
-                  onImportClick={handleImportClick}
-                />
+                <ThemeTab onImportClick={handleImportClick} />
               </TabsContent>
 
               <TabsContent value="layout" className="mt-0 flex-1">
@@ -206,12 +150,14 @@ export function ThemeCustomizerTrigger({ onClick }: { onClick: () => void }) {
     <Button
       onClick={onClick}
       size="icon"
+      aria-label="Open theme customizer"
       className={cn(
         "bg-primary hover:bg-primary/90 text-primary-foreground fixed top-1/2 z-50 h-12 w-12 -translate-y-1/2 cursor-pointer rounded-full shadow-lg",
         sidebarConfig.side === "left" ? "right-4" : "left-4",
       )}
     >
       <Settings className="h-5 w-5" />
+      <span className="sr-only">Open theme customizer</span>
     </Button>
   );
 }

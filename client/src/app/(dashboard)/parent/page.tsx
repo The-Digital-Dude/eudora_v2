@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { useGetChildrenQuery, useGetChildAttendanceQuery, useGetChildHomeworkQuery, useGetChildGradesQuery } from "@/features/parent/parentApi";
@@ -43,18 +43,18 @@ export default function ParentPage() {
   if (isChildrenLoading) {
     return (
       <div className="flex h-[400px] flex-col items-center justify-center gap-4 text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Loading children data...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm font-medium text-muted-foreground">Loading children data...</p>
       </div>
     );
   }
 
   if (children.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[350px] p-6 text-center rounded-3xl border border-zinc-200/50 bg-white/40 dark:border-zinc-800/50 dark:bg-zinc-950/20 backdrop-blur-md">
-        <ShieldAlert className="h-12 w-12 text-zinc-300 dark:text-zinc-700 mb-3" />
-        <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50">No linked children</h3>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 max-w-sm mx-auto">
+      <div className="flex flex-col items-center justify-center h-[350px] p-6 text-center rounded-3xl border border-border/50 bg-card/40/50/20 backdrop-blur-md">
+        <ShieldAlert className="h-12 w-12 text-muted-foreground mb-3" />
+        <h3 className="text-base font-bold text-foreground">No linked children</h3>
+        <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
           We couldn't find any student profiles linked to your guardian account. Please contact school administration to set up your links.
         </p>
       </div>
@@ -68,22 +68,22 @@ export default function ParentPage() {
       {/* Welcome Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-2xl font-black tracking-tight text-foreground">
             Parent Portal
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-muted-foreground">
             Welcome back, {user?.name || "Guardian"}. Monitor your children's educational progress and schedules.
           </p>
         </div>
 
         {/* Global Navigation Tabs for Parent */}
-        <div className="inline-flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-900 self-start md:self-auto">
+        <div className="inline-flex rounded-xl bg-muted p-1 self-start md:self-auto">
           <button
             onClick={() => setActiveSection("academics")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeSection === "academics"
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
-                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <GraduationCap className="h-4 w-4" />
@@ -93,8 +93,8 @@ export default function ParentPage() {
             onClick={() => setActiveSection("billing")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeSection === "billing"
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
-                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <CreditCard className="h-4 w-4" />
@@ -104,8 +104,8 @@ export default function ParentPage() {
             onClick={() => setActiveSection("messages")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeSection === "messages"
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
-                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <MessageSquare className="h-4 w-4" />
@@ -118,7 +118,7 @@ export default function ParentPage() {
         <div className="space-y-6">
           {/* Children Status Cards Grid */}
           <div>
-            <h3 className="text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
               Linked Children
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -137,12 +137,12 @@ export default function ParentPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             {/* Attendance Calendar (col-span-1) */}
             <div className="lg:col-span-1">
-              <h3 className="text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
                 Attendance Calendar
               </h3>
               {isAttendanceLoading ? (
-                <div className="rounded-3xl border border-zinc-200/50 bg-white/40 p-6 shadow-xl dark:border-zinc-800/50 dark:bg-zinc-950/20 backdrop-blur-md flex items-center justify-center h-[280px]">
-                  <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+                <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl/50/20 backdrop-blur-md flex items-center justify-center h-[280px]">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : (
                 <AttendanceCalendar records={attendance} />
@@ -151,7 +151,7 @@ export default function ParentPage() {
 
             {/* Homework and Grades (col-span-2) */}
             <div className="lg:col-span-2">
-              <h3 className="text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
                 Assignments & Grades
               </h3>
               <HomeworkGradesPanel
@@ -174,10 +174,10 @@ export default function ParentPage() {
       {activeSection === "messages" && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+            <h2 className="text-lg font-bold text-foreground">
               Message Center
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-muted-foreground">
               Send messages directly to the teachers of your children's classes.
             </p>
           </div>

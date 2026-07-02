@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { useGetTeacherClassesQuery } from "@/features/teacher/teacherPortalApi";
@@ -38,8 +38,8 @@ export default function TeacherPage() {
   if (isLoading) {
     return (
       <div className="flex h-[400px] flex-col items-center justify-center gap-4 text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Loading Teacher Command Center...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm font-medium text-muted-foreground">Loading Teacher Command Center...</p>
       </div>
     );
   }
@@ -58,22 +58,22 @@ export default function TeacherPage() {
       {/* Welcome Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-2xl font-black tracking-tight text-foreground">
             Teacher Dashboard
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-muted-foreground">
             Welcome back, {user?.name || "Teacher"}. Manage your classes, record attendance, and communicate with parents.
           </p>
         </div>
 
         {/* Global Section Tabs */}
-        <div className="inline-flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-900 self-start md:self-auto">
+        <div className="inline-flex rounded-xl bg-muted p-1 self-start md:self-auto">
           <button
             onClick={() => setActiveSection("attendance")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeSection === "attendance"
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
-                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <ClipboardCheck className="h-4 w-4" />
@@ -83,8 +83,8 @@ export default function TeacherPage() {
             onClick={() => setActiveSection("grading")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeSection === "grading"
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
-                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <BookOpen className="h-4 w-4" />
@@ -94,8 +94,8 @@ export default function TeacherPage() {
             onClick={() => setActiveSection("messages")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeSection === "messages"
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
-                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <MessageSquare className="h-4 w-4" />
@@ -108,7 +108,7 @@ export default function TeacherPage() {
         <div className="space-y-6">
           {/* Header */}
           <div>
-            <h3 className="text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
               Assigned Classes
             </h3>
             <ClassesOverview
@@ -122,7 +122,7 @@ export default function TeacherPage() {
           {/* Quick roll-call selector */}
           {activeClassId && (
             <div>
-              <h3 className="text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
                 Quick Roll-Call Marking
               </h3>
               <QuickAttendance
@@ -139,17 +139,17 @@ export default function TeacherPage() {
           {/* Today's Schedule Slot list (col-span-1) */}
           <div className="space-y-6 lg:col-span-1">
             <div>
-              <h3 className="text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
                 Today's Schedule
               </h3>
-              <div className="rounded-3xl border border-zinc-200/50 bg-white/40 p-6 shadow-xl shadow-zinc-200/5 dark:border-zinc-800/50 dark:bg-zinc-950/20 backdrop-blur-md space-y-4 max-h-[520px] overflow-y-auto">
-                <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-indigo-500" />
+              <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5/50/20 backdrop-blur-md space-y-4 max-h-[520px] overflow-y-auto">
+                <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-primary" />
                   Timetable for {format(new Date(), "EEEE")}
                 </h3>
 
                 {todaySchedule.length === 0 ? (
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 py-6 text-center">
+                  <p className="text-xs text-muted-foreground py-6 text-center">
                     No classes scheduled for today.
                   </p>
                 ) : (
@@ -157,17 +157,17 @@ export default function TeacherPage() {
                     {todaySchedule.map((slot: any) => (
                       <div
                         key={slot.id}
-                        className="p-3 rounded-2xl border border-zinc-200/40 bg-white/20 dark:border-zinc-800/40 dark:bg-zinc-900/10 flex items-center justify-between"
+                        className="p-3 rounded-2xl border border-border/40 bg-card/20/40/10 flex items-center justify-between"
                       >
                         <div>
-                          <h4 className="font-extrabold text-xs text-zinc-900 dark:text-zinc-50">
+                          <h4 className="font-extrabold text-xs text-foreground">
                             {slot.courseClass?.name}
                           </h4>
-                          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
                             Roster: {slot.classSection?.name}
                           </p>
                         </div>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-mono">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 dark:bg-primary/10 text-primary font-mono">
                           {slot.startTime} - {slot.endTime}
                         </span>
                       </div>
@@ -181,52 +181,52 @@ export default function TeacherPage() {
           {/* Grading Queue (col-span-1) */}
           <div className="space-y-6 lg:col-span-1">
             <div>
-              <h3 className="text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
                 Grading Queue
               </h3>
-              <div className="rounded-3xl border border-zinc-200/50 bg-white/40 p-6 shadow-xl shadow-zinc-200/5 dark:border-zinc-800/50 dark:bg-zinc-950/20 backdrop-blur-md flex flex-col h-[520px]">
-                <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-1.5 border-b border-zinc-200/20 dark:border-zinc-800/40 pb-3 mb-3">
-                  <BookOpen className="h-4. w-4 text-indigo-500" />
+              <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5/50/20 backdrop-blur-md flex flex-col h-[520px]">
+                <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 border-b border-border/20/40 pb-3 mb-3">
+                  <BookOpen className="h-4. w-4 text-primary" />
                   Submissions to Grade
                 </h3>
 
                 <div className="flex-1 overflow-y-auto space-y-3">
                   {ungradedSubmissions.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-zinc-400 text-xs py-6">
+                    <div className="flex items-center justify-center h-full text-muted-foreground text-xs py-6">
                       No assignments awaiting grades.
                     </div>
                   ) : (
                     ungradedSubmissions.map((sub: any) => (
                       <div
                         key={sub.id}
-                        className="p-3 rounded-2xl border border-zinc-200/40 bg-white/20 dark:border-zinc-800/40 dark:bg-zinc-900/10 flex flex-col gap-2"
+                        className="p-3 rounded-2xl border border-border/40 bg-card/20/40/10 flex flex-col gap-2"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <h4 className="text-xs font-extrabold text-zinc-900 dark:text-zinc-50 truncate">
+                            <h4 className="text-xs font-extrabold text-foreground truncate">
                               {sub.homework?.title}
                             </h4>
-                            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 truncate">
+                            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
                               Student: {sub.studentProfile?.fullName}
                             </p>
                           </div>
 
                           <Link
                             href="/homework"
-                            className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                            className="inline-flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary"
                           >
                             Grade <ExternalLink className="h-3 w-3" />
                           </Link>
                         </div>
 
-                        <div className="flex items-center justify-between mt-1 text-[9px] font-bold text-zinc-400">
+                        <div className="flex items-center justify-between mt-1 text-[9px] font-bold text-muted-foreground">
                           <span>
                             Submitted: {format(new Date(sub.submissionDate), "MMM dd")}
                           </span>
                           <span className={`px-1.5 py-0.5 rounded-full ${
                             sub.status === "LATE"
                               ? "bg-orange-500/10 text-orange-600"
-                              : "bg-blue-500/10 text-blue-600"
+                              : "bg-primary/10 text-primary"
                           }`}>
                             {sub.status}
                           </span>
@@ -242,7 +242,7 @@ export default function TeacherPage() {
           {/* Performance Alerts (col-span-1) */}
           <div className="space-y-6 lg:col-span-1">
             <div>
-              <h3 className="text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
                 Student Alerts
               </h3>
               <PerformanceAlerts />
@@ -254,10 +254,10 @@ export default function TeacherPage() {
       {activeSection === "messages" && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+            <h2 className="text-lg font-bold text-foreground">
               Parent Messaging Center
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-muted-foreground">
               Reply to incoming communications from parents and guardians of your students.
             </p>
           </div>

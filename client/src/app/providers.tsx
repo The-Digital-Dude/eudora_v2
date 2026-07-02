@@ -36,12 +36,12 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
 
   if (!mounted || isLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 text-neutral-900 select-none">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground select-none">
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-pulse rounded-xl bg-neutral-900 p-2.5 text-white shadow-sm">
+          <div className="animate-pulse rounded-xl bg-foreground p-2.5 text-background shadow-sm">
             <Sparkles className="h-5 w-5" />
           </div>
-          <span className="animate-pulse text-xs font-semibold tracking-wide text-neutral-400 uppercase">
+          <span className="animate-pulse text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             Connecting...
           </span>
         </div>

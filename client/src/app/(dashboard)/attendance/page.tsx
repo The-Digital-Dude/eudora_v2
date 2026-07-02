@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   AlertCircle,
@@ -261,11 +261,11 @@ export default function AttendancePage() {
       <div className="space-y-6">
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-50">
-              <ClipboardList className="h-6 w-6 text-indigo-500" />
+            <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-foreground">
+              <ClipboardList className="h-6 w-6 text-primary" />
               Attendance Record
             </h1>
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs font-medium text-muted-foreground">
               {isStudent
                 ? "Track your daily and subject-wise classroom attendance."
                 : "Monitor attendance records and statistics for linked students."}
@@ -274,7 +274,7 @@ export default function AttendancePage() {
         </div>
 
         {isGuardian && linkedStudents.length > 1 && (
-          <div className="flex gap-2 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="flex gap-2 rounded-2xl border border-border bg-card p-4">
             {linkedStudents.map((rel: any) => (
               <Button
                 key={rel.studentProfileId}
@@ -289,16 +289,16 @@ export default function AttendancePage() {
         )}
 
         {isLoadingStudentSummary ? (
-          <div className="flex h-48 items-center justify-center text-xs text-neutral-400">
+          <div className="flex h-48 items-center justify-center text-xs text-muted-foreground">
             Loading student attendance summaries...
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Daily Attendance Overview Card */}
-            <Card className="overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-              <CardHeader className="border-b border-neutral-100 dark:border-zinc-800">
-                <CardTitle className="flex items-center gap-2 text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                  <Calendar className="h-4 w-4 text-emerald-500" />
+            <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <Calendar className="h-4 w-4 text-success" />
                   Homeroom Daily Attendance
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -307,30 +307,30 @@ export default function AttendancePage() {
               </CardHeader>
               <CardContent className="space-y-6 p-6">
                 <div className="flex items-center gap-6">
-                  <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-4 border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10">
+                  <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-4 border-success bg-success/10">
                     <div className="text-center">
-                      <span className="text-2xl font-black text-neutral-800 dark:text-neutral-200">
+                      <span className="text-2xl font-black text-foreground">
                         {dailyStats.attendanceRate}%
                       </span>
-                      <p className="text-[8px] font-bold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
+                      <p className="text-[8px] font-bold tracking-wider text-success uppercase">
                         Rate
                       </p>
                     </div>
                   </div>
                   <div className="grid flex-1 grid-cols-2 gap-4">
-                    <div className="rounded-xl bg-neutral-50 p-3 dark:bg-zinc-900">
-                      <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+                    <div className="rounded-xl bg-muted/50 p-3">
+                      <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                         Total Recorded
                       </span>
-                      <p className="text-lg font-black text-neutral-800 dark:text-neutral-200">
+                      <p className="text-lg font-black text-foreground">
                         {dailyStats.total}
                       </p>
                     </div>
-                    <div className="rounded-xl bg-emerald-50/50 p-3 dark:bg-emerald-500/5">
-                      <span className="text-[10px] font-bold tracking-wider text-emerald-600/70 uppercase dark:text-emerald-400/70">
+                    <div className="rounded-xl bg-success/10 p-3">
+                      <span className="text-[10px] font-bold tracking-wider text-success/70 uppercase">
                         Present
                       </span>
-                      <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                      <p className="text-lg font-black text-success">
                         {dailyStats.breakdown.PRESENT +
                           dailyStats.breakdown.LATE +
                           dailyStats.breakdown.EXCUSED}
@@ -339,24 +339,24 @@ export default function AttendancePage() {
                   </div>
                 </div>
 
-                <div className="space-y-2 border-t border-neutral-100 pt-2 dark:border-zinc-800">
-                  <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                <div className="space-y-2 border-t border-border pt-2">
+                  <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                     Status Breakdown
                   </span>
                   <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                    <div className="rounded-xl bg-emerald-50/40 p-2 text-emerald-700 dark:bg-emerald-500/5 dark:text-emerald-400">
+                    <div className="rounded-xl bg-success/10 p-2 text-success">
                       <div className="text-sm font-black">{dailyStats.breakdown.PRESENT}</div>
                       <div className="text-[9px] font-semibold">On Time</div>
                     </div>
-                    <div className="rounded-xl bg-amber-50/40 p-2 text-amber-700 dark:bg-amber-500/5 dark:text-amber-400">
+                    <div className="rounded-xl bg-warning/10 p-2 text-warning">
                       <div className="text-sm font-black">{dailyStats.breakdown.LATE}</div>
                       <div className="text-[9px] font-semibold">Late</div>
                     </div>
-                    <div className="rounded-xl bg-blue-50/40 p-2 text-blue-700 dark:bg-blue-500/5 dark:text-blue-400">
+                    <div className="rounded-xl bg-accent p-2 text-accent-foreground">
                       <div className="text-sm font-black">{dailyStats.breakdown.EXCUSED}</div>
                       <div className="text-[9px] font-semibold">Excused</div>
                     </div>
-                    <div className="rounded-xl bg-rose-50/40 p-2 text-rose-700 dark:bg-rose-500/5 dark:text-rose-400">
+                    <div className="rounded-xl bg-destructive/10 p-2 text-destructive">
                       <div className="text-sm font-black">{dailyStats.breakdown.ABSENT}</div>
                       <div className="text-[9px] font-semibold">Absent</div>
                     </div>
@@ -366,10 +366,10 @@ export default function AttendancePage() {
             </Card>
 
             {/* Subject Attendance Card */}
-            <Card className="overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-              <CardHeader className="border-b border-neutral-100 dark:border-zinc-800">
-                <CardTitle className="flex items-center gap-2 text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                  <GraduationCap className="h-4 w-4 text-violet-500" />
+            <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <GraduationCap className="h-4 w-4 text-primary" />
                   Subject Class Sessions Attendance
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -378,30 +378,30 @@ export default function AttendancePage() {
               </CardHeader>
               <CardContent className="space-y-6 p-6">
                 <div className="flex items-center gap-6">
-                  <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-4 border-violet-500 bg-violet-50/50 dark:bg-violet-500/10">
+                  <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-4 border-primary bg-primary/10">
                     <div className="text-center">
-                      <span className="text-2xl font-black text-neutral-800 dark:text-neutral-200">
+                      <span className="text-2xl font-black text-foreground">
                         {subjectStats.attendanceRate}%
                       </span>
-                      <p className="text-[8px] font-bold tracking-wider text-violet-600 uppercase dark:text-violet-400">
+                      <p className="text-[8px] font-bold tracking-wider text-primary uppercase">
                         Rate
                       </p>
                     </div>
                   </div>
                   <div className="grid flex-1 grid-cols-2 gap-4">
-                    <div className="rounded-xl bg-neutral-50 p-3 dark:bg-zinc-900">
-                      <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+                    <div className="rounded-xl bg-muted/50 p-3">
+                      <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                         Total Lectures
                       </span>
-                      <p className="text-lg font-black text-neutral-800 dark:text-neutral-200">
+                      <p className="text-lg font-black text-foreground">
                         {subjectStats.total}
                       </p>
                     </div>
-                    <div className="rounded-xl bg-violet-50/50 p-3 dark:bg-violet-500/5">
-                      <span className="text-[10px] font-bold tracking-wider text-violet-600/70 uppercase dark:text-violet-400/70">
+                    <div className="rounded-xl bg-primary/10 p-3">
+                      <span className="text-[10px] font-bold tracking-wider text-primary/80 uppercase">
                         Attended
                       </span>
-                      <p className="text-lg font-black text-violet-600 dark:text-violet-400">
+                      <p className="text-lg font-black text-primary">
                         {subjectStats.breakdown.PRESENT +
                           subjectStats.breakdown.LATE +
                           subjectStats.breakdown.EXCUSED}
@@ -410,24 +410,24 @@ export default function AttendancePage() {
                   </div>
                 </div>
 
-                <div className="space-y-2 border-t border-neutral-100 pt-2 dark:border-zinc-800">
-                  <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                <div className="space-y-2 border-t border-border pt-2">
+                  <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                     Status Breakdown
                   </span>
                   <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                    <div className="rounded-xl bg-emerald-50/40 p-2 text-emerald-700 dark:bg-emerald-500/5 dark:text-emerald-400">
+                    <div className="rounded-xl bg-success/10 p-2 text-success">
                       <div className="text-sm font-black">{subjectStats.breakdown.PRESENT}</div>
                       <div className="text-[9px] font-semibold">Attended</div>
                     </div>
-                    <div className="rounded-xl bg-amber-50/40 p-2 text-amber-700 dark:bg-amber-500/5 dark:text-amber-400">
+                    <div className="rounded-xl bg-warning/10 p-2 text-warning">
                       <div className="text-sm font-black">{subjectStats.breakdown.LATE}</div>
                       <div className="text-[9px] font-semibold">Late</div>
                     </div>
-                    <div className="rounded-xl bg-blue-50/40 p-2 text-blue-700 dark:bg-blue-500/5 dark:text-blue-400">
+                    <div className="rounded-xl bg-accent p-2 text-accent-foreground">
                       <div className="text-sm font-black">{subjectStats.breakdown.EXCUSED}</div>
                       <div className="text-[9px] font-semibold">Excused</div>
                     </div>
-                    <div className="rounded-xl bg-rose-50/40 p-2 text-rose-700 dark:bg-rose-500/5 dark:text-rose-400">
+                    <div className="rounded-xl bg-destructive/10 p-2 text-destructive">
                       <div className="text-sm font-black">{subjectStats.breakdown.ABSENT}</div>
                       <div className="text-[9px] font-semibold">Absent</div>
                     </div>
@@ -447,11 +447,11 @@ export default function AttendancePage() {
       {/* Title */}
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-50">
-            <ClipboardList className="h-6 w-6 text-rose-500" />
+          <h1 className="font-display flex items-center gap-2 text-2xl font-black tracking-tight text-foreground">
+            <ClipboardList className="h-6 w-6 text-primary" />
             Attendance & Roster Daily Marking
           </h1>
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs font-medium text-muted-foreground">
             Manage student attendance rosters, record notes, view monthly sheets, trends and track
             at-risk students.
           </p>
@@ -459,15 +459,15 @@ export default function AttendancePage() {
       </div>
 
       {/* Control panel & filters */}
-      <div className="grid grid-cols-1 gap-4 rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm md:grid-cols-3 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="grid grid-cols-1 gap-4 rounded-3xl border border-border bg-card p-5 shadow-sm md:grid-cols-3">
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+          <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
             Class Section
           </Label>
           <select
             value={selectedClassId}
             onChange={(e) => setSelectedClassId(e.target.value)}
-            className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-xs text-neutral-800 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
+            className="h-11 w-full rounded-xl border border-border bg-muted/30 px-3 text-xs text-foreground focus:outline-none"
           >
             {isLoadingClasses ? (
               <option>Loading class sections...</option>
@@ -482,19 +482,19 @@ export default function AttendancePage() {
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+          <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
             Attendance Date
           </Label>
           <Input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="h-11 rounded-xl border-neutral-200 bg-neutral-50/50 text-xs text-neutral-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-neutral-200"
+            className="h-11 rounded-xl border-border bg-muted/30 text-xs text-foreground"
           />
         </div>
 
         <div className="flex flex-col justify-end gap-1.5">
-          <Label className="hidden text-xs font-bold tracking-wider text-neutral-400 uppercase md:block dark:text-neutral-500">
+          <Label className="hidden text-xs font-bold tracking-wider text-muted-foreground uppercase md:block">
             &nbsp;
           </Label>
           <div className="flex gap-2">
@@ -519,57 +519,57 @@ export default function AttendancePage() {
       {/* Stats Summary Panel */}
       {activeTab === "sheet" && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
             <div>
-              <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Unmarked Placements
               </span>
-              <p className="mt-0.5 text-xl font-black text-rose-500">{unmarkedCount}</p>
+              <p className="mt-0.5 text-xl font-black text-destructive">{unmarkedCount}</p>
             </div>
-            <div className="rounded-xl bg-rose-50 p-2.5 dark:bg-rose-500/10">
-              <AlertCircle className="h-5 w-5 text-rose-500" />
+            <div className="rounded-xl bg-destructive/10 p-2.5">
+              <AlertCircle className="h-5 w-5 text-destructive" />
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
             <div>
-              <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Daily Presence Rate
               </span>
-              <p className="mt-0.5 text-xl font-black text-emerald-500">
+              <p className="mt-0.5 text-xl font-black text-success">
                 {classSummary?.attendanceRate ?? 100}%
               </p>
             </div>
-            <div className="rounded-xl bg-emerald-50 p-2.5 dark:bg-emerald-500/10">
-              <CheckCircle className="h-5 w-5 text-emerald-500" />
+            <div className="rounded-xl bg-success/10 p-2.5">
+              <CheckCircle className="h-5 w-5 text-success" />
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
             <div>
-              <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Monthly Rate ({selectedDate.substring(0, 7)})
               </span>
-              <p className="mt-0.5 text-xl font-black text-indigo-500">
+              <p className="mt-0.5 text-xl font-black text-primary">
                 {monthlySummary?.attendanceRate ?? 100}%
               </p>
             </div>
-            <div className="rounded-xl bg-indigo-50 p-2.5 dark:bg-indigo-500/10">
-              <BarChart3 className="h-5 w-5 text-indigo-500" />
+            <div className="rounded-xl bg-primary/10 p-2.5">
+              <BarChart3 className="h-5 w-5 text-primary" />
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
             <div>
-              <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 At Risk Placements
               </span>
-              <p className="mt-0.5 text-xl font-black text-amber-500">
+              <p className="mt-0.5 text-xl font-black text-warning">
                 {atRiskStudents?.length ?? 0}
               </p>
             </div>
-            <div className="rounded-xl bg-amber-50 p-2.5 dark:bg-amber-500/10">
-              <TrendingDown className="h-5 w-5 text-amber-500" />
+            <div className="rounded-xl bg-warning/10 p-2.5">
+              <TrendingDown className="h-5 w-5 text-warning" />
             </div>
           </div>
         </div>
@@ -577,17 +577,17 @@ export default function AttendancePage() {
 
       {/* Tabs panels */}
       {activeTab === "sheet" ? (
-        <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
           {/* Header toolbar */}
-          <div className="flex flex-col items-center justify-between gap-3 border-b border-neutral-100 p-5 md:flex-row dark:border-zinc-800">
+          <div className="flex flex-col items-center justify-between gap-3 border-b border-border p-5 md:flex-row">
             <div className="relative w-full md:w-72">
-              <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+              <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search student profile name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-10 w-full rounded-xl border-neutral-200 bg-neutral-50/50 pl-9 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
+                className="h-10 w-full rounded-xl border-border bg-muted/30 pl-9 text-xs"
               />
             </div>
 
@@ -595,14 +595,14 @@ export default function AttendancePage() {
               <Button
                 onClick={handleMarkAllPresent}
                 variant="outline"
-                className="h-10 w-full cursor-pointer rounded-xl text-xs font-semibold hover:bg-neutral-50 md:w-auto dark:hover:bg-zinc-900"
+                className="h-10 w-full cursor-pointer rounded-xl text-xs font-semibold hover:bg-muted md:w-auto"
               >
                 Mark All Present
               </Button>
               <Button
                 onClick={handleSaveAttendance}
                 disabled={isSaving}
-                className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-neutral-900 text-xs font-semibold text-white hover:bg-neutral-800 md:w-auto dark:bg-zinc-100 dark:text-neutral-900 dark:hover:bg-zinc-200"
+                className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary text-xs font-semibold text-white hover:bg-foreground/90 md:w-auto"
               >
                 <Save className="h-3.5 w-3.5" />
                 {isSaving ? "Saving..." : "Save Roster Attendance"}
@@ -613,25 +613,25 @@ export default function AttendancePage() {
           {/* Roster Marking Grid */}
           <div className="overflow-x-auto">
             {isLoadingSheet ? (
-              <div className="flex h-48 items-center justify-center text-xs text-neutral-400">
+              <div className="flex h-48 items-center justify-center text-xs text-muted-foreground">
                 Loading class section roster...
               </div>
             ) : filteredSheet.length === 0 ? (
-              <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-neutral-400">
-                <Users className="h-8 w-8 text-neutral-300 dark:text-zinc-700" />
+              <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
+                <Users className="h-8 w-8 text-muted-foreground/50" />
                 No student profiles found for this class section.
               </div>
             ) : (
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-neutral-100 bg-neutral-50/60 text-[10px] font-bold tracking-wider text-neutral-400 uppercase dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-neutral-500">
+                  <tr className="border-b border-border bg-muted/40 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                     <th className="px-6 py-3">Student Profile</th>
                     <th className="px-6 py-3">Gender</th>
                     <th className="px-6 py-3 text-center">Status Toggle</th>
                     <th className="px-6 py-3">Remarks / Notes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-100 text-xs text-neutral-800 dark:divide-zinc-800 dark:text-neutral-200">
+                <tbody className="divide-y divide-border text-xs text-foreground">
                   {filteredSheet.map((row) => {
                     const localRec = localRecords[row.studentProfileId] || {
                       status: "PRESENT",
@@ -642,17 +642,17 @@ export default function AttendancePage() {
                     return (
                       <tr
                         key={row.studentProfileId}
-                        className="transition-colors hover:bg-neutral-50/40 dark:hover:bg-zinc-900/10"
+                        className="transition-colors hover:bg-muted/30"
                       >
                         <td className="flex items-center gap-2.5 px-6 py-4 font-bold">
                           {row.fullName}
                           {isUnmarked && (
-                            <Badge className="rounded-md border-none bg-neutral-100 px-1 py-0 text-[8px] font-semibold text-neutral-600 dark:bg-zinc-800 dark:text-zinc-400">
+                            <Badge className="rounded-md border-none bg-muted px-1 py-0 text-[8px] font-semibold text-muted-foreground">
                               Unmarked
                             </Badge>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-[9px] font-semibold tracking-wider text-neutral-400 uppercase">
+                        <td className="px-6 py-4 text-[9px] font-semibold tracking-wider text-muted-foreground uppercase">
                           {row.gender}
                         </td>
                         <td className="px-6 py-4">
@@ -661,17 +661,17 @@ export default function AttendancePage() {
                               const isSelected = localRec.status === status;
                               const variantColors = {
                                 PRESENT: isSelected
-                                  ? "bg-emerald-500 text-white dark:bg-emerald-600"
-                                  : "bg-emerald-50/50 hover:bg-emerald-50 dark:bg-emerald-500/5 text-emerald-600 hover:text-emerald-700",
+                                  ? "bg-success text-success-foreground"
+                                  : "bg-success/10 hover:bg-success/20 text-success",
                                 LATE: isSelected
-                                  ? "bg-amber-500 text-white dark:bg-amber-600"
-                                  : "bg-amber-50/50 hover:bg-amber-50 dark:bg-amber-500/5 text-amber-600 hover:text-amber-700",
+                                  ? "bg-warning text-warning-foreground"
+                                  : "bg-warning/10 hover:bg-warning/20 text-warning",
                                 EXCUSED: isSelected
-                                  ? "bg-sky-500 text-white dark:bg-sky-600"
-                                  : "bg-sky-50/50 hover:bg-sky-50 dark:bg-sky-500/5 text-sky-600 hover:text-sky-700",
+                                  ? "bg-accent-foreground text-accent"
+                                  : "bg-accent hover:bg-accent/80 text-accent-foreground",
                                 ABSENT: isSelected
-                                  ? "bg-rose-500 text-white dark:bg-rose-600"
-                                  : "bg-rose-50/50 hover:bg-rose-50 dark:bg-rose-500/5 text-rose-600 hover:text-rose-700",
+                                  ? "bg-destructive text-destructive-foreground"
+                                  : "bg-destructive/10 hover:bg-destructive/20 text-destructive",
                               };
 
                               return (
@@ -697,7 +697,7 @@ export default function AttendancePage() {
                             onChange={(e) =>
                               handleRemarksChange(row.studentProfileId, e.target.value)
                             }
-                            className="h-8 rounded-lg border-neutral-200 bg-neutral-50/50 text-xs dark:border-zinc-800 dark:bg-zinc-900/50"
+                            className="h-8 rounded-lg border-border bg-muted/30 text-xs"
                           />
                         </td>
                       </tr>
@@ -713,10 +713,10 @@ export default function AttendancePage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Trends and monthly summaries */}
           <div className="space-y-6 lg:col-span-2">
-            <Card className="overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-              <CardHeader className="border-b border-neutral-100 dark:border-zinc-800">
-                <CardTitle className="flex items-center gap-2 text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
+            <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <TrendingUp className="h-4 w-4 text-success" />
                   Absence & Tardiness Daily Trends
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -725,7 +725,7 @@ export default function AttendancePage() {
               </CardHeader>
               <CardContent className="p-6">
                 {!absenceTrends || absenceTrends.length === 0 ? (
-                  <div className="flex h-64 items-center justify-center text-xs text-neutral-400">
+                  <div className="flex h-64 items-center justify-center text-xs text-muted-foreground">
                     No trend records available for this date range.
                   </div>
                 ) : (
@@ -773,10 +773,10 @@ export default function AttendancePage() {
             </Card>
 
             {/* Monthly Status Summary */}
-            <Card className="overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-              <CardHeader className="border-b border-neutral-100 dark:border-zinc-800">
-                <CardTitle className="flex items-center gap-2 text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                  <BarChart3 className="h-4 w-4 text-indigo-500" />
+            <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <BarChart3 className="h-4 w-4 text-primary" />
                   Monthly Status Distribution
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -785,7 +785,7 @@ export default function AttendancePage() {
               </CardHeader>
               <CardContent className="p-6">
                 {!monthlySummary || monthlySummary.total === 0 ? (
-                  <div className="flex h-64 items-center justify-center text-xs text-neutral-400">
+                  <div className="flex h-64 items-center justify-center text-xs text-muted-foreground">
                     No summary data recorded for this month.
                   </div>
                 ) : (
@@ -842,10 +842,10 @@ export default function AttendancePage() {
 
           {/* At-Risk Students Panel */}
           <div className="space-y-6">
-            <Card className="h-full overflow-hidden rounded-3xl border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-              <CardHeader className="border-b border-neutral-100 dark:border-zinc-800">
-                <CardTitle className="flex items-center gap-2 text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                  <AlertCircle className="h-4 w-4 text-rose-500" />
+            <Card className="h-full overflow-hidden rounded-3xl border-border bg-card shadow-sm">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <AlertCircle className="h-4 w-4 text-destructive" />
                   At-Risk Students List
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -854,8 +854,8 @@ export default function AttendancePage() {
               </CardHeader>
               <CardContent className="p-5">
                 {!atRiskStudents || atRiskStudents.length === 0 ? (
-                  <div className="flex h-64 flex-col items-center justify-center gap-2 p-8 text-center text-xs text-neutral-400">
-                    <Sparkles className="h-8 w-8 text-emerald-400" />
+                  <div className="flex h-64 flex-col items-center justify-center gap-2 p-8 text-center text-xs text-muted-foreground">
+                    <Sparkles className="h-8 w-8 text-success" />
                     All student profiles exceed the 85% attendance standard!
                   </div>
                 ) : (
@@ -863,26 +863,26 @@ export default function AttendancePage() {
                     {atRiskStudents.map((row) => (
                       <div
                         key={row.studentProfileId}
-                        className="flex items-center justify-between rounded-2xl border border-neutral-200/60 bg-neutral-50 p-3.5 dark:border-zinc-800 dark:bg-zinc-900"
+                        className="flex items-center justify-between rounded-2xl border border-border/50 bg-muted/50 p-3.5"
                       >
                         <div className="space-y-1">
-                          <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                          <h4 className="text-xs font-bold text-foreground">
                             {row.fullName}
                           </h4>
-                          <div className="flex items-center gap-2 text-[10px] font-semibold text-neutral-400 uppercase">
+                          <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase">
                             <span>{row.classSectionName}</span>
-                            <span className="h-1 w-1 rounded-full bg-neutral-300 dark:bg-zinc-700"></span>
-                            <span className="font-bold text-rose-500">
+                            <span className="h-1 w-1 rounded-full bg-muted-foreground/30"></span>
+                            <span className="font-bold text-destructive">
                               {row.absentCount} Absences
                             </span>
                           </div>
                         </div>
 
                         <div className="text-right">
-                          <span className="text-xs font-black text-rose-600 dark:text-rose-400">
+                          <span className="text-xs font-black text-destructive">
                             {row.attendanceRate}%
                           </span>
-                          <p className="text-[8px] font-bold tracking-wider text-neutral-400 uppercase">
+                          <p className="text-[8px] font-bold tracking-wider text-muted-foreground uppercase">
                             Rate
                           </p>
                         </div>

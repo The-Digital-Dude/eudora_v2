@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -27,14 +27,14 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-neutral-200/50 bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 select-none">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-2">
-          <div className="rounded-lg bg-neutral-900 p-1.5 text-white shadow-sm transition-transform group-hover:scale-105">
+          <div className="rounded-lg bg-foreground p-1.5 text-white shadow-sm transition-transform group-hover:scale-105">
             <Sparkles className="h-4 w-4" />
           </div>
-          <span className="font-display text-base font-bold tracking-tight text-neutral-900">
+          <span className="font-display text-base font-bold tracking-tight text-foreground">
             Eudora
           </span>
         </Link>
@@ -43,19 +43,19 @@ export default function Navbar() {
         <nav className="hidden items-center gap-8 md:flex">
           <a
             href="#features"
-            className="text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-950"
+            className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
             Features
           </a>
           <a
             href="#stats"
-            className="text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-950"
+            className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
             Analytics
           </a>
           <a
             href="/docs"
-            className="text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-950"
+            className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
             Documentation
           </a>
@@ -65,7 +65,7 @@ export default function Navbar() {
         <div className="flex items-center gap-4 text-sm">
           {isAuthenticated ? (
             <div className="flex items-center gap-4">
-              <span className="text-xs font-semibold text-neutral-600">
+              <span className="text-xs font-semibold text-muted-foreground">
                 Hello, {user?.firstName || "User"}
               </span>
               <Link
@@ -85,7 +85,7 @@ export default function Navbar() {
                     ? "/dashboard"
                     : "/learn"
                 }
-                className="text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-950"
+                className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
               >
                 {user?.role === "ADMIN" ||
                 user?.role === "SUPER_ADMIN" ||
@@ -104,7 +104,7 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={handleLogout}
-                className="h-9 cursor-pointer rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white shadow-sm transition-all hover:bg-neutral-800 active:scale-97"
+                className="h-9 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm transition-all hover:bg-foreground/90 active:scale-97"
               >
                 Sign Out
               </button>
@@ -113,12 +113,12 @@ export default function Navbar() {
             <div className="flex items-center gap-4">
               <Link
                 href="/login"
-                className="text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-950"
+                className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
               >
                 Sign In
               </Link>
               <Link href="/register">
-                <button className="h-9 cursor-pointer rounded-xl bg-neutral-900 px-4 text-xs font-semibold text-white shadow-sm transition-all hover:bg-neutral-800 active:scale-97">
+                <button className="h-9 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm transition-all hover:bg-foreground/90 active:scale-97">
                   Get Started
                 </button>
               </Link>

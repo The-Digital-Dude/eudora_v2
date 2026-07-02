@@ -3,16 +3,23 @@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useSidebar } from "@/components/ui/sidebar";
+import { Slider } from "@/components/ui/slider";
 import {
   sidebarCollapsibleOptions,
   sidebarSideOptions,
   sidebarVariants,
+  sidebarWidthSlider,
+  uiScaleSlider,
 } from "@/config/theme-customizer-constants";
 import { useSidebarConfig } from "@/contexts/sidebar-context";
+import { useThemeSettings } from "@/contexts/theme-settings-context";
 
 export function LayoutTab() {
   const { config: sidebarConfig, updateConfig: updateSidebarConfig } = useSidebarConfig();
+  const { settings, update } = useThemeSettings();
   const { toggleSidebar, state: sidebarState } = useSidebar();
+
+  const sidebarWidthRem = parseFloat(settings.sidebarWidth) || sidebarWidthSlider.min;
 
   // Sidebar handler functions
   const handleSidebarVariantSelect = (variant: "sidebar" | "floating" | "inset") => {
@@ -219,6 +226,47 @@ export function LayoutTab() {
             </div>
           ))}
         </div>
+      </div>
+
+      <Separator />
+
+      {/* Sidebar Width */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Sidebar Width</Label>
+          <span className="text-muted-foreground text-xs font-semibold tabular-nums">
+            {sidebarWidthRem}rem
+          </span>
+        </div>
+        <Slider
+          min={sidebarWidthSlider.min}
+          max={sidebarWidthSlider.max}
+          step={sidebarWidthSlider.step}
+          value={sidebarWidthRem}
+          onValueChange={(v) => update({ sidebarWidth: `${v}rem` })}
+        />
+      </div>
+
+      <Separator />
+
+      {/* UI Scale */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">UI Scale</Label>
+          <span className="text-muted-foreground text-xs font-semibold tabular-nums">
+            {settings.uiScale}%
+          </span>
+        </div>
+        <Slider
+          min={uiScaleSlider.min}
+          max={uiScaleSlider.max}
+          step={uiScaleSlider.step}
+          value={settings.uiScale}
+          onValueChange={(v) => update({ uiScale: v })}
+        />
+        <p className="text-muted-foreground text-xs">
+          Scales the entire interface up or down.
+        </p>
       </div>
     </div>
   );

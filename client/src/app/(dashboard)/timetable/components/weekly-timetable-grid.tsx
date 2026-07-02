@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Clock,Edit3, MapPin, Plus, User } from "lucide-react";
 import * as React from "react";
@@ -68,18 +68,18 @@ export function WeeklyTimetableGrid({
   };
 
   return (
-    <div className="w-full overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="w-full overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-zinc-800 dark:bg-zinc-900/50">
-              <th className="w-36 p-4 text-left text-xs font-bold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+            <tr className="border-b border-border bg-muted/40">
+              <th className="w-36 p-4 text-left text-xs font-bold tracking-wider text-muted-foreground uppercase">
                 Period
               </th>
               {DAYS_OF_WEEK.map((day) => (
                 <th
                   key={day}
-                  className="min-w-[180px] p-4 text-left text-xs font-bold tracking-wider text-neutral-900 uppercase dark:text-neutral-50"
+                  className="min-w-[180px] p-4 text-left text-xs font-bold tracking-wider text-foreground uppercase"
                 >
                   {DAY_LABELS[day]}
                 </th>
@@ -98,16 +98,16 @@ export function WeeklyTimetableGrid({
               return (
                 <tr
                   key={periodIdx}
-                  className="border-b border-neutral-100 transition-colors last:border-0 hover:bg-neutral-50/20 dark:border-zinc-800/50 dark:hover:bg-zinc-800/10"
+                  className="border-b border-border/50 transition-colors last:border-0 hover:bg-muted/20"
                 >
                   {/* Period Identity Column */}
                   <td className="p-4 align-top">
                     <div className="space-y-1">
-                      <span className="inline-flex items-center justify-center rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-bold text-neutral-600 dark:bg-zinc-800 dark:text-neutral-300">
+                      <span className="inline-flex items-center justify-center rounded-md bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
                         Period {periodIdx}
                       </span>
                       {timeRangeStr && (
-                        <div className="flex items-center gap-1 text-[10px] font-semibold text-neutral-400 dark:text-neutral-500">
+                        <div className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">
                           <Clock className="h-3 w-3" />
                           <span>{timeRangeStr}</span>
                         </div>
@@ -124,7 +124,7 @@ export function WeeklyTimetableGrid({
                     return (
                       <td
                         key={day}
-                        className="border-l border-neutral-100 p-3 align-top first:border-0 dark:border-zinc-800/50"
+                        className="border-l border-border/30 p-3 align-top first:border-0"
                       >
                         <div className="flex min-h-[90px] flex-col justify-between space-y-2">
                           {cellSlots.length > 0 ? (
@@ -195,7 +195,7 @@ export function WeeklyTimetableGrid({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => onCreateSlot(day, periodIdx)}
-                                  className="group flex h-full min-h-[60px] w-full cursor-pointer flex-col gap-1 rounded-2xl border border-dashed border-neutral-100 text-[10px] font-bold text-neutral-300 transition-all duration-200 hover:border-neutral-200 hover:text-neutral-500 dark:border-zinc-800 dark:text-zinc-700 dark:hover:border-zinc-700 dark:hover:text-zinc-400"
+                                  className="group flex h-full min-h-[60px] w-full cursor-pointer flex-col gap-1 rounded-2xl border border-dashed border-border/30 text-[10px] font-bold text-muted-foreground/30 transition-all duration-200 hover:border-border/60 hover:text-muted-foreground/60"
                                 >
                                   <Plus className="h-4 w-4 scale-90 transition-transform group-hover:scale-100" />
                                   <span>Schedule Slot</span>
@@ -216,3 +216,4 @@ export function WeeklyTimetableGrid({
     </div>
   );
 }
+

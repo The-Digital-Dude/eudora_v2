@@ -1,34 +1,13 @@
 "use client";
 
-import {
-  CalendarCheck,
-  CalendarDays,
-  ClipboardCheck,
-  ClipboardList,
-  CreditCard,
-  GraduationCap,
-  HeartHandshake,
-  LayoutDashboard,
-  Library,
-  MessageSquare,
-  NotebookPen,
-  PencilRuler,
-  Presentation,
-  Radio,
-  School,
-  Sparkles,
-  SquareStack,
-  Stethoscope,
-  UserCog,
-  UserPlus,
-  Users2,
-  UsersRound,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 
 import { Logo } from "@/components/logo";
+import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -40,160 +19,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-
-// Navigation items configured for Eudora Admin
-const data = {
-  navGroups: [
-    {
-      label: "Academics",
-      items: [
-        {
-          title: "Overview",
-          url: "/dashboard",
-          icon: LayoutDashboard,
-          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
-        },
-        {
-          title: "Parent Portal",
-          url: "/parent",
-          icon: HeartHandshake,
-          roles: ["GUARDIAN", "ADMIN", "SUPER_ADMIN"],
-        },
-        {
-          title: "Student Portal",
-          url: "/student",
-          icon: GraduationCap,
-          roles: ["USER", "ADMIN", "SUPER_ADMIN"],
-        },
-        {
-          title: "Teacher Portal",
-          url: "/teacher",
-          icon: Presentation,
-          roles: ["TEACHER", "ADMIN", "SUPER_ADMIN"],
-        },
-        {
-          title: "Timetable",
-          url: "/timetable",
-          icon: CalendarDays,
-          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
-        },
-        {
-          title: "Live Classes",
-          url: "/live-classes",
-          icon: Radio,
-          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER"],
-        },
-        {
-          title: "Attendance",
-          url: "/attendance",
-          icon: CalendarCheck,
-          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "GUARDIAN"],
-        },
-        {
-          title: "Homework",
-          url: "/homework",
-          icon: NotebookPen,
-          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
-        },
-        {
-          title: "Gradebook",
-          url: "/gradebook",
-          icon: ClipboardCheck,
-          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER", "GUARDIAN"],
-        },
-        {
-          title: "Active Learning",
-          url: "/learn",
-          icon: Sparkles,
-          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER", "USER"],
-        },
-        {
-          title: "Lesson Authoring",
-          url: "/lessons",
-          icon: PencilRuler,
-          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER"],
-        },
-        {
-          title: "Diagnostics",
-          url: "/diagnostics",
-          icon: Stethoscope,
-          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER"],
-        },
-        {
-          title: "Question Bank",
-          url: "/questions",
-          icon: Library,
-          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER"],
-        },
-        {
-          title: "Assessments",
-          url: "/assessments",
-          icon: ClipboardList,
-          roles: ["ADMIN", "SUPER_ADMIN", "TEACHER"],
-        },
-      ],
-    },
-    {
-      label: "Management",
-      items: [
-        {
-          title: "Leads & Enrolments",
-          url: "/leads",
-          icon: UserPlus,
-          roles: ["ADMIN", "SUPER_ADMIN"],
-        },
-        {
-          title: "Student Roster",
-          url: "/students",
-          icon: UsersRound,
-          roles: ["ADMIN", "SUPER_ADMIN"],
-        },
-        {
-          title: "Teachers",
-          url: "/teachers",
-          icon: Users2,
-          roles: ["ADMIN", "SUPER_ADMIN"],
-        },
-        {
-          title: "Classes & Attendance",
-          url: "/classes",
-          icon: SquareStack,
-          roles: ["ADMIN", "SUPER_ADMIN"],
-        },
-        {
-          title: "Campuses & Programs",
-          url: "/campuses",
-          icon: School,
-          roles: ["ADMIN", "SUPER_ADMIN"],
-        },
-        {
-          title: "Users & Roles",
-          url: "/users",
-          icon: UserCog,
-          roles: ["ADMIN", "SUPER_ADMIN"],
-        },
-      ],
-    },
-    {
-      label: "Operations",
-      items: [
-        {
-          title: "Communication",
-          url: "/communication",
-          icon: MessageSquare,
-          roles: ["ADMIN", "SUPER_ADMIN"],
-        },
-        {
-          title: "Billing & Plans",
-          url: "/plans",
-          icon: CreditCard,
-          roles: ["ADMIN", "SUPER_ADMIN"],
-        },
-      ],
-    },
-  ],
-};
+import { hasAccess } from "@/lib/access-control";
+import { isNavParent,type NavGroup, navGroups } from "@/config/nav-config";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: {
@@ -201,6 +32,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     email: string;
     roles?: string[];
     role?: string;
+    permissions?: { action: string; subject: string }[];
   };
 }
 
@@ -216,41 +48,22 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         .slice(0, 2)
     : "A";
 
-  // Extract roles
-  const userRoles = React.useMemo<string[]>(() => {
-    if (!user) return [];
-    const rolesList: string[] = [];
-    if (user.role) {
-      rolesList.push(user.role);
-    }
-    if (Array.isArray(user.roles)) {
-      user.roles.forEach((r: any) => {
-        if (typeof r === "string") {
-          rolesList.push(r);
-        } else if (r && typeof r === "object") {
-          if (r.name) rolesList.push(r.name);
-          else if (r.role?.name) rolesList.push(r.role?.name);
-        }
-      });
-    }
-    return rolesList;
-  }, [user]);
-
-  const hasRole = (allowedRoles: string[]) => {
-    return userRoles.some((role) => allowedRoles.includes(role));
-  };
-
-  const filteredNavGroups = React.useMemo(() => {
-    return data.navGroups
+  const filteredNavGroups = React.useMemo<NavGroup[]>(() => {
+    return navGroups
       .map((group) => {
-        const items = group.items.filter((item) => {
-          if (!item.roles) return true;
-          return hasRole(item.roles);
-        });
+        const items = group.items
+          .map((item) => {
+            if (isNavParent(item)) {
+              const children = item.children.filter((child) => hasAccess(user, child.requirement));
+              return children.length > 0 ? { ...item, children } : null;
+            }
+            return hasAccess(user, item.requirement) ? item : null;
+          })
+          .filter((item): item is NonNullable<typeof item> => item !== null);
         return { ...group, items };
       })
       .filter((group) => group.items.length > 0);
-  }, [userRoles]);
+  }, [user]);
 
   return (
     <Sidebar {...props}>
@@ -283,6 +96,62 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
+                  if (isNavParent(item)) {
+                    const isChildActive = item.children.some((child) => pathname === child.url);
+                    const Icon = item.icon;
+                    return (
+                      <Collapsible key={item.title} defaultOpen={isChildActive} className="group/collapsible">
+                        <SidebarMenuItem>
+                          <CollapsibleTrigger asChild>
+                            <SidebarMenuButton
+                              tooltip={item.title}
+                              className={`w-full rounded-xl transition-all duration-200 ${
+                                isChildActive
+                                  ? "font-bold text-sidebar-foreground"
+                                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                              }`}
+                            >
+                              <Icon className="h-4 w-4" />
+                              <span className="text-xs font-semibold">{item.title}</span>
+                              <ChevronRight className="ml-auto h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                            </SidebarMenuButton>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <SidebarMenuSub>
+                              {item.children.map((child) => {
+                                const isActive = pathname === child.url;
+                                const ChildIcon = child.icon;
+                                return (
+                                  <SidebarMenuSubItem key={child.title}>
+                                    {child.disabled ? (
+                                      <span className="flex h-7 min-w-0 cursor-not-allowed items-center gap-2 rounded-md px-2 text-xs text-sidebar-foreground/40">
+                                        <ChildIcon className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="truncate">{child.title}</span>
+                                        <Badge
+                                          variant="outline"
+                                          className="ml-auto px-1.5 py-0 text-[9px] font-semibold tracking-wider uppercase"
+                                        >
+                                          Soon
+                                        </Badge>
+                                      </span>
+                                    ) : (
+                                      <SidebarMenuSubButton asChild isActive={isActive}>
+                                        <Link href={child.url} aria-current={isActive ? "page" : undefined}>
+                                          <ChildIcon className="h-3.5 w-3.5" />
+                                          <span>{child.title}</span>
+                                        </Link>
+                                      </SidebarMenuSubButton>
+                                    )}
+                                  </SidebarMenuSubItem>
+                                );
+                              })}
+                            </SidebarMenuSub>
+                          </CollapsibleContent>
+                        </SidebarMenuItem>
+                      </Collapsible>
+                    );
+                  }
+
                   const isActive = pathname === item.url;
                   const Icon = item.icon;
                   return (

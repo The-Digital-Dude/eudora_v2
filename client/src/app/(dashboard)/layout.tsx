@@ -11,11 +11,19 @@ import { SiteHeader } from "@/components/site-header";
 import { ThemeCustomizer, ThemeCustomizerTrigger } from "@/components/theme-customizer";
 import { Button } from "@/components/ui/button";
 import { SidebarInset,SidebarProvider } from "@/components/ui/sidebar";
+import { flattenNavLeaves } from "@/config/nav-config";
 import { useLogoutMutation } from "@/features/auth/authApi";
 import { logout } from "@/features/auth/authSlice";
 import { useGetCampusesQuery } from "@/features/dashboard/dashboardApi";
 import { useSidebarConfig } from "@/hooks/use-sidebar-config";
+import { getUserRoles,hasAccess } from "@/lib/access-control";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+
+const AUTHORIZED_ROLES = ["SUPER_ADMIN", "ADMIN", "TEACHER", "USER", "GUARDIAN"];
+
+// Leaves sorted longest-url-first so a more specific route (e.g. /users/roles)
+// is matched before a shorter sibling prefix (e.g. /users).
+const navLeavesByUrlLength = flattenNavLeaves().sort((a, b) => b.url.length - a.url.length);
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -34,70 +42,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const pathname = usePathname();
 
-  // Normalize user roles
-  const userRoles = React.useMemo<string[]>(() => {
-    if (!user) return [];
-    const rolesList: string[] = [];
-    if (user.role) {
-      rolesList.push(user.role);
-    }
-    if (Array.isArray(user.roles)) {
-      user.roles.forEach((r: any) => {
-        if (typeof r === "string") {
-          rolesList.push(r);
-        } else if (r && typeof r === "object") {
-          if (r.name) rolesList.push(r.name);
-          else if (r.role?.name) rolesList.push(r.role?.name);
-        }
-      });
-    }
-    return rolesList;
-  }, [user]);
+  const userRoles = React.useMemo<string[]>(() => getUserRoles(user), [user]);
 
-  // Check auth and roles
-  const hasAuthorizedRole = React.useMemo(() => {
-    const allowedRoles = ["SUPER_ADMIN", "ADMIN", "TEACHER", "USER", "GUARDIAN"];
-    return userRoles.some((role) => allowedRoles.includes(role));
-  }, [userRoles]);
+  const hasAuthorizedRole = React.useMemo(
+    () => userRoles.some((role) => AUTHORIZED_ROLES.includes(role)),
+    [userRoles],
+  );
 
+  // Derived from the same nav-config tree that drives the sidebar, so a route's
+  // access requirement can never drift from what's shown as a menu item for it.
   const isRouteAuthorized = React.useMemo(() => {
-    if (userRoles.includes("SUPER_ADMIN") || userRoles.includes("ADMIN")) {
-      return true;
-    }
-
-    const adminOnlyRoutes = [
-      "/users",
-      "/campuses",
-      "/plans",
-      "/leads",
-      "/teachers",
-      "/communication",
-    ];
-
-    const isSensitive = adminOnlyRoutes.some((route) => pathname.startsWith(route));
-
-    if (isSensitive) {
-      return false;
-    }
-
-    const teacherOnlyRoutes = ["/classes", "/diagnostics", "/lessons", "/questions", "/assessments", "/teacher"];
-    const studentOnlyRoutes = ["/learn", "/student"];
-    const guardianOnlyRoutes = ["/parent"];
-
-    if (teacherOnlyRoutes.some((route) => pathname.startsWith(route))) {
-      return userRoles.includes("TEACHER");
-    }
-
-    if (studentOnlyRoutes.some((route) => pathname.startsWith(route))) {
-      return userRoles.includes("USER") || userRoles.includes("TEACHER");
-    }
-
-    if (guardianOnlyRoutes.some((route) => pathname.startsWith(route))) {
-      return userRoles.includes("GUARDIAN");
-    }
-
-    return true;
-  }, [pathname, userRoles]);
+    const matchedLeaf = navLeavesByUrlLength.find(
+      (leaf) => pathname === leaf.url || pathname.startsWith(`${leaf.url}/`),
+    );
+    // Routes with no nav entry default to "any authenticated role", same as before.
+    if (!matchedLeaf) return true;
+    return hasAccess(user, matchedLeaf.requirement);
+  }, [pathname, user]);
 
   const handleLogout = async () => {
     try {

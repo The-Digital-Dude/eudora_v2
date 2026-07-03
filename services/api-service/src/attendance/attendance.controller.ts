@@ -6,6 +6,7 @@ import {
   Query,
   Param,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { RecordDailyAttendanceDto } from './dto/record-daily-attendance.dto';
@@ -90,18 +91,45 @@ export class AttendanceController {
 
   /**
    * Get summary statistics report for a single student (both daily and subject-level).
+   * Staff can look up any student; a student or guardian may only view a
+   * student profile that is their own (or one they're linked to).
    */
   @Get('student/:studentProfileId/summary')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @RequirePermissions({ action: 'read', subject: 'Attendance' })
   getStudentSummary(
     @Param('studentProfileId') studentProfileId: string,
+    @CurrentUser() user: CurrentUserDto,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
+    this.assertCanViewStudentSummary(user, studentProfileId);
     return this.attendanceService.getStudentSummary(
       studentProfileId,
       startDate,
       endDate,
+    );
+  }
+
+  private assertCanViewStudentSummary(
+    user: CurrentUserDto,
+    studentProfileId: string,
+  ): void {
+    const isStaff = ['SUPER_ADMIN', 'ADMIN', 'TEACHER'].some((role) =>
+      user.roles?.includes(role),
+    );
+    if (isStaff) return;
+
+    if (user.studentProfile?.id === studentProfileId) return;
+
+    const isLinkedGuardian = user.guardianProfile?.students?.some(
+      (rel) =>
+        rel.studentProfileId === studentProfileId && rel.hasAcademicAccess,
+    );
+    if (isLinkedGuardian) return;
+
+    throw new ForbiddenException(
+      'You do not have access to this student\'s attendance record.',
     );
   }
 

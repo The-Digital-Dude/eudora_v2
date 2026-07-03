@@ -20,7 +20,11 @@ export class GapService {
         ...(query.competencyId ? { competencyId: query.competencyId } : {}),
         ...(query.status ? { status: query.status } : {}),
       },
-      include: { nextActions: true },
+      include: {
+        nextActions: true,
+        studentProfile: { select: { id: true, fullName: true } },
+        competency: { select: { id: true, name: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -28,7 +32,11 @@ export class GapService {
   async getGapById(id: string) {
     const gap = await this.prisma.learningGap.findUnique({
       where: { id },
-      include: { nextActions: true },
+      include: {
+        nextActions: true,
+        studentProfile: { select: { id: true, fullName: true } },
+        competency: { select: { id: true, name: true } },
+      },
     });
     if (!gap) {
       throw new NotFoundException('Learning gap not found');

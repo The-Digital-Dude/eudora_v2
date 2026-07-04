@@ -29,6 +29,24 @@ export interface TestUser {
   id: string;
   email: string;
   token: string;
+  csrf: string;
+}
+
+export interface AuthCreds {
+  token: string;
+  csrf: string;
+}
+
+/**
+ * Headers for endpoints behind CsrfGuard (assessments module): the guard
+ * demands cookie + header on every unsafe method, even with Bearer auth.
+ */
+export function csrfHeaders(creds: AuthCreds): Record<string, string> {
+  return {
+    Authorization: `Bearer ${creds.token}`,
+    Cookie: `csrf_token=${creds.csrf}`,
+    'x-csrf-token': creds.csrf,
+  };
 }
 
 export interface AcademicWorld {
@@ -65,13 +83,29 @@ export function unwrap<T = any>(res: request.Response): T {
   return (res.body as { data: T }).data;
 }
 
-function tokenFromCookies(res: request.Response): string {
+function cookieValue(res: request.Response, name: string): string {
   const raw = res.headers['set-cookie'];
   const cookies = Array.isArray(raw) ? raw : raw ? [raw] : [];
-  const accessCookie = cookies.find((c: string) =>
-    c.startsWith('access_token='),
-  );
-  return accessCookie ? accessCookie.split(';')[0].split('=')[1] : '';
+  const cookie = cookies.find((c: string) => c.startsWith(`${name}=`));
+  return cookie ? cookie.split(';')[0].split('=')[1] : '';
+}
+
+function tokenFromCookies(res: request.Response): string {
+  return cookieValue(res, 'access_token');
+}
+
+export async function loginFull(
+  app: INestApplication<App>,
+  email: string,
+  password: string,
+): Promise<AuthCreds> {
+  const res = await request(app.getHttpServer())
+    .post('/api/auth/login')
+    .send({ email, password })
+    .expect(200);
+  const token = tokenFromCookies(res);
+  expect(token).toBeTruthy();
+  return { token, csrf: cookieValue(res, 'csrf_token') };
 }
 
 export async function loginAs(
@@ -79,19 +113,23 @@ export async function loginAs(
   email: string,
   password: string,
 ): Promise<string> {
-  const res = await request(app.getHttpServer())
-    .post('/api/auth/login')
-    .send({ email, password })
-    .expect(200);
-  const token = tokenFromCookies(res);
-  expect(token).toBeTruthy();
-  return token;
+  return (await loginFull(app, email, password)).token;
 }
 
 export async function loginAsSuperAdmin(
   app: INestApplication<App>,
 ): Promise<string> {
   return loginAs(
+    app,
+    SUPER_ADMIN_CREDENTIALS.email,
+    SUPER_ADMIN_CREDENTIALS.password,
+  );
+}
+
+export async function loginAsSuperAdminFull(
+  app: INestApplication<App>,
+): Promise<AuthCreds> {
+  return loginFull(
     app,
     SUPER_ADMIN_CREDENTIALS.email,
     SUPER_ADMIN_CREDENTIALS.password,
@@ -119,7 +157,23 @@ export async function registerUser(
 
   const dbUser = await ctx.prisma.user.findUnique({ where: { email } });
   expect(dbUser).toBeTruthy();
-  return { id: dbUser!.id, email, token };
+  return { id: dbUser!.id, email, token, csrf: cookieValue(res, 'csrf_token') };
+}
+
+/** Grants a seeded role (e.g. GUARDIAN, TEACHER) to a user via the users API. */
+export async function grantRole(
+  ctx: TestContext,
+  adminToken: string,
+  userId: string,
+  roleName: string,
+): Promise<void> {
+  const role = await ctx.prisma.role.findUnique({ where: { name: roleName } });
+  expect(role).toBeTruthy();
+  await request(ctx.app.getHttpServer())
+    .post(`/api/users/${userId}/roles`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ roleId: role!.id })
+    .expect(201);
 }
 
 /**

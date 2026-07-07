@@ -22,7 +22,11 @@ export class PlacementService {
         ...(query.leadId ? { leadId: query.leadId } : {}),
         ...(query.status ? { status: query.status } : {}),
       },
-      include: { recommendedLevel: true, recommendedClassSection: true },
+      include: {
+        recommendedLevel: true,
+        recommendedClassSection: true,
+        studentProfile: { select: { id: true, fullName: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }

@@ -725,6 +725,9 @@ export class AuthService {
     const refreshPayload = {
       sub: user.id,
       typ: 'refresh',
+      // jti keeps concurrent logins from minting identical tokens (iat has
+      // second granularity), which would collide on AuthSession.refreshTokenHash.
+      jti: crypto.randomUUID(),
     };
 
     const accessTokenExpiresInSeconds = 15 * 60;

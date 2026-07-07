@@ -117,6 +117,9 @@ export const authApi = createApi({
     "Leaderboard",
     "TeacherPortal",
     "LiveClasses",
+    "LearningGaps",
+    "NextActions",
+    "PlacementRecommendations",
   ],
   endpoints: (builder) => ({
     login: builder.mutation({

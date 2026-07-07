@@ -60,7 +60,7 @@ export class HomeworkController {
    */
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Post('submit')
-  @RequirePermissions({ action: 'create', subject: 'Homework' })
+  @RequirePermissions({ action: 'attempt', subject: 'Homework' })
   async submit(
     @Body() dto: SubmitHomeworkDto,
     @CurrentUser() user: CurrentUserDto,

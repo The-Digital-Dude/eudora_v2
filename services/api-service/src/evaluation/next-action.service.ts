@@ -15,6 +15,12 @@ import {
 export class NextActionService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private readonly listInclude = {
+    studentProfile: { select: { id: true, fullName: true } },
+    competency: { select: { id: true, name: true } },
+    owner: { select: { id: true, firstName: true, lastName: true } },
+  };
+
   async listNextActions(query: ListNextActionsQueryDto) {
     return this.prisma.nextAction.findMany({
       where: {
@@ -24,12 +30,16 @@ export class NextActionService {
           : {}),
         ...(query.status ? { status: query.status } : {}),
       },
+      include: this.listInclude,
       orderBy: { dueDate: 'asc' },
     });
   }
 
   async getNextActionById(id: string) {
-    const action = await this.prisma.nextAction.findUnique({ where: { id } });
+    const action = await this.prisma.nextAction.findUnique({
+      where: { id },
+      include: this.listInclude,
+    });
     if (!action) {
       throw new NotFoundException('Next action not found');
     }

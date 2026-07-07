@@ -62,7 +62,7 @@ async function main() {
     const pid = permissionIds[k];
     if (pid) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: adminRole.id, permissionId: pid } }, update: {}, create: { roleId: adminRole.id, permissionId: pid } });
   }
-  for (const k of ['read:User','read:Student','read:Assessment','attempt:Assessment','read:Timetable','read:Attendance','read:Homework','read:Gradebook','read:ReportCard']) {
+  for (const k of ['read:User','read:Student','read:Assessment','attempt:Assessment','read:Timetable','read:Attendance','read:Homework','attempt:Homework','read:Gradebook','read:ReportCard']) {
     const pid = permissionIds[k];
     if (pid) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: userRole.id, permissionId: pid } }, update: {}, create: { roleId: userRole.id, permissionId: pid } });
   }

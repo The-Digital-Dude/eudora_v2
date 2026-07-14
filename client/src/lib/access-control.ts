@@ -58,3 +58,48 @@ export function hasAccess(user: AuthUser | null | undefined, requirement: NavReq
     }
   }
 }
+
+/**
+ * The role that decides which experience shell a user gets. Admin outranks
+ * teacher outranks guardian; plain USER means student.
+ */
+export function getPrimaryRole(
+  user: AuthUser | null | undefined,
+): "ADMIN" | "TEACHER" | "GUARDIAN" | "STUDENT" {
+  const roles = getUserRoles(user);
+  if (roles.includes("SUPER_ADMIN") || roles.includes("ADMIN")) return "ADMIN";
+  if (roles.includes("TEACHER")) return "TEACHER";
+  if (roles.includes("GUARDIAN")) return "GUARDIAN";
+  return "STUDENT";
+}
+
+/** Where each role lands after login and where the sidebar logo links to. */
+export function getRoleHome(user: AuthUser | null | undefined): string {
+  switch (getPrimaryRole(user)) {
+    case "ADMIN":
+      return "/dashboard";
+    case "TEACHER":
+      return "/teacher";
+    case "GUARDIAN":
+      return "/parent";
+    default:
+      return "/student";
+  }
+}
+
+/** Brand block per experience shell — keeps admin chrome out of learner/parent views. */
+export function getShellBrand(user: AuthUser | null | undefined): {
+  title: string;
+  subtitle: string;
+} {
+  switch (getPrimaryRole(user)) {
+    case "ADMIN":
+      return { title: "Eudora Admin", subtitle: "Console" };
+    case "TEACHER":
+      return { title: "Eudora", subtitle: "Teacher Studio" };
+    case "GUARDIAN":
+      return { title: "Eudora", subtitle: "Family Portal" };
+    default:
+      return { title: "Eudora", subtitle: "Learning Space" };
+  }
+}

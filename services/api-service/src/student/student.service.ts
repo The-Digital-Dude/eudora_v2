@@ -46,12 +46,19 @@ export class StudentService {
     });
   }
 
-  async findAllProfiles(page = 1, limit = 10, status?: string) {
+  async findAllProfiles(
+    page = 1,
+    limit = 10,
+    status?: string,
+    includeArchived = false,
+  ) {
     const skip = (page - 1) * limit;
     const where: any = {};
     if (status) {
       where.status = status;
     }
+    // includeArchived is a scoping-extension arg, stripped before validation.
+    const archivedArg = includeArchived ? { includeArchived: true } : {};
 
     const [profiles, total] = await Promise.all([
       this.prisma.studentProfile.findMany({
@@ -62,8 +69,9 @@ export class StudentService {
           user: { select: { email: true, firstName: true, lastName: true } },
         },
         orderBy: { fullName: 'asc' },
-      }),
-      this.prisma.studentProfile.count({ where }),
+        ...archivedArg,
+      } as any),
+      this.prisma.studentProfile.count({ where, ...archivedArg } as any),
     ]);
 
     return {
@@ -137,11 +145,35 @@ export class StudentService {
       throw new NotFoundException('Student profile not found');
     }
 
+    // Rewritten to an archive (deletedAt) by the row-scoping extension.
     await this.prisma.studentProfile.delete({
       where: { id },
     });
 
-    return { message: 'Student profile deleted successfully' };
+    return { message: 'Student profile archived successfully' };
+  }
+
+  async restoreProfile(id: string) {
+    // includeArchived: archived rows are invisible to plain reads by design.
+    const profile = await (this.prisma.studentProfile.findUnique as any)({
+      where: { id },
+      includeArchived: true,
+    });
+    if (!profile) {
+      throw new NotFoundException('Student profile not found');
+    }
+    if (!profile.deletedAt) {
+      return { message: 'Student profile is not archived', profile };
+    }
+
+    const restored = await this.prisma.studentProfile.update({
+      where: { id },
+      data: { deletedAt: null, deletedById: null },
+    });
+    return {
+      message: 'Student profile restored successfully',
+      profile: restored,
+    };
   }
 
   // --- Student Class Placement Operations ---

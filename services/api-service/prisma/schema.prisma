@@ -194,6 +194,8 @@ model Campus {
   representative String?
   createdAt      DateTime                     @default(now())
   updatedAt      DateTime                     @updatedAt
+  deletedAt      DateTime?
+  deletedById    String?
 
   programs     Program[]
   subscription Subscription?
@@ -202,13 +204,15 @@ model Campus {
 }
 
 model Program {
-  id        String                       @id @default(uuid())
-  campusId  String
-  name      String
-  code      String                       @unique
-  status    EducationalInstitutionStatus @default(ACTIVE)
-  createdAt DateTime                     @default(now())
-  updatedAt DateTime                     @updatedAt
+  id          String                       @id @default(uuid())
+  campusId    String
+  name        String
+  code        String                       @unique
+  status      EducationalInstitutionStatus @default(ACTIVE)
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
+  deletedAt   DateTime?
+  deletedById String?
 
   campus        Campus         @relation(fields: [campusId], references: [id], onDelete: Cascade)
   classSections ClassSection[]
@@ -217,13 +221,15 @@ model Program {
 }
 
 model AcademicYear {
-  id        String                       @id @default(uuid())
-  name      String                       @unique
-  startDate DateTime
-  endDate   DateTime
-  status    EducationalInstitutionStatus @default(ACTIVE)
-  createdAt DateTime                     @default(now())
-  updatedAt DateTime                     @updatedAt
+  id          String                       @id @default(uuid())
+  name        String                       @unique
+  startDate   DateTime
+  endDate     DateTime
+  status      EducationalInstitutionStatus @default(ACTIVE)
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
+  deletedAt   DateTime?
+  deletedById String?
 
   classSections     ClassSection[]
   terms             Term[]
@@ -244,6 +250,8 @@ model ClassSection {
   status         ClassStatus @default(ACTIVE)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+  deletedAt      DateTime?
+  deletedById    String?
 
   program                  Program                   @relation(fields: [programId], references: [id], onDelete: Cascade)
   academicYear             AcademicYear              @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
@@ -269,6 +277,8 @@ model Term {
   status         CourseTermStatus @default(ACTIVE)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+  deletedAt      DateTime?
+  deletedById    String?
 
   academicYear     AcademicYear     @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   courseClasses    CourseClass[]
@@ -280,13 +290,15 @@ model Term {
 }
 
 model CourseClass {
-  id        String            @id @default(uuid())
-  termId    String
-  name      String
-  code      String            @unique
-  status    CourseClassStatus @default(ACTIVE)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id          String            @id @default(uuid())
+  termId      String
+  name        String
+  code        String            @unique
+  status      CourseClassStatus @default(ACTIVE)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  deletedAt   DateTime?
+  deletedById String?
 
   term             Term                      @relation(fields: [termId], references: [id], onDelete: Cascade)
   enrollments      StudentCourseEnrollment[]
@@ -300,14 +312,16 @@ model CourseClass {
 }
 
 model StudentProfile {
-  id        String        @id @default(uuid())
-  userId    String        @unique
-  fullName  String
-  birthDate DateTime
-  gender    Gender
-  status    StudentStatus @default(ACTIVE)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id          String        @id @default(uuid())
+  userId      String        @unique
+  fullName    String
+  birthDate   DateTime
+  gender      Gender
+  status      StudentStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+  deletedById String?
 
   user                     User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
   placements               StudentClassPlacement[]
@@ -369,14 +383,16 @@ model StudentCourseEnrollment {
 }
 
 model GuardianProfile {
-  id        String         @id @default(uuid())
-  userId    String         @unique
-  fullName  String
-  email     String?
-  phone     String?
-  status    GuardianStatus @default(ACTIVE)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id          String         @id @default(uuid())
+  userId      String         @unique
+  fullName    String
+  email       String?
+  phone       String?
+  status      GuardianStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+  deletedById String?
 
   user     User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
   students GuardianStudentRelationship[]
@@ -410,6 +426,8 @@ model Family {
   status        FamilyStatus @default(ACTIVE)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+  deletedById   String?
 
   students  FamilyStudent[]
   guardians FamilyGuardian[]
@@ -462,6 +480,8 @@ model TeacherProfile {
   joinDate       DateTime      @default(now())
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+  deletedById    String?
 
   user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   classAssignments ClassTeacher[]
@@ -541,6 +561,8 @@ model Invoice {
   paidAt          DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+  deletedById     String?
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   payments     Payment[]
@@ -559,6 +581,8 @@ model Payment {
   metadata              Json?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
+  deletedAt             DateTime?
+  deletedById           String?
 
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
@@ -585,7 +609,7 @@ model DailyAttendance {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
   classSection   ClassSection   @relation(fields: [classSectionId], references: [id], onDelete: Cascade)
 
   @@unique([studentProfileId, classSectionId, date])
@@ -621,7 +645,7 @@ model CourseClassAttendance {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  studentProfile StudentProfile     @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile     @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
   session        CourseClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([studentProfileId, sessionId])
@@ -830,7 +854,7 @@ model CompetencyMastery {
   status           MasteryStatus @default(NOT_STARTED)
   updatedAt        DateTime      @updatedAt
 
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
   competency     Competency     @relation(fields: [competencyId], references: [id], onDelete: Cascade)
 
   @@id([studentProfileId, competencyId])
@@ -1026,6 +1050,8 @@ model Assessment {
   publishedAt              DateTime?
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
+  deletedAt                DateTime?
+  deletedById              String?
 
   assessmentType AssessmentType @relation(fields: [assessmentTypeId], references: [id])
   subject        Subject        @relation(fields: [subjectId], references: [id])
@@ -1087,6 +1113,8 @@ model Question {
   isGraded      Boolean     @default(true)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+  deletedById   String?
 
   subject     Subject              @relation(fields: [subjectId], references: [id])
   level       Level                @relation(fields: [levelId], references: [id])
@@ -1159,7 +1187,7 @@ model AssessmentAttempt {
   updatedAt              DateTime  @updatedAt
 
   assignment              AssessmentAssignment     @relation(fields: [assessmentAssignmentId], references: [id], onDelete: Cascade)
-  studentProfile          StudentProfile           @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  studentProfile          StudentProfile           @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
   markedByUser            User?                    @relation("MarkedAttempts", fields: [markedByUserId], references: [id], onDelete: SetNull)
   responses               StudentResponse[]
   placementRecommendation PlacementRecommendation?
@@ -1312,14 +1340,16 @@ enum WidgetType {
 }
 
 model Lesson {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   conceptId   String
   title       String
   description String?
-  sortOrder   Int      @default(1)
-  xpReward    Int      @default(50)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  sortOrder   Int       @default(1)
+  xpReward    Int       @default(50)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  deletedById String?
 
   concept     Concept                @relation(fields: [conceptId], references: [id], onDelete: Cascade)
   cards       Card[]
@@ -1555,8 +1585,10 @@ model GradeBookEntry {
   updatedById      String?
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
+  deletedAt        DateTime?
+  deletedById      String?
 
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
   classSection   ClassSection?  @relation(fields: [classSectionId], references: [id], onDelete: SetNull)
   courseClass    CourseClass?   @relation(fields: [courseClassId], references: [id], onDelete: SetNull)
   term           Term?          @relation(fields: [termId], references: [id], onDelete: SetNull)
@@ -1569,16 +1601,18 @@ model GradeBookEntry {
 }
 
 model FamilyInvoice {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   familyId    String
-  amount      Decimal  @db.Decimal(10, 2)
-  currency    String   @default("USD")
+  amount      Decimal   @db.Decimal(10, 2)
+  currency    String    @default("USD")
   description String? // "Term 1 Tuition", "Uniform Fee", etc.
   issueDate   DateTime
   dueDate     DateTime
-  status      String   @default("PENDING") // PENDING, PAID, OVERDUE
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      String    @default("PENDING") // PENDING, PAID, OVERDUE
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  deletedById String?
 
   family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
 
@@ -1587,16 +1621,18 @@ model FamilyInvoice {
 }
 
 model FamilyPayment {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   familyId    String
   invoiceId   String? // optional: which invoice this paid off
-  amount      Decimal  @db.Decimal(10, 2)
-  currency    String   @default("USD")
+  amount      Decimal   @db.Decimal(10, 2)
+  currency    String    @default("USD")
   paymentDate DateTime
   method      String // "BANK_TRANSFER", "CASH", "CHECK", "MANUAL"
   reference   String? // receipt/transaction id
   notes       String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+  deletedById String?
 
   family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
 

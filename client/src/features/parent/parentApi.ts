@@ -46,6 +46,19 @@ export interface FamilyPayment {
   createdAt: string;
 }
 
+export interface ChildLearning {
+  lessonsCompleted: number;
+  currentStreak: number;
+  longestStreak: number;
+  totalXp: number;
+  level: number;
+  mastery: {
+    competencyName: string;
+    masteryScore: number;
+    status: "NOT_STARTED" | "INTRODUCED" | "DEVELOPING" | "NEAR_MASTERY" | "MASTERED";
+  }[];
+}
+
 export const parentApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
@@ -69,6 +82,10 @@ export const parentApi = authApi.injectEndpoints({
       query: (studentProfileId) => `/parent/children/${studentProfileId}/grades`,
       providesTags: (result, error, id) => [{ type: "ParentPortal", id: `GRADES-${id}` }],
     }),
+    getChildLearning: builder.query<ChildLearning, string>({
+      query: (studentProfileId) => `/parent/children/${studentProfileId}/learning`,
+      providesTags: (result, error, id) => [{ type: "ParentPortal", id: `LEARNING-${id}` }],
+    }),
     getInvoices: builder.query<FamilyInvoice[], void>({
       query: () => "/parent/billing/invoices",
       providesTags: ["ParentPortal"],
@@ -86,6 +103,7 @@ export const {
   useGetChildAttendanceQuery,
   useGetChildHomeworkQuery,
   useGetChildGradesQuery,
+  useGetChildLearningQuery,
   useGetInvoicesQuery,
   useGetPaymentsQuery,
 } = parentApi;

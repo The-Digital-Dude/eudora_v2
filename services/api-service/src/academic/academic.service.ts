@@ -126,11 +126,35 @@ export class AcademicService {
       throw new NotFoundException('Academic year not found');
     }
 
-    await this.prisma.academicYear.delete({
-      where: { id },
+    // Cascade-archive: children are archived alongside the year rather than
+    // hard-cascaded away (explicit updateMany — the extension's delete
+    // rewrite must not be relied on inside transactions).
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      const terms = await tx.term.findMany({
+        where: { academicYearId: id },
+        select: { id: true },
+      });
+      const termIds = terms.map((t) => t.id);
+      await tx.courseClass.updateMany({
+        where: { termId: { in: termIds }, deletedAt: null },
+        data: { deletedAt: now },
+      });
+      await tx.term.updateMany({
+        where: { academicYearId: id, deletedAt: null },
+        data: { deletedAt: now },
+      });
+      await tx.classSection.updateMany({
+        where: { academicYearId: id, deletedAt: null },
+        data: { deletedAt: now },
+      });
+      await tx.academicYear.update({
+        where: { id },
+        data: { deletedAt: now },
+      });
     });
 
-    return { message: 'Academic year deleted successfully' };
+    return { message: 'Academic year archived successfully' };
   }
 
   // --- Term Operations ---

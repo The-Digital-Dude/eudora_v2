@@ -178,6 +178,7 @@ export interface StudentProfile {
   status: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "GRADUATED";
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string | null;
   user: {
     id: string;
     email: string;
@@ -565,13 +566,17 @@ export const dashboardApi = authApi.injectEndpoints({
 
     getStudentProfiles: builder.query<
       { items: StudentProfile[]; total: number },
-      { page?: number; limit?: number; status?: string } | void
+      | { page?: number; limit?: number; status?: string; includeArchived?: boolean }
+      | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
         const statusQuery = params?.status ? `&status=${params.status}` : "";
-        return `/student-profiles?page=${page}&limit=${limit}${statusQuery}`;
+        const archivedQuery = params?.includeArchived
+          ? "&includeArchived=true"
+          : "";
+        return `/student-profiles?page=${page}&limit=${limit}${statusQuery}${archivedQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -602,6 +607,13 @@ export const dashboardApi = authApi.injectEndpoints({
       query: (id: any) => ({
         url: `/student-profiles/${id}`,
         method: "DELETE",
+      }),
+      invalidatesTags: ["Students"],
+    } as any),
+    restoreStudentProfile: builder.mutation<void, string>({
+      query: (id: any) => ({
+        url: `/student-profiles/${id}/restore`,
+        method: "POST",
       }),
       invalidatesTags: ["Students"],
     } as any),
@@ -803,6 +815,7 @@ export const {
   useCreateStudentProfileMutation,
   useUpdateStudentProfileMutation,
   useDeleteStudentProfileMutation,
+  useRestoreStudentProfileMutation,
   useCreateStudentPlacementMutation,
   useDeleteStudentPlacementMutation,
   useCreateStudentEnrollmentMutation,

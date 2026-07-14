@@ -227,6 +227,36 @@ export class ParentService {
     return grades;
   }
 
+  /** Read-only active-learning summary for the parent portal. */
+  async getChildLearning(studentProfileId: string) {
+    const [lessonsCompleted, streak, experience, mastery] = await Promise.all([
+      this.prisma.lessonAttempt.count({
+        where: { studentProfileId, status: 'COMPLETED' },
+      }),
+      this.prisma.studentStreak.findUnique({ where: { studentProfileId } }),
+      this.prisma.studentExperience.findUnique({ where: { studentProfileId } }),
+      this.prisma.competencyMastery.findMany({
+        where: { studentProfileId },
+        include: { competency: { select: { name: true } } },
+        orderBy: { updatedAt: 'desc' },
+        take: 6,
+      }),
+    ]);
+
+    return {
+      lessonsCompleted,
+      currentStreak: streak?.currentStreak ?? 0,
+      longestStreak: streak?.longestStreak ?? 0,
+      totalXp: experience?.totalXp ?? 0,
+      level: experience?.level ?? 1,
+      mastery: mastery.map((m) => ({
+        competencyName: m.competency.name,
+        masteryScore: m.masteryScore,
+        status: m.status,
+      })),
+    };
+  }
+
   async getInvoices(userId: string) {
     const familyId =
       await this.guardianAccessService.getGuardianFamilyId(userId);

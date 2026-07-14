@@ -34,7 +34,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isAuthenticated = auth.isAuthenticated;
   const [logoutMutation] = useLogoutMutation();
 
-  const { data: campusesData } = useGetCampusesQuery();
+  const userRolesForQueries = getUserRoles(user);
+  const isAdminUser =
+    userRolesForQueries.includes("ADMIN") || userRolesForQueries.includes("SUPER_ADMIN");
+  // Campus scope is an admin concept — don't fire the query (403s) for other roles.
+  const { data: campusesData } = useGetCampusesQuery(undefined, { skip: !isAdminUser });
   const [selectedCampusId, setSelectedCampusId] = useState<string>("all");
 
   const [themeCustomizerOpen, setThemeCustomizerOpen] = useState(false);

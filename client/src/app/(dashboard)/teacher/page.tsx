@@ -62,7 +62,7 @@ export default function TeacherPage() {
             Teacher Dashboard
           </h1>
           <p className="text-sm text-muted-foreground">
-            Welcome back, {user?.name || "Teacher"}. Manage your classes, record attendance, and communicate with parents.
+            Welcome back, {user?.firstName || user?.name || "Teacher"}. Manage your classes, record attendance, and communicate with parents.
           </p>
         </div>
 

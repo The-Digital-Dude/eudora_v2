@@ -47,7 +47,7 @@ export default function StudentPage() {
           Student Dashboard
         </h1>
         <p className="text-sm text-muted-foreground">
-          Welcome back, {user?.name || "Student"}. Here is your learning overview, XP progression, and upcoming tasks.
+          Welcome back, {user?.firstName || user?.name || "Student"}. Here is your learning overview, XP progression, and upcoming tasks.
         </p>
       </div>
 

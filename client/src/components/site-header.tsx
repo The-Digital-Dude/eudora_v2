@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { getPrimaryRole } from "@/lib/access-control";
 import {
   useDeleteNotificationMutation,
   useGetNotificationsQuery,
@@ -57,6 +58,7 @@ export function SiteHeader({
   onLogout,
 }: SiteHeaderProps) {
   const [searchOpen, setSearchOpen] = React.useState(false);
+  const isAdminShell = getPrimaryRole(user) === "ADMIN";
   const { data: notifications = [] } = useGetNotificationsQuery();
   const { data: unreadData } = useGetUnreadNotificationsCountQuery();
   const [markAsRead] = useMarkNotificationAsReadMutation();
@@ -77,8 +79,13 @@ export function SiteHeader({
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const userInitials = user?.name
-    ? user.name
+  const displayName =
+    user?.name ||
+    [(user as any)?.firstName, (user as any)?.lastName].filter(Boolean).join(" ") ||
+    user?.email ||
+    "";
+  const userInitials = displayName
+    ? displayName
         .split(" ")
         .map((n: string) => n[0])
         .join("")
@@ -96,7 +103,8 @@ export function SiteHeader({
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
 
-          {/* Global Campus Scope Selector */}
+          {/* Global Campus Scope Selector — an admin concept; hidden for learner/parent/teacher shells */}
+          {isAdminShell && (
           <div className="mr-2 flex items-center gap-1.5">
             <Globe className="h-3.5 w-3.5 text-muted-foreground" />
             <Select value={selectedCampusId} onValueChange={setSelectedCampusId}>
@@ -115,6 +123,7 @@ export function SiteHeader({
               </SelectContent>
             </Select>
           </div>
+          )}
 
           <Separator
             orientation="vertical"

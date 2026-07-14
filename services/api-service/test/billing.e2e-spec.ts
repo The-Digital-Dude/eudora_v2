@@ -76,9 +76,10 @@ describe('Billing: plans, family invoices, webhook rejection (e2e)', () => {
         .catch(() => undefined);
     }
     if (familyId) {
-      await ctx.prisma.family
-        .deleteMany({ where: { id: familyId } })
-        .catch(() => undefined);
+      await (ctx.prisma.family.deleteMany as any)({
+        where: { id: familyId },
+        forceDelete: true,
+      }).catch(() => undefined);
     }
     await cleanupWorld(ctx, null, [plainUser, guardian]);
     await ctx.app.close();

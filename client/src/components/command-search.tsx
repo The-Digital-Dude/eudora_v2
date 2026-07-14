@@ -125,7 +125,7 @@ export function CommandSearch({ open, onOpenChange }: CommandSearchProps) {
   const searchItems: SearchItem[] = [
     // Dashboard & Academics
     { title: "Overview Dashboard", url: "/dashboard", group: "Dashboard", icon: LayoutDashboard },
-    { title: "Active Learning", url: "/learn", group: "Academics", icon: BookOpen },
+    { title: "Active Learning", url: "/learning", group: "Academics", icon: BookOpen },
     { title: "Lesson Authoring", url: "/lessons", group: "Academics", icon: PenTool },
     { title: "Diagnostics Tests", url: "/diagnostics", group: "Academics", icon: ClipboardList },
 

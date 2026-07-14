@@ -23,12 +23,14 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { hasAccess } from "@/lib/access-control";
+import { getRoleHome, getShellBrand, hasAccess } from "@/lib/access-control";
 import { isNavParent,type NavGroup, navGroups } from "@/config/nav-config";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: {
-    name: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
     email: string;
     roles?: string[];
     role?: string;
@@ -39,14 +41,14 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
   const pathname = usePathname();
 
-  const userInitials = user.name
-    ? user.name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "A";
+  const displayName =
+    user.name || [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
+  const userInitials = displayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   const filteredNavGroups = React.useMemo<NavGroup[]>(() => {
     return navGroups
@@ -71,14 +73,16 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
+              <Link href={getRoleHome(user)}>
                 <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Logo size={18} className="text-current" />
                 </div>
                 <div className="grid flex-1 text-left text-xs leading-tight">
-                  <span className="truncate font-bold text-sidebar-foreground">Eudora Admin</span>
+                  <span className="truncate font-bold text-sidebar-foreground">
+                    {getShellBrand(user).title}
+                  </span>
                   <span className="truncate text-[10px] font-semibold tracking-wider text-sidebar-foreground/50 uppercase">
-                    Console
+                    {getShellBrand(user).subtitle}
                   </span>
                 </div>
               </Link>
@@ -190,7 +194,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
             {userInitials}
           </div>
           <div className="min-w-0 flex-1 text-left">
-            <p className="truncate text-xs font-semibold text-sidebar-foreground">{user.name}</p>
+            <p className="truncate text-xs font-semibold text-sidebar-foreground">{displayName}</p>
             <p className="truncate text-[10px] text-sidebar-foreground/50">{user.email}</p>
           </div>
         </div>

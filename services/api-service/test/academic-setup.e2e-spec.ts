@@ -119,12 +119,10 @@ describe('Academic setup chain (e2e)', () => {
   });
 
   /**
-   * Documents CURRENT behavior: deleting an academic year with children
-   * silently cascades them away (no children guard in academic.service).
-   * Scope B (soft delete + Restrict edges) intentionally flips this — when it
-   * lands, this test MUST be updated to expect rejection/archival instead.
+   * Scope B behavior: deleting an academic year ARCHIVES it and its children
+   * (terms, course classes, class sections) — nothing is hard-deleted.
    */
-  it('currently cascade-deletes an academic year with children (flips under Scope B)', async () => {
+  it('archives an academic year together with its children (soft delete)', async () => {
     const yearRes = await http()
       .post('/api/academic-years')
       .set(asAdmin())
@@ -148,11 +146,31 @@ describe('Academic setup chain (e2e)', () => {
       .expect(201);
     const termId = unwrap<{ id: string }>(termRes).id;
 
-    await http().delete(`/api/academic-years/${yearId}`).set(asAdmin()).expect(200);
+    await http()
+      .delete(`/api/academic-years/${yearId}`)
+      .set(asAdmin())
+      .expect(200);
 
-    const orphanTerm = await ctx.prisma.term.findUnique({
+    // Both rows survive in the database, stamped as archived.
+    const archivedTerm = await (ctx.prisma.term.findUnique as any)({
       where: { id: termId },
+      includeArchived: true,
     });
-    expect(orphanTerm).toBeNull();
+    expect(archivedTerm).not.toBeNull();
+    expect(archivedTerm!.deletedAt).not.toBeNull();
+
+    const archivedYear = await (ctx.prisma.academicYear.findUnique as any)({
+      where: { id: yearId },
+      includeArchived: true,
+    });
+    expect(archivedYear!.deletedAt).not.toBeNull();
+
+    // Archived records vanish from the API surface.
+    await http().get(`/api/terms/${termId}`).set(asAdmin()).expect(404);
+
+    await (ctx.prisma.academicYear.deleteMany as any)({
+      where: { id: yearId },
+      forceDelete: true,
+    });
   });
 });

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { useLogoutMutation } from "@/features/auth/authApi";
 import { logout } from "@/features/auth/authSlice";
+import { getPrimaryRole, getRoleHome } from "@/lib/access-control";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 export default function Navbar() {
@@ -69,38 +70,10 @@ export default function Navbar() {
                 Hello, {user?.firstName || "User"}
               </span>
               <Link
-                href={
-                  user?.role === "ADMIN" ||
-                  user?.role === "SUPER_ADMIN" ||
-                  (Array.isArray(user?.roles) &&
-                    user?.roles.some(
-                      (r: any) =>
-                        r === "ADMIN" ||
-                        r === "SUPER_ADMIN" ||
-                        r.name === "ADMIN" ||
-                        r.name === "SUPER_ADMIN" ||
-                        r.role?.name === "ADMIN" ||
-                        r.role?.name === "SUPER_ADMIN",
-                    ))
-                    ? "/dashboard"
-                    : "/learn"
-                }
+                href={getRoleHome(user)}
                 className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
               >
-                {user?.role === "ADMIN" ||
-                user?.role === "SUPER_ADMIN" ||
-                (Array.isArray(user?.roles) &&
-                  user?.roles.some(
-                    (r: any) =>
-                      r === "ADMIN" ||
-                      r === "SUPER_ADMIN" ||
-                      r.name === "ADMIN" ||
-                      r.name === "SUPER_ADMIN" ||
-                      r.role?.name === "ADMIN" ||
-                      r.role?.name === "SUPER_ADMIN",
-                  ))
-                  ? "Dashboard"
-                  : "Active Learning"}
+                {getPrimaryRole(user) === "ADMIN" ? "Dashboard" : "My Portal"}
               </Link>
               <button
                 onClick={handleLogout}

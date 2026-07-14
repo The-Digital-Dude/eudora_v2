@@ -135,7 +135,7 @@ export default function StudentAssessmentPlayerPage() {
         <div className="text-center">
           <HelpCircle className="h-12 w-12 text-destructive mx-auto mb-3" />
           <h3 className="text-base font-bold text-foreground">Assignment Not Found</h3>
-          <Button onClick={() => router.push("/learn")} className="mt-4 bg-primary">
+          <Button onClick={() => router.push("/learning")} className="mt-4 bg-primary">
             Back to Student Portal
           </Button>
         </div>
@@ -275,7 +275,7 @@ export default function StudentAssessmentPlayerPage() {
           </div>
 
           <Button
-            onClick={() => router.push("/learn")}
+            onClick={() => router.push("/learning")}
             className="w-full h-11 rounded-xl bg-muted text-xs font-semibold text-foreground border border-border hover:bg-muted"
           >
             Return to Dashboard

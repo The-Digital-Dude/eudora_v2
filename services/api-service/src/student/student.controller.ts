@@ -41,10 +41,16 @@ export class StudentController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
+    @Query('includeArchived') includeArchived?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.studentService.findAllProfiles(pageNum, limitNum, status);
+    return this.studentService.findAllProfiles(
+      pageNum,
+      limitNum,
+      status,
+      includeArchived === 'true',
+    );
   }
 
   @Get('student-profiles/:id')
@@ -68,6 +74,13 @@ export class StudentController {
   @RequirePermissions({ action: 'delete', subject: 'Student' })
   async deleteProfile(@Param('id') id: string) {
     return this.studentService.deleteProfile(id);
+  }
+
+  @Post('student-profiles/:id/restore')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions({ action: 'update', subject: 'Student' })
+  async restoreProfile(@Param('id') id: string) {
+    return this.studentService.restoreProfile(id);
   }
 
   // --- Student Class Placement Endpoints ---

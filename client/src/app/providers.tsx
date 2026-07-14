@@ -5,6 +5,7 @@ import { Sparkles } from "lucide-react";
 import React from "react";
 import { Provider } from "react-redux";
 
+import { Toaster } from "@/components/ui/sonner";
 import { useGetMeQuery } from "@/features/auth/authApi";
 import { login, logout } from "@/features/auth/authSlice";
 import { useAppDispatch } from "@/store/hooks";
@@ -59,6 +60,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <Provider store={store}>
       <GoogleOAuthProvider clientId={googleClientId}>
         <AuthInitializer>{children}</AuthInitializer>
+        <Toaster />
       </GoogleOAuthProvider>
     </Provider>
   );

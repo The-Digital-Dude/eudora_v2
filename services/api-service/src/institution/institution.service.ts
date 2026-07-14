@@ -90,11 +90,26 @@ export class InstitutionService {
       throw new NotFoundException('Campus not found');
     }
 
-    await this.prisma.campus.delete({
-      where: { id },
+    // Cascade-archive programs and their class sections with the campus.
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      const programs = await tx.program.findMany({
+        where: { campusId: id },
+        select: { id: true },
+      });
+      const programIds = programs.map((p) => p.id);
+      await tx.classSection.updateMany({
+        where: { programId: { in: programIds }, deletedAt: null },
+        data: { deletedAt: now },
+      });
+      await tx.program.updateMany({
+        where: { campusId: id, deletedAt: null },
+        data: { deletedAt: now },
+      });
+      await tx.campus.update({ where: { id }, data: { deletedAt: now } });
     });
 
-    return { message: 'Campus deleted successfully' };
+    return { message: 'Campus archived successfully' };
   }
 
   // --- Program Operations ---

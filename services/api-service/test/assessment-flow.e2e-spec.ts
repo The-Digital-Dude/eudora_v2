@@ -60,14 +60,16 @@ describe('Assessment flow: author -> assign -> attempt -> mark -> gradebook (e2e
   afterAll(async () => {
     const { prisma } = ctx;
     if (assessmentId) {
-      await prisma.assessment
-        .deleteMany({ where: { id: assessmentId } })
-        .catch(() => undefined);
+      await (prisma.assessment.deleteMany as any)({
+        where: { id: assessmentId },
+        forceDelete: true,
+      }).catch(() => undefined);
     }
     if (questionId) {
-      await prisma.question
-        .deleteMany({ where: { id: questionId } })
-        .catch(() => undefined);
+      await (prisma.question.deleteMany as any)({
+        where: { id: questionId },
+        forceDelete: true,
+      }).catch(() => undefined);
     }
     await prisma.subject
       .deleteMany({ where: { code: `E2E-SUB-${tag}` } })

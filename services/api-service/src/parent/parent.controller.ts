@@ -44,6 +44,12 @@ export class ParentController {
     return this.parentService.getChildGrades(studentProfileId);
   }
 
+  @Get('children/:studentProfileId/learning')
+  @UseGuards(GuardianScopeGuard)
+  async getChildLearning(@Param('studentProfileId') studentProfileId: string) {
+    return this.parentService.getChildLearning(studentProfileId);
+  }
+
   @Get('billing/invoices')
   async getInvoices(@CurrentUser() user: CurrentUserDto) {
     return this.parentService.getInvoices(user.id);

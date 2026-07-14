@@ -282,8 +282,11 @@ export async function createStudent(
 }
 
 /**
- * Removes everything a suite created. Deletes roots and lets the schema's
- * cascades clear the children; user cleanup mirrors the rbac suite.
+ * Removes everything a suite created — HARD deletes via the scoping
+ * extension's `forceDelete` escape hatch (plain deletes on Tier-1 models are
+ * rewritten to archives). Student-history rows (attendance, gradebook,
+ * mastery, attempts) have Restrict FKs to StudentProfile, so they are purged
+ * first or the profile/user deletes would be rejected.
  */
 export async function cleanupWorld(
   ctx: TestContext,
@@ -292,20 +295,59 @@ export async function cleanupWorld(
 ): Promise<void> {
   const { prisma } = ctx;
   const realUsers = users.filter((u): u is TestUser => Boolean(u));
+  const userIds = realUsers.map((u) => u.id);
+
+  if (userIds.length) {
+    const profiles: Array<{ id: string }> = await (
+      prisma.studentProfile.findMany as any
+    )({
+      where: { userId: { in: userIds } },
+      select: { id: true },
+      includeArchived: true,
+    });
+    const profileIds = profiles.map((p) => p.id);
+    if (profileIds.length) {
+      const byProfile = { studentProfileId: { in: profileIds } };
+      await prisma.assessmentAttempt
+        .deleteMany({ where: byProfile })
+        .catch(() => undefined);
+      await (prisma.gradeBookEntry.deleteMany as any)({
+        where: byProfile,
+        forceDelete: true,
+      }).catch(() => undefined);
+      await prisma.dailyAttendance
+        .deleteMany({ where: byProfile })
+        .catch(() => undefined);
+      await prisma.courseClassAttendance
+        .deleteMany({ where: byProfile })
+        .catch(() => undefined);
+      await prisma.competencyMastery
+        .deleteMany({ where: byProfile })
+        .catch(() => undefined);
+      await (prisma.studentProfile.deleteMany as any)({
+        where: { id: { in: profileIds } },
+        forceDelete: true,
+      }).catch(() => undefined);
+    }
+  }
+
   if (world) {
-    await prisma.academicYear
-      .deleteMany({ where: { id: world.academicYearId } })
-      .catch(() => undefined);
-    await prisma.campus
-      .deleteMany({ where: { id: world.campusId } })
-      .catch(() => undefined);
+    await (prisma.academicYear.deleteMany as any)({
+      where: { id: world.academicYearId },
+      forceDelete: true,
+    }).catch(() => undefined);
+    await (prisma.campus.deleteMany as any)({
+      where: { id: world.campusId },
+      forceDelete: true,
+    }).catch(() => undefined);
   }
   for (const user of realUsers) {
     await prisma.userRole
       .deleteMany({ where: { userId: user.id } })
       .catch(() => undefined);
-    await prisma.user
-      .deleteMany({ where: { id: user.id } })
-      .catch(() => undefined);
+    await (prisma.user.deleteMany as any)({
+      where: { id: user.id },
+      forceDelete: true,
+    }).catch(() => undefined);
   }
 }

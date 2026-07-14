@@ -66,7 +66,7 @@ export const navGroups: NavGroup[] = [
         title: "Overview",
         url: "/dashboard",
         icon: LayoutDashboard,
-        requirement: { type: "always" },
+        requirement: { type: "roles", roles: ADMIN_ROLES },
       },
       {
         title: "Parent Portal",
@@ -88,7 +88,7 @@ export const navGroups: NavGroup[] = [
       },
       {
         title: "Active Learning",
-        url: "/learn",
+        url: "/learning",
         icon: Sparkles,
         requirement: { type: "roles", roles: ["TEACHER", "USER", ...ADMIN_ROLES] },
       },

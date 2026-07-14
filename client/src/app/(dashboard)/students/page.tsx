@@ -37,6 +37,7 @@ import {
   useDeleteStudentEnrollmentMutation,
   useDeleteStudentPlacementMutation,
   useDeleteStudentProfileMutation,
+  useRestoreStudentProfileMutation,
   useGetAcademicYearsQuery,
   useGetClassSectionsQuery,
   useGetCourseClassesQuery,
@@ -48,9 +49,11 @@ import {
 export default function StudentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showArchived, setShowArchived] = useState(false);
 
   // Queries & Mutations
-  const { data: studentsData, isLoading: studentsLoading } = useGetStudentProfilesQuery();
+  const { data: studentsData, isLoading: studentsLoading } =
+    useGetStudentProfilesQuery({ includeArchived: showArchived });
   const { data: usersData } = useGetUsersQuery();
   const { data: yearsData } = useGetAcademicYearsQuery();
   const { data: sectionsData } = useGetClassSectionsQuery();
@@ -59,6 +62,7 @@ export default function StudentsPage() {
   const [createStudentProfile, { isLoading: creatingProfile }] = useCreateStudentProfileMutation();
   const [updateStudentProfile, { isLoading: updatingProfile }] = useUpdateStudentProfileMutation();
   const [deleteStudentProfile] = useDeleteStudentProfileMutation();
+  const [restoreStudentProfile] = useRestoreStudentProfileMutation();
 
   const [createPlacement, { isLoading: placing }] = useCreateStudentPlacementMutation();
   const [deletePlacement] = useDeleteStudentPlacementMutation();
@@ -154,14 +158,26 @@ export default function StudentsPage() {
     }
   };
 
-  // Delete Student Profile
+  // Archive Student Profile (soft delete — restorable from "Show archived")
   const handleDeleteProfile = async (id: string) => {
-    if (confirm("Are you sure you want to delete this student profile?")) {
+    if (
+      confirm(
+        "Archive this student profile? Their learning history is kept and the profile can be restored later.",
+      )
+    ) {
       try {
         await deleteStudentProfile(id).unwrap();
       } catch (err: any) {
-        alert(err?.data?.message || "Failed to delete student profile.");
+        alert(err?.data?.message || "Failed to archive student profile.");
       }
+    }
+  };
+
+  const handleRestoreProfile = async (id: string) => {
+    try {
+      await restoreStudentProfile(id).unwrap();
+    } catch (err: any) {
+      alert(err?.data?.message || "Failed to restore student profile.");
     }
   };
 
@@ -353,6 +369,15 @@ export default function StudentsPage() {
           <h2 className="font-display text-sm font-bold text-foreground">Student Directory</h2>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <label className="flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-border bg-card px-3 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+                className="h-3.5 w-3.5 cursor-pointer accent-primary"
+              />
+              Show archived
+            </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -495,27 +520,44 @@ export default function StudentsPage() {
                       </td>
                       <td className="py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            onClick={() => handleOpenAcademicDialog(student)}
-                            variant="outline"
-                            className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
-                          >
-                            Route Setup
-                          </Button>
-                          <Button
-                            onClick={() => handleOpenProfileDialog(student)}
-                            variant="outline"
-                            className="h-8 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            onClick={() => handleDeleteProfile(student.id)}
-                            variant="outline"
-                            className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          {student.deletedAt ? (
+                            <>
+                              <span className="rounded-md border border-border bg-muted px-2 py-0.5 text-[9px] font-semibold text-muted-foreground">
+                                Archived
+                              </span>
+                              <Button
+                                onClick={() => handleRestoreProfile(student.id)}
+                                variant="outline"
+                                className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+                              >
+                                Restore
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                onClick={() => handleOpenAcademicDialog(student)}
+                                variant="outline"
+                                className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+                              >
+                                Route Setup
+                              </Button>
+                              <Button
+                                onClick={() => handleOpenProfileDialog(student)}
+                                variant="outline"
+                                className="h-8 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteProfile(student.id)}
+                                variant="outline"
+                                className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

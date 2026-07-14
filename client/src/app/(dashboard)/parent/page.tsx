@@ -6,6 +6,7 @@ import { ChildSelector } from "./components/child-selector";
 import { ChildStatusCard } from "./components/child-status-card";
 import { AttendanceCalendar } from "./components/attendance-calendar";
 import { HomeworkGradesPanel } from "./components/homework-grades-panel";
+import { LearningPanel } from "./components/learning-panel";
 import { BillingHistoryPanel } from "./components/billing-history-panel";
 import { MessagingCenter } from "@/features/messaging/components/MessagingCenter";
 import { useAppSelector } from "@/store/hooks";
@@ -72,7 +73,7 @@ export default function ParentPage() {
             Parent Portal
           </h1>
           <p className="text-sm text-muted-foreground">
-            Welcome back, {user?.name || "Guardian"}. Monitor your children's educational progress and schedules.
+            Welcome back, {user?.firstName || user?.name || "Guardian"}. Monitor your children's educational progress and schedules.
           </p>
         </div>
 
@@ -161,6 +162,16 @@ export default function ParentPage() {
                 isGradesLoading={isGradesLoading}
               />
             </div>
+
+            {/* Active Learning progress (col-span-3) */}
+            {selectedChild && (
+              <div className="lg:col-span-3">
+                <LearningPanel
+                  studentProfileId={selectedChild.studentProfileId}
+                  childName={selectedChild.fullName}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -200,21 +200,10 @@ export default function LessonFlowPage() {
     }
   };
 
-  const handleBackToDashboard = () => {
-    const hasAdminRole =
-      user?.role === "ADMIN" ||
-      user?.role === "SUPER_ADMIN" ||
-      (Array.isArray(user?.roles) &&
-        user?.roles.some(
-          (r: any) =>
-            r === "ADMIN" ||
-            r === "SUPER_ADMIN" ||
-            r.name === "ADMIN" ||
-            r.name === "SUPER_ADMIN" ||
-            r.role?.name === "ADMIN" ||
-            r.role?.name === "SUPER_ADMIN",
-        ));
-    router.push(hasAdminRole ? "/dashboard" : "/learn");
+  const handleExitToHub = () => {
+    // Exiting a lesson always returns to the learning hub — a predictable
+    // "leave focus mode" affordance for every role.
+    router.push("/learning");
   };
 
   const hasQuestion = !!currentCard.question;
@@ -247,7 +236,7 @@ export default function LessonFlowPage() {
         lessonProgress={
           cards.length > 0 ? (currentCardIndex + (showExpPanel ? 1 : 0)) / cards.length : 0
         }
-        onClose={handleBackToDashboard}
+        onClose={handleExitToHub}
       />
 
       <main className="relative flex flex-1 flex-col overflow-hidden md:flex-row">
@@ -469,7 +458,7 @@ export default function LessonFlowPage() {
         totalXp={sessionXp}
         streakCount={data.attempt?.id ? 4 : 3} // Mock increment or placeholder
         lessonTitle={data.lesson.title}
-        onBackToLessons={handleBackToDashboard}
+        onBackToLessons={handleExitToHub}
       />
     </>
   );

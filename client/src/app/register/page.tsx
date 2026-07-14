@@ -1,31 +1,58 @@
-﻿"use client";
+"use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, Eye, EyeOff, Lock, Mail, Sparkles, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegisterMutation } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
+const registerSchema = z
+  .object({
+    name: z.string().min(2, "Full name must be at least 2 characters"),
+    email: z.string().min(1, "Email address is required").email("Please enter a valid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Confirm password is required"),
+    agree: z.boolean().refine((val) => val === true, {
+      message: "You must agree to the Terms of Service and Privacy Policy",
+    }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
+
 export default function RegisterPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agree, setAgree] = useState(false);
-  const [error, setError] = useState("");
 
   const router = useRouter();
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const [registerMutation, { isLoading: loading }] = useRegisterMutation();
+
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema as any),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      agree: false,
+    },
+  });
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -34,38 +61,27 @@ export default function RegisterPage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    if (!agree) {
-      setError("You must agree to the Terms of Service.");
-      return;
-    }
-
-    const nameParts = name.trim().split(/\s+/);
+  const handleRegister = async (values: RegisterFormValues) => {
+    const nameParts = values.name.trim().split(/\s+/);
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "User";
 
     try {
       const user = await registerMutation({
-        email,
-        password,
+        email: values.email,
+        password: values.password,
         firstName,
         lastName,
       }).unwrap();
 
       // Automatically sign in locally on register success
       dispatch(login({ user, token: null }));
+      toast.success("Account created successfully!");
       router.push("/login");
     } catch (err: any) {
       console.error(err);
-      setError(err?.data?.message || "An error occurred. Please try again.");
+      const errMsg = err?.data?.message || "An error occurred. Please try again.";
+      toast.error(errMsg);
     }
   };
 
@@ -146,186 +162,218 @@ export default function RegisterPage() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border"></div>
             </div>
-            <span className="relative bg-card px-3 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase0">
+            <span className="relative bg-card px-3 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
               Or sign up with
             </span>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-              {error}
-            </div>
-          )}
-
           {/* Registration Form */}
-          <form className="space-y-4" onSubmit={handleRegister}>
-            {/* Full Name */}
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                Full Name
-              </Label>
-              <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                  <User className="h-4 w-4" />
-                </span>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
+          <Form {...form}>
+            <form className="space-y-4" onSubmit={form.handleSubmit(handleRegister)}>
+              {/* Full Name */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="space-y-1.5">
+                    <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                      Full Name
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
+                          <User className="h-4 w-4" />
+                        </span>
+                        <Input
+                          {...field}
+                          id="name"
+                          type="text"
+                          placeholder="John Doe"
+                          className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
+                          disabled={loading}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Email Address */}
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                Email Address
-              </Label>
-              <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                </span>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@school.edu"
-                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
+              {/* Email Address */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="space-y-1.5">
+                    <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                      Email Address
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
+                          <Mail className="h-4 w-4" />
+                        </span>
+                        <Input
+                          {...field}
+                          id="email"
+                          type="email"
+                          placeholder="name@school.edu"
+                          className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
+                          disabled={loading}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Password */}
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                Password
-              </Label>
-              <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                  <Lock className="h-4 w-4" />
-                </span>
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pr-10 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-muted-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
+              {/* Password */}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem className="space-y-1.5">
+                    <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                      Password
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
+                          <Lock className="h-4 w-4" />
+                        </span>
+                        <Input
+                          {...field}
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pr-10 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
+                          disabled={loading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Confirm Password */}
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                Confirm Password
-              </Label>
-              <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                  <Lock className="h-4 w-4" />
-                </span>
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pr-10 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-muted-foreground"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
+              {/* Confirm Password */}
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem className="space-y-1.5">
+                    <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                      Confirm Password
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
+                          <Lock className="h-4 w-4" />
+                        </span>
+                        <Input
+                          {...field}
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pr-10 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
+                          disabled={loading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Terms and Conditions Option */}
-            <div className="flex items-start py-1">
-              <label className="group flex cursor-pointer items-start gap-2.5 text-xs text-muted-foreground select-none hover:text-foreground">
-                <input
-                  type="checkbox"
-                  checked={agree}
-                  onChange={(e) => setAgree(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-border bg-card text-foreground transition-all focus:ring-ring/20"
-                />
-                <span className="leading-normal">
-                  I agree to the{" "}
-                  <a className="underline hover:text-foreground hover:text-foreground">
-                    Terms of Service
-                  </a>{" "}
-                  and{" "}
-                  <a className="underline hover:text-foreground hover:text-foreground">
-                    Privacy Policy
-                  </a>
-                  .
-                </span>
-              </label>
-            </div>
+              {/* Terms and Conditions Option */}
+              <FormField
+                control={form.control}
+                name="agree"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-2.5 space-y-0 py-1">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 cursor-pointer rounded border-border bg-card text-foreground transition-all focus:ring-ring/20"
+                      />
+                    </FormControl>
+                    <div className="grid gap-1.5 leading-none">
+                      <FormLabel className="cursor-pointer text-xs text-muted-foreground select-none hover:text-foreground font-normal">
+                        I agree to the{" "}
+                        <a className="underline hover:text-foreground">
+                          Terms of Service
+                        </a>{" "}
+                        and{" "}
+                        <a className="underline hover:text-foreground">
+                          Privacy Policy
+                        </a>
+                        .
+                      </FormLabel>
+                      <FormMessage />
+                    </div>
+                  </FormItem>
+                )}
+              />
 
-            {/* Primary Action Button */}
-            <Button
-              type="submit"
-              className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all hover:bg-foreground/90 active:scale-98 disabled:pointer-events-none disabled:opacity-75 disabled:active:scale-100"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <svg
-                    className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Creating Account...
-                </>
-              ) : (
-                <>
-                  Create Account
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </form>
+              {/* Primary Action Button */}
+              <Button
+                type="submit"
+                className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all hover:bg-foreground/90 active:scale-98 disabled:pointer-events-none disabled:opacity-75 disabled:active:scale-100"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <svg
+                      className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </form>
+          </Form>
         </div>
 
         {/* Footer Sign-In Link */}
@@ -342,3 +390,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

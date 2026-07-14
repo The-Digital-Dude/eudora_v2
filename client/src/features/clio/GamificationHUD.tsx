@@ -80,6 +80,7 @@ export function GamificationHUD({
         {onClose && (
           <button
             onClick={onClose}
+            aria-label="Exit lesson and return to Active Learning"
             className="bg-muted/40 border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-200"
           >
             <svg

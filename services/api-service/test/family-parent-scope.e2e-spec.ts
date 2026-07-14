@@ -48,9 +48,10 @@ describe('Family & parent portal scoping (e2e)', () => {
 
   afterAll(async () => {
     if (familyId) {
-      await ctx.prisma.family
-        .deleteMany({ where: { id: familyId } })
-        .catch(() => undefined);
+      await (ctx.prisma.family.deleteMany as any)({
+        where: { id: familyId },
+        forceDelete: true,
+      }).catch(() => undefined);
     }
     await cleanupWorld(ctx, null, [
       plainUser,

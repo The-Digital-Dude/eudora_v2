@@ -1,24 +1,35 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleLogin } from "@react-oauth/google";
 import { ArrowRight, Eye, EyeOff, Lock, Mail, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getPrimaryRole, getRoleHome } from "@/lib/access-control";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGoogleLoginMutation, useLoginMutation } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
+const loginSchema = z.object({
+  email: z.string().min(1, "Email address is required").email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required").min(6, "Password must be at least 6 characters"),
+  remember: z.boolean(),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const [loginAs, setLoginAs] = useState<"student" | "guardian" | "admin">("student");
 
   const router = useRouter();
@@ -28,46 +39,30 @@ export default function LoginPage() {
   const [loginMutation, { isLoading: loading }] = useLoginMutation();
   const [googleLoginMutation, { isLoading: googleLoading }] = useGoogleLoginMutation();
 
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema as any),
+    defaultValues: {
+      email: "",
+      password: "",
+      remember: false,
+    },
+  });
+
   const checkRedirect = (u: any) => {
     if (!u) return;
 
-    const hasAdminRole =
-      u.role === "ADMIN" ||
-      u.role === "SUPER_ADMIN" ||
-      (Array.isArray(u.roles) &&
-        u.roles.some(
-          (r: any) =>
-            r === "ADMIN" ||
-            r === "SUPER_ADMIN" ||
-            r.name === "ADMIN" ||
-            r.name === "SUPER_ADMIN" ||
-            r.role?.name === "ADMIN" ||
-            r.role?.name === "SUPER_ADMIN",
-        ));
-
-    const isGuardian =
-      u.role === "GUARDIAN" ||
-      (Array.isArray(u.roles) &&
-        u.roles.some(
-          (r: any) => r === "GUARDIAN" || r.name === "GUARDIAN" || r.role?.name === "GUARDIAN",
-        ));
-
-    if (isGuardian) {
+    // Every role lands on its purpose-built home: admin -> /dashboard,
+    // teacher -> /teacher, guardian -> /parent, student -> /student.
+    if (getPrimaryRole(u) === "GUARDIAN") {
       const hasProfile = !!u.guardianProfile;
       const hasStudents =
         hasProfile &&
         Array.isArray(u.guardianProfile.students) &&
         u.guardianProfile.students.length > 0;
-      if (!hasProfile || !hasStudents) {
-        router.push("/complete-profile");
-      } else {
-        router.push("/dashboard");
-      }
-    } else if (hasAdminRole) {
-      router.push("/dashboard");
-    } else {
-      router.push("/learn");
+      router.replace(!hasProfile || !hasStudents ? "/complete-profile" : "/parent");
+      return;
     }
+    router.replace(getRoleHome(u));
   };
 
   useEffect(() => {
@@ -76,38 +71,37 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, user]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) return;
-    setError("");
-
+  const handleLogin = async (values: LoginFormValues) => {
     try {
-      const loggedInUser = await loginMutation({ email, password }).unwrap();
+      const loggedInUser = await loginMutation({ email: values.email, password: values.password }).unwrap();
       dispatch(login({ user: loggedInUser, token: null }));
+      toast.success("Welcome back! Successfully logged in.");
       checkRedirect(loggedInUser);
     } catch (err: any) {
       console.error(err);
-      setError(err?.data?.message || "Invalid email or password.");
+      const errMsg = err?.data?.message || "Invalid email or password.";
+      toast.error(errMsg);
     }
   };
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      setError("");
       try {
         const loggedInUser = await googleLoginMutation({
           token: tokenResponse.access_token,
           role: loginAs === "guardian" ? "GUARDIAN" : "USER",
         }).unwrap();
         dispatch(login({ user: loggedInUser, token: null }));
+        toast.success("Successfully logged in with Google!");
         checkRedirect(loggedInUser);
       } catch (err: any) {
         console.error(err);
-        setError(err?.data?.message || "Google authentication failed. Please try again.");
+        const errMsg = err?.data?.message || "Google authentication failed. Please try again.";
+        toast.error(errMsg);
       }
     },
     onError: () => {
-      setError("Google authentication failed. Please try again.");
+      toast.error("Google authentication failed. Please try again.");
     },
   });
 
@@ -209,131 +203,148 @@ export default function LoginPage() {
             </span>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div
-              role="alert"
-              aria-live="polite"
-              className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs font-semibold text-destructive"
-            >
-              {error}
-            </div>
-          )}
-
           {/* Form */}
-          <form className="space-y-5" onSubmit={handleLogin}>
-            {/* Email */}
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                Email Address
-              </Label>
-              <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                </span>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@company.com"
-                  className="cupertino-input h-11 rounded-xl pl-10"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
+          <Form {...form}>
+            <form className="space-y-5" onSubmit={form.handleSubmit(handleLogin)}>
+              {/* Email */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="space-y-1.5">
+                    <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                      Email Address
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
+                          <Mail className="h-4 w-4" />
+                        </span>
+                        <Input
+                          {...field}
+                          id="email"
+                          type="email"
+                          placeholder="name@company.com"
+                          className="cupertino-input h-11 rounded-xl pl-10"
+                          disabled={loading}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Password */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                  Password
-                </Label>
-                <button
-                  type="button"
-                  className="cursor-pointer text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground hover:underline"
-                  onClick={() => {
-                    /* TODO: forgot password flow */
-                  }}
-                >
-                  Forgot?
-                </button>
-              </div>
-              <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                  <Lock className="h-4 w-4" />
-                </span>
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="cupertino-input h-11 rounded-xl pr-10 pl-10"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
+              {/* Password */}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                        Password
+                      </FormLabel>
+                      <button
+                        type="button"
+                        className="cursor-pointer text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground hover:underline"
+                        onClick={() => {
+                          /* TODO: forgot password flow */
+                        }}
+                      >
+                        Forgot?
+                      </button>
+                    </div>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
+                          <Lock className="h-4 w-4" />
+                        </span>
+                        <Input
+                          {...field}
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="cupertino-input h-11 rounded-xl pr-10 pl-10"
+                          disabled={loading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Keep me signed in */}
-            <div className="flex items-center gap-2.5">
-              <Checkbox id="remember" />
-              <label
-                htmlFor="remember"
-                className="cursor-pointer text-xs text-muted-foreground select-none hover:text-foreground"
+              {/* Keep me signed in */}
+              <FormField
+                control={form.control}
+                name="remember"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2.5 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        id="remember"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel
+                      htmlFor="remember"
+                      className="cursor-pointer text-xs text-muted-foreground select-none hover:text-foreground font-normal"
+                    >
+                      Keep me signed in
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+
+              {/* Submit */}
+              <Button
+                type="submit"
+                className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold"
+                disabled={loading}
               >
-                Keep me signed in
-              </label>
-            </div>
-
-            {/* Submit */}
-            <Button
-              type="submit"
-              className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <svg
-                    className="mr-2 -ml-1 h-4 w-4 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  Continue
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </form>
+                {loading ? (
+                  <>
+                    <svg
+                      className="mr-2 -ml-1 h-4 w-4 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    Continue
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </form>
+          </Form>
         </div>
 
         {/* Footer */}
@@ -350,3 +361,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

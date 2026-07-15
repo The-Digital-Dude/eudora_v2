@@ -143,6 +143,7 @@ export const authApi = createApi({
         method: "POST",
         body: credentials,
       }),
+      invalidatesTags: ["Users"],
     }),
     register: builder.mutation({
       query: (userData) => ({
@@ -150,15 +151,18 @@ export const authApi = createApi({
         method: "POST",
         body: userData,
       }),
+      invalidatesTags: ["Users"],
     }),
     getMe: builder.query<any, void>({
       query: () => "/auth/me",
+      providesTags: ["Users"],
     }),
     logout: builder.mutation<void, void>({
       query: () => ({
         url: "/auth/logout",
         method: "POST",
       }),
+      invalidatesTags: ["Users"],
     }),
     googleLogin: builder.mutation({
       query: (dto) => ({
@@ -166,6 +170,7 @@ export const authApi = createApi({
         method: "POST",
         body: dto,
       }),
+      invalidatesTags: ["Users"],
     }),
   }),
 });

@@ -13,6 +13,8 @@ export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
   brandColors: {},
   // Matches the :root default in globals.css
   radius: "0.625rem",
+  // Matches the :root default --shadow-intensity in globals.css
+  shadowIntensity: 1,
   fontSans: "--font-jakarta",
   fontDisplay: "--font-outfit",
   density: "comfortable",
@@ -139,6 +141,9 @@ export function applyThemeSettings(settings: ThemeSettings, isDarkMode: boolean)
 
   // 4. Radius.
   root.style.setProperty("--radius", settings.radius);
+
+  // 4b. Shadow/elevation intensity — scales every shadow-* token's opacity.
+  root.style.setProperty("--shadow-intensity", String(settings.shadowIntensity));
 
   // 5. Fonts.
   root.style.setProperty("--font-sans", `var(${settings.fontSans})`);

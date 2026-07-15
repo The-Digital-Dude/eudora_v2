@@ -71,7 +71,7 @@ export function TeacherHomeworkView() {
 
   // Queries
   const { data: courseClassesData, isLoading: isLoadingClasses } = useGetCourseClassesQuery();
-  const courseClasses = courseClassesData?.items || [];
+  const courseClasses = React.useMemo(() => courseClassesData?.items ?? [], [courseClassesData]);
 
   // Set default class if empty
   React.useEffect(() => {
@@ -159,7 +159,7 @@ export function TeacherHomeworkView() {
 
         <Button
           onClick={() => setCreateDialogOpen(true)}
-          className="h-11 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+          className="h-11 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
         >
           <Plus className="mr-2 h-4 w-4" />
           Distribute Homework
@@ -335,7 +335,7 @@ export function TeacherHomeworkView() {
                                     setGradeFeedback(sub.feedback || "");
                                     setGradingModalOpen(true);
                                   }}
-                                  className="flex h-8 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-3 text-[10px] font-semibold text-white hover:bg-foreground/90"
+                                  className="flex h-8 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-3 text-[10px] font-semibold text-background hover:bg-foreground/90"
                                 >
                                   <Award className="h-3.5 w-3.5" />
                                   Grade
@@ -515,7 +515,7 @@ export function TeacherHomeworkView() {
               <Button
                 type="submit"
                 disabled={isCreating}
-                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
               >
                 {isCreating ? "Distributing..." : "Assign Tasks"}
               </Button>

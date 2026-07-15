@@ -24,6 +24,13 @@ export const radiusSlider = {
   step: 0.025,
 };
 
+// Shadow/elevation intensity slider bounds — multiplies every shadow-* token's opacity.
+export const shadowSlider = {
+  min: 0,
+  max: 2,
+  step: 0.1,
+};
+
 // Font family options. Each cssVar is loaded in the root layout via next/font.
 export const fontOptions: FontOption[] = [
   { name: "Plus Jakarta Sans", cssVar: "--font-jakarta" },

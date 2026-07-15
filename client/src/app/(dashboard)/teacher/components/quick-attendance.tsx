@@ -1,10 +1,11 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
-import { useGetClassDailySheetQuery, useRecordDailyAttendanceMutation } from "@/features/academic/attendanceApi";
-import { CheckCircle2, UserCheck, Loader2, Save } from "lucide-react";
 import { format } from "date-fns";
+import { Loader2, Save,UserCheck } from "lucide-react";
+import React, { useEffect,useState } from "react";
 import { toast } from "sonner";
+
+import { useGetClassDailySheetQuery, useRecordDailyAttendanceMutation } from "@/features/academic/attendanceApi";
 
 interface QuickAttendanceProps {
   classSectionId: string;

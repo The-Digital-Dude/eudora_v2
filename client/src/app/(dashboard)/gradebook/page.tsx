@@ -2,12 +2,8 @@
 
 import {
   Award,
-  BookOpen,
-  Calendar,
-  ChevronRight,
   ClipboardList,
   GraduationCap,
-  Info,
   Plus,
   RefreshCw,
   Save,
@@ -33,12 +29,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   useBulkUpsertGradesMutation,
-  useCreateManualGradeMutation,
   useGetGradebookForClassQuery,
   useGetStudentGradesQuery,
   useGetStudentSummaryQuery,
   useSyncGradesMutation,
-  useUpdateGradeEntryMutation,
 } from "@/features/academic/gradebookApi";
 import { useGetTermsQuery } from "@/features/academic/timetableApi";
 import { useGetCourseClassesQuery } from "@/features/dashboard/dashboardApi";
@@ -96,10 +90,10 @@ export default function GradebookPage() {
 
   // Queries
   const { data: courseClassesData, isLoading: isLoadingClasses } = useGetCourseClassesQuery();
-  const courseClasses = courseClassesData?.items || [];
+  const courseClasses = React.useMemo(() => courseClassesData?.items ?? [], [courseClassesData]);
 
   const { data: termsData } = useGetTermsQuery({ page: 1, limit: 100 });
-  const termsList = termsData?.items || [];
+  const termsList = React.useMemo(() => termsData?.items ?? [], [termsData]);
 
   // Default selections
   React.useEffect(() => {
@@ -587,7 +581,7 @@ export default function GradebookPage() {
             size="sm"
             onClick={handleSaveGrid}
             disabled={isSavingBulk}
-            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
           >
             <Save className="h-3.5 w-3.5" />
             {isSavingBulk ? "Saving..." : "Save Gradebook"}
@@ -849,7 +843,7 @@ export default function GradebookPage() {
               </Button>
               <Button
                 type="submit"
-                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
               >
                 Add Column
               </Button>

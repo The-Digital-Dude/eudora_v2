@@ -3,13 +3,13 @@
 import React from "react";
 
 import type { ClioQuestion } from "../clioApi";
+import { CodePlaygroundWidget } from "./CodePlaygroundWidget";
 import { ComingSoonWidget } from "./ComingSoonWidget";
+import { CoordinatePlotterWidget } from "./CoordinatePlotterWidget";
 import { DragDropWidget } from "./DragDropWidget";
+import { GridMatchingWidget } from "./GridMatchingWidget";
 import { MCQWidget } from "./MCQWidget";
 import { SliderWidget } from "./SliderWidget";
-import { CoordinatePlotterWidget } from "./CoordinatePlotterWidget";
-import { GridMatchingWidget } from "./GridMatchingWidget";
-import { CodePlaygroundWidget } from "./CodePlaygroundWidget";
 
 export interface WidgetSelectorProps {
   question: ClioQuestion;

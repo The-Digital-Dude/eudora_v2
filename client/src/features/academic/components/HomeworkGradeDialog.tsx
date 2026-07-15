@@ -123,7 +123,7 @@ export function HomeworkGradeDialog({
             <Button
               type="submit"
               disabled={isGrading}
-              className="h-10 cursor-pointer rounded-xl bg-success px-4 text-xs font-semibold text-white hover:bg-success"
+              className="h-10 cursor-pointer rounded-xl bg-success px-4 text-xs font-semibold text-success-foreground hover:bg-success"
             >
               {isGrading ? "Submitting..." : "Save Grade"}
             </Button>

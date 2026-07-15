@@ -4,7 +4,7 @@ import { AlertCircle, Info,Mail, MessageSquare, Plus, Radio, Send } from "lucide
 import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -86,7 +86,7 @@ export default function CommunicationPage() {
         </div>
         <Button
           onClick={handleOpenDialog}
-          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90 active:scale-98"
+          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90 active:scale-98"
         >
           <Plus className="h-4 w-4" /> New Broadcast
         </Button>
@@ -195,7 +195,7 @@ export default function CommunicationPage() {
             ))
           ) : (
             <p className="py-8 text-center text-xs font-medium text-muted-foreground">
-              No communication broadcasts logged. Click "New Broadcast" to compose an alert.
+              No communication broadcasts logged. Click &quot;New Broadcast&quot; to compose an alert.
             </p>
           )}
         </div>
@@ -298,7 +298,7 @@ export default function CommunicationPage() {
               <Button
                 type="submit"
                 disabled={sending}
-                className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90"
+                className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90"
               >
                 <Send className="h-3.5 w-3.5" />
                 {sending ? "Dispatching..." : "Send Broadcast"}

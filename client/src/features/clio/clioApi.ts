@@ -120,7 +120,7 @@ export const clioApi = authApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: (_result: any, _err: any, { cardId }: any) => ["LessonFlow" as any],
+      invalidatesTags: ["LessonFlow" as any],
     } as any),
 
     // Fetch curriculum concepts for dropdown selection

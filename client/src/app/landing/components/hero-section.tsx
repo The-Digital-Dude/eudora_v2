@@ -9,7 +9,7 @@ export default function HeroSection() {
 
       <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-6 text-center">
         {/* Top Product Badge */}
-        <div className="animate-fade-in-up mb-6 inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3.5 py-1 text-[10px] font-bold tracking-widest text-muted-foreground uppercase shadow-sm select-none">
+        <div className="animate-fade-in-up mb-6 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1 text-[10px] font-bold tracking-widest text-muted-foreground uppercase shadow-sm select-none">
           <Sparkles className="h-3.5 w-3.5 text-foreground" />
           Introducing Eudora OS v2.0
         </div>
@@ -53,7 +53,7 @@ export default function HeroSection() {
           className="animate-fade-in-up w-full max-w-[840px] px-2"
           style={{ animationDelay: "0.3s" }}
         >
-          <div className="relative overflow-hidden rounded-[24px] border border-border/50 bg-card shadow-[0_30px_70px_rgba(0,0,0,0.06),0_10px_20px_rgba(0,0,0,0.015)] select-none">
+          <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-card shadow-[0_30px_70px_rgba(0,0,0,0.06),0_10px_20px_rgba(0,0,0,0.015)] select-none">
             {/* Window Title Bar */}
             <div className="flex h-11 items-center border-b border-border/50 bg-background/50 px-5">
               <div className="flex gap-1.5">

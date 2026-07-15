@@ -64,12 +64,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return hasAccess(user, matchedLeaf.requirement);
   }, [pathname, user]);
 
+  // Auth state is already settled by AuthInitializer before this layout mounts,
+  // so an unauthenticated user here is final — send them to login instead of
+  // stranding them on the spinner.
+  React.useEffect(() => {
+    if (!isAuthenticated || !user) {
+      router.replace("/login");
+    }
+  }, [isAuthenticated, user, router]);
+
   const handleLogout = async () => {
     try {
       await logoutMutation().unwrap();
       dispatch(logout());
       router.push("/login");
-    } catch (err) {
+    } catch {
       dispatch(logout());
       router.push("/login");
     }
@@ -81,7 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex max-w-sm flex-col items-center gap-4 text-center">
           <Loader2 className="h-8 w-8 animate-spin text-foreground" />
           <p className="text-sm font-medium text-muted-foreground">
-            Checking your session...
+            Redirecting to sign in...
           </p>
         </div>
       </div>

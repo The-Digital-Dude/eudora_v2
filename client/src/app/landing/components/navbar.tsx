@@ -32,7 +32,7 @@ export default function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 select-none">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-2">
-          <div className="rounded-lg bg-foreground p-1.5 text-white shadow-sm transition-transform group-hover:scale-105">
+          <div className="rounded-lg bg-foreground p-1.5 text-background shadow-sm transition-transform group-hover:scale-105">
             <Sparkles className="h-4 w-4" />
           </div>
           <span className="font-display text-base font-bold tracking-tight text-foreground">
@@ -77,7 +77,7 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={handleLogout}
-                className="h-9 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm transition-all hover:bg-foreground/90 active:scale-97"
+                className="h-9 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm transition-all hover:bg-foreground/90 active:scale-97"
               >
                 Sign Out
               </button>
@@ -91,7 +91,7 @@ export default function Navbar() {
                 Sign In
               </Link>
               <Link href="/register">
-                <button className="h-9 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm transition-all hover:bg-foreground/90 active:scale-97">
+                <button className="h-9 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm transition-all hover:bg-foreground/90 active:scale-97">
                   Get Started
                 </button>
               </Link>

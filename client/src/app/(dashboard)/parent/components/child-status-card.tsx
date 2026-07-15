@@ -1,7 +1,8 @@
 ﻿"use client";
 
+import { AlertCircle, GraduationCap } from "lucide-react";
 import React from "react";
-import { User, Calendar, BookOpen, GraduationCap, AlertCircle } from "lucide-react";
+
 import type { ChildRollup } from "@/features/parent/parentApi";
 
 interface ChildStatusCardProps {

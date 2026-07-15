@@ -1,8 +1,8 @@
 ﻿"use client";
 
+import { Medal, Sparkles, TrendingUp, Trophy, Users } from "lucide-react";
 import React, { useState } from "react";
-import { Trophy, Medal, Sparkles, TrendingUp, Users } from "lucide-react";
-import type { LeaderboardData } from "@/features/student/studentApi";
+
 import { useGetLeaderboardQuery } from "@/features/student/studentApi";
 
 export function LeaderboardCard() {
@@ -11,7 +11,7 @@ export function LeaderboardCard() {
 
   if (isLoading || !data) {
     return (
-      <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl/50/20 backdrop-blur-md">
+      <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl backdrop-blur-md h-full">
         <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
           Loading leaderboard...
         </div>
@@ -44,7 +44,7 @@ export function LeaderboardCard() {
         );
       case 3:
         return (
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-warning/80 text-white font-extrabold text-[10px] shadow-md shadow-warning/20">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-warning/80 text-warning-foreground font-extrabold text-[10px] shadow-md shadow-warning/20">
             3rd
           </div>
         );
@@ -58,9 +58,9 @@ export function LeaderboardCard() {
   };
 
   return (
-    <div className="rounded-3xl border border-border/50 bg-card/40 shadow-xl shadow-black/5/50/20 backdrop-blur-md overflow-hidden flex flex-col h-[520px]">
+    <div className="rounded-3xl border border-border/50 bg-card/40 shadow-xl backdrop-blur-md overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="p-6 border-b border-border/50/40">
+      <div className="p-6 border-b border-border/40">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -73,7 +73,7 @@ export function LeaderboardCard() {
           </div>
 
           {/* Scope Selectors */}
-          <div className="inline-flex rounded-lg bg-muted/85 p-0.5/60">
+          <div className="inline-flex rounded-lg bg-muted/85 p-0.5">
             <button
               onClick={() => setScope("class")}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
@@ -111,10 +111,10 @@ export function LeaderboardCard() {
           <>
             {/* Podium top 3 render */}
             {topThree.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 pb-4 pt-2 border-b border-border/40/20">
+              <div className="grid grid-cols-3 gap-2 pb-4 pt-2 border-b border-border/20">
                 {/* 2nd place (Left) */}
                 {topThree[1] && (
-                  <div className={`flex flex-col items-center justify-end p-3 rounded-2xl border text-center ${topThree[1].studentProfileId === me?.studentProfileId ? 'bg-primary/10 border-primary/30' : 'bg-muted/50/10 border-border/40'}`}>
+                  <div className={`flex flex-col items-center justify-end p-3 rounded-2xl border text-center ${topThree[1].studentProfileId === me?.studentProfileId ? 'bg-primary/10 border-primary/30' : 'bg-muted/10 border-border/40'}`}>
                     <Medal className="h-6 w-6 text-muted-foreground mb-1" />
                     <span className="text-[10px] font-extrabold text-foreground truncate max-w-full">
                       {topThree[1].fullName}
@@ -137,7 +137,7 @@ export function LeaderboardCard() {
                 )}
                 {/* 3rd place (Right) */}
                 {topThree[2] && (
-                  <div className={`flex flex-col items-center justify-end p-3 rounded-2xl border text-center ${topThree[2].studentProfileId === me?.studentProfileId ? 'bg-primary/10 border-primary/30' : 'bg-muted/50/10 border-border/40'}`}>
+                  <div className={`flex flex-col items-center justify-end p-3 rounded-2xl border text-center ${topThree[2].studentProfileId === me?.studentProfileId ? 'bg-primary/10 border-primary/30' : 'bg-muted/10 border-border/40'}`}>
                     <Medal className="h-6 w-6 text-warning/80 mb-1" />
                     <span className="text-[10px] font-extrabold text-foreground truncate max-w-full">
                       {topThree[2].fullName}
@@ -159,7 +159,7 @@ export function LeaderboardCard() {
                     className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
                       isMeRow
                         ? "bg-primary/10 border-primary/30 shadow-sm"
-                        : "bg-transparent border-transparent hover:bg-muted/50/30"
+                        : "bg-transparent border-transparent hover:bg-muted/30"
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">

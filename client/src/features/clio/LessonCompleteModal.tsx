@@ -97,7 +97,7 @@ export function LessonCompleteModal({
 
         {/* Level up encouragement */}
         <p className="text-muted-foreground mb-8 max-w-xs text-xs leading-relaxed font-medium">
-          You're doing amazing! Continue learning to level up your mathematical skills with Clio.
+          You&apos;re doing amazing! Continue learning to level up your mathematical skills with Clio.
         </p>
 
         {/* Action Buttons */}

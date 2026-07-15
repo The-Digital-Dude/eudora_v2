@@ -28,6 +28,7 @@ import {
   densityOptions,
   fontOptions,
   radiusSlider,
+  shadowSlider,
 } from "@/config/theme-customizer-constants";
 import { colorThemes, tweakcnThemes } from "@/config/theme-data";
 import { useThemeSettings } from "@/contexts/theme-settings-context";
@@ -290,6 +291,25 @@ export function ThemeTab({ onImportClick }: ThemeTabProps) {
           step={radiusSlider.step}
           value={radiusRem}
           onValueChange={(v) => update({ radius: `${v}rem` })}
+        />
+      </div>
+
+      <Separator />
+
+      {/* Shadow / Elevation Slider */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Shadow</Label>
+          <span className="text-muted-foreground text-xs font-semibold tabular-nums">
+            {settings.shadowIntensity.toFixed(1)}x
+          </span>
+        </div>
+        <Slider
+          min={shadowSlider.min}
+          max={shadowSlider.max}
+          step={shadowSlider.step}
+          value={settings.shadowIntensity}
+          onValueChange={(v) => update({ shadowIntensity: v })}
         />
       </div>
 

@@ -1,7 +1,8 @@
 ﻿"use client";
 
-import React from "react";
 import { GraduationCap } from "lucide-react";
+import React from "react";
+
 import type { ChildRollup } from "@/features/parent/parentApi";
 
 interface ChildSelectorProps {

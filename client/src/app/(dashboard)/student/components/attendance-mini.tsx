@@ -1,7 +1,7 @@
 ﻿"use client";
 
+import {UserCheck } from "lucide-react";
 import React from "react";
-import { UserCheck, CheckCircle2, AlertTriangle, HelpCircle } from "lucide-react";
 
 interface AttendanceSummary {
   attendanceRate: number;
@@ -22,7 +22,7 @@ interface AttendanceMiniProps {
 export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
   if (isLoading) {
     return (
-      <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl/50/20 backdrop-blur-md">
+      <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl backdrop-blur-md h-full">
         <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
           Loading attendance summary...
         </div>
@@ -39,9 +39,9 @@ export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
   const strokeDashoffset = circumference - (rate / 100) * circumference;
 
   return (
-    <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5/50/20 backdrop-blur-md flex flex-col h-[350px]">
+    <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl backdrop-blur-md flex flex-col h-full">
       <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
-        <UserCheck className="h-4. w-4 text-primary" />
+        <UserCheck className="h-4 w-4 text-primary" />
         Attendance Rate
       </h3>
 
@@ -102,7 +102,7 @@ export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
 
         {/* Attendance Breakdown Grid */}
         <div className="grid grid-cols-2 gap-2.5 w-full mt-6">
-          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/10/40">
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/40">
             <div className="h-2 w-2 rounded-full bg-success shrink-0" />
             <div className="min-w-0">
               <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
@@ -114,7 +114,7 @@ export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/10/40">
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/40">
             <div className="h-2 w-2 rounded-full bg-warning shrink-0" />
             <div className="min-w-0">
               <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
@@ -126,7 +126,7 @@ export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/10/40">
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/40">
             <div className="h-2 w-2 rounded-full bg-destructive shrink-0" />
             <div className="min-w-0">
               <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
@@ -138,7 +138,7 @@ export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/10/40">
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border/40">
             <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
             <div className="min-w-0">
               <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">

@@ -2,16 +2,13 @@
 
 import {
   AlertCircle,
-  ArrowRight,
   Edit2,
-  FileText,
   Mail,
   Phone,
   Plus,
   Search,
   Trash2,
   TrendingUp,
-  UserCheck,
 } from "lucide-react";
 import React, { useState } from "react";
 
@@ -148,7 +145,7 @@ export default function LeadsPage() {
         </div>
         <Button
           onClick={() => handleOpenDialog()}
-          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90 active:scale-98"
+          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90 active:scale-98"
         >
           <Plus className="h-4 w-4" /> Add Lead
         </Button>
@@ -298,7 +295,7 @@ export default function LeadsPage() {
               ) : (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-xs font-medium text-muted-foreground">
-                    No leads listed. Click "Add Lead" to register prospective interests.
+                    No leads listed. Click &quot;Add Lead&quot; to register prospective interests.
                   </td>
                 </tr>
               )}
@@ -427,7 +424,7 @@ export default function LeadsPage() {
               <Button
                 type="submit"
                 disabled={creating || updating}
-                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
               >
                 {creating || updating ? "Saving..." : "Save Lead"}
               </Button>

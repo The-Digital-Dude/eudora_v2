@@ -5,13 +5,12 @@ import {
   Calendar,
   CheckCircle2,
   ClipboardList,
-  Clock,
   Search,
   User,
 } from "lucide-react";
 import React, { useState } from "react";
 
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useGetAssessmentAttemptsQuery } from "@/features/dashboard/dashboardApi";
 

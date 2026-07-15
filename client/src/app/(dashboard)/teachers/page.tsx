@@ -2,12 +2,9 @@
 
 import {
   AlertCircle,
-  BookOpen,
   Briefcase,
-  Calendar,
   Edit2,
   Mail,
-  Phone,
   Plus,
   Search,
   Trash,
@@ -17,7 +14,7 @@ import {
 import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -249,7 +246,7 @@ export default function TeachersPage() {
         </div>
         <Button
           onClick={() => handleOpenProfileDialog()}
-          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90"
+          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90"
         >
           <Plus className="h-4 w-4" /> Add Teacher
         </Button>
@@ -394,7 +391,7 @@ export default function TeachersPage() {
                     >
                       <td className="py-4">
                         <div className="flex items-center gap-3">
-                          <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-foreground text-xs font-bold text-white">
+                          <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-foreground text-xs font-bold text-background">
                             {initials}
                           </div>
                           <div>
@@ -633,7 +630,7 @@ export default function TeachersPage() {
               <Button
                 type="submit"
                 disabled={creatingProfile || updatingProfile}
-                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
               >
                 {creatingProfile || updatingProfile ? "Saving..." : "Save Profile"}
               </Button>
@@ -708,7 +705,7 @@ export default function TeachersPage() {
               <Button
                 type="submit"
                 disabled={assigning}
-                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
               >
                 {assigning ? "Assigning..." : "Assign Section"}
               </Button>
@@ -754,7 +751,7 @@ export default function TeachersPage() {
             <Button
               type="button"
               onClick={() => setIsClassDialogOpen(false)}
-              className="h-10 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+              className="h-10 rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
             >
               Done Setup
             </Button>

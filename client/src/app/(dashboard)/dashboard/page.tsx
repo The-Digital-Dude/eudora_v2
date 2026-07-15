@@ -8,10 +8,8 @@ import {
   Calendar,
   CheckSquare,
   ChevronRight,
-  Clock,
   CreditCard,
   FileText,
-  MessageSquare,
   Plus,
   School,
   Sparkles,
@@ -30,7 +28,6 @@ import {
   useGetCampusesQuery,
   useGetDashboardSnapshotQuery,
   useGetProgramsQuery,
-  useGetUsersQuery,
 } from "@/features/dashboard/dashboardApi";
 import { useAppSelector } from "@/store/hooks";
 
@@ -55,20 +52,18 @@ export default function DashboardOverview() {
     return rolesList;
   }, [user]);
 
-  const isAdmin = userRoles.includes("ADMIN") || userRoles.includes("SUPER_ADMIN");
   const isTeacher = userRoles.includes("TEACHER");
   const isStudent = userRoles.includes("USER") && user?.studentProfile;
   const isGuardian = userRoles.includes("GUARDIAN") && user?.guardianProfile;
 
   // Selected date state (defaults to today)
-  const [selectedDate, setSelectedDate] = React.useState<string>(
+  const [selectedDate] = React.useState<string>(
     new Date().toISOString().split("T")[0],
   );
 
   // Queries
   const { data: campusesData } = useGetCampusesQuery();
   const { data: programsData } = useGetProgramsQuery();
-  const { data: usersData } = useGetUsersQuery();
 
   const { data: snapshot, isLoading: isLoadingSnapshot } = useGetDashboardSnapshotQuery(
     selectedDate ? { date: selectedDate } : undefined,
@@ -118,7 +113,7 @@ export default function DashboardOverview() {
             <Link href="/homework">
               <Button
                 size="sm"
-                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
               >
                 Grade Worksheets
               </Button>
@@ -133,7 +128,7 @@ export default function DashboardOverview() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-1.5 text-sm font-black text-foreground uppercase">
-                    <Calendar className="h-4 w-4 text-primary" /> Today's Teaching Schedule
+                    <Calendar className="h-4 w-4 text-primary" /> Today&apos;s Teaching Schedule
                   </CardTitle>
                   <CardDescription className="text-[10px] text-muted-foreground">
                     Scheduled classroom lectures and subjects.
@@ -174,7 +169,7 @@ export default function DashboardOverview() {
                             <span>Room: {slot.room || "N/A"}</span>
                           </p>
                         </div>
-                        <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-white hover:bg-primary/90">
+                        <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-primary-foreground hover:bg-primary/90">
                           {startHours}:{startMins} - {endHours}:{endMins}
                         </Badge>
                       </div>
@@ -192,7 +187,7 @@ export default function DashboardOverview() {
                   {ungradedSubmissions.length})
                 </CardTitle>
                 <CardDescription className="text-[10px] text-muted-foreground">
-                  Students' solution uploads waiting for points assignment.
+                  Students&apos; solution uploads waiting for points assignment.
                 </CardDescription>
               </div>
 
@@ -321,7 +316,7 @@ export default function DashboardOverview() {
             <Card className="space-y-4 rounded-3xl border-border bg-card p-5 shadow-sm">
               <div>
                 <CardTitle className="flex items-center gap-1.5 text-sm font-black text-foreground uppercase">
-                  <Calendar className="h-4 w-4 text-primary" /> Today's Class Schedule
+                  <Calendar className="h-4 w-4 text-primary" /> Today&apos;s Class Schedule
                 </CardTitle>
                 <CardDescription className="text-[10px] text-muted-foreground">
                   Class periods, subjects, and rooms for today.
@@ -357,7 +352,7 @@ export default function DashboardOverview() {
                             <span>Teacher: {slot.teacherProfile?.fullName || "Staff"}</span>
                           </p>
                         </div>
-                        <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-white hover:bg-primary/90">
+                        <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-primary-foreground hover:bg-primary/90">
                           {startHours}:{startMins} - {endHours}:{endMins}
                         </Badge>
                       </div>
@@ -449,7 +444,7 @@ export default function DashboardOverview() {
                       <Link href="/homework">
                         <Button
                           size="sm"
-                          className="h-6 cursor-pointer rounded-lg bg-primary px-2.5 text-[9px] text-white hover:bg-foreground/90"
+                          className="h-6 cursor-pointer rounded-lg bg-primary px-2.5 text-[9px] text-primary-foreground hover:bg-foreground/90"
                         >
                           Submit
                         </Button>
@@ -514,7 +509,7 @@ export default function DashboardOverview() {
               <Card className="space-y-4 rounded-3xl border-border bg-card p-5 shadow-sm">
                 <div>
                   <CardTitle className="flex items-center gap-1.5 text-sm font-black text-foreground uppercase">
-                    <Calendar className="h-4 w-4 text-primary" /> {activeChild.fullName}'s
+                    <Calendar className="h-4 w-4 text-primary" /> {activeChild.fullName}&apos;s
                     Schedule Today
                   </CardTitle>
                   <CardDescription className="text-[10px] text-muted-foreground">
@@ -549,7 +544,7 @@ export default function DashboardOverview() {
                               Room: {slot.room || "N/A"}
                             </p>
                           </div>
-                          <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-white hover:bg-primary/90">
+                          <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-primary-foreground hover:bg-primary/90">
                             {startHours}:{startMins} - {endHours}:{endMins}
                           </Badge>
                         </div>
@@ -621,7 +616,7 @@ export default function DashboardOverview() {
                 </div>
 
                 <Link href="/homework" className="block">
-                  <Button className="h-10 w-full cursor-pointer rounded-xl bg-primary text-xs font-semibold text-white hover:bg-foreground/90">
+                  <Button className="h-10 w-full cursor-pointer rounded-xl bg-primary text-xs font-semibold text-primary-foreground hover:bg-foreground/90">
                     Review Homework Portal
                   </Button>
                 </Link>
@@ -657,7 +652,7 @@ export default function DashboardOverview() {
         </div>
         <div className="flex items-center gap-3">
           <Link href="/campuses">
-            <Button className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90 active:scale-98">
+            <Button className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-foreground/90 active:scale-98">
               <Plus className="h-4 w-4" /> Add Campus
             </Button>
           </Link>

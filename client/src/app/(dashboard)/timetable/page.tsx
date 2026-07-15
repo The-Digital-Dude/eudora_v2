@@ -1,13 +1,9 @@
 ﻿"use client";
 
 import {
-  Award,
   Calendar,
-  Eye,
   GraduationCap,
   Plus,
-  RefreshCw,
-  UploadCloud,
   Users,
 } from "lucide-react";
 import * as React from "react";
@@ -15,7 +11,6 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
 import {
   Dialog,
   DialogContent,
@@ -24,13 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Timetable,
   TimetableSlot,
   useCreateTimetableMutation,
-  useGetClassSectionScheduleQuery,
   useGetStudentScheduleQuery,
   useGetTeacherMeQuery,
   useGetTeacherScheduleQuery,
@@ -97,7 +92,7 @@ export default function TimetablePage() {
   const [publishTimetable, { isLoading: isPublishing }] = usePublishTimetableMutation();
 
   // Load teacher profile if teacher
-  const { data: teacherProfile, isLoading: loadingTeacherProfile } = useGetTeacherMeQuery(
+  const { data: teacherProfile } = useGetTeacherMeQuery(
     undefined,
     {
       skip: !isTeacher,
@@ -105,7 +100,7 @@ export default function TimetablePage() {
   );
 
   // Queries depending on role
-  const { data: timetablesData, refetch: refetchTimetables } = useGetTimetablesQuery(
+  const { data: timetablesData } = useGetTimetablesQuery(
     isAdmin
       ? {
           academicYearId: selectedYearId !== "all" ? selectedYearId : undefined,
@@ -222,7 +217,7 @@ export default function TimetablePage() {
           <div className="flex gap-2">
             <Button
               onClick={() => setCreateTimetableOpen(true)}
-              className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+              className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
             >
               <Plus className="h-4 w-4" />
               Create Timetable
@@ -275,7 +270,7 @@ export default function TimetablePage() {
                       size="sm"
                       onClick={handlePublish}
                       disabled={isPublishing}
-                      className="h-9 cursor-pointer rounded-xl bg-foreground text-[10px] font-bold text-white hover:bg-foreground/90"
+                      className="h-9 cursor-pointer rounded-xl bg-foreground text-[10px] font-bold text-background hover:bg-foreground/90"
                     >
                       Publish Schedule
                     </Button>
@@ -484,7 +479,7 @@ export default function TimetablePage() {
               <Button
                 type="submit"
                 disabled={isCreatingTimetable}
-                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
               >
                 Create
               </Button>

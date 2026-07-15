@@ -1,9 +1,10 @@
 ﻿"use client";
 
+import { Loader2,Send } from "lucide-react";
 import React, { useState } from "react";
-import { Send, Loader2 } from "lucide-react";
-import { usePostMessageMutation } from "../messagingApi";
 import { toast } from "sonner";
+
+import { usePostMessageMutation } from "../messagingApi";
 
 interface MessageComposerProps {
   threadId: string;
@@ -36,7 +37,7 @@ export function MessageComposer({ threadId }: MessageComposerProps) {
   return (
     <form
       onSubmit={handleSend}
-      className="border-t border-border/50 p-4 bg-card/45/50/20 backdrop-blur-md flex items-end gap-3"
+      className="border-t border-border/50 p-4 bg-card/45 backdrop-blur-md flex items-end gap-3"
     >
       <div className="flex-1 relative">
         <textarea
@@ -46,7 +47,7 @@ export function MessageComposer({ threadId }: MessageComposerProps) {
           placeholder="Type a message... (Press Enter to send)"
           rows={1}
           disabled={isLoading}
-          className="w-full resize-none rounded-2xl border border-border/80 bg-muted/50 px-4 py-3 text-sm focus:border-primary focus:outline-none/80/50 min-h-[44px] max-h-[120px] transition-all duration-200"
+          className="w-full resize-none rounded-2xl border border-border/80 bg-muted/50 px-4 py-3 text-sm focus:border-primary focus:outline-none min-h-[44px] max-h-[120px] transition-all duration-200"
         />
       </div>
 

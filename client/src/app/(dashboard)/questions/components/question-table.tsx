@@ -1,7 +1,8 @@
 ﻿"use client";
 
+import { Archive, Edit2, HelpCircle } from "lucide-react";
 import React from "react";
-import { Edit2, Archive, HelpCircle } from "lucide-react";
+
 import type { Question } from "@/features/assessments/questionsApi";
 
 interface QuestionTableProps {

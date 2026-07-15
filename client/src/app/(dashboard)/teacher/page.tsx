@@ -1,16 +1,18 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
-import { useGetTeacherClassesQuery } from "@/features/teacher/teacherPortalApi";
-import { useGetDashboardSnapshotQuery } from "@/features/dashboard/dashboardApi";
-import { ClassesOverview } from "./components/classes-overview";
-import { QuickAttendance } from "./components/quick-attendance";
-import { PerformanceAlerts } from "./components/performance-alerts";
-import { MessagingCenter } from "@/features/messaging/components/MessagingCenter";
-import { useAppSelector } from "@/store/hooks";
-import { Loader2, Users, ClipboardCheck, Calendar, BookOpen, MessageSquare, ExternalLink } from "lucide-react";
+import { format, isValid } from "date-fns";
+import { BookOpen, Calendar, ClipboardCheck, ExternalLink,Loader2, MessageSquare } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+import React, { useEffect,useState } from "react";
+
+import { useGetDashboardSnapshotQuery } from "@/features/dashboard/dashboardApi";
+import { MessagingCenter } from "@/features/messaging/components/MessagingCenter";
+import { useGetTeacherClassesQuery } from "@/features/teacher/teacherPortalApi";
+import { useAppSelector } from "@/store/hooks";
+
+import { ClassesOverview } from "./components/classes-overview";
+import { PerformanceAlerts } from "./components/performance-alerts";
+import { QuickAttendance } from "./components/quick-attendance";
 
 export default function TeacherPage() {
   const auth = useAppSelector((state) => state.auth);
@@ -135,62 +137,59 @@ export default function TeacherPage() {
       )}
 
       {activeSection === "grading" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Today's Schedule Slot list (col-span-1) */}
-          <div className="space-y-6 lg:col-span-1">
-            <div>
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                Today's Schedule
+          <div className="lg:col-span-1 flex flex-col">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
+              Today&apos;s Schedule
+            </h3>
+            <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl backdrop-blur-md flex flex-col flex-1 min-h-[280px]">
+              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 shrink-0 mb-3">
+                <Calendar className="h-4 w-4 text-primary" />
+                Timetable for {format(new Date(), "EEEE")}
               </h3>
-              <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5/50/20 backdrop-blur-md space-y-4 max-h-[520px] overflow-y-auto">
-                <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  Timetable for {format(new Date(), "EEEE")}
-                </h3>
 
-                {todaySchedule.length === 0 ? (
-                  <p className="text-xs text-muted-foreground py-6 text-center">
-                    No classes scheduled for today.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {todaySchedule.map((slot: any) => (
-                      <div
-                        key={slot.id}
-                        className="p-3 rounded-2xl border border-border/40 bg-card/20/40/10 flex items-center justify-between"
-                      >
-                        <div>
-                          <h4 className="font-extrabold text-xs text-foreground">
-                            {slot.courseClass?.name}
-                          </h4>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            Roster: {slot.classSection?.name}
-                          </p>
-                        </div>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 dark:bg-primary/10 text-primary font-mono">
-                          {slot.startTime} - {slot.endTime}
-                        </span>
+              {todaySchedule.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-6 text-center">
+                  No classes scheduled for today.
+                </p>
+              ) : (
+                <div className="flex-1 overflow-y-auto space-y-3">
+                  {todaySchedule.map((slot: any) => (
+                    <div
+                      key={slot.id}
+                      className="p-3 rounded-2xl border border-border/40 bg-card/20 flex items-center justify-between"
+                    >
+                      <div>
+                        <h4 className="font-extrabold text-xs text-foreground">
+                          {slot.courseClass?.name}
+                        </h4>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          Roster: {slot.classSection?.name}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 dark:bg-primary/10 text-primary font-mono">
+                        {slot.startTime} - {slot.endTime}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Grading Queue (col-span-1) */}
-          <div className="space-y-6 lg:col-span-1">
-            <div>
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                Grading Queue
+          <div className="lg:col-span-1 flex flex-col">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
+              Grading Queue
+            </h3>
+            <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl backdrop-blur-md flex flex-col flex-1 min-h-[280px]">
+              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 border-b border-border/40 pb-3 mb-3 shrink-0">
+                <BookOpen className="h-4 w-4 text-primary" />
+                Submissions to Grade
               </h3>
-              <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5/50/20 backdrop-blur-md flex flex-col h-[520px]">
-                <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 border-b border-border/20/40 pb-3 mb-3">
-                  <BookOpen className="h-4. w-4 text-primary" />
-                  Submissions to Grade
-                </h3>
 
-                <div className="flex-1 overflow-y-auto space-y-3">
+              <div className="flex-1 overflow-y-auto space-y-3">
                   {ungradedSubmissions.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-muted-foreground text-xs py-6">
                       No assignments awaiting grades.
@@ -199,7 +198,7 @@ export default function TeacherPage() {
                     ungradedSubmissions.map((sub: any) => (
                       <div
                         key={sub.id}
-                        className="p-3 rounded-2xl border border-border/40 bg-card/20/40/10 flex flex-col gap-2"
+                        className="p-3 rounded-2xl border border-border/40 bg-card/20 flex flex-col gap-2"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
@@ -221,7 +220,7 @@ export default function TeacherPage() {
 
                         <div className="flex items-center justify-between mt-1 text-[9px] font-bold text-muted-foreground">
                           <span>
-                            Submitted: {format(new Date(sub.submissionDate), "MMM dd")}
+                            Submitted: {isValid(new Date(sub.submissionDate)) ? format(new Date(sub.submissionDate), "MMM dd") : "—"}
                           </span>
                           <span className={`px-1.5 py-0.5 rounded-full ${
                             sub.status === "LATE"
@@ -237,16 +236,12 @@ export default function TeacherPage() {
                 </div>
               </div>
             </div>
-          </div>
-
           {/* Performance Alerts (col-span-1) */}
-          <div className="space-y-6 lg:col-span-1">
-            <div>
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                Student Alerts
-              </h3>
-              <PerformanceAlerts />
-            </div>
+          <div className="lg:col-span-1 flex flex-col">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
+              Student Alerts
+            </h3>
+            <PerformanceAlerts />
           </div>
         </div>
       )}

@@ -30,7 +30,7 @@ export function WeeklyTimetableGrid({
   onCreateSlot,
   canEdit = true,
 }: WeeklyTimetableGridProps) {
-  const slots = timetable?.slots || [];
+  const slots = React.useMemo(() => timetable?.slots ?? [], [timetable]);
 
   // Determine period indices (unique and sorted)
   const periodIndices = React.useMemo(() => {
@@ -133,7 +133,6 @@ export function WeeklyTimetableGrid({
                                 const title =
                                   slot.courseClass?.name || slot.notes || "Homeroom/Unscheduled";
                                 const colors = getColors(title);
-                                const isDraft = timetable?.status === "DRAFT";
 
                                 return (
                                   <div

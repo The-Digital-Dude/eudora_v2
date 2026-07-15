@@ -3,7 +3,6 @@
 import {
   AlertCircle,
   CreditCard,
-  DollarSign,
   GraduationCap,
   Plus,
   School,
@@ -105,7 +104,7 @@ export default function BillingPage() {
         <div>
           <Button
             onClick={handleOpenPlanDialog}
-            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90 active:scale-98"
+            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90 active:scale-98"
           >
             <Plus className="h-4 w-4" /> Add Plan
           </Button>
@@ -127,7 +126,7 @@ export default function BillingPage() {
           {plansData.map((plan) => (
             <div
               key={plan.id}
-              className="relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-t-4 border-border/80 border-t-neutral-900 bg-card p-6 shadow-[0_4px_16px_rgba(0,0,0,0.015)] transition-all hover:shadow-lg dark:border-t-zinc-200"
+              className="relative flex flex-col justify-between overflow-hidden rounded-3xl border border-t-4 border-border/80 border-t-neutral-900 bg-card p-6 shadow-[0_4px_16px_rgba(0,0,0,0.015)] transition-all hover:shadow-lg dark:border-t-zinc-200"
             >
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
@@ -420,7 +419,7 @@ export default function BillingPage() {
               <Button
                 type="submit"
                 disabled={creatingPlan}
-                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
               >
                 {creatingPlan ? "Creating..." : "Create Plan"}
               </Button>

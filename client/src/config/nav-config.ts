@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Library,
   ListChecks,
+  type LucideIcon,
   MessageSquare,
   NotebookPen,
   PencilRuler,
@@ -25,7 +26,6 @@ import {
   UserPlus,
   Users2,
   UsersRound,
-  type LucideIcon,
 } from "lucide-react";
 
 import type { NavRequirement } from "@/lib/access-control";

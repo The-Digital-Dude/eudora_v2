@@ -1,13 +1,15 @@
 ﻿"use client";
 
+import { Loader2, MessageSquare,X } from "lucide-react";
 import React, { useState } from "react";
-import { MessageSquare, Plus, X, Send, Loader2, User } from "lucide-react";
-import { useGetThreadsQuery, useGetThreadByIdQuery, useCreateThreadMutation } from "../messagingApi";
+import { toast } from "sonner";
+
+import { useGetChildrenQuery, useGetChildTeachersQuery } from "@/features/parent/parentApi";
+
+import { useCreateThreadMutation,useGetThreadByIdQuery, useGetThreadsQuery } from "../messagingApi";
+import { MessageComposer } from "./MessageComposer";
 import { ThreadList } from "./ThreadList";
 import { ThreadView } from "./ThreadView";
-import { MessageComposer } from "./MessageComposer";
-import { useGetChildrenQuery, useGetChildTeachersQuery } from "@/features/parent/parentApi";
-import { toast } from "sonner";
 
 interface MessagingCenterProps {
   currentUserId: string;
@@ -16,7 +18,7 @@ interface MessagingCenterProps {
 
 export function MessagingCenter({ currentUserId, isGuardian }: MessagingCenterProps) {
   // Query all threads with polling for real-time messaging updates
-  const { data: threads = [], isLoading: isThreadsLoading } = useGetThreadsQuery(undefined, {
+  const { data: threads = [] } = useGetThreadsQuery(undefined, {
     pollingInterval: 5000,
   });
 
@@ -83,7 +85,7 @@ export function MessagingCenter({ currentUserId, isGuardian }: MessagingCenterPr
   };
 
   return (
-    <div className="flex h-[600px] w-full rounded-3xl border border-border/50 bg-card/40 shadow-xl shadow-black/5/50/20 backdrop-blur-md overflow-hidden relative">
+    <div className="flex h-[600px] w-full rounded-3xl border border-border/50 bg-card/40 shadow-xl backdrop-blur-md overflow-hidden relative">
       {/* Thread list sidebar */}
       <div className="w-full md:w-80 flex-shrink-0">
         <ThreadList
@@ -122,7 +124,7 @@ export function MessagingCenter({ currentUserId, isGuardian }: MessagingCenterPr
       {/* Fallback for mobile overlays or small layouts when thread is active */}
       {activeThread && (
         <div className="md:hidden fixed inset-0 z-50 bg-muted/50 flex flex-col">
-          <div className="p-3 border-b border-border flex items-center bg-card">
+          <div className="p-4 border-b border-border flex items-center bg-card">
             <button
               onClick={() => setActiveThreadId(null)}
               className="text-xs font-bold text-primary mr-4"
@@ -150,7 +152,7 @@ export function MessagingCenter({ currentUserId, isGuardian }: MessagingCenterPr
               </h3>
               <button
                 onClick={() => setShowNewThreadModal(false)}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-xl hover:bg-muted text-foreground0"
+                className="h-8 w-8 inline-flex items-center justify-center rounded-xl hover:bg-muted text-foreground"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -240,7 +242,7 @@ export function MessagingCenter({ currentUserId, isGuardian }: MessagingCenterPr
                 <button
                   type="button"
                   onClick={() => setShowNewThreadModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-foreground0 hover:text-foreground dark:hover:text-muted-foreground"
+                  className="px-4 py-2 text-xs font-bold text-foreground hover:text-foreground dark:hover:text-muted-foreground"
                 >
                   Cancel
                 </button>

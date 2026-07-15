@@ -1,50 +1,40 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { toast } from "sonner";
 import {
   ArrowLeft,
-  Settings,
-  Plus,
-  Trash2,
-  FolderOpen,
-  FolderPlus,
-  ChevronUp,
-  ChevronDown,
   BookOpen,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  FolderPlus,
   HelpCircle,
-  Award,
-  Sparkles,
+  Layers,
   Play,
+  Plus,
   Save,
   Search,
-  Filter,
-  Check,
-  Calendar,
-  Layers,
-  Clock
-} from "lucide-react";
-import {
-  useGetAssessmentQuery,
-  useUpdateAssessmentMutation,
-  usePublishAssessmentMutation,
-  useAddQuestionToAssessmentMutation,
-  useRemoveQuestionFromAssessmentMutation,
-  useUpdateAssessmentQuestionMutation,
-  Assessment,
-  AssessmentSection,
-  AssessmentQuestion
-} from "@/features/assessments/assessmentsApi";
-import { useGetQuestionsQuery } from "@/features/assessments/questionsApi";
+  Trash2} from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import React, { useEffect,useState } from "react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription,CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AssignmentWizardDialog } from "../components/assignment-wizard-dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  AssessmentQuestion,
+  useAddQuestionToAssessmentMutation,
+  useGetAssessmentQuery,
+  usePublishAssessmentMutation,
+  useRemoveQuestionFromAssessmentMutation,
+  useUpdateAssessmentMutation,
+  useUpdateAssessmentQuestionMutation} from "@/features/assessments/assessmentsApi";
+import { useGetQuestionsQuery } from "@/features/assessments/questionsApi";
+
 import { QuestionPreview } from "../../questions/components/question-preview";
+import { AssignmentWizardDialog } from "../components/assignment-wizard-dialog";
 
 export default function AssessmentBuilderPage() {
   const router = useRouter();
@@ -70,8 +60,8 @@ export default function AssessmentBuilderPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState("");
+  const [selectedSubject] = useState("");
+  const [selectedLevel] = useState("");
 
   const { data: questionsData } = useGetQuestionsQuery({
     search: searchQuery || undefined,
@@ -353,7 +343,7 @@ export default function AssessmentBuilderPage() {
             </button>
           </Link>
           <div>
-            <h1 className="text-sm font-bold text-foreground dark:text-white flex items-center gap-2">
+            <h1 className="text-sm font-bold text-foreground flex items-center gap-2">
               {assessment.title}
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-primary/10 text-primary">
                 {assessment.status}
@@ -371,7 +361,7 @@ export default function AssessmentBuilderPage() {
             <Button
               onClick={handleSaveSections}
               disabled={isUpdating}
-              className="h-9 rounded-xl bg-success text-xs font-bold text-white hover:bg-success"
+              className="h-9 rounded-xl bg-success text-xs font-bold text-success-foreground hover:bg-success"
             >
               <Save className="mr-1.5 h-3.5 w-3.5" /> Save Sections
             </Button>
@@ -381,14 +371,14 @@ export default function AssessmentBuilderPage() {
             <Button
               onClick={handlePublish}
               disabled={isPublishing}
-              className="h-9 rounded-xl bg-primary text-xs font-bold text-white hover:bg-primary/90 shadow-md shadow-primary/10"
+              className="h-9 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/10"
             >
               <Play className="mr-1.5 h-3.5 w-3.5 fill-current" /> Publish Paper
             </Button>
           ) : (
             <Button
               onClick={() => setAssignDialogOpen(true)}
-              className="h-9 rounded-xl bg-primary text-xs font-bold text-white hover:bg-primary/90"
+              className="h-9 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90"
             >
               Assign Assessment
             </Button>
@@ -417,7 +407,7 @@ export default function AssessmentBuilderPage() {
             <div className="flex-1 flex flex-col items-center justify-center text-center p-4 border border-dashed border-border rounded-2xl">
               <FolderPlus className="h-8 w-8 text-muted-foreground mb-2" />
               <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
-                No sections created yet. Click "Add" to start grouping your questions.
+                No sections created yet. Click &quot;Add&quot; to start grouping your questions.
               </p>
             </div>
           ) : (
@@ -568,14 +558,14 @@ export default function AssessmentBuilderPage() {
                               <button
                                 onClick={() => handleMoveQuestionOrder(sq, "up")}
                                 disabled={sIdx === 0}
-                                className="h-6 w-6 rounded border border-border hover:bg-muted flex items-center justify-center disabled:opacity-30"
+                                className="h-6 w-6 rounded-sm border border-border hover:bg-muted flex items-center justify-center disabled:opacity-30"
                               >
                                 <ChevronUp className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => handleMoveQuestionOrder(sq, "down")}
                                 disabled={sIdx === sQuestions.length - 1}
-                                className="h-6 w-6 rounded border border-border hover:bg-muted flex items-center justify-center disabled:opacity-30"
+                                className="h-6 w-6 rounded-sm border border-border hover:bg-muted flex items-center justify-center disabled:opacity-30"
                               >
                                 <ChevronDown className="h-3.5 w-3.5" />
                               </button>

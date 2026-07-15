@@ -17,7 +17,6 @@ import { ClioCard,useGetLessonFlowQuery, useSubmitCardMutation } from "@/feature
 import { GamificationHUD } from "@/features/clio/GamificationHUD";
 import { LessonCompleteModal } from "@/features/clio/LessonCompleteModal";
 import {
-  hideExplanation,
   jumpToCard,
   markCardStart,
   nextCard,
@@ -59,7 +58,6 @@ export default function LessonFlowPage() {
   const hintIndex = useAppSelector(selectHintIndex);
   const sessionXp = useAppSelector(selectSessionXp);
   const cardStartedAt = useAppSelector(selectCardStartedAt);
-  const user = useAppSelector((state) => state.auth.user) as any;
 
   const [mascotState, setMascotState] = useState<
     | "idle"
@@ -75,7 +73,7 @@ export default function LessonFlowPage() {
 
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
-  const cards = data?.lesson?.cards ?? [];
+  const cards = React.useMemo(() => data?.lesson?.cards ?? [], [data]);
   const currentCard: ClioCard | undefined = cards[currentCardIndex];
 
   // Selected state for the current widget
@@ -101,7 +99,7 @@ export default function LessonFlowPage() {
       // Clean up lesson state on unmount
       dispatch(resetLesson());
     };
-  }, [data, cards.length, dispatch]);
+  }, [data, cards, dispatch]);
 
   // Set companion mascot reaction state
   useEffect(() => {
@@ -140,7 +138,7 @@ export default function LessonFlowPage() {
         </p>
         <button
           onClick={() => refetch()}
-          className="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-primary/90"
+          className="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Retry Load
         </button>
@@ -428,7 +426,7 @@ export default function LessonFlowPage() {
                   </span>
                 )}
               </div>
-              <div className="text-foreground/80 text-xs leading-relaxed font-normal md:text-sm dark:text-white/75">
+              <div className="text-foreground/80 text-xs leading-relaxed font-normal md:text-sm">
                 <MathRenderer
                   text={lastResult.explanation || currentCard.question?.explanation || ""}
                 />

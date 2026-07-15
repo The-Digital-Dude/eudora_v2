@@ -7,7 +7,7 @@
   ];
 
   return (
-    <section id="stats" className="border-y border-border/40 bg-white py-16 select-none">
+    <section id="stats" className="border-y border-border/40 bg-background py-16 select-none">
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-12">
           {stats.map((stat, idx) => (

@@ -79,7 +79,7 @@ export const attendanceApi = authApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { classSectionId, date }) => [{ type: "Attendance" }],
+      invalidatesTags: [{ type: "Attendance" }],
     }),
 
     getClassAttendanceSummary: builder.query<

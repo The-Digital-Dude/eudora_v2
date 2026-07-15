@@ -8,13 +8,12 @@ import {
   Check,
   CheckCircle2,
   Clock,
-  Users,
   X,
 } from "lucide-react";
 import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -230,7 +229,7 @@ export default function ClassesPage() {
                     </p>
                     {m.reason && (
                       <p className="mt-1 text-[9px] font-medium text-warning">
-                        Reason: "{m.reason}"
+                        Reason: &quot;{m.reason}&quot;
                       </p>
                     )}
                     {m.scheduledDate && (

@@ -71,6 +71,7 @@
   --color-warning-foreground: var(--warning-foreground);
 
   --animate-fade-in-up: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-nav-pulse: nav-pulse-ring 2.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
   @keyframes fade-in-up {
     from {
@@ -80,6 +81,16 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes nav-pulse-ring {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in oklch, var(--sidebar-ring) 45%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 4px color-mix(in oklch, var(--sidebar-ring) 0%, transparent);
     }
   }
 }
@@ -204,6 +215,34 @@
 body {
   margin: 0;
   overflow-x: hidden;
+}
+
+/* Calm attention-drawing ring for a specific sidebar nav item (see NavLeaf.highlight). */
+.nav-pulse {
+  box-shadow: 0 0 0 0 transparent;
+  animation: var(--animate-nav-pulse);
+}
+
+/* ─── Eudora Professional: student-portal accent variant ───────────────────
+   The base palette stays calm everywhere; inside the student portal the
+   primary/accent hues shift to a livelier violet so XP, streak, and
+   leaderboard elements feel more energetic. Scoped custom-property
+   overrides only — every other token still comes from the base preset. */
+.theme-eudora-pro [data-portal="student"] {
+  --primary: oklch(0.5 0.17 295);
+  --primary-foreground: oklch(0.985 0.005 295);
+  --accent: oklch(0.93 0.04 300);
+  --accent-foreground: oklch(0.3 0.08 295);
+  --ring: oklch(0.58 0.14 295);
+  --chart-1: oklch(0.55 0.16 295);
+}
+.theme-eudora-pro.dark [data-portal="student"] {
+  --primary: oklch(0.72 0.14 295);
+  --primary-foreground: oklch(0.17 0.04 295);
+  --accent: oklch(0.32 0.06 295);
+  --accent-foreground: oklch(0.95 0.01 295);
+  --ring: oklch(0.64 0.12 295);
+  --chart-1: oklch(0.7 0.14 295);
 }
 
 /* Cupertino clean styling */

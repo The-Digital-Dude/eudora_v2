@@ -37,6 +37,8 @@ export interface NavLeaf {
   requirement: NavRequirement;
   /** Feature has no backing page/API yet — shown greyed out with a "Soon" badge, not linked. */
   disabled?: boolean;
+  /** Draws a calm pulsing outline (theme-colored) to call attention to this item while inactive. */
+  highlight?: boolean;
 }
 
 export interface NavParent {
@@ -91,6 +93,7 @@ export const navGroups: NavGroup[] = [
         url: "/learning",
         icon: Sparkles,
         requirement: { type: "roles", roles: ["TEACHER", "USER", ...ADMIN_ROLES] },
+        highlight: true,
       },
       {
         title: "Schedule",

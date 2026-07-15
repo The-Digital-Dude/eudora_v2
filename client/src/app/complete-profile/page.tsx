@@ -158,7 +158,7 @@ export default function CompleteProfilePage() {
       <div className="animate-fade-in-up w-full max-w-[480px] space-y-8">
         {/* Brand Header */}
         <div className="flex flex-col items-center space-y-3">
-          <div className="bg-foreground rounded-xl p-2.5 text-white shadow-sm">
+          <div className="bg-foreground rounded-xl p-2.5 text-background shadow-sm">
             <Sparkles className="h-5 w-5" />
           </div>
           <span className="font-display text-foreground text-xl font-bold tracking-tight">
@@ -167,7 +167,7 @@ export default function CompleteProfilePage() {
         </div>
 
         {/* Wizard Card */}
-        <div className="border-border/80 bg-card rounded-[28px] border p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10">
+        <div className="border-border/80 bg-card rounded-3xl border p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10">
           {/* Progress Indicators */}
           <div className="mb-8 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -273,7 +273,7 @@ export default function CompleteProfilePage() {
                 <Button
                   type="submit"
                   disabled={isCreatingProfile}
-                  className="bg-foreground hover:bg-foreground/90 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold text-white transition-all active:scale-98"
+                  className="bg-foreground hover:bg-foreground/90 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold text-background transition-all active:scale-98"
                 >
                   Continue
                   <ArrowRight className="h-4 w-4" />
@@ -368,7 +368,7 @@ export default function CompleteProfilePage() {
                   <Button
                     type="submit"
                     disabled={isLinking}
-                    className="bg-foreground hover:bg-foreground/90 flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold text-white transition-all active:scale-98"
+                    className="bg-foreground hover:bg-foreground/90 flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold text-background transition-all active:scale-98"
                   >
                     Complete Setup
                   </Button>

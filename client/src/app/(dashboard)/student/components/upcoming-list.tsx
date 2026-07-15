@@ -21,7 +21,7 @@ interface UpcomingListProps {
 export function UpcomingList({ homework, assessments, isLoading }: UpcomingListProps) {
   if (isLoading) {
     return (
-      <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl/50/20 backdrop-blur-md">
+      <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl backdrop-blur-md h-full">
         <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
           Loading upcoming tasks...
         </div>
@@ -60,11 +60,11 @@ export function UpcomingList({ homework, assessments, isLoading }: UpcomingListP
   };
 
   return (
-    <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5/50/20 backdrop-blur-md flex flex-col h-[350px]">
+    <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl backdrop-blur-md flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Clock className="h-4. w-4 text-primary" />
+            <Clock className="h-4 w-4 text-primary" />
             What&apos;s Due Next
           </h3>
           <p className="text-[10px] text-muted-foreground">
@@ -77,7 +77,7 @@ export function UpcomingList({ homework, assessments, isLoading }: UpcomingListP
         {merged.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-6 text-center text-muted-foreground">
             <CheckCircle className="h-10 w-10 text-success/30 mb-2" />
-            <p className="text-xs font-semibold text-foreground0">All caught up!</p>
+            <p className="text-xs font-semibold text-foreground">All caught up!</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">No pending assessments or homework.</p>
           </div>
         ) : (
@@ -86,7 +86,7 @@ export function UpcomingList({ homework, assessments, isLoading }: UpcomingListP
             return (
               <div
                 key={item.id}
-                className="p-3.5 rounded-2xl border border-border/40 bg-card/30/30/10 flex items-start justify-between gap-3"
+                className="p-3.5 rounded-2xl border border-border/40 bg-card/30 flex items-start justify-between gap-3"
               >
                 <div className="flex gap-3 min-w-0">
                   <div className={`p-2 rounded-xl shrink-0 ${isHw ? "bg-primary/10 text-primary" : "bg-primary/10 text-primary"}`}>

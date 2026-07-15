@@ -7,12 +7,32 @@
   --font-sans: var(--font-sans), sans-serif;
   --font-display: var(--font-display), sans-serif;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  /* Proportional (not additive) so every step — including rounded-xl/2xl/3xl,
+     the most-used classes in the app — collapses to 0 together when the
+     customizer's radius slider is at 0. Multipliers reproduce the exact
+     legacy pixel values at the default --radius: 0.625rem (10px). */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 16px);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.6);
+
+  /* Elevation — every shadow-* token's alpha scales with the customizer's
+     shadow-intensity slider (0 = flat, 1 = default, 2 = dramatic), so the
+     shared border color stays fixed while depth grows/shrinks uniformly. */
+  --shadow-2xs: 0 1px 0 0 rgb(var(--shadow-color) / calc(0.04 * var(--shadow-intensity)));
+  --shadow-xs: 0 1px 2px 0 rgb(var(--shadow-color) / calc(0.04 * var(--shadow-intensity)));
+  --shadow-sm: 0 1px 3px 0 rgb(var(--shadow-color) / calc(0.06 * var(--shadow-intensity))),
+    0 1px 2px -1px rgb(var(--shadow-color) / calc(0.06 * var(--shadow-intensity)));
+  --shadow-md: 0 4px 6px -1px rgb(var(--shadow-color) / calc(0.06 * var(--shadow-intensity))),
+    0 2px 4px -2px rgb(var(--shadow-color) / calc(0.06 * var(--shadow-intensity)));
+  --shadow-lg: 0 10px 15px -3px rgb(var(--shadow-color) / calc(0.06 * var(--shadow-intensity))),
+    0 4px 6px -4px rgb(var(--shadow-color) / calc(0.06 * var(--shadow-intensity)));
+  --shadow-xl: 0 20px 25px -5px rgb(var(--shadow-color) / calc(0.06 * var(--shadow-intensity))),
+    0 8px 10px -6px rgb(var(--shadow-color) / calc(0.06 * var(--shadow-intensity)));
+  --shadow-2xl: 0 25px 50px -12px rgb(var(--shadow-color) / calc(0.16 * var(--shadow-intensity)));
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -28,6 +48,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -65,6 +86,9 @@
 
 :root {
   --radius: 0.625rem;
+  /* Shadow color (r g b triplet) and intensity multiplier — overridable via the customizer. */
+  --shadow-color: 0 0 0;
+  --shadow-intensity: 1;
   /* Default font mappings — the customizer overrides these at runtime. */
   --font-sans: var(--font-jakarta);
   --font-display: var(--font-outfit);
@@ -85,6 +109,7 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -123,6 +148,7 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);

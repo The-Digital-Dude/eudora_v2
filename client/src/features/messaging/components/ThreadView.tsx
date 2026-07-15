@@ -33,9 +33,9 @@ export function ThreadView({ thread, currentUserId }: ThreadViewProps) {
   const partnerName = partner ? `${partner.firstName} ${partner.lastName}` : "Participant";
 
   return (
-    <div className="flex h-full flex-col bg-muted/50/10">
+    <div className="flex h-full flex-col bg-muted/10">
       {/* Header */}
-      <div className="flex flex-col border-b border-border/50 p-4 bg-card/40/50/20 backdrop-blur-md">
+      <div className="flex flex-col border-b border-border/50 p-4 bg-card/40 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary font-bold text-sm">
             {partner ? `${partner.firstName[0]}${partner.lastName[0]}` : "P"}
@@ -80,7 +80,7 @@ export function ThreadView({ thread, currentUserId }: ThreadViewProps) {
                     className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                       isMe
                         ? "bg-primary text-primary-foreground rounded-tr-none shadow-md shadow-primary/10"
-                        : "bg-card border border-border/50 text-foreground/50 rounded-tl-none"
+                        : "bg-card border border-border/50 text-foreground rounded-tl-none"
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{message.body}</p>
@@ -95,7 +95,7 @@ export function ThreadView({ thread, currentUserId }: ThreadViewProps) {
                             rel="noopener noreferrer"
                             className={`flex items-center gap-1.5 text-xs p-1.5 rounded-lg border ${
                               isMe
-                                ? "bg-primary/70 hover:bg-primary/90 border-primary/30 text-white"
+                                ? "bg-primary/70 hover:bg-primary/90 border-primary/30 text-primary-foreground"
                                 : "bg-muted/50 hover:bg-muted border-border text-foreground"
                             }`}
                           >

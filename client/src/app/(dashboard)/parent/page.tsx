@@ -136,14 +136,14 @@ export default function ParentPage() {
           </div>
 
           {/* Academic details */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Attendance Calendar (col-span-1) */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 flex flex-col">
               <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
                 Attendance Calendar
               </h3>
               {isAttendanceLoading ? (
-                <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl/50/20 backdrop-blur-md flex items-center justify-center h-[280px]">
+                <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl backdrop-blur-md flex items-center justify-center flex-1 min-h-[280px]">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : (
@@ -152,7 +152,7 @@ export default function ParentPage() {
             </div>
 
             {/* Homework and Grades (col-span-2) */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 flex flex-col">
               <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
                 Assignments & Grades
               </h3>

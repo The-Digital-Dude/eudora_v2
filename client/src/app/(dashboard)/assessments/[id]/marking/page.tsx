@@ -208,7 +208,7 @@ export default function AssessmentMarkingPage() {
             </button>
           </Link>
           <div>
-            <h1 className="text-sm font-bold text-foreground dark:text-white flex items-center gap-2">
+            <h1 className="text-sm font-bold text-foreground flex items-center gap-2">
               Marking Workspace: {assessment.title}
             </h1>
             <p className="text-[10px] text-muted-foreground font-medium">
@@ -555,7 +555,7 @@ export default function AssessmentMarkingPage() {
                                     <Button
                                       onClick={() => handleSaveResponseMark(studentResponse.id, sq.questionId)}
                                       disabled={isMarkingResponse}
-                                      className="h-8.5 rounded-lg text-[10px] font-bold bg-muted hover:bg-muted text-white mt-5.5 self-end"
+                                      className="h-8.5 rounded-lg text-[10px] font-bold bg-muted hover:bg-muted text-foreground mt-5.5 self-end"
                                     >
                                       <Save className="mr-1 h-3.5 w-3.5" /> Save
                                     </Button>
@@ -593,7 +593,7 @@ export default function AssessmentMarkingPage() {
                   <Button
                     onClick={handleFinalizeAttemptGrading}
                     disabled={isMarkingAttempt}
-                    className="h-10 rounded-xl bg-primary text-xs font-bold text-white hover:bg-primary/90"
+                    className="h-10 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90"
                   >
                     Submit Final Marks
                   </Button>

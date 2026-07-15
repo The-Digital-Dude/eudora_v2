@@ -134,7 +134,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <div className="border-border bg-card rounded-[24px] border p-8 shadow-[0_24px_60px_color-mix(in_oklch,var(--foreground)_4%,transparent),0_4px_12px_color-mix(in_oklch,var(--foreground)_2%,transparent)] md:p-10">
+        <div className="border-border bg-card rounded-3xl border p-8 shadow-[0_24px_60px_color-mix(in_oklch,var(--foreground)_4%,transparent),0_4px_12px_color-mix(in_oklch,var(--foreground)_2%,transparent)] md:p-10">
           {/* Header */}
           <div className="mb-8 space-y-2 text-center">
             <h1 className="font-display text-card-foreground text-2xl font-bold tracking-tight">

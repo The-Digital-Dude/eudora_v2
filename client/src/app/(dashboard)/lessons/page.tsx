@@ -276,7 +276,7 @@ export default function LessonAuthoringPage() {
               <ArrowLeft className="h-4 w-4 text-muted-foreground" />
             </button>
             <div>
-              <h1 className="text-sm font-bold text-foreground dark:text-white flex items-center gap-1.5">
+              <h1 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                 Lesson Authoring Studio: {lessonFlow?.lesson?.title}
               </h1>
               <p className="text-[10px] text-muted-foreground font-semibold">
@@ -412,7 +412,7 @@ export default function LessonAuthoringPage() {
                   <select
                     value={editCardType}
                     onChange={(e: any) => setEditCardType(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none dark:text-white"
+                    className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
                   >
                     <option value="CONCEPTUAL">CONCEPTUAL</option>
                     <option value="INTERACTIVE">INTERACTIVE</option>
@@ -480,7 +480,7 @@ export default function LessonAuthoringPage() {
             {selectedCard ? (
               <div className="rounded-3xl border border-border bg-card p-6 shadow-sm min-h-[400px] flex flex-col justify-between">
                 <div className="space-y-4">
-                  <h3 className="text-sm font-bold text-foreground dark:text-white">{editCardTitle || "Untitled Card"}</h3>
+                  <h3 className="text-sm font-bold text-foreground">{editCardTitle || "Untitled Card"}</h3>
                   
                   {/* Markdown math rendered */}
                   <div className="text-xs text-foreground leading-relaxed select-text">
@@ -583,7 +583,7 @@ export default function LessonAuthoringPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground dark:text-white flex items-center gap-2">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <BookOpen className="h-7 w-7 text-primary" />
             Curriculum & Lesson Authoring
           </h1>
@@ -609,7 +609,7 @@ export default function LessonAuthoringPage() {
             <select
               value={conceptFilter}
               onChange={(e) => setConceptFilter(e.target.value)}
-              className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none dark:text-white"
+              className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
             >
               <option value="all">All Concepts</option>
               {(concepts ?? []).map((c) => (
@@ -732,7 +732,7 @@ export default function LessonAuthoringPage() {
       <Dialog open={isLessonDialogOpen} onOpenChange={setIsLessonDialogOpen}>
         <DialogContent className="max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-1.5 text-base font-bold text-foreground dark:text-white">
+            <DialogTitle className="font-display flex items-center gap-1.5 text-base font-bold text-foreground">
               <PenTool className="h-4 w-4 text-primary" />
               Create Lesson Unit
             </DialogTitle>
@@ -762,7 +762,7 @@ export default function LessonAuthoringPage() {
                 <select
                   value={lessonConceptId}
                   onChange={(e) => setLessonConceptId(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none dark:text-white"
+                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
                   required
                 >
                   <option value="" disabled>

@@ -326,7 +326,7 @@ export default function StudentAssessmentPlayerPage() {
           <Button
             onClick={handleStartAttempt}
             disabled={isStarting}
-            className="w-full h-12 rounded-2xl bg-primary hover:bg-primary/90 font-bold text-xs text-white shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2"
+            className="w-full h-12 rounded-2xl bg-primary hover:bg-primary/90 font-bold text-xs text-primary-foreground shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2"
           >
             <Play className="h-4 w-4 fill-current" />
             {isStarting ? "Initializing..." : "Start Assessment Now"}
@@ -393,7 +393,7 @@ export default function StudentAssessmentPlayerPage() {
 
           <Button
             onClick={() => setConfirmSubmitOpen(true)}
-            className="h-9 rounded-xl bg-primary hover:bg-primary/90 text-xs font-bold text-white px-4 shrink-0 shadow-md shadow-primary/10"
+            className="h-9 rounded-xl bg-primary hover:bg-primary/90 text-xs font-bold text-primary-foreground px-4 shrink-0 shadow-md shadow-primary/10"
           >
             <Send className="mr-1.5 h-3.5 w-3.5" /> Submit Test
           </Button>
@@ -430,7 +430,7 @@ export default function StudentAssessmentPlayerPage() {
                             isCurrent
                               ? "bg-muted border-primary text-primary shadow-md shadow-primary/5"
                               : isAnswered
-                              ? "bg-primary border-primary text-white"
+                              ? "bg-primary border-primary text-primary-foreground"
                               : "bg-muted border-border text-muted-foreground hover:border-border"
                           }`}
                         >
@@ -501,7 +501,7 @@ export default function StudentAssessmentPlayerPage() {
                               <div
                                 className={`h-5 w-5 rounded-full border flex items-center justify-center text-[10px] font-bold ${
                                   isSelected
-                                    ? "border-primary bg-primary/100 text-white"
+                                    ? "border-primary bg-primary/100 text-primary-foreground"
                                     : "border-border text-muted-foreground"
                                 }`}
                               >
@@ -538,7 +538,7 @@ export default function StudentAssessmentPlayerPage() {
                           onBlur={(e) =>
                             handleSaveResponse(currentQuestion.questionId, { responseText: e.target.value })
                           }
-                          className="h-11 rounded-xl text-xs bg-muted border-border text-white"
+                          className="h-11 rounded-xl text-xs bg-muted border-border text-foreground"
                         />
                       </div>
                     )}
@@ -564,7 +564,7 @@ export default function StudentAssessmentPlayerPage() {
                           onBlur={(e) =>
                             handleSaveResponse(currentQuestion.questionId, { responseText: e.target.value })
                           }
-                          className="h-11 rounded-xl text-xs bg-muted border-border text-white"
+                          className="h-11 rounded-xl text-xs bg-muted border-border text-foreground"
                         />
                       </div>
                     )}
@@ -590,7 +590,7 @@ export default function StudentAssessmentPlayerPage() {
                           onBlur={(e) =>
                             handleSaveResponse(currentQuestion.questionId, { responseText: e.target.value })
                           }
-                          className="h-48 w-full resize-none rounded-2xl border border-border bg-muted p-4 text-xs text-white focus:outline-none"
+                          className="h-48 w-full resize-none rounded-2xl border border-border bg-muted p-4 text-xs text-foreground focus:outline-none"
                         />
                       </div>
                     )}
@@ -611,7 +611,7 @@ export default function StudentAssessmentPlayerPage() {
               variant="ghost"
               disabled={currentIndex === 0}
               onClick={() => setCurrentIndex(currentIndex - 1)}
-              className="h-10 rounded-xl text-xs font-semibold text-muted-foreground hover:text-white"
+              className="h-10 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground"
             >
               <ChevronLeft className="mr-1 h-4 w-4" /> Previous
             </Button>
@@ -619,7 +619,7 @@ export default function StudentAssessmentPlayerPage() {
             {currentIndex === questions.length - 1 ? (
               <Button
                 onClick={() => setConfirmSubmitOpen(true)}
-                className="h-10 rounded-xl bg-success hover:bg-success font-bold text-xs text-white px-5"
+                className="h-10 rounded-xl bg-success hover:bg-success font-bold text-xs text-success-foreground px-5"
               >
                 Submit Paper <Send className="ml-1.5 h-3.5 w-3.5" />
               </Button>
@@ -638,7 +638,7 @@ export default function StudentAssessmentPlayerPage() {
       {/* Confirmation Submit Modal */}
       {confirmSubmitOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="max-w-md w-full rounded-3xl border border-border bg-background p-6 shadow-2xl text-center text-white">
+          <Card className="max-w-md w-full rounded-3xl border border-border bg-background p-6 shadow-2xl text-center text-foreground">
             <AlertTriangle className="mx-auto h-12 w-12 text-warning mb-3 animate-pulse" />
             <h3 className="text-base font-bold text-foreground mb-1">Submit Assessment?</h3>
             <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
@@ -655,7 +655,7 @@ export default function StudentAssessmentPlayerPage() {
               <Button
                 onClick={handleSubmitTest}
                 disabled={isSubmitting}
-                className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-xs font-semibold text-white"
+                className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-xs font-semibold text-primary-foreground"
               >
                 {isSubmitting ? "Submitting..." : "Yes, Submit"}
               </Button>

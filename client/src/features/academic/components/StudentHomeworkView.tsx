@@ -230,7 +230,7 @@ export function StudentHomeworkView() {
                           setSubmitHomeworkId(hw.id);
                           setSubmitDialogOpen(true);
                         }}
-                        className="flex h-8 cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-3.5 text-[10px] font-bold text-white hover:bg-primary"
+                        className="flex h-8 cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-3.5 text-[10px] font-bold text-primary-foreground hover:bg-primary"
                       >
                         <Send className="h-3 w-3" />
                         Submit Task

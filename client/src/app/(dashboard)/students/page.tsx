@@ -313,7 +313,7 @@ export default function StudentsPage() {
         </div>
         <Button
           onClick={() => handleOpenProfileDialog()}
-          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90"
+          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-foreground/90"
         >
           <Plus className="h-4 w-4" /> Add Student
         </Button>
@@ -458,7 +458,7 @@ export default function StudentsPage() {
                     >
                       <td className="py-4">
                         <div className="flex items-center gap-3">
-                          <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-white">
+                          <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-primary-foreground">
                             {initials}
                           </div>
                           <div>
@@ -697,7 +697,7 @@ export default function StudentsPage() {
               <Button
                 type="submit"
                 disabled={creatingProfile || updatingProfile}
-                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
               >
                 {creatingProfile || updatingProfile ? "Saving..." : "Save Profile"}
               </Button>
@@ -796,7 +796,7 @@ export default function StudentsPage() {
                 <Button
                   type="submit"
                   disabled={placing}
-                  className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                  className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
                 >
                   {placing ? "Adding..." : "Place Student"}
                 </Button>
@@ -871,7 +871,7 @@ export default function StudentsPage() {
                 <Button
                   type="submit"
                   disabled={enrolling}
-                  className="h-10 shrink-0 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                  className="h-10 shrink-0 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
                 >
                   {enrolling ? "Enrolling..." : "Enroll Student"}
                 </Button>
@@ -919,7 +919,7 @@ export default function StudentsPage() {
             <Button
               type="button"
               onClick={() => setIsAcademicDialogOpen(false)}
-              className="h-10 rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+              className="h-10 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
             >
               Done Setup
             </Button>

@@ -20,9 +20,9 @@ export function HomeworkGradesPanel({
   const [activeTab, setActiveTab] = useState<"homework" | "grades">("homework");
 
   return (
-    <div className="rounded-3xl border border-border/50 bg-card/40 shadow-xl shadow-black/5/50/20 backdrop-blur-md overflow-hidden">
+    <div className="rounded-3xl border border-border/50 bg-card/40 shadow-xl backdrop-blur-md overflow-hidden flex flex-col flex-1">
       {/* Tabs Header */}
-      <div className="flex border-b border-border/50/40 bg-muted/50/10">
+      <div className="flex border-b border-border/40 bg-muted/10 shrink-0">
         <button
           onClick={() => setActiveTab("homework")}
           className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-bold tracking-tight transition-all cursor-pointer border-b-2 ${
@@ -31,7 +31,7 @@ export function HomeworkGradesPanel({
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
-          <PenTool className="h-4. w-4" />
+          <PenTool className="h-4 w-4" />
           Homework & Submissions
         </button>
         <button
@@ -42,13 +42,13 @@ export function HomeworkGradesPanel({
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
-          <ClipboardList className="h-4. w-4" />
+          <ClipboardList className="h-4 w-4" />
           Published Grades
         </button>
       </div>
 
       {/* Tabs Content */}
-      <div className="p-6">
+      <div className="p-6 flex-1 overflow-y-auto min-h-[280px]">
         {activeTab === "homework" ? (
           <div>
             {isHomeworkLoading ? (
@@ -73,7 +73,7 @@ export function HomeworkGradesPanel({
                   return (
                     <div
                       key={hw.id}
-                      className="p-4 rounded-2xl border border-border/50 bg-card/20/40/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      className="p-4 rounded-2xl border border-border/50 bg-card/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -94,7 +94,7 @@ export function HomeworkGradesPanel({
                           </p>
                         )}
                         {sub?.feedback && (
-                          <div className="mt-3 p-2.5 rounded-xl bg-muted/50 border border-border/30/40/30 text-xs text-muted-foreground font-medium">
+                          <div className="mt-3 p-2.5 rounded-xl bg-muted/50 border border-border/30 text-xs text-muted-foreground font-medium">
                             <span className="font-bold text-foreground">Teacher Feedback:</span> {sub.feedback}
                           </div>
                         )}
@@ -132,7 +132,7 @@ export function HomeworkGradesPanel({
                 {grades.map((grade) => (
                   <div
                     key={grade.id}
-                    className="p-4 rounded-2xl border border-border/50 bg-card/20/40/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="p-4 rounded-2xl border border-border/50 bg-card/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">

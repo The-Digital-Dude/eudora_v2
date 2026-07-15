@@ -112,7 +112,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Clean Cupertino Card */}
-        <div className="border-border/60 bg-card rounded-[24px] border p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10">
+        <div className="border-border/60 bg-card rounded-3xl border p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10">
           {/* Header */}
           <div className="mb-6 space-y-2 text-center">
             <h1 className="font-display text-foreground text-2xl font-bold tracking-tight">
@@ -348,13 +348,13 @@ export default function RegisterPage() {
               {/* Primary Action Button */}
               <Button
                 type="submit"
-                className="bg-primary hover:bg-foreground/90 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold text-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all active:scale-98 disabled:pointer-events-none disabled:opacity-75 disabled:active:scale-100"
+                className="bg-primary hover:bg-foreground/90 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold text-primary-foreground shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all active:scale-98 disabled:pointer-events-none disabled:opacity-75 disabled:active:scale-100"
                 disabled={loading}
               >
                 {loading ? (
                   <>
                     <svg
-                      className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
+                      className="mr-2 -ml-1 h-4 w-4 animate-spin text-primary-foreground"
                       fill="none"
                       viewBox="0 0 24 24"
                     >

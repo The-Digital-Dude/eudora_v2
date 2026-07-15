@@ -166,7 +166,7 @@ export default function AssessmentsPage() {
       {/* Header section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground dark:text-white flex items-center gap-2">
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
             <FileText className="h-8 w-8 text-primary" />
             Assessment Platform
           </h1>

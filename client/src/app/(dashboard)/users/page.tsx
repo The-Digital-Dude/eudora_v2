@@ -202,7 +202,7 @@ export default function UsersPage() {
                     >
                       <td className="py-4">
                         <div className="flex items-center gap-3">
-                          <div className="font-display flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-xs font-bold text-white">
+                          <div className="font-display flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-xs font-bold text-background">
                             {getUserName(user) ? getUserName(user)[0].toUpperCase() : "U"}
                           </div>
                           <div>
@@ -350,7 +350,7 @@ export default function UsersPage() {
               <Button
                 type="submit"
                 disabled={updatingUser}
-                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
               >
                 {updatingUser ? "Saving..." : "Save Profile"}
               </Button>

@@ -217,7 +217,7 @@ export default function TimetablePage() {
           <div className="flex gap-2">
             <Button
               onClick={() => setCreateTimetableOpen(true)}
-              className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+              className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
             >
               <Plus className="h-4 w-4" />
               Create Timetable
@@ -270,7 +270,7 @@ export default function TimetablePage() {
                       size="sm"
                       onClick={handlePublish}
                       disabled={isPublishing}
-                      className="h-9 cursor-pointer rounded-xl bg-foreground text-[10px] font-bold text-white hover:bg-foreground/90"
+                      className="h-9 cursor-pointer rounded-xl bg-foreground text-[10px] font-bold text-background hover:bg-foreground/90"
                     >
                       Publish Schedule
                     </Button>
@@ -479,7 +479,7 @@ export default function TimetablePage() {
               <Button
                 type="submit"
                 disabled={isCreatingTimetable}
-                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
               >
                 Create
               </Button>

@@ -138,7 +138,7 @@ export default function LessonFlowPage() {
         </p>
         <button
           onClick={() => refetch()}
-          className="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-primary/90"
+          className="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Retry Load
         </button>
@@ -426,7 +426,7 @@ export default function LessonFlowPage() {
                   </span>
                 )}
               </div>
-              <div className="text-foreground/80 text-xs leading-relaxed font-normal md:text-sm dark:text-white/75">
+              <div className="text-foreground/80 text-xs leading-relaxed font-normal md:text-sm">
                 <MathRenderer
                   text={lastResult.explanation || currentCard.question?.explanation || ""}
                 />

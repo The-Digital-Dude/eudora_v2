@@ -97,9 +97,10 @@ export function QuestionEditorDialog({
   }, [open, questionId, initialQuestion, subjects, levels]);
 
   // Adjust widget defaults when widgetType changes
-  const handleWidgetTypeChange = (type: string) => {
+  const handleWidgetTypeChange = (value: string) => {
+    const type = value === "none" ? "" : value;
     setWidgetType(type);
-    
+
     // Seed initial sensible widget configurations
     if (type === "SLIDER_MANIPULATIVE") {
       setWidgetConfig({ min: 0, max: 100, step: 1, unit: "", correctValue: 50 });
@@ -348,12 +349,12 @@ export function QuestionEditorDialog({
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Bind Interactive Widget (Optional)
               </Label>
-              <Select value={widgetType} onValueChange={handleWidgetTypeChange}>
+              <Select value={widgetType || "none"} onValueChange={handleWidgetTypeChange}>
                 <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
                   <SelectValue placeholder="None (Standard Question)" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="">None (Standard Question)</SelectItem>
+                  <SelectItem value="none">None (Standard Question)</SelectItem>
                   <SelectItem value="STANDARD_MCQ">MCQ Widget</SelectItem>
                   <SelectItem value="SLIDER_MANIPULATIVE">Slider Widget</SelectItem>
                   <SelectItem value="DRAG_AND_DROP_LABELS">Drag and Drop Labels</SelectItem>
@@ -453,7 +454,7 @@ export function QuestionEditorDialog({
           <Button
             onClick={() => document.getElementById("editor-submit-btn")?.click()}
             disabled={isCreating || isUpdating}
-            className="h-10 cursor-pointer rounded-xl bg-primary px-5 text-xs font-semibold text-white hover:bg-primary"
+            className="h-10 cursor-pointer rounded-xl bg-primary px-5 text-xs font-semibold text-primary-foreground hover:bg-primary"
           >
             {isCreating || isUpdating ? "Saving..." : "Save Question"}
           </Button>

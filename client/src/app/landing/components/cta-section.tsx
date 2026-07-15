@@ -6,7 +6,7 @@ export default function CtaSection() {
     <section className="border-t border-border/40 bg-background py-24 select-none">
       <div className="mx-auto max-w-4xl px-6">
         {/* CTA Card */}
-        <div className="flex flex-col items-center space-y-6 rounded-[24px] border border-border/50 bg-card p-8 text-center shadow-[0_24px_50px_rgba(0,0,0,0.02)] md:p-16">
+        <div className="flex flex-col items-center space-y-6 rounded-3xl border border-border/50 bg-card p-8 text-center shadow-[0_24px_50px_rgba(0,0,0,0.02)] md:p-16">
           {/* Badge */}
           <div className="inline-flex items-center gap-1 rounded-full border border-border bg-background/50 px-3 py-1 text-[9px] font-bold tracking-widest text-muted-foreground uppercase">
             <Sparkles className="h-3 w-3 text-foreground" />

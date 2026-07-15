@@ -38,13 +38,13 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="border-t border-border/40 bg-white py-16 text-xs text-muted-foreground select-none">
+    <footer className="border-t border-border/40 bg-background py-16 text-xs text-muted-foreground select-none">
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-5 md:gap-12">
           {/* Logo Column */}
           <div className="col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2">
-              <div className="rounded-lg bg-foreground p-1.5 text-white shadow-sm">
+              <div className="rounded-lg bg-foreground p-1.5 text-background shadow-sm">
                 <Sparkles className="h-4 w-4" />
               </div>
               <span className="font-display text-sm font-bold tracking-tight text-foreground">

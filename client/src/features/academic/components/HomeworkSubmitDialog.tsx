@@ -143,7 +143,7 @@ export function HomeworkSubmitDialog({
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:bg-primary"
+              className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary"
             >
               {isSubmitting ? "Submitting..." : "Submit Homework"}
             </Button>

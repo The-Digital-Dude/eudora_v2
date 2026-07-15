@@ -22,8 +22,8 @@ export function ThreadList({
   currentUserId,
 }: ThreadListProps) {
   return (
-    <div className="flex h-full flex-col border-r border-border/50 bg-card/40/50/20 backdrop-blur-md">
-      <div className="flex items-center justify-between border-b border-border/50 p-4/50">
+    <div className="flex h-full flex-col border-r border-border/50 bg-card/40 backdrop-blur-md">
+      <div className="flex items-center justify-between border-b border-border/50 p-4">
         <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
           <MessageSquare className="h-5 w-5 text-primary" />
           Conversations
@@ -33,7 +33,7 @@ export function ThreadList({
           className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary active:scale-95 transition-all duration-200 shadow-lg shadow-primary/10"
           title="New Message"
         >
-          <Plus className="h-4. w-4" />
+          <Plus className="h-4 w-4" />
         </button>
       </div>
 
@@ -61,7 +61,7 @@ export function ThreadList({
                 className={`w-full flex flex-col items-start gap-1 p-3 rounded-2xl transition-all duration-200 text-left border ${
                   isActive
                     ? "bg-primary/10 border-primary/30"
-                    : "bg-transparent border-transparent hover:bg-muted/50/50"
+                    : "bg-transparent border-transparent hover:bg-muted/50"
                 }`}
               >
                 <div className="flex w-full items-center justify-between gap-2">
@@ -80,7 +80,7 @@ export function ThreadList({
                     {thread.subject}
                   </span>
                   {thread.unreadCount && thread.unreadCount > 0 ? (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                       {thread.unreadCount}
                     </span>
                   ) : null}

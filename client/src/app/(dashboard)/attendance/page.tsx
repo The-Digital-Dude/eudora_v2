@@ -597,7 +597,7 @@ export default function AttendancePage() {
               <Button
                 onClick={handleSaveAttendance}
                 disabled={isSaving}
-                className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary text-xs font-semibold text-white hover:bg-foreground/90 md:w-auto"
+                className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary text-xs font-semibold text-primary-foreground hover:bg-foreground/90 md:w-auto"
               >
                 <Save className="h-3.5 w-3.5" />
                 {isSaving ? "Saving..." : "Save Roster Attendance"}
@@ -727,7 +727,7 @@ export default function AttendancePage() {
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={absenceTrends}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eaeaea" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                         <XAxis
                           dataKey="date"
                           tickLine={false}
@@ -738,8 +738,10 @@ export default function AttendancePage() {
                         <Tooltip
                           contentStyle={{
                             fontSize: "11px",
-                            borderRadius: "12px",
-                            border: "1px solid #ddd",
+                            borderRadius: "var(--radius)",
+                            border: "1px solid var(--border)",
+                            backgroundColor: "var(--popover)",
+                            color: "var(--popover-foreground)",
                           }}
                         />
                         <Legend wrapperStyle={{ fontSize: "10px" }} />
@@ -747,7 +749,7 @@ export default function AttendancePage() {
                           type="monotone"
                           dataKey="absentCount"
                           name="Absences"
-                          stroke="#ef4444"
+                          stroke="var(--destructive)"
                           strokeWidth={2.5}
                           dot={{ r: 4 }}
                           activeDot={{ r: 6 }}
@@ -756,7 +758,7 @@ export default function AttendancePage() {
                           type="monotone"
                           dataKey="lateCount"
                           name="Lates"
-                          stroke="#f59e0b"
+                          stroke="var(--warning)"
                           strokeWidth={2}
                           dot={{ r: 3 }}
                         />
@@ -791,27 +793,27 @@ export default function AttendancePage() {
                           {
                             name: "Present",
                             count: monthlySummary.breakdown.PRESENT,
-                            fill: "#10b981",
+                            fill: "var(--success)",
                           },
                           {
                             name: "Late",
                             count: monthlySummary.breakdown.LATE,
-                            fill: "#f59e0b",
+                            fill: "var(--warning)",
                           },
                           {
                             name: "Excused",
                             count: monthlySummary.breakdown.EXCUSED,
-                            fill: "#0ea5e9",
+                            fill: "var(--chart-2)",
                           },
                           {
                             name: "Absent",
                             count: monthlySummary.breakdown.ABSENT,
-                            fill: "#ef4444",
+                            fill: "var(--destructive)",
                           },
                         ]}
                         barSize={32}
                       >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eaeaea" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                         <XAxis
                           dataKey="name"
                           tickLine={false}
@@ -822,8 +824,10 @@ export default function AttendancePage() {
                         <Tooltip
                           contentStyle={{
                             fontSize: "11px",
-                            borderRadius: "12px",
-                            border: "1px solid #ddd",
+                            borderRadius: "var(--radius)",
+                            border: "1px solid var(--border)",
+                            backgroundColor: "var(--popover)",
+                            color: "var(--popover-foreground)",
                           }}
                         />
                         <Bar dataKey="count" radius={[8, 8, 0, 0]} />

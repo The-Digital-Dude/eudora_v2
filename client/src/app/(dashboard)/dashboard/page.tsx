@@ -113,7 +113,7 @@ export default function DashboardOverview() {
             <Link href="/homework">
               <Button
                 size="sm"
-                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
               >
                 Grade Worksheets
               </Button>
@@ -169,7 +169,7 @@ export default function DashboardOverview() {
                             <span>Room: {slot.room || "N/A"}</span>
                           </p>
                         </div>
-                        <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-white hover:bg-primary/90">
+                        <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-primary-foreground hover:bg-primary/90">
                           {startHours}:{startMins} - {endHours}:{endMins}
                         </Badge>
                       </div>
@@ -352,7 +352,7 @@ export default function DashboardOverview() {
                             <span>Teacher: {slot.teacherProfile?.fullName || "Staff"}</span>
                           </p>
                         </div>
-                        <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-white hover:bg-primary/90">
+                        <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-primary-foreground hover:bg-primary/90">
                           {startHours}:{startMins} - {endHours}:{endMins}
                         </Badge>
                       </div>
@@ -444,7 +444,7 @@ export default function DashboardOverview() {
                       <Link href="/homework">
                         <Button
                           size="sm"
-                          className="h-6 cursor-pointer rounded-lg bg-primary px-2.5 text-[9px] text-white hover:bg-foreground/90"
+                          className="h-6 cursor-pointer rounded-lg bg-primary px-2.5 text-[9px] text-primary-foreground hover:bg-foreground/90"
                         >
                           Submit
                         </Button>
@@ -544,7 +544,7 @@ export default function DashboardOverview() {
                               Room: {slot.room || "N/A"}
                             </p>
                           </div>
-                          <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-white hover:bg-primary/90">
+                          <Badge className="rounded-lg bg-primary px-2 font-mono text-[9px] text-primary-foreground hover:bg-primary/90">
                             {startHours}:{startMins} - {endHours}:{endMins}
                           </Badge>
                         </div>
@@ -616,7 +616,7 @@ export default function DashboardOverview() {
                 </div>
 
                 <Link href="/homework" className="block">
-                  <Button className="h-10 w-full cursor-pointer rounded-xl bg-primary text-xs font-semibold text-white hover:bg-foreground/90">
+                  <Button className="h-10 w-full cursor-pointer rounded-xl bg-primary text-xs font-semibold text-primary-foreground hover:bg-foreground/90">
                     Review Homework Portal
                   </Button>
                 </Link>
@@ -652,7 +652,7 @@ export default function DashboardOverview() {
         </div>
         <div className="flex items-center gap-3">
           <Link href="/campuses">
-            <Button className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90 active:scale-98">
+            <Button className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-foreground/90 active:scale-98">
               <Plus className="h-4 w-4" /> Add Campus
             </Button>
           </Link>

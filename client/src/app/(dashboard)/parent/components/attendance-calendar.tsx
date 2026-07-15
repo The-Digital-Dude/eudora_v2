@@ -77,8 +77,8 @@ export function AttendanceCalendar({ records }: AttendanceCalendarProps) {
   const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5/50/20 backdrop-blur-md flex flex-col gap-6">
-      <div className="flex items-center justify-between border-b border-border/50/40 pb-4">
+    <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl backdrop-blur-md flex flex-col gap-6 flex-1">
+      <div className="flex items-center justify-between border-b border-border/40 pb-4">
         <h3 className="font-semibold text-foreground flex items-center gap-2 text-base">
           <CalendarCheck className="h-5 w-5 text-primary" />
           Attendance Calendar
@@ -88,7 +88,7 @@ export function AttendanceCalendar({ records }: AttendanceCalendarProps) {
             onClick={handlePrevMonth}
             className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-muted text-muted-foreground cursor-pointer"
           >
-            <ChevronLeft className="h-4. w-4" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
           <span className="text-xs font-bold text-foreground min-w-[100px] text-center">
             {format(currentMonth, "MMMM yyyy")}
@@ -97,7 +97,7 @@ export function AttendanceCalendar({ records }: AttendanceCalendarProps) {
             onClick={handleNextMonth}
             className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-muted text-muted-foreground cursor-pointer"
           >
-            <ChevronRight className="h-4. w-4" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>

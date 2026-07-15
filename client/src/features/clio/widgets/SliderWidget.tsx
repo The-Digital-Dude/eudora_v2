@@ -38,7 +38,7 @@ export function SliderWidget({ config, value, onChange, locked }: SliderWidgetPr
             left: `calc(${percentage}% - 24px)`,
           }}
         >
-          <div className="rounded-lg bg-primary px-2.5 py-1 text-xs font-bold text-white shadow-lg shadow-primary/20">
+          <div className="rounded-lg bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20">
             {value}
             {unit}
           </div>

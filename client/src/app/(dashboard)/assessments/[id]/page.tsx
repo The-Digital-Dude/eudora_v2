@@ -343,7 +343,7 @@ export default function AssessmentBuilderPage() {
             </button>
           </Link>
           <div>
-            <h1 className="text-sm font-bold text-foreground dark:text-white flex items-center gap-2">
+            <h1 className="text-sm font-bold text-foreground flex items-center gap-2">
               {assessment.title}
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-primary/10 text-primary">
                 {assessment.status}
@@ -361,7 +361,7 @@ export default function AssessmentBuilderPage() {
             <Button
               onClick={handleSaveSections}
               disabled={isUpdating}
-              className="h-9 rounded-xl bg-success text-xs font-bold text-white hover:bg-success"
+              className="h-9 rounded-xl bg-success text-xs font-bold text-success-foreground hover:bg-success"
             >
               <Save className="mr-1.5 h-3.5 w-3.5" /> Save Sections
             </Button>
@@ -371,14 +371,14 @@ export default function AssessmentBuilderPage() {
             <Button
               onClick={handlePublish}
               disabled={isPublishing}
-              className="h-9 rounded-xl bg-primary text-xs font-bold text-white hover:bg-primary/90 shadow-md shadow-primary/10"
+              className="h-9 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/10"
             >
               <Play className="mr-1.5 h-3.5 w-3.5 fill-current" /> Publish Paper
             </Button>
           ) : (
             <Button
               onClick={() => setAssignDialogOpen(true)}
-              className="h-9 rounded-xl bg-primary text-xs font-bold text-white hover:bg-primary/90"
+              className="h-9 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90"
             >
               Assign Assessment
             </Button>
@@ -558,14 +558,14 @@ export default function AssessmentBuilderPage() {
                               <button
                                 onClick={() => handleMoveQuestionOrder(sq, "up")}
                                 disabled={sIdx === 0}
-                                className="h-6 w-6 rounded border border-border hover:bg-muted flex items-center justify-center disabled:opacity-30"
+                                className="h-6 w-6 rounded-sm border border-border hover:bg-muted flex items-center justify-center disabled:opacity-30"
                               >
                                 <ChevronUp className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => handleMoveQuestionOrder(sq, "down")}
                                 disabled={sIdx === sQuestions.length - 1}
-                                className="h-6 w-6 rounded border border-border hover:bg-muted flex items-center justify-center disabled:opacity-30"
+                                className="h-6 w-6 rounded-sm border border-border hover:bg-muted flex items-center justify-center disabled:opacity-30"
                               >
                                 <ChevronDown className="h-3.5 w-3.5" />
                               </button>

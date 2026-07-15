@@ -217,14 +217,14 @@ export function GridMatchingWidget({
                     {leftItem ? (
                       <div
                         className={[
-                          "flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-bold text-white shadow-sm",
+                          "flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-bold text-primary-foreground shadow-sm",
                           locked ? "" : "hover:bg-primary",
                         ].join(" ")}
                       >
                         <span>{leftItem.text}</span>
                         {!locked && (
                           <span
-                            className="ml-1 text-[9px] font-bold text-white/60 hover:text-white"
+                            className="ml-1 text-[9px] font-bold text-primary-foreground/60 hover:text-primary-foreground"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleRightSlotClick(rItem.id);

@@ -159,7 +159,7 @@ export function DragDropWidget({ config, placements, onChange, locked }: DragDro
                 >
                   <span>{placedLabel}</span>
                   {!locked && (
-                    <span className="ml-1 text-[9px] font-bold text-white/60 hover:text-white">
+                    <span className="ml-1 text-[9px] font-bold text-primary-foreground/60 hover:text-primary-foreground">
                       ✕
                     </span>
                   )}

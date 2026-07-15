@@ -247,7 +247,7 @@ export default function CampusesPage() {
             onClick={() =>
               activeTab === "campuses" ? handleOpenCampusDialog() : handleOpenProgramDialog()
             }
-            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-white shadow-sm hover:bg-foreground/90 active:scale-98"
+            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90 active:scale-98"
           >
             <Plus className="h-4 w-4" />
             {activeTab === "campuses" ? "Add Campus" : "Add Program"}
@@ -620,7 +620,7 @@ export default function CampusesPage() {
               <Button
                 type="submit"
                 disabled={creatingCampus || updatingCampus}
-                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
               >
                 {creatingCampus || updatingCampus ? "Saving..." : "Save Campus"}
               </Button>
@@ -753,7 +753,7 @@ export default function CampusesPage() {
               <Button
                 type="submit"
                 disabled={creatingProgram || updatingProgram}
-                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-white hover:bg-foreground/90"
+                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
               >
                 {creatingProgram || updatingProgram ? "Saving..." : "Save Program"}
               </Button>

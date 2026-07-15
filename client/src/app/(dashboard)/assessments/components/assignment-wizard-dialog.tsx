@@ -236,7 +236,7 @@ export function AssignmentWizardDialog({
             <Button
               type="submit"
               disabled={isAssigning}
-              className="h-10 flex-1 cursor-pointer rounded-xl bg-primary text-xs font-semibold text-white hover:bg-primary"
+              className="h-10 flex-1 cursor-pointer rounded-xl bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary"
             >
               {isAssigning ? "Assigning..." : "Assign Assessment"}
             </Button>

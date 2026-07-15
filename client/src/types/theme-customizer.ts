@@ -74,6 +74,8 @@ export interface ThemeSettings {
   /** Per-variable brand color overrides, keyed by cssVar (e.g. "--primary") */
   brandColors: Record<string, string>;
   radius: string;
+  /** Multiplier applied to every shadow-* token's opacity/spread (0 = flat, 1 = default, 2 = dramatic). */
+  shadowIntensity: number;
   fontSans: string;
   fontDisplay: string;
   density: DensityValue;

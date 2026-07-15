@@ -1,7 +1,8 @@
 ﻿"use client";
 
+import { AlertCircle,CheckCircle2, Users } from "lucide-react";
 import React from "react";
-import { Users, CheckCircle2, AlertCircle, Calendar } from "lucide-react";
+
 import type { TeacherClassOverview } from "@/features/teacher/teacherPortalApi";
 
 interface ClassesOverviewProps {

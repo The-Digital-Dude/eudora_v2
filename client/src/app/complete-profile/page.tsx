@@ -9,9 +9,15 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useGetMeQuery } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
 import {
@@ -26,7 +32,10 @@ const step1Schema = z.object({
 });
 
 const step2Schema = z.object({
-  studentEmail: z.string().min(1, "Child's email address is required").email("Please enter a valid email address"),
+  studentEmail: z
+    .string()
+    .min(1, "Child's email address is required")
+    .email("Please enter a valid email address"),
   relationshipType: z.enum(["FATHER", "MOTHER", "GUARDIAN", "SPONSOR", "OTHER"]),
 });
 
@@ -137,27 +146,28 @@ export default function CompleteProfilePage() {
       }, 1500);
     } catch (err: any) {
       console.error(err);
-      const errMsg = err?.data?.message || "Failed to link student. Verify the email and try again.";
+      const errMsg =
+        err?.data?.message || "Failed to link student. Verify the email and try again.";
       toast.error(errMsg);
     }
   };
 
   return (
-    <div className="dot-grid relative flex min-h-screen flex-col items-center justify-center bg-muted/50 px-4 py-12 font-sans text-foreground select-none">
+    <div className="dot-grid bg-muted/50 text-foreground relative flex min-h-screen flex-col items-center justify-center px-4 py-12 font-sans select-none">
       {/* Centered wizard container */}
       <div className="animate-fade-in-up w-full max-w-[480px] space-y-8">
         {/* Brand Header */}
         <div className="flex flex-col items-center space-y-3">
-          <div className="rounded-xl bg-foreground p-2.5 text-white shadow-sm">
+          <div className="bg-foreground rounded-xl p-2.5 text-white shadow-sm">
             <Sparkles className="h-5 w-5" />
           </div>
-          <span className="font-display text-xl font-bold tracking-tight text-foreground">
+          <span className="font-display text-foreground text-xl font-bold tracking-tight">
             Eudora
           </span>
         </div>
 
         {/* Wizard Card */}
-        <div className="rounded-[28px] border border-border/80 bg-card p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10">
+        <div className="border-border/80 bg-card rounded-[28px] border p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10">
           {/* Progress Indicators */}
           <div className="mb-8 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -168,9 +178,9 @@ export default function CompleteProfilePage() {
               >
                 1
               </span>
-              <span className="text-xs font-semibold text-muted-foreground">Profile Details</span>
+              <span className="text-muted-foreground text-xs font-semibold">Profile Details</span>
             </div>
-            <div className="w-8 border-t border-border"></div>
+            <div className="border-border w-8 border-t"></div>
             <div className="flex items-center gap-2">
               <span
                 className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
@@ -179,13 +189,13 @@ export default function CompleteProfilePage() {
               >
                 2
               </span>
-              <span className="text-xs font-semibold text-muted-foreground">Link Child</span>
+              <span className="text-muted-foreground text-xs font-semibold">Link Child</span>
             </div>
           </div>
 
           {success && (
-            <div className="mb-6 flex animate-pulse items-center gap-2 rounded-xl border border-success/20 bg-success/10 p-3 text-xs font-semibold text-success">
-              <ShieldCheck className="h-4 w-4 text-success" />
+            <div className="border-success/20 bg-success/10 text-success mb-6 flex animate-pulse items-center gap-2 rounded-xl border p-3 text-xs font-semibold">
+              <ShieldCheck className="text-success h-4 w-4" />
               Profile completed successfully! Redirecting...
             </div>
           )}
@@ -198,7 +208,7 @@ export default function CompleteProfilePage() {
                   <h2 className="font-display text-xl font-bold tracking-tight">
                     Set Up Your Profile
                   </h2>
-                  <p className="text-xs leading-normal text-muted-foreground">
+                  <p className="text-muted-foreground text-xs leading-normal">
                     Please confirm your profile information. This will help teachers and staff
                     identify you.
                   </p>
@@ -211,22 +221,22 @@ export default function CompleteProfilePage() {
                     name="fullName"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                        <FormLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                           Full Name
                         </FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                              <User className="h-4 w-4" />
-                            </span>
+                        <div className="relative">
+                          <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <User className="h-4 w-4" />
+                          </span>
+                          <FormControl>
                             <Input
                               {...field}
                               type="text"
                               placeholder="Jane Doe"
-                              className="cupertino-input h-11 rounded-xl border-border bg-muted/50 pl-10 text-foreground placeholder:text-muted-foreground focus:border-ring"
+                              className="cupertino-input border-border bg-muted/50 text-foreground placeholder:text-muted-foreground focus:border-ring h-11 rounded-xl pl-10"
                             />
-                          </div>
-                        </FormControl>
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -238,22 +248,22 @@ export default function CompleteProfilePage() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                        <FormLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                           Phone Number
                         </FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                              <Phone className="h-4 w-4" />
-                            </span>
+                        <div className="relative">
+                          <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <Phone className="h-4 w-4" />
+                          </span>
+                          <FormControl>
                             <Input
                               {...field}
                               type="tel"
                               placeholder="+1 (555) 000-0000"
-                              className="cupertino-input h-11 rounded-xl border-border bg-muted/50 pl-10 text-foreground placeholder:text-muted-foreground focus:border-ring"
+                              className="cupertino-input border-border bg-muted/50 text-foreground placeholder:text-muted-foreground focus:border-ring h-11 rounded-xl pl-10"
                             />
-                          </div>
-                        </FormControl>
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -263,7 +273,7 @@ export default function CompleteProfilePage() {
                 <Button
                   type="submit"
                   disabled={isCreatingProfile}
-                  className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-foreground font-semibold text-white transition-all hover:bg-foreground/90 active:scale-98"
+                  className="bg-foreground hover:bg-foreground/90 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold text-white transition-all active:scale-98"
                 >
                   Continue
                   <ArrowRight className="h-4 w-4" />
@@ -280,9 +290,9 @@ export default function CompleteProfilePage() {
                   <h2 className="font-display text-xl font-bold tracking-tight">
                     Link to Your Child
                   </h2>
-                  <p className="text-xs leading-normal text-muted-foreground">
-                    Enter your child's school email address to associate their student profile with
-                    your account.
+                  <p className="text-muted-foreground text-xs leading-normal">
+                    Enter your child&apos;s school email address to associate their student profile
+                    with your account.
                   </p>
                 </div>
 
@@ -293,17 +303,17 @@ export default function CompleteProfilePage() {
                     name="relationshipType"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                        <FormLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                           Relationship
                         </FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                              <Heart className="h-4 w-4" />
-                            </span>
+                        <div className="relative">
+                          <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <Heart className="h-4 w-4" />
+                          </span>
+                          <FormControl>
                             <select
                               {...field}
-                              className="h-11 w-full cursor-pointer appearance-none rounded-xl border border-border bg-muted/50 pl-10 text-xs font-semibold text-foreground focus:border-ring focus:outline-none"
+                              className="border-border bg-muted/50 text-foreground focus:border-ring h-11 w-full cursor-pointer appearance-none rounded-xl border pl-10 text-xs font-semibold focus:outline-none"
                             >
                               <option value="FATHER">Father</option>
                               <option value="MOTHER">Mother</option>
@@ -311,8 +321,8 @@ export default function CompleteProfilePage() {
                               <option value="SPONSOR">Sponsor</option>
                               <option value="OTHER">Other</option>
                             </select>
-                          </div>
-                        </FormControl>
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -324,22 +334,22 @@ export default function CompleteProfilePage() {
                     name="studentEmail"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                          Child's School Email
+                        <FormLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                          Child&apos;s School Email
                         </FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                              <Mail className="h-4 w-4" />
-                            </span>
+                        <div className="relative">
+                          <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <Mail className="h-4 w-4" />
+                          </span>
+                          <FormControl>
                             <Input
                               {...field}
                               type="email"
                               placeholder="child@student.eudora.app"
-                              className="cupertino-input h-11 rounded-xl border-border bg-muted/50 pl-10 text-foreground placeholder:text-muted-foreground focus:border-ring"
+                              className="cupertino-input border-border bg-muted/50 text-foreground placeholder:text-muted-foreground focus:border-ring h-11 rounded-xl pl-10"
                             />
-                          </div>
-                        </FormControl>
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -351,14 +361,14 @@ export default function CompleteProfilePage() {
                     type="button"
                     onClick={() => setStep(1)}
                     variant="outline"
-                    className="h-11 flex-1 rounded-xl text-xs font-semibold hover:bg-muted/50 active:scale-98"
+                    className="hover:bg-muted/50 h-11 flex-1 rounded-xl text-xs font-semibold active:scale-98"
                   >
                     Back
                   </Button>
                   <Button
                     type="submit"
                     disabled={isLinking}
-                    className="flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-foreground font-semibold text-white transition-all hover:bg-foreground/90 active:scale-98"
+                    className="bg-foreground hover:bg-foreground/90 flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold text-white transition-all active:scale-98"
                   >
                     Complete Setup
                   </Button>
@@ -371,4 +381,3 @@ export default function CompleteProfilePage() {
     </div>
   );
 }
-

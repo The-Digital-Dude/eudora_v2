@@ -41,9 +41,9 @@ export function ScheduleFilterBar({
   setSelectedTeacherId,
   showTeacherFilter = true,
 }: ScheduleFilterBarProps) {
-  const { data: yearsData, isLoading: yearsLoading } = useGetAcademicYearsQuery();
-  const { data: classSectionsData, isLoading: classesLoading } = useGetClassSectionsQuery();
-  const { data: teachersData, isLoading: teachersLoading } = useGetTeacherProfilesQuery();
+  const { data: yearsData } = useGetAcademicYearsQuery();
+  const { data: classSectionsData } = useGetClassSectionsQuery();
+  const { data: teachersData } = useGetTeacherProfilesQuery();
 
   const { data: termsData, isLoading: termsLoading } = useGetTermsQuery(
     selectedYearId !== "all" ? { academicYearId: selectedYearId } : undefined,

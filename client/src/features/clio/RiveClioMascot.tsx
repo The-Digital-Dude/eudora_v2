@@ -1,5 +1,6 @@
 "use client";
 
+import type { StateMachineInput } from "@rive-app/react-canvas";
 import { useRive } from "@rive-app/react-canvas";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
@@ -34,13 +35,13 @@ const MOOD_MAP: Partial<Record<MascotState, number>> = {
 const STATE_MACHINE = "ClioBrain";
 
 interface StateMachineInputs {
-  mood: any;
-  celebrate: any;
-  wrong: any;
-  levelUp: any;
-  lookX: any;
-  lookY: any;
-  energy: any;
+  mood: StateMachineInput | null;
+  celebrate: StateMachineInput | null;
+  wrong: StateMachineInput | null;
+  levelUp: StateMachineInput | null;
+  lookX: StateMachineInput | null;
+  lookY: StateMachineInput | null;
+  energy: StateMachineInput | null;
 }
 
 export function RiveClioMascot({
@@ -57,7 +58,10 @@ export function RiveClioMascot({
     autoplay: true,
   });
 
-  const [inputs, setInputs] = useState<StateMachineInputs | null>(null);
+  // Rive inputs are live mutable handles into the animation runtime, so they
+  // live in a ref; `smReady` re-runs the effects once they become available.
+  const inputsRef = useRef<StateMachineInputs | null>(null);
+  const [smReady, setSmReady] = useState(false);
 
   // Dynamically load the state machine and extract inputs if it exists in the loaded file
   useEffect(() => {
@@ -68,7 +72,7 @@ export function RiveClioMascot({
       rive.play(STATE_MACHINE);
       const smInputs = rive.stateMachineInputs(STATE_MACHINE);
       if (smInputs) {
-        setInputs({
+        const next: StateMachineInputs = {
           mood: smInputs.find((i) => i.name === "mood") || null,
           celebrate: smInputs.find((i) => i.name === "celebrate") || null,
           wrong: smInputs.find((i) => i.name === "wrong") || null,
@@ -76,36 +80,35 @@ export function RiveClioMascot({
           lookX: smInputs.find((i) => i.name === "lookX") || null,
           lookY: smInputs.find((i) => i.name === "lookY") || null,
           energy: smInputs.find((i) => i.name === "energy") || null,
-        });
+        };
+        // Default energy to mid-level; callers can extend the prop later to tie to streak.
+        if (next.energy) next.energy.value = 0.5;
+        inputsRef.current = next;
+      } else {
+        inputsRef.current = null;
       }
     } else {
-      setInputs(null);
+      inputsRef.current = null;
     }
+    setSmReady(exists && inputsRef.current !== null);
   }, [rive]);
-
-  const moodInput = inputs?.mood;
-  const celebrateInput = inputs?.celebrate;
-  const wrongInput = inputs?.wrong;
-  const levelUpInput = inputs?.levelUp;
-  const lookXInput = inputs?.lookX;
-  const lookYInput = inputs?.lookY;
-  const energyInput = inputs?.energy;
 
   // Drive state: state-machine inputs when ClioBrain exists, else name-based fallback.
   useEffect(() => {
     if (!rive) return;
 
-    if (moodInput != null) {
+    const inputs = inputsRef.current;
+    if (smReady && inputs?.mood != null) {
       // ClioBrain state machine is present
       const moodValue = MOOD_MAP[state];
       if (moodValue !== undefined) {
-        moodInput.value = moodValue;
+        inputs.mood.value = moodValue;
       } else if (state === "celebrate") {
-        celebrateInput?.fire();
+        inputs.celebrate?.fire();
       } else if (state === "wrong") {
-        wrongInput?.fire();
+        inputs.wrong?.fire();
       } else if (state === "milestone") {
-        levelUpInput?.fire();
+        inputs.levelUp?.fire();
       }
     } else {
       // Fallback: name-based playback for existing .riv without ClioBrain
@@ -121,12 +124,7 @@ export function RiveClioMascot({
         console.warn("Rive mascot animation playback error:", err);
       }
     }
-  }, [state, rive, moodInput, celebrateInput, wrongInput, levelUpInput]);
-
-  // Default energy to mid-level; callers can extend the prop later to tie to streak.
-  useEffect(() => {
-    if (energyInput) energyInput.value = 0.5;
-  }, [energyInput]);
+  }, [state, rive, smReady]);
 
   // ── Eye tracking ──────────────────────────────────────────────────────────
   const rafRef = useRef<number | null>(null);
@@ -142,19 +140,23 @@ export function RiveClioMascot({
   }, []);
 
   const startIdleDrift = useCallback(() => {
-    if (!lookXInput || !lookYInput) return;
+    const inputs = inputsRef.current;
+    if (!inputs?.lookX || !inputs?.lookY) return;
+    const { lookX, lookY } = inputs;
     stopIdleDrift();
     const tick = () => {
       idleAngleRef.current += 0.015;
-      lookXInput.value = Math.sin(idleAngleRef.current) * 0.2;
-      lookYInput.value = Math.sin(idleAngleRef.current * 0.7) * 0.15;
+      lookX.value = Math.sin(idleAngleRef.current) * 0.2;
+      lookY.value = Math.sin(idleAngleRef.current * 0.7) * 0.15;
       idleRafRef.current = requestAnimationFrame(tick);
     };
     idleRafRef.current = requestAnimationFrame(tick);
-  }, [lookXInput, lookYInput, stopIdleDrift]);
+  }, [stopIdleDrift]);
 
   useEffect(() => {
-    if (!enableEyeTracking || !lookXInput || !lookYInput) return;
+    const inputs = inputsRef.current;
+    if (!enableEyeTracking || !smReady || !inputs?.lookX || !inputs?.lookY) return;
+    const { lookX, lookY } = inputs;
 
     const handlePointerMove = (e: PointerEvent) => {
       if (rafRef.current !== null) return;
@@ -166,8 +168,8 @@ export function RiveClioMascot({
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
         const radius = size * 2;
-        lookXInput.value = Math.max(-1, Math.min(1, (e.clientX - cx) / radius));
-        lookYInput.value = Math.max(-1, Math.min(1, (e.clientY - cy) / radius));
+        lookX.value = Math.max(-1, Math.min(1, (e.clientX - cx) / radius));
+        lookY.value = Math.max(-1, Math.min(1, (e.clientY - cy) / radius));
 
         stopIdleDrift();
         if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
@@ -184,7 +186,7 @@ export function RiveClioMascot({
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       stopIdleDrift();
     };
-  }, [enableEyeTracking, lookXInput, lookYInput, size, startIdleDrift, stopIdleDrift]);
+  }, [enableEyeTracking, smReady, size, startIdleDrift, stopIdleDrift]);
 
   return (
     <div

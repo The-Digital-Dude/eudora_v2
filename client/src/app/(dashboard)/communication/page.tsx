@@ -4,7 +4,7 @@ import { AlertCircle, Info,Mail, MessageSquare, Plus, Radio, Send } from "lucide
 import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -195,7 +195,7 @@ export default function CommunicationPage() {
             ))
           ) : (
             <p className="py-8 text-center text-xs font-medium text-muted-foreground">
-              No communication broadcasts logged. Click "New Broadcast" to compose an alert.
+              No communication broadcasts logged. Click &quot;New Broadcast&quot; to compose an alert.
             </p>
           )}
         </div>

@@ -1,45 +1,41 @@
 ﻿"use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { toast } from "sonner";
 import {
-  FileText,
-  Search,
-  Plus,
-  Calendar,
-  Clock,
-  Award,
-  BookOpen,
-  Layers,
-  Sparkles,
-  ArrowRight,
-  MoreVertical,
-  CheckCircle,
-  Archive,
   AlertCircle,
-  GraduationCap
-} from "lucide-react";
-import {
-  useGetAssessmentsQuery,
-  useCreateAssessmentMutation,
-  usePublishAssessmentMutation,
-  useArchiveAssessmentMutation,
-  useGetAssessmentTypesQuery,
-  useGetTermsQuery,
-  Assessment,
-} from "@/features/assessments/assessmentsApi";
-import {
-  useGetSubjectsQuery,
-  useGetLevelsQuery,
-} from "@/features/assessments/questionsApi";
+  Award,
+  Clock,
+  FileText,
+  GraduationCap,
+  Layers,
+  MoreVertical,
+  Plus,
+  Search,
+  Sparkles} from "lucide-react";
+import Link from "next/link";
+import React, { useState } from "react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter,DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Assessment,
+  useArchiveAssessmentMutation,
+  useCreateAssessmentMutation,
+  useGetAssessmentsQuery,
+  useGetAssessmentTypesQuery,
+  useGetTermsQuery,
+  usePublishAssessmentMutation,
+} from "@/features/assessments/assessmentsApi";
+import {
+  useGetLevelsQuery,
+  useGetSubjectsQuery,
+} from "@/features/assessments/questionsApi";
+
 import { AssignmentWizardDialog } from "./components/assignment-wizard-dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function AssessmentsPage() {
   // Query filters state
@@ -47,7 +43,7 @@ export default function AssessmentsPage() {
   const [subjectId, setSubjectId] = useState("all");
   const [levelId, setLevelId] = useState("all");
   const [status, setStatus] = useState("all");
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
 
   // Queries
   const { data: assessmentsData, isLoading } = useGetAssessmentsQuery({
@@ -98,7 +94,7 @@ export default function AssessmentsPage() {
     if (!newLevelId) return toast.error("Please select a grade level.");
 
     try {
-      const result = await createAssessment({
+      await createAssessment({
         title: newTitle,
         assessmentTypeId: newTypeId,
         subjectId: newSubjectId,
@@ -260,7 +256,7 @@ export default function AssessmentsPage() {
           <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
           <h3 className="text-sm font-bold text-foreground">No Assessments Found</h3>
           <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-            Try adjusting your search filters or click "Create Assessment" to start building your first paper.
+            Try adjusting your search filters or click &quot;Create Assessment&quot; to start building your first paper.
           </p>
         </div>
       ) : (

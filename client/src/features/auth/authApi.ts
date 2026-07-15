@@ -73,8 +73,23 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   }
 
   // Normalize successful responses from the NestJS envelope format
+  // ({ success, code, message, data, meta }). Paginated payloads keep their
+  // list metadata in a hybrid shape because consumers read it three ways:
+  // transformResponse sites use `response.data` + `response.meta.total`,
+  // picker endpoints are typed `{ items }`, and some read `total` directly.
   if (result.data && typeof result.data === "object" && "success" in result.data) {
-    result.data = (result.data as any).data;
+    const envelope = result.data as any;
+    if (Array.isArray(envelope.data) && envelope.meta?.pagination) {
+      const total = envelope.meta.pagination.total ?? envelope.data.length;
+      result.data = {
+        items: envelope.data,
+        data: envelope.data,
+        meta: { total },
+        total,
+      };
+    } else {
+      result.data = envelope.data;
+    }
   }
 
   return result;

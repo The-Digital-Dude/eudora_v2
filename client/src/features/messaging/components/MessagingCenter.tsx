@@ -1,13 +1,15 @@
 ﻿"use client";
 
+import { Loader2, MessageSquare,X } from "lucide-react";
 import React, { useState } from "react";
-import { MessageSquare, Plus, X, Send, Loader2, User } from "lucide-react";
-import { useGetThreadsQuery, useGetThreadByIdQuery, useCreateThreadMutation } from "../messagingApi";
+import { toast } from "sonner";
+
+import { useGetChildrenQuery, useGetChildTeachersQuery } from "@/features/parent/parentApi";
+
+import { useCreateThreadMutation,useGetThreadByIdQuery, useGetThreadsQuery } from "../messagingApi";
+import { MessageComposer } from "./MessageComposer";
 import { ThreadList } from "./ThreadList";
 import { ThreadView } from "./ThreadView";
-import { MessageComposer } from "./MessageComposer";
-import { useGetChildrenQuery, useGetChildTeachersQuery } from "@/features/parent/parentApi";
-import { toast } from "sonner";
 
 interface MessagingCenterProps {
   currentUserId: string;
@@ -16,7 +18,7 @@ interface MessagingCenterProps {
 
 export function MessagingCenter({ currentUserId, isGuardian }: MessagingCenterProps) {
   // Query all threads with polling for real-time messaging updates
-  const { data: threads = [], isLoading: isThreadsLoading } = useGetThreadsQuery(undefined, {
+  const { data: threads = [] } = useGetThreadsQuery(undefined, {
     pollingInterval: 5000,
   });
 

@@ -2,16 +2,13 @@
 
 import {
   AlertCircle,
-  ArrowRight,
   Edit2,
-  FileText,
   Mail,
   Phone,
   Plus,
   Search,
   Trash2,
   TrendingUp,
-  UserCheck,
 } from "lucide-react";
 import React, { useState } from "react";
 
@@ -298,7 +295,7 @@ export default function LeadsPage() {
               ) : (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-xs font-medium text-muted-foreground">
-                    No leads listed. Click "Add Lead" to register prospective interests.
+                    No leads listed. Click &quot;Add Lead&quot; to register prospective interests.
                   </td>
                 </tr>
               )}

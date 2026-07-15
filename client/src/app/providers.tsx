@@ -2,17 +2,31 @@
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Sparkles } from "lucide-react";
+import { usePathname } from "next/navigation";
 import React from "react";
 import { Provider } from "react-redux";
 
 import { Toaster } from "@/components/ui/sonner";
 import { useGetMeQuery } from "@/features/auth/authApi";
 import { login, logout } from "@/features/auth/authSlice";
-import { useAppDispatch } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { store } from "@/store/store";
+
+// Routes that must render immediately (marketing + auth entry points) — the
+// session check still runs, but never blocks their first paint.
+const PUBLIC_PATHS = ["/", "/login", "/register"];
+const PUBLIC_PREFIXES = ["/landing"];
+
+function isPublicPath(pathname: string) {
+  return (
+    PUBLIC_PATHS.includes(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
+  );
+}
 
 function AuthInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
+  const pathname = usePathname();
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -35,7 +49,13 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
     }
   }, [user, error, dispatch]);
 
-  if (!mounted || isLoading) {
+  // Hold the gate until the Redux store reflects the fetched session — the
+  // login dispatch happens in an effect, so there is one render frame where
+  // the query has resolved but the store hasn't caught up. Letting protected
+  // layouts render in that frame makes their auth redirects misfire.
+  const storeOutOfSync = !!user && !isAuthenticated;
+
+  if ((!mounted || isLoading || storeOutOfSync) && !isPublicPath(pathname)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground select-none">
         <div className="flex flex-col items-center gap-3">

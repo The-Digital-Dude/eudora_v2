@@ -1,50 +1,40 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { toast } from "sonner";
 import {
   ArrowLeft,
-  Settings,
-  Plus,
-  Trash2,
-  FolderOpen,
-  FolderPlus,
-  ChevronUp,
-  ChevronDown,
   BookOpen,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  FolderPlus,
   HelpCircle,
-  Award,
-  Sparkles,
+  Layers,
   Play,
+  Plus,
   Save,
   Search,
-  Filter,
-  Check,
-  Calendar,
-  Layers,
-  Clock
-} from "lucide-react";
-import {
-  useGetAssessmentQuery,
-  useUpdateAssessmentMutation,
-  usePublishAssessmentMutation,
-  useAddQuestionToAssessmentMutation,
-  useRemoveQuestionFromAssessmentMutation,
-  useUpdateAssessmentQuestionMutation,
-  Assessment,
-  AssessmentSection,
-  AssessmentQuestion
-} from "@/features/assessments/assessmentsApi";
-import { useGetQuestionsQuery } from "@/features/assessments/questionsApi";
+  Trash2} from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import React, { useEffect,useState } from "react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription,CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AssignmentWizardDialog } from "../components/assignment-wizard-dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  AssessmentQuestion,
+  useAddQuestionToAssessmentMutation,
+  useGetAssessmentQuery,
+  usePublishAssessmentMutation,
+  useRemoveQuestionFromAssessmentMutation,
+  useUpdateAssessmentMutation,
+  useUpdateAssessmentQuestionMutation} from "@/features/assessments/assessmentsApi";
+import { useGetQuestionsQuery } from "@/features/assessments/questionsApi";
+
 import { QuestionPreview } from "../../questions/components/question-preview";
+import { AssignmentWizardDialog } from "../components/assignment-wizard-dialog";
 
 export default function AssessmentBuilderPage() {
   const router = useRouter();
@@ -70,8 +60,8 @@ export default function AssessmentBuilderPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState("");
+  const [selectedSubject] = useState("");
+  const [selectedLevel] = useState("");
 
   const { data: questionsData } = useGetQuestionsQuery({
     search: searchQuery || undefined,
@@ -417,7 +407,7 @@ export default function AssessmentBuilderPage() {
             <div className="flex-1 flex flex-col items-center justify-center text-center p-4 border border-dashed border-border rounded-2xl">
               <FolderPlus className="h-8 w-8 text-muted-foreground mb-2" />
               <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
-                No sections created yet. Click "Add" to start grouping your questions.
+                No sections created yet. Click &quot;Add&quot; to start grouping your questions.
               </p>
             </div>
           ) : (

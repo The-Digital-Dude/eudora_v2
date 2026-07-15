@@ -2,12 +2,8 @@
 
 import {
   Award,
-  BookOpen,
-  Calendar,
-  ChevronRight,
   ClipboardList,
   GraduationCap,
-  Info,
   Plus,
   RefreshCw,
   Save,
@@ -33,12 +29,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   useBulkUpsertGradesMutation,
-  useCreateManualGradeMutation,
   useGetGradebookForClassQuery,
   useGetStudentGradesQuery,
   useGetStudentSummaryQuery,
   useSyncGradesMutation,
-  useUpdateGradeEntryMutation,
 } from "@/features/academic/gradebookApi";
 import { useGetTermsQuery } from "@/features/academic/timetableApi";
 import { useGetCourseClassesQuery } from "@/features/dashboard/dashboardApi";
@@ -96,10 +90,10 @@ export default function GradebookPage() {
 
   // Queries
   const { data: courseClassesData, isLoading: isLoadingClasses } = useGetCourseClassesQuery();
-  const courseClasses = courseClassesData?.items || [];
+  const courseClasses = React.useMemo(() => courseClassesData?.items ?? [], [courseClassesData]);
 
   const { data: termsData } = useGetTermsQuery({ page: 1, limit: 100 });
-  const termsList = termsData?.items || [];
+  const termsList = React.useMemo(() => termsData?.items ?? [], [termsData]);
 
   // Default selections
   React.useEffect(() => {

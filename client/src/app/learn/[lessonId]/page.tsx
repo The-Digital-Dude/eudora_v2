@@ -17,7 +17,6 @@ import { ClioCard,useGetLessonFlowQuery, useSubmitCardMutation } from "@/feature
 import { GamificationHUD } from "@/features/clio/GamificationHUD";
 import { LessonCompleteModal } from "@/features/clio/LessonCompleteModal";
 import {
-  hideExplanation,
   jumpToCard,
   markCardStart,
   nextCard,
@@ -59,7 +58,6 @@ export default function LessonFlowPage() {
   const hintIndex = useAppSelector(selectHintIndex);
   const sessionXp = useAppSelector(selectSessionXp);
   const cardStartedAt = useAppSelector(selectCardStartedAt);
-  const user = useAppSelector((state) => state.auth.user) as any;
 
   const [mascotState, setMascotState] = useState<
     | "idle"
@@ -75,7 +73,7 @@ export default function LessonFlowPage() {
 
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
-  const cards = data?.lesson?.cards ?? [];
+  const cards = React.useMemo(() => data?.lesson?.cards ?? [], [data]);
   const currentCard: ClioCard | undefined = cards[currentCardIndex];
 
   // Selected state for the current widget
@@ -101,7 +99,7 @@ export default function LessonFlowPage() {
       // Clean up lesson state on unmount
       dispatch(resetLesson());
     };
-  }, [data, cards.length, dispatch]);
+  }, [data, cards, dispatch]);
 
   // Set companion mascot reaction state
   useEffect(() => {

@@ -1,7 +1,8 @@
 ﻿"use client";
 
+import { AlertTriangle, Sparkles,TrendingDown, UserCheck } from "lucide-react";
 import React from "react";
-import { AlertTriangle, ShieldAlert, TrendingDown, UserCheck, Sparkles } from "lucide-react";
+
 import { useGetTeacherAlertsQuery } from "@/features/teacher/teacherPortalApi";
 
 export function PerformanceAlerts() {

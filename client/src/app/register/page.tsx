@@ -10,9 +10,15 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useRegisterMutation } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -20,7 +26,10 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 const registerSchema = z
   .object({
     name: z.string().min(2, "Full name must be at least 2 characters"),
-    email: z.string().min(1, "Email address is required").email("Please enter a valid email address"),
+    email: z
+      .string()
+      .min(1, "Email address is required")
+      .email("Please enter a valid email address"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Confirm password is required"),
     agree: z.boolean().refine((val) => val === true, {
@@ -86,30 +95,30 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="dot-grid relative flex min-h-screen flex-col items-center justify-center bg-muted/50 px-4 py-12 font-sans text-foreground select-none">
+    <div className="dot-grid bg-muted/50 text-foreground relative flex min-h-screen flex-col items-center justify-center px-4 py-12 font-sans select-none">
       {/* Slide-up entrance animated container */}
       <div className="animate-fade-in-up w-full max-w-[440px] space-y-8">
         {/* Brand Logo and Title */}
         <div className="flex flex-col items-center space-y-3">
           <Link
             href="/"
-            className="flex items-center justify-center rounded-xl bg-foreground p-2.5 text-background shadow-sm transition-transform hover:scale-105"
+            className="bg-foreground text-background flex items-center justify-center rounded-xl p-2.5 shadow-sm transition-transform hover:scale-105"
           >
             <Sparkles className="h-5 w-5" />
           </Link>
-          <span className="font-display text-xl font-bold tracking-tight text-foreground">
+          <span className="font-display text-foreground text-xl font-bold tracking-tight">
             Eudora
           </span>
         </div>
 
         {/* Clean Cupertino Card */}
-        <div className="rounded-[24px] border border-border/60 bg-card p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10">
+        <div className="border-border/60 bg-card rounded-[24px] border p-8 shadow-[0_24px_60px_rgba(0,0,0,0.035),0_4px_12px_rgba(0,0,0,0.015)] md:p-10">
           {/* Header */}
           <div className="mb-6 space-y-2 text-center">
-            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="font-display text-foreground text-2xl font-bold tracking-tight">
               Create your account
             </h1>
-            <p className="mx-auto max-w-[280px] text-xs leading-normal text-muted-foreground">
+            <p className="text-muted-foreground mx-auto max-w-[280px] text-xs leading-normal">
               Sign up to start designing student learning paths and curriculums.
             </p>
           </div>
@@ -118,7 +127,7 @@ export default function RegisterPage() {
           <div className="mb-6 grid grid-cols-2 gap-3">
             <button
               type="button"
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-sm transition-all hover:border-border hover:bg-muted active:scale-98"
+              className="border-border bg-card text-foreground hover:border-border hover:bg-muted flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-sm transition-all active:scale-98"
             >
               {/* Google SVG */}
               <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -143,7 +152,7 @@ export default function RegisterPage() {
             </button>
             <button
               type="button"
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-sm transition-all hover:border-border hover:bg-muted active:scale-98"
+              className="border-border bg-card text-foreground hover:border-border hover:bg-muted flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-sm transition-all active:scale-98"
             >
               {/* GitHub SVG */}
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -160,9 +169,9 @@ export default function RegisterPage() {
           {/* Separator */}
           <div className="relative mb-6 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
+              <div className="border-border w-full border-t"></div>
             </div>
-            <span className="relative bg-card px-3 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+            <span className="bg-card text-muted-foreground relative px-3 text-[10px] font-semibold tracking-widest uppercase">
               Or sign up with
             </span>
           </div>
@@ -176,24 +185,24 @@ export default function RegisterPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
-                    <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                    <FormLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                       Full Name
                     </FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                          <User className="h-4 w-4" />
-                        </span>
+                    <div className="relative">
+                      <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                        <User className="h-4 w-4" />
+                      </span>
+                      <FormControl>
                         <Input
                           {...field}
-                          id="name"
                           type="text"
+                          autoComplete="name"
                           placeholder="John Doe"
-                          className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
+                          className="cupertino-input border-border bg-muted/30 text-foreground placeholder:text-muted-foreground/50 focus:border-ring h-11 rounded-xl pl-10"
                           disabled={loading}
                         />
-                      </div>
-                    </FormControl>
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -205,24 +214,24 @@ export default function RegisterPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
-                    <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                    <FormLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                       Email Address
                     </FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                          <Mail className="h-4 w-4" />
-                        </span>
+                    <div className="relative">
+                      <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                        <Mail className="h-4 w-4" />
+                      </span>
+                      <FormControl>
                         <Input
                           {...field}
-                          id="email"
                           type="email"
+                          autoComplete="email"
                           placeholder="name@school.edu"
-                          className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
+                          className="cupertino-input border-border bg-muted/30 text-foreground placeholder:text-muted-foreground/50 focus:border-ring h-11 rounded-xl pl-10"
                           disabled={loading}
                         />
-                      </div>
-                    </FormControl>
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -234,31 +243,36 @@ export default function RegisterPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
-                    <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                    <FormLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                       Password
                     </FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                          <Lock className="h-4 w-4" />
-                        </span>
+                    <div className="relative">
+                      <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                        <Lock className="h-4 w-4" />
+                      </span>
+                      <FormControl>
                         <Input
                           {...field}
-                          id="password"
                           type={showPassword ? "text" : "password"}
+                          autoComplete="new-password"
                           placeholder="••••••••"
-                          className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pr-10 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
+                          className="cupertino-input border-border bg-muted/30 text-foreground placeholder:text-muted-foreground/50 focus:border-ring h-11 rounded-xl pr-10 pl-10"
                           disabled={loading}
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
+                      </FormControl>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center pr-3 transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -270,35 +284,36 @@ export default function RegisterPage() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
-                    <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                    <FormLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                       Confirm Password
                     </FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                          <Lock className="h-4 w-4" />
-                        </span>
+                    <div className="relative">
+                      <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                        <Lock className="h-4 w-4" />
+                      </span>
+                      <FormControl>
                         <Input
                           {...field}
-                          id="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
+                          autoComplete="new-password"
                           placeholder="••••••••"
-                          className="cupertino-input h-11 rounded-xl border-border bg-muted/30 pr-10 pl-10 text-foreground placeholder:text-muted-foreground/50 focus:border-ring"
+                          className="cupertino-input border-border bg-muted/30 text-foreground placeholder:text-muted-foreground/50 focus:border-ring h-11 rounded-xl pr-10 pl-10"
                           disabled={loading}
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </button>
-                      </div>
-                    </FormControl>
+                      </FormControl>
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                        className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center pr-3 transition-colors"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -309,26 +324,20 @@ export default function RegisterPage() {
                 control={form.control}
                 name="agree"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-2.5 space-y-0 py-1">
+                  <FormItem className="flex flex-row items-start space-y-0 space-x-2.5 py-1">
                     <FormControl>
                       <input
                         type="checkbox"
                         checked={field.value}
                         onChange={(e) => field.onChange(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 cursor-pointer rounded border-border bg-card text-foreground transition-all focus:ring-ring/20"
+                        className="border-border bg-card text-foreground focus:ring-ring/20 mt-0.5 h-4 w-4 cursor-pointer rounded transition-all"
                       />
                     </FormControl>
                     <div className="grid gap-1.5 leading-none">
-                      <FormLabel className="cursor-pointer text-xs text-muted-foreground select-none hover:text-foreground font-normal">
+                      <FormLabel className="text-muted-foreground hover:text-foreground cursor-pointer text-xs font-normal select-none">
                         I agree to the{" "}
-                        <a className="underline hover:text-foreground">
-                          Terms of Service
-                        </a>{" "}
-                        and{" "}
-                        <a className="underline hover:text-foreground">
-                          Privacy Policy
-                        </a>
-                        .
+                        <a className="hover:text-foreground underline">Terms of Service</a> and{" "}
+                        <a className="hover:text-foreground underline">Privacy Policy</a>.
                       </FormLabel>
                       <FormMessage />
                     </div>
@@ -339,7 +348,7 @@ export default function RegisterPage() {
               {/* Primary Action Button */}
               <Button
                 type="submit"
-                className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all hover:bg-foreground/90 active:scale-98 disabled:pointer-events-none disabled:opacity-75 disabled:active:scale-100"
+                className="bg-primary hover:bg-foreground/90 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold text-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all active:scale-98 disabled:pointer-events-none disabled:opacity-75 disabled:active:scale-100"
                 disabled={loading}
               >
                 {loading ? (
@@ -377,11 +386,11 @@ export default function RegisterPage() {
         </div>
 
         {/* Footer Sign-In Link */}
-        <div className="text-center text-xs text-muted-foreground">
+        <div className="text-muted-foreground text-center text-xs">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-semibold text-foreground transition-colors hover:underline"
+            className="text-foreground font-semibold transition-colors hover:underline"
           >
             Sign in
           </Link>
@@ -390,4 +399,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

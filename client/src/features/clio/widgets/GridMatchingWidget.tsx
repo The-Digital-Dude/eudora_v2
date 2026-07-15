@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import React, { useState } from "react";
+
 import type { GridMatchingConfig } from "../../assessments/widgetConfigSchemas";
 
 interface GridMatchingWidgetProps {
@@ -22,7 +23,7 @@ export function GridMatchingWidget({
   const rightItems = config.right ?? [];
   const correctPairs = config.correctPairs ?? [];
 
-  const pairs = value?.pairs ?? [];
+  const pairs = React.useMemo(() => value?.pairs ?? [], [value]);
 
   // Currently selected left item for click-to-match UX
   const [selectedLeftId, setSelectedLeftId] = useState<string | null>(null);

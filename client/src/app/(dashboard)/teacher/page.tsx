@@ -1,16 +1,18 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
-import { useGetTeacherClassesQuery } from "@/features/teacher/teacherPortalApi";
-import { useGetDashboardSnapshotQuery } from "@/features/dashboard/dashboardApi";
-import { ClassesOverview } from "./components/classes-overview";
-import { QuickAttendance } from "./components/quick-attendance";
-import { PerformanceAlerts } from "./components/performance-alerts";
-import { MessagingCenter } from "@/features/messaging/components/MessagingCenter";
-import { useAppSelector } from "@/store/hooks";
-import { Loader2, Users, ClipboardCheck, Calendar, BookOpen, MessageSquare, ExternalLink } from "lucide-react";
-import Link from "next/link";
 import { format } from "date-fns";
+import { BookOpen, Calendar, ClipboardCheck, ExternalLink,Loader2, MessageSquare } from "lucide-react";
+import Link from "next/link";
+import React, { useEffect,useState } from "react";
+
+import { useGetDashboardSnapshotQuery } from "@/features/dashboard/dashboardApi";
+import { MessagingCenter } from "@/features/messaging/components/MessagingCenter";
+import { useGetTeacherClassesQuery } from "@/features/teacher/teacherPortalApi";
+import { useAppSelector } from "@/store/hooks";
+
+import { ClassesOverview } from "./components/classes-overview";
+import { PerformanceAlerts } from "./components/performance-alerts";
+import { QuickAttendance } from "./components/quick-attendance";
 
 export default function TeacherPage() {
   const auth = useAppSelector((state) => state.auth);
@@ -140,7 +142,7 @@ export default function TeacherPage() {
           <div className="space-y-6 lg:col-span-1">
             <div>
               <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                Today's Schedule
+                Today&apos;s Schedule
               </h3>
               <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5/50/20 backdrop-blur-md space-y-4 max-h-[520px] overflow-y-auto">
                 <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">

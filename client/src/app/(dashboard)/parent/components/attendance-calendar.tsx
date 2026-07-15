@@ -1,18 +1,18 @@
 ﻿"use client";
 
-import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, CalendarCheck } from "lucide-react";
 import {
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  format,
-  isSameMonth,
-  isSameDay,
   addMonths,
-  subMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  format,
   getDay,
+  isSameDay,
+  isSameMonth,
+  startOfMonth,
+  subMonths,
 } from "date-fns";
+import { CalendarCheck,ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState } from "react";
 
 interface AttendanceRecord {
   id: string;
@@ -42,7 +42,6 @@ export function AttendanceCalendar({ records }: AttendanceCalendarProps) {
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
   // Calendar stats
-  const totalInMonth = days.filter((d) => d <= new Date()).length;
   const monthRecords = records.filter((r) => isSameMonth(new Date(r.date), currentMonth));
 
   const stats = React.useMemo(() => {

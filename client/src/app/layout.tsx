@@ -1,5 +1,6 @@
 import "./globals.css";
 
+import type { Metadata } from "next";
 import {
   Inter,
   Nunito_Sans,
@@ -29,6 +30,15 @@ const fontVariables = [
   nunitoSans.variable,
   sourceSerif.variable,
 ].join(" ");
+
+export const metadata: Metadata = {
+  title: {
+    default: "Eudora — Education OS",
+    template: "%s | Eudora",
+  },
+  description:
+    "AI-powered education operating system: personalized learning paths, automated grading, and school administration in one place.",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

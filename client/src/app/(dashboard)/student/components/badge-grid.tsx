@@ -1,7 +1,8 @@
 ﻿"use client";
 
+import { Award, BookOpen, Flame, Lock, Sparkles, Star, Trophy } from "lucide-react";
 import React from "react";
-import { Award, Lock, Sparkles, Flame, BookOpen, Star, Trophy } from "lucide-react";
+
 import type { VirtualBadge } from "@/features/student/studentApi";
 
 interface BadgeGridProps {

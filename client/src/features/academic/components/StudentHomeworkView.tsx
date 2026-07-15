@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Award, BookOpen, Clock, Download,FileText, Paperclip, Send } from "lucide-react";
+import { Award, BookOpen, Clock,FileText, Paperclip, Send } from "lucide-react";
 import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";

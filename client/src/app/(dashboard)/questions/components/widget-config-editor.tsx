@@ -1,11 +1,12 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Code } from "lucide-react";
+import { Code,Plus, Trash2 } from "lucide-react";
+import React, { useEffect,useState } from "react";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CoordinatePlotterWidget } from "@/features/clio/widgets/CoordinatePlotterWidget";
 
 interface WidgetConfigEditorProps {

@@ -1,15 +1,17 @@
 ﻿"use client";
 
+import { Loader2 } from "lucide-react";
 import React from "react";
-import { useGetGamificationMeQuery, useGetBadgesQuery } from "@/features/student/studentApi";
+
 import { useGetDashboardSnapshotQuery } from "@/features/dashboard/dashboardApi";
+import { useGetBadgesQuery,useGetGamificationMeQuery } from "@/features/student/studentApi";
+import { useAppSelector } from "@/store/hooks";
+
+import { AttendanceMini } from "./components/attendance-mini";
+import { BadgeGrid } from "./components/badge-grid";
+import { LeaderboardCard } from "./components/leaderboard-card";
 import { ProgressHero } from "./components/progress-hero";
 import { UpcomingList } from "./components/upcoming-list";
-import { AttendanceMini } from "./components/attendance-mini";
-import { LeaderboardCard } from "./components/leaderboard-card";
-import { BadgeGrid } from "./components/badge-grid";
-import { useAppSelector } from "@/store/hooks";
-import { Loader2 } from "lucide-react";
 
 export default function StudentPage() {
   const auth = useAppSelector((state) => state.auth);

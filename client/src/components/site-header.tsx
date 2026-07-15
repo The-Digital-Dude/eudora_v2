@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { getPrimaryRole } from "@/lib/access-control";
 import {
   useDeleteNotificationMutation,
   useGetNotificationsQuery,
@@ -32,6 +31,7 @@ import {
   useMarkAllNotificationsAsReadMutation,
   useMarkNotificationAsReadMutation,
 } from "@/features/dashboard/dashboardApi";
+import { getPrimaryRole } from "@/lib/access-control";
 
 interface Campus {
   id: string;

@@ -1,16 +1,17 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
-import { useGetChildrenQuery, useGetChildAttendanceQuery, useGetChildHomeworkQuery, useGetChildGradesQuery } from "@/features/parent/parentApi";
-import { ChildSelector } from "./components/child-selector";
-import { ChildStatusCard } from "./components/child-status-card";
+import { CreditCard, GraduationCap, Loader2, MessageSquare, ShieldAlert } from "lucide-react";
+import React, { useEffect,useState } from "react";
+
+import { MessagingCenter } from "@/features/messaging/components/MessagingCenter";
+import { useGetChildAttendanceQuery, useGetChildGradesQuery,useGetChildHomeworkQuery, useGetChildrenQuery } from "@/features/parent/parentApi";
+import { useAppSelector } from "@/store/hooks";
+
 import { AttendanceCalendar } from "./components/attendance-calendar";
+import { BillingHistoryPanel } from "./components/billing-history-panel";
+import { ChildStatusCard } from "./components/child-status-card";
 import { HomeworkGradesPanel } from "./components/homework-grades-panel";
 import { LearningPanel } from "./components/learning-panel";
-import { BillingHistoryPanel } from "./components/billing-history-panel";
-import { MessagingCenter } from "@/features/messaging/components/MessagingCenter";
-import { useAppSelector } from "@/store/hooks";
-import { Loader2, GraduationCap, ClipboardList, CreditCard, MessageSquare, ShieldAlert } from "lucide-react";
 
 export default function ParentPage() {
   const auth = useAppSelector((state) => state.auth);
@@ -56,7 +57,7 @@ export default function ParentPage() {
         <ShieldAlert className="h-12 w-12 text-muted-foreground mb-3" />
         <h3 className="text-base font-bold text-foreground">No linked children</h3>
         <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-          We couldn't find any student profiles linked to your guardian account. Please contact school administration to set up your links.
+          We couldn&apos;t find any student profiles linked to your guardian account. Please contact school administration to set up your links.
         </p>
       </div>
     );
@@ -73,7 +74,7 @@ export default function ParentPage() {
             Parent Portal
           </h1>
           <p className="text-sm text-muted-foreground">
-            Welcome back, {user?.firstName || user?.name || "Guardian"}. Monitor your children's educational progress and schedules.
+            Welcome back, {user?.firstName || user?.name || "Guardian"}. Monitor your children&apos;s educational progress and schedules.
           </p>
         </div>
 
@@ -189,7 +190,7 @@ export default function ParentPage() {
               Message Center
             </h2>
             <p className="text-xs text-muted-foreground">
-              Send messages directly to the teachers of your children's classes.
+              Send messages directly to the teachers of your children&apos;s classes.
             </p>
           </div>
           <MessagingCenter currentUserId={currentUserId} isGuardian={true} />

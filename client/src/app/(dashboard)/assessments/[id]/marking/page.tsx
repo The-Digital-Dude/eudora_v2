@@ -1,43 +1,36 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { toast } from "sonner";
 import {
   ArrowLeft,
-  GraduationCap,
-  Award,
-  Clock,
-  CheckCircle,
-  XCircle,
-  HelpCircle,
-  Save,
-  MessageSquare,
-  Search,
-  Filter,
   Check,
-  X,
-  User,
+  CheckCircle,
+  GraduationCap,
+  HelpCircle,
+  Loader2,
+  MessageSquare,
+  Save,
+  Search,
   ShieldAlert,
-  Loader2
-} from "lucide-react";
+  User,
+  X,
+  XCircle} from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import React, { useEffect,useState } from "react";
+import { toast } from "sonner";
+
+import { MathRenderer } from "@/components/MathRenderer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent,CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   useGetAssessmentQuery,
   useGetAssignmentsQuery,
-  useListAssignmentAttemptsQuery,
   useGetAttemptQuery,
+  useListAssignmentAttemptsQuery,
   useMarkAttemptMutation,
-  useMarkStudentResponseMutation,
-  Assignment,
-  Attempt,
-  StudentResponse
-} from "@/features/assessments/assessmentsApi";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MathRenderer } from "@/components/MathRenderer";
+  useMarkStudentResponseMutation} from "@/features/assessments/assessmentsApi";
 import { WidgetSelector } from "@/features/clio/widgets/WidgetSelector";
 
 export default function AssessmentMarkingPage() {
@@ -53,7 +46,7 @@ export default function AssessmentMarkingPage() {
     { assessmentId },
     { skip: !assessmentId }
   );
-  const assignments = assignmentsData?.items || [];
+  const assignments = React.useMemo(() => assignmentsData?.items ?? [], [assignmentsData]);
 
   // Filter and queue states
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "graded">("all");
@@ -151,7 +144,6 @@ export default function AssessmentMarkingPage() {
     const nameMatch = asg.studentProfile?.fullName.toLowerCase().includes(studentSearch.toLowerCase());
     
     // Status match
-    const isSubmitted = asg.status === "submitted";
     const statusMatch =
       filterStatus === "all" ||
       (filterStatus === "pending" && (asg.status === "submitted" || asg.status === "started")) ||
@@ -160,7 +152,6 @@ export default function AssessmentMarkingPage() {
     return nameMatch && statusMatch;
   });
 
-  const selectedAssignment = assignments.find((a) => a.id === selectedAssignmentId);
 
   // Action: Save marks for a single response
   const handleSaveResponseMark = async (responseId: string, questionId: string) => {
@@ -335,7 +326,7 @@ export default function AssessmentMarkingPage() {
               <ShieldAlert className="h-12 w-12 text-warning mb-3" />
               <h3 className="text-base font-bold text-foreground">No Attempt Record Found</h3>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs leading-relaxed">
-                This student has not started this assessment yet. Check back once their status updates to 'Started' or 'Submitted'.
+                This student has not started this assessment yet. Check back once their status updates to &apos;Started&apos; or &apos;Submitted&apos;.
               </p>
             </div>
           ) : (

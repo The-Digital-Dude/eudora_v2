@@ -1,7 +1,7 @@
 ﻿"use client";
 
+import {UserCheck } from "lucide-react";
 import React from "react";
-import { UserCheck, CheckCircle2, AlertTriangle, HelpCircle } from "lucide-react";
 
 interface AttendanceSummary {
   attendanceRate: number;

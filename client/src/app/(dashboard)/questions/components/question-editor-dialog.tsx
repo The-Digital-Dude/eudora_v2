@@ -1,23 +1,25 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
+import { Edit3, Eye, HelpCircle,Plus, Trash2 } from "lucide-react";
+import React, { useEffect,useState } from "react";
 import { toast } from "sonner";
-import { Eye, Edit3, Plus, Trash2, HelpCircle } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter,DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Question,
   useCreateQuestionMutation,
-  useUpdateQuestionMutation,
-  useGetSubjectsQuery,
   useGetLevelsQuery,
+  useGetSubjectsQuery,
+  useUpdateQuestionMutation,
 } from "@/features/assessments/questionsApi";
+
+import { QuestionPreview } from "./question-preview";
 import { QuestionTypeFields } from "./question-type-fields";
 import { WidgetConfigEditor } from "./widget-config-editor";
-import { QuestionPreview } from "./question-preview";
 
 interface QuestionEditorDialogProps {
   open: boolean;
@@ -35,8 +37,8 @@ export function QuestionEditorDialog({
   const { data: subjectsData } = useGetSubjectsQuery();
   const { data: levelsData } = useGetLevelsQuery();
 
-  const subjects = subjectsData?.items || [];
-  const levels = levelsData?.items || [];
+  const subjects = React.useMemo(() => subjectsData?.items ?? [], [subjectsData]);
+  const levels = React.useMemo(() => levelsData?.items ?? [], [levelsData]);
 
   const [createQuestion, { isLoading: isCreating }] = useCreateQuestionMutation();
   const [updateQuestion, { isLoading: isUpdating }] = useUpdateQuestionMutation();

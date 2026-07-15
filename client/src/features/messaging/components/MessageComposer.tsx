@@ -1,9 +1,10 @@
 ﻿"use client";
 
+import { Loader2,Send } from "lucide-react";
 import React, { useState } from "react";
-import { Send, Loader2 } from "lucide-react";
-import { usePostMessageMutation } from "../messagingApi";
 import { toast } from "sonner";
+
+import { usePostMessageMutation } from "../messagingApi";
 
 interface MessageComposerProps {
   threadId: string;

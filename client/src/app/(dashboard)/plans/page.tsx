@@ -3,7 +3,6 @@
 import {
   AlertCircle,
   CreditCard,
-  DollarSign,
   GraduationCap,
   Plus,
   School,

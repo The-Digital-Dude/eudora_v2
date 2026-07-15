@@ -5,24 +5,33 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { ArrowRight, Eye, EyeOff, Lock, Mail, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getPrimaryRole, getRoleHome } from "@/lib/access-control";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useGoogleLoginMutation, useLoginMutation } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
+import { getPrimaryRole, getRoleHome } from "@/lib/access-control";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email address is required").email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required").min(6, "Password must be at least 6 characters"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(6, "Password must be at least 6 characters"),
   remember: z.boolean(),
 });
 
@@ -48,32 +57,38 @@ export default function LoginPage() {
     },
   });
 
-  const checkRedirect = (u: any) => {
-    if (!u) return;
+  const checkRedirect = useCallback(
+    (u: any) => {
+      if (!u) return;
 
-    // Every role lands on its purpose-built home: admin -> /dashboard,
-    // teacher -> /teacher, guardian -> /parent, student -> /student.
-    if (getPrimaryRole(u) === "GUARDIAN") {
-      const hasProfile = !!u.guardianProfile;
-      const hasStudents =
-        hasProfile &&
-        Array.isArray(u.guardianProfile.students) &&
-        u.guardianProfile.students.length > 0;
-      router.replace(!hasProfile || !hasStudents ? "/complete-profile" : "/parent");
-      return;
-    }
-    router.replace(getRoleHome(u));
-  };
+      // Every role lands on its purpose-built home: admin -> /dashboard,
+      // teacher -> /teacher, guardian -> /parent, student -> /student.
+      if (getPrimaryRole(u) === "GUARDIAN") {
+        const hasProfile = !!u.guardianProfile;
+        const hasStudents =
+          hasProfile &&
+          Array.isArray(u.guardianProfile.students) &&
+          u.guardianProfile.students.length > 0;
+        router.replace(!hasProfile || !hasStudents ? "/complete-profile" : "/parent");
+        return;
+      }
+      router.replace(getRoleHome(u));
+    },
+    [router],
+  );
 
   useEffect(() => {
     if (isAuthenticated && user) {
       checkRedirect(user);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, checkRedirect]);
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
-      const loggedInUser = await loginMutation({ email: values.email, password: values.password }).unwrap();
+      const loggedInUser = await loginMutation({
+        email: values.email,
+        password: values.password,
+      }).unwrap();
       dispatch(login({ user: loggedInUser, token: null }));
       toast.success("Welcome back! Successfully logged in.");
       checkRedirect(loggedInUser);
@@ -106,32 +121,32 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="dot-grid relative flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12 font-sans text-foreground select-none">
+    <div className="dot-grid bg-background text-foreground relative flex min-h-screen flex-col items-center justify-center px-4 py-12 font-sans select-none">
       <div className="animate-fade-in-up w-full max-w-[440px] space-y-8">
         {/* Brand Logo */}
         <div className="flex flex-col items-center space-y-3">
-          <div className="rounded-xl bg-foreground p-2.5 text-background shadow-sm">
+          <div className="bg-foreground text-background rounded-xl p-2.5 shadow-sm">
             <Sparkles className="h-5 w-5" />
           </div>
-          <span className="font-display text-xl font-bold tracking-tight text-foreground">
+          <span className="font-display text-foreground text-xl font-bold tracking-tight">
             Eudora
           </span>
         </div>
 
         {/* Login Card */}
-        <div className="rounded-[24px] border border-border bg-card p-8 shadow-[0_24px_60px_color-mix(in_oklch,var(--foreground)_4%,transparent),0_4px_12px_color-mix(in_oklch,var(--foreground)_2%,transparent)] md:p-10">
+        <div className="border-border bg-card rounded-[24px] border p-8 shadow-[0_24px_60px_color-mix(in_oklch,var(--foreground)_4%,transparent),0_4px_12px_color-mix(in_oklch,var(--foreground)_2%,transparent)] md:p-10">
           {/* Header */}
           <div className="mb-8 space-y-2 text-center">
-            <h1 className="font-display text-2xl font-bold tracking-tight text-card-foreground">
+            <h1 className="font-display text-card-foreground text-2xl font-bold tracking-tight">
               Sign in to your account
             </h1>
-            <p className="mx-auto max-w-[280px] text-xs leading-normal text-muted-foreground">
+            <p className="text-muted-foreground mx-auto max-w-[280px] text-xs leading-normal">
               Enter your email and password below to access your classrooms and learning paths.
             </p>
           </div>
 
           {/* Role Switcher */}
-          <div className="mb-6 flex gap-1 rounded-xl bg-muted p-1">
+          <div className="bg-muted mb-6 flex gap-1 rounded-xl p-1">
             {(["student", "guardian", "admin"] as const).map((role) => (
               <button
                 key={role}
@@ -154,7 +169,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => handleGoogleLogin()}
               disabled={googleLoading || loading}
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-card-foreground shadow-sm transition-all hover:bg-accent active:scale-98 disabled:opacity-50"
+              className="border-border bg-card text-card-foreground hover:bg-accent flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-sm transition-all active:scale-98 disabled:opacity-50"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path
@@ -180,7 +195,7 @@ export default function LoginPage() {
               type="button"
               disabled
               aria-disabled="true"
-              className="flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-card-foreground shadow-sm opacity-50"
+              className="border-border bg-card text-card-foreground flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold opacity-50 shadow-sm"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path
@@ -196,9 +211,9 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="relative mb-6 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
+              <div className="border-border w-full border-t"></div>
             </div>
-            <span className="relative bg-card px-3 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+            <span className="bg-card text-muted-foreground relative px-3 text-[10px] font-semibold tracking-widest uppercase">
               Or continue with
             </span>
           </div>
@@ -212,24 +227,24 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
-                    <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                    <FormLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                       Email Address
                     </FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                          <Mail className="h-4 w-4" />
-                        </span>
+                    <div className="relative">
+                      <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                        <Mail className="h-4 w-4" />
+                      </span>
+                      <FormControl>
                         <Input
                           {...field}
-                          id="email"
                           type="email"
+                          autoComplete="email"
                           placeholder="name@company.com"
                           className="cupertino-input h-11 rounded-xl pl-10"
                           disabled={loading}
                         />
-                      </div>
-                    </FormControl>
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -242,12 +257,12 @@ export default function LoginPage() {
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <FormLabel className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                      <FormLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                         Password
                       </FormLabel>
                       <button
                         type="button"
-                        className="cursor-pointer text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground hover:underline"
+                        className="text-muted-foreground hover:text-foreground cursor-pointer text-[11px] font-semibold transition-colors hover:underline"
                         onClick={() => {
                           /* TODO: forgot password flow */
                         }}
@@ -255,29 +270,33 @@ export default function LoginPage() {
                         Forgot?
                       </button>
                     </div>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
-                          <Lock className="h-4 w-4" />
-                        </span>
+                    <div className="relative">
+                      <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                        <Lock className="h-4 w-4" />
+                      </span>
+                      <FormControl>
                         <Input
                           {...field}
-                          id="password"
                           type={showPassword ? "text" : "password"}
+                          autoComplete="current-password"
                           placeholder="••••••••"
                           className="cupertino-input h-11 rounded-xl pr-10 pl-10"
                           disabled={loading}
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          aria-label={showPassword ? "Hide password" : "Show password"}
-                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
+                      </FormControl>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center pr-3 transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -288,7 +307,7 @@ export default function LoginPage() {
                 control={form.control}
                 name="remember"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-2.5 space-y-0">
+                  <FormItem className="flex flex-row items-center space-y-0 space-x-2.5">
                     <FormControl>
                       <Checkbox
                         id="remember"
@@ -298,7 +317,7 @@ export default function LoginPage() {
                     </FormControl>
                     <FormLabel
                       htmlFor="remember"
-                      className="cursor-pointer text-xs text-muted-foreground select-none hover:text-foreground font-normal"
+                      className="text-muted-foreground hover:text-foreground cursor-pointer text-xs font-normal select-none"
                     >
                       Keep me signed in
                     </FormLabel>
@@ -348,11 +367,11 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center text-xs text-muted-foreground">
+        <div className="text-muted-foreground text-center text-xs">
           Don&apos;t have an account?{" "}
           <Link
             href="/register"
-            className="font-semibold text-foreground transition-colors hover:underline"
+            className="text-foreground font-semibold transition-colors hover:underline"
           >
             Create an account
           </Link>
@@ -361,4 +380,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

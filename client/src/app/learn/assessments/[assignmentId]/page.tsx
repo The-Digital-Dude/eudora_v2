@@ -1,40 +1,35 @@
 ﻿"use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { toast } from "sonner";
 import {
-  Clock,
+  AlertTriangle,
   Award,
   BookOpen,
-  ArrowLeft,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
-  Send,
+  Clock,
+  FileText,
+  GraduationCap,
   HelpCircle,
   Play,
-  Save,
-  CheckCircle,
-  FileText,
-  AlertTriangle,
-  GraduationCap
-} from "lucide-react";
-import {
-  useGetAssignmentQuery,
-  useListAssignmentAttemptsQuery,
-  useGetAttemptQuery,
-  useStartAttemptMutation,
-  useSaveStudentResponseMutation,
-  useSubmitAttemptMutation,
-  Attempt,
-  StudentResponse
-} from "@/features/assessments/assessmentsApi";
-import { useGetAssessmentQuery } from "@/features/assessments/assessmentsApi";
+  Send} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import React, { useEffect,useState } from "react";
+import { toast } from "sonner";
+
+import { MathRenderer } from "@/components/MathRenderer";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MathRenderer } from "@/components/MathRenderer";
+import {
+  useGetAssignmentQuery,
+  useGetAttemptQuery,
+  useListAssignmentAttemptsQuery,
+  useSaveStudentResponseMutation,
+  useStartAttemptMutation,
+  useSubmitAttemptMutation} from "@/features/assessments/assessmentsApi";
+import { useGetAssessmentQuery } from "@/features/assessments/assessmentsApi";
 import { WidgetSelector } from "@/features/clio/widgets/WidgetSelector";
 
 export default function StudentAssessmentPlayerPage() {
@@ -54,7 +49,7 @@ export default function StudentAssessmentPlayerPage() {
   const latestCompletedAttempt = attempts.find((a) => a.resultStatus === "submitted" || a.resultStatus === "marked" || a.resultStatus === "needs_review");
 
   // 3. Fetch active attempt details if there is one
-  const { data: attemptDetails, isLoading: isLoadingAttemptDetails, refetch: refetchAttempt } =
+  const { data: attemptDetails, isLoading: isLoadingAttemptDetails } =
     useGetAttemptQuery(activeAttemptInfo?.id || "", { skip: !activeAttemptInfo?.id });
 
   // 4. Fetch assessment details
@@ -96,27 +91,40 @@ export default function StudentAssessmentPlayerPage() {
     }
   }, [attemptDetails]);
 
+  // Action: Timer expired auto submit
+  const handleAutoSubmit = React.useCallback(async () => {
+    if (!attemptDetails) return;
+    try {
+      await submitAttempt(attemptDetails.id).unwrap();
+      toast.error("Time limit reached! Your paper was auto-submitted.", { duration: 10000 });
+      refetchAttempts();
+    } catch (err) {
+      console.error(err);
+    }
+  }, [attemptDetails, submitAttempt, refetchAttempts]);
+
   // Set up test timer countdown
   useEffect(() => {
-    if (attemptDetails && assessment) {
-      const start = new Date(attemptDetails.startedAt).getTime();
-      const limit = start + assessment.estimatedDurationMinutes * 60 * 1000;
+    if (!attemptDetails || !assessment) return;
 
-      const updateTimer = () => {
-        const diff = Math.max(0, Math.floor((limit - Date.now()) / 1000));
-        setTimeLeft(diff);
+    const start = new Date(attemptDetails.startedAt).getTime();
+    const limit = start + assessment.estimatedDurationMinutes * 60 * 1000;
+    let expired = false;
 
-        if (diff <= 0) {
-          clearInterval(timerInterval);
-          handleAutoSubmit();
-        }
-      };
+    const tick = () => {
+      const diff = Math.max(0, Math.floor((limit - Date.now()) / 1000));
+      setTimeLeft(diff);
+      if (diff <= 0 && !expired) {
+        expired = true;
+        clearInterval(timerInterval);
+        handleAutoSubmit();
+      }
+    };
 
-      updateTimer();
-      const timerInterval = setInterval(updateTimer, 1000);
-      return () => clearInterval(timerInterval);
-    }
-  }, [attemptDetails, assessment]);
+    const timerInterval = setInterval(tick, 1000);
+    tick();
+    return () => clearInterval(timerInterval);
+  }, [attemptDetails, assessment, handleAutoSubmit]);
 
   if (isLoadingAssignment || isLoadingAttempts || isLoadingAssessment || (activeAttemptInfo && isLoadingAttemptDetails)) {
     return (
@@ -200,18 +208,6 @@ export default function StudentAssessmentPlayerPage() {
     }
   };
 
-  // Action: Timer expired auto submit
-  const handleAutoSubmit = async () => {
-    if (!attemptDetails) return;
-    try {
-      await submitAttempt(attemptDetails.id).unwrap();
-      toast.error("Time limit reached! Your paper was auto-submitted.", { duration: 10000 });
-      refetchAttempts();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   // Format time remaining MM:SS
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -261,7 +257,7 @@ export default function StudentAssessmentPlayerPage() {
                   <div className="text-left pt-2 border-t border-border/80">
                     <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">Teacher Feedback</p>
                     <p className="text-xs text-muted-foreground bg-background/60 p-2.5 rounded-xl border border-border/50 italic">
-                      "{latestCompletedAttempt.teacherComment}"
+                      &quot;{latestCompletedAttempt.teacherComment}&quot;
                     </p>
                   </div>
                 )}

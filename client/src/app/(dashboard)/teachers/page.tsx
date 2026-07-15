@@ -2,12 +2,9 @@
 
 import {
   AlertCircle,
-  BookOpen,
   Briefcase,
-  Calendar,
   Edit2,
   Mail,
-  Phone,
   Plus,
   Search,
   Trash,
@@ -17,7 +14,7 @@ import {
 import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,

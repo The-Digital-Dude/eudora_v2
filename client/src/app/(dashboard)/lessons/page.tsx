@@ -1,53 +1,45 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
-import { toast } from "sonner";
 import {
   AlertCircle,
   ArrowLeft,
   Award,
   Bookmark,
   BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Eye,
   Hash,
   Layers,
+  Link2,
+  Link2Off,
   Loader2,
   PenTool,
   Plus,
-  Search,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
   Save,
-  Eye,
-  Link2,
-  Link2Off,
-  Sparkles,
-  HelpCircle,
-  Code
-} from "lucide-react";
+  Search,
+  Trash2} from "lucide-react";
+import React, { useEffect,useState } from "react";
+import { toast } from "sonner";
 
+import { RichTextEditor } from "@/components/editor/RichTextEditor";
+import { MathRenderer } from "@/components/MathRenderer";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MathRenderer } from "@/components/MathRenderer";
-import { RichTextEditor } from "@/components/editor/RichTextEditor";
-import { WidgetSelector } from "@/features/clio/widgets/WidgetSelector";
 import { useGetQuestionsQuery } from "@/features/assessments/questionsApi";
-
 import {
   useCreateCardMutation,
   useCreateLessonMutation,
+  useDeleteCardMutation,
   useGetConceptsQuery,
   useGetLessonFlowQuery,
   useGetLessonsQuery,
-  useUpdateLessonMutation,
-  useUpdateCardMutation,
   useReorderCardsMutation,
-  useDeleteCardMutation,
-  ClioCard
-} from "@/features/clio/clioApi";
+  useUpdateCardMutation} from "@/features/clio/clioApi";
+import { WidgetSelector } from "@/features/clio/widgets/WidgetSelector";
 
 export default function LessonAuthoringPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,14 +52,13 @@ export default function LessonAuthoringPage() {
   // Queries & Mutations
   const { data: lessons, isLoading: lessonsLoading, refetch: refetchLessons } = useGetLessonsQuery();
   const { data: concepts, isLoading: conceptsLoading } = useGetConceptsQuery();
-  const { data: lessonFlow, isLoading: flowLoading, refetch: refetchFlow } = useGetLessonFlowQuery(
+  const { data: lessonFlow, refetch: refetchFlow } = useGetLessonFlowQuery(
     selectedLessonId ?? "",
     { skip: !selectedLessonId }
   );
 
   const [createLesson, { isLoading: creatingLesson }] = useCreateLessonMutation();
-  const [updateLesson] = useUpdateLessonMutation();
-  const [createCard, { isLoading: creatingCard }] = useCreateCardMutation();
+  const [createCard] = useCreateCardMutation();
   const [updateCard, { isLoading: isSavingCard }] = useUpdateCardMutation();
   const [reorderCards] = useReorderCardsMutation();
   const [deleteCard] = useDeleteCardMutation();
@@ -728,7 +719,7 @@ export default function LessonAuthoringPage() {
               ) : (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-xs font-medium text-muted-foreground">
-                    No lessons available. Click "Create Lesson" to build your first curriculum unit.
+                    No lessons available. Click &quot;Create Lesson&quot; to build your first curriculum unit.
                   </td>
                 </tr>
               )}

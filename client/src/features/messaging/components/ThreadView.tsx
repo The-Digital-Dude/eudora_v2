@@ -1,8 +1,9 @@
 ﻿"use client";
 
-import React, { useEffect, useRef } from "react";
 import { format } from "date-fns";
-import { Send, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
+import React, { useEffect, useRef } from "react";
+
 import type { MessageThread } from "../messagingApi";
 import { useMarkThreadReadMutation } from "../messagingApi";
 

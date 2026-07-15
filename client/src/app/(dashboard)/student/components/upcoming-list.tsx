@@ -1,8 +1,8 @@
 ﻿"use client";
 
-import React from "react";
-import { Calendar, PenTool, ClipboardCheck, Clock, CheckCircle } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { Calendar, CheckCircle,ClipboardCheck, Clock, PenTool } from "lucide-react";
+import React from "react";
 
 interface UpcomingItem {
   id: string;
@@ -65,7 +65,7 @@ export function UpcomingList({ homework, assessments, isLoading }: UpcomingListP
         <div>
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
             <Clock className="h-4. w-4 text-primary" />
-            What's Due Next
+            What&apos;s Due Next
           </h3>
           <p className="text-[10px] text-muted-foreground">
             Keep track of homework and upcoming assessments.

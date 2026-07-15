@@ -1,13 +1,9 @@
 ﻿"use client";
 
 import {
-  Award,
   Calendar,
-  Eye,
   GraduationCap,
   Plus,
-  RefreshCw,
-  UploadCloud,
   Users,
 } from "lucide-react";
 import * as React from "react";
@@ -15,7 +11,6 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
 import {
   Dialog,
   DialogContent,
@@ -24,13 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Timetable,
   TimetableSlot,
   useCreateTimetableMutation,
-  useGetClassSectionScheduleQuery,
   useGetStudentScheduleQuery,
   useGetTeacherMeQuery,
   useGetTeacherScheduleQuery,
@@ -97,7 +92,7 @@ export default function TimetablePage() {
   const [publishTimetable, { isLoading: isPublishing }] = usePublishTimetableMutation();
 
   // Load teacher profile if teacher
-  const { data: teacherProfile, isLoading: loadingTeacherProfile } = useGetTeacherMeQuery(
+  const { data: teacherProfile } = useGetTeacherMeQuery(
     undefined,
     {
       skip: !isTeacher,
@@ -105,7 +100,7 @@ export default function TimetablePage() {
   );
 
   // Queries depending on role
-  const { data: timetablesData, refetch: refetchTimetables } = useGetTimetablesQuery(
+  const { data: timetablesData } = useGetTimetablesQuery(
     isAdmin
       ? {
           academicYearId: selectedYearId !== "all" ? selectedYearId : undefined,

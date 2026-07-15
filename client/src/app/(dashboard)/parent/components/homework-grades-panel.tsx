@@ -1,8 +1,8 @@
 ﻿"use client";
 
-import React, { useState } from "react";
-import { PenTool, ClipboardList, CheckCircle2, AlertCircle, Clock, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { Calendar, ClipboardList, Clock, PenTool } from "lucide-react";
+import React, { useState } from "react";
 
 interface HomeworkGradesPanelProps {
   homework: any[];

@@ -1,8 +1,8 @@
 ﻿"use client";
 
+import { Medal, Sparkles, TrendingUp, Trophy, Users } from "lucide-react";
 import React, { useState } from "react";
-import { Trophy, Medal, Sparkles, TrendingUp, Users } from "lucide-react";
-import type { LeaderboardData } from "@/features/student/studentApi";
+
 import { useGetLeaderboardQuery } from "@/features/student/studentApi";
 
 export function LeaderboardCard() {

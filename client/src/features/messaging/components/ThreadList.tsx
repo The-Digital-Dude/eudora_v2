@@ -1,8 +1,9 @@
 ﻿"use client";
 
-import React from "react";
-import { MessageSquare, Plus, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import {MessageSquare, Plus } from "lucide-react";
+import React from "react";
+
 import type { MessageThread } from "../messagingApi";
 
 interface ThreadListProps {
@@ -52,7 +53,6 @@ export function ThreadList({
             const isGuardian = thread.guardianUserId === currentUserId;
             const partner = isGuardian ? thread.teacher : thread.guardian;
             const partnerName = partner ? `${partner.firstName} ${partner.lastName}` : "Participant";
-            const partnerRole = isGuardian ? "Teacher" : "Parent";
 
             return (
               <button

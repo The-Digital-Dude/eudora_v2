@@ -5,18 +5,14 @@ import {
   BarChart3,
   Calendar,
   CheckCircle,
-  ChevronRight,
   ClipboardList,
-  Clock,
   GraduationCap,
-  Info,
   Save,
   Search,
   Sparkles,
   TrendingDown,
   TrendingUp,
   Users,
-  XCircle,
 } from "lucide-react";
 import * as React from "react";
 import {
@@ -95,7 +91,7 @@ export default function AttendancePage() {
 
   // Queries
   const { data: classSectionsData, isLoading: isLoadingClasses } = useGetClassSectionsQuery();
-  const classSections = classSectionsData?.items || [];
+  const classSections = React.useMemo(() => classSectionsData?.items ?? [], [classSectionsData]);
 
   // Set default class section if empty
   React.useEffect(() => {
@@ -121,7 +117,6 @@ export default function AttendancePage() {
   );
 
   // Load Stats Summaries
-  const todayStr = new Date().toISOString().split("T")[0];
   const startOfMonthStr = `${selectedDate.substring(0, 7)}-01`;
   const { data: classSummary } = useGetClassAttendanceSummaryQuery(
     { classSectionId: selectedClassId, startDate: startOfMonthStr, endDate: selectedDate },

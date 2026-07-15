@@ -23,8 +23,8 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { getRoleHome, getShellBrand, hasAccess } from "@/lib/access-control";
 import { isNavParent,type NavGroup, navGroups } from "@/config/nav-config";
+import { getRoleHome, getShellBrand, hasAccess } from "@/lib/access-control";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: {

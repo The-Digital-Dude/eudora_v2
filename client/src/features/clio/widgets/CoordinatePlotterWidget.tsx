@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import React, { useRef } from "react";
+
 import type { CoordinatePlotterConfig } from "../../assessments/widgetConfigSchemas";
 
 interface CoordinatePlotterWidgetProps {
@@ -63,7 +64,7 @@ export function CoordinatePlotterWidget({
       (p) => Math.abs(p.x - snapX) < 0.01 && Math.abs(p.y - snapY) < 0.01
     );
 
-    let newPoints = [...points];
+    const newPoints = [...points];
     if (existingIndex > -1) {
       newPoints.splice(existingIndex, 1);
     } else {

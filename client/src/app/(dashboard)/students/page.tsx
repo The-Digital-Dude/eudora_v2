@@ -3,7 +3,6 @@
 import {
   AlertCircle,
   BookOpen,
-  Calendar,
   Edit2,
   GraduationCap,
   Mail,
@@ -11,13 +10,12 @@ import {
   Search,
   Trash,
   Trash2,
-  User,
   Users,
 } from "lucide-react";
 import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { DataState } from "@/components/ui/data-state";
 import {
   Dialog,
@@ -37,12 +35,12 @@ import {
   useDeleteStudentEnrollmentMutation,
   useDeleteStudentPlacementMutation,
   useDeleteStudentProfileMutation,
-  useRestoreStudentProfileMutation,
   useGetAcademicYearsQuery,
   useGetClassSectionsQuery,
   useGetCourseClassesQuery,
   useGetStudentProfilesQuery,
   useGetUsersQuery,
+  useRestoreStudentProfileMutation,
   useUpdateStudentProfileMutation,
 } from "@/features/dashboard/dashboardApi";
 

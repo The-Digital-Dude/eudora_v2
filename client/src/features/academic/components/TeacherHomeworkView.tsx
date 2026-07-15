@@ -71,7 +71,7 @@ export function TeacherHomeworkView() {
 
   // Queries
   const { data: courseClassesData, isLoading: isLoadingClasses } = useGetCourseClassesQuery();
-  const courseClasses = courseClassesData?.items || [];
+  const courseClasses = React.useMemo(() => courseClassesData?.items ?? [], [courseClassesData]);
 
   // Set default class if empty
   React.useEffect(() => {

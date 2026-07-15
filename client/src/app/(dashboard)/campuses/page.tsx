@@ -2,13 +2,9 @@
 
 import {
   AlertCircle,
-  Calendar,
-  CheckCircle,
   Clock,
   Edit2,
-  Globe,
   GraduationCap,
-  Layers,
   Mail,
   MapPin,
   Phone,

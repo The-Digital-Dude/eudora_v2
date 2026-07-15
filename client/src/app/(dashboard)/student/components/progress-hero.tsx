@@ -1,7 +1,8 @@
 ﻿"use client";
 
+import { BookOpen,Flame, Star, Trophy } from "lucide-react";
 import React from "react";
-import { Flame, Star, Trophy, Award, BookOpen } from "lucide-react";
+
 import type { GamificationMe } from "@/features/student/studentApi";
 
 interface ProgressHeroProps {

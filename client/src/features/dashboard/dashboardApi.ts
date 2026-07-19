@@ -57,11 +57,29 @@ export interface BillingPlan {
   priceAnnual: number;
   currency: string;
   active: boolean;
+  stripeProductId?: string;
   stripePriceIdMonthly?: string;
   stripePriceIdAnnual?: string;
   maxStudents?: number | null;
   maxCampuses?: number | null;
   maxPrograms?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CampusSubscription {
+  id: string;
+  campusId: string;
+  planId: string;
+  plan?: BillingPlan;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  status: "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED" | "UNPAID";
+  interval: "MONTHLY" | "ANNUAL";
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  trialEndsAt?: string | null;
+  canceledAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -409,6 +427,49 @@ export const dashboardApi = authApi.injectEndpoints({
         body,
       }),
       invalidatesTags: ["BillingPlans"],
+    } as any),
+
+    /**
+     * Create or refresh the Stripe Product/Price for a plan. Runs automatically
+     * on create/update; this is the manual retry when that sync failed.
+     */
+    syncBillingPlanToStripe: builder.mutation<BillingPlan, string>({
+      query: (id: string) => ({
+        url: `/billing/plans/${id}/sync-stripe`,
+        method: "POST",
+      }),
+      invalidatesTags: ["BillingPlans"],
+    } as any),
+
+    /**
+     * Start a Stripe Checkout session for a paid plan.
+     * Returns a hosted Checkout URL — redirect the browser to it.
+     */
+    createCheckoutSession: builder.mutation<
+      { sessionId: string; url: string | null },
+      { campusId: string; planId: string; interval?: "MONTHLY" | "ANNUAL" }
+    >({
+      query: (body: any) => ({
+        url: "/billing/subscriptions/checkout-session",
+        method: "POST",
+        body,
+      }),
+    } as any),
+
+    /**
+     * Open the Stripe Billing Portal (update card, invoices, cancel).
+     * Returns a hosted portal URL — redirect the browser to it.
+     */
+    createBillingPortalSession: builder.mutation<{ url: string }, string>({
+      query: (campusId: string) => ({
+        url: `/billing/subscriptions/campus/${campusId}/portal-session`,
+        method: "POST",
+      }),
+    } as any),
+
+    getCampusSubscription: builder.query<CampusSubscription, string>({
+      query: (campusId: string) => `/billing/subscriptions/campus/${campusId}`,
+      providesTags: ["CampusSubscription"],
     } as any),
 
     getLeads: builder.query<
@@ -799,6 +860,10 @@ export const {
   useGetRolesQuery,
   useGetBillingPlansQuery,
   useCreateBillingPlanMutation,
+  useSyncBillingPlanToStripeMutation,
+  useCreateCheckoutSessionMutation,
+  useCreateBillingPortalSessionMutation,
+  useGetCampusSubscriptionQuery,
   useGetLeadsQuery,
   useCreateLeadMutation,
   useUpdateLeadMutation,

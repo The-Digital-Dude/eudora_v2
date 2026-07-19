@@ -104,6 +104,7 @@ export const authApi = createApi({
     "Users",
     "Roles",
     "BillingPlans",
+    "CampusSubscription",
     "Leads",
     "CourseClasses",
     "ClassSections",

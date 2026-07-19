@@ -512,6 +512,7 @@ model Plan {
   priceMonthly         Decimal  @db.Decimal(10, 2)
   priceAnnual          Decimal  @db.Decimal(10, 2)
   currency             String   @default("USD")
+  stripeProductId      String?
   stripePriceIdMonthly String?
   stripePriceIdAnnual  String?
   maxStudents          Int? // null = unlimited
@@ -587,6 +588,17 @@ model Payment {
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@map("payments")
+}
+
+/// Records every Stripe event we have already processed.
+/// Stripe delivers webhooks at-least-once, so handlers must be idempotent;
+/// inserting the event id under a unique constraint is the dedup mechanism.
+model StripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+
+  @@map("stripe_events")
 }
 
 // ─── Attendance ──────────────────────────────────────────────────────────────

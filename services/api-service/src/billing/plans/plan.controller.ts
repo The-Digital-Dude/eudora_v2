@@ -55,6 +55,16 @@ export class PlanController {
     return this.planService.update(id, dto);
   }
 
+  /**
+   * Create or refresh the Stripe Product/Prices backing this plan.
+   * Runs automatically on create/update; this is the manual retry path for when
+   * that best-effort sync failed (e.g. Stripe was unreachable).
+   */
+  @Post(':id/sync-stripe')
+  syncToStripe(@Param('id') id: string) {
+    return this.planService.syncToStripe(id);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.planService.remove(id);

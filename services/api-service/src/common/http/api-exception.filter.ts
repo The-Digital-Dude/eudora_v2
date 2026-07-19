@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import {
   createMeta,
@@ -28,11 +29,22 @@ type JsonResponseLike = {
 @Catch()
 @Injectable()
 export class ApiExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(ApiExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const httpContext = host.switchToHttp();
     const request = httpContext.getRequest<HttpRequestLike>();
     const response = httpContext.getResponse<JsonResponseLike>();
     const statusCode = getStatusCode(exception);
+
+    // Stripe failures are otherwise invisible: the client sees a bare 500 and
+    // nothing reaches the logs. Always record the underlying reason.
+    if (isStripeError(exception)) {
+      this.logger.error(
+        `Stripe ${exception.type ?? 'error'} on ${request?.method ?? '?'} ` +
+          `${request?.url ?? '?'}: ${exception.message}`,
+      );
+    }
 
     if (isRawResponsePath(request)) {
       response.status(statusCode).json(getRawErrorBody(exception, statusCode));
@@ -67,6 +79,10 @@ function getStatusCode(exception: unknown): number {
     return HttpStatus.BAD_REQUEST;
   }
 
+  if (isStripeError(exception)) {
+    return stripeStatusCode(exception.type);
+  }
+
   return HttpStatus.INTERNAL_SERVER_ERROR;
 }
 
@@ -99,6 +115,10 @@ function normalizeException(
         code: fallbackCode,
         message: 'Invalid database query input',
       };
+    }
+
+    if (isStripeError(exception)) {
+      return normalizeStripeError(exception, fallbackCode);
     }
 
     return {
@@ -142,6 +162,71 @@ function normalizeException(
       : exception.message || 'Request failed';
 
   return errors ? { code, message, errors } : { code, message };
+}
+
+type StripeErrorLike = {
+  type: string;
+  message: string;
+  code?: string;
+  statusCode?: number;
+};
+
+/** Stripe SDK errors all carry a `type` of the form `Stripe*Error`. */
+function isStripeError(exception: unknown): exception is StripeErrorLike {
+  return (
+    isRecord(exception) &&
+    typeof exception.type === 'string' &&
+    /^Stripe[A-Za-z]*Error$/.test(exception.type) &&
+    typeof exception.message === 'string'
+  );
+}
+
+function stripeStatusCode(type: string): number {
+  switch (type) {
+    case 'StripeCardError':
+      // The card was declined — the caller can act on this.
+      return HttpStatus.PAYMENT_REQUIRED;
+    case 'StripeInvalidRequestError':
+      return HttpStatus.BAD_REQUEST;
+    case 'StripeRateLimitError':
+      return HttpStatus.TOO_MANY_REQUESTS;
+    case 'StripeAuthenticationError':
+    case 'StripePermissionError':
+      // Our credentials are wrong — a server misconfiguration, not the
+      // caller's fault, so this must not be reported as a 4xx.
+      return HttpStatus.SERVICE_UNAVAILABLE;
+    default:
+      return HttpStatus.BAD_GATEWAY;
+  }
+}
+
+function normalizeStripeError(
+  exception: StripeErrorLike,
+  fallbackCode: string,
+): {
+  code: string;
+  message: string;
+} {
+  switch (exception.type) {
+    case 'StripeAuthenticationError':
+    case 'StripePermissionError':
+      // Never echo the key material back to the client; the real reason is
+      // logged server-side.
+      return {
+        code: fallbackCode,
+        message:
+          'Payment provider is not configured correctly. Please contact support.',
+      };
+    case 'StripeCardError':
+    case 'StripeInvalidRequestError':
+      // Safe and actionable, e.g. "No such price: price_x" or a card decline.
+      return { code: fallbackCode, message: exception.message };
+    default:
+      return {
+        code: fallbackCode,
+        message: 'Payment provider request failed. Please try again.',
+      };
+  }
 }
 
 type PrismaKnownRequestErrorLike = {

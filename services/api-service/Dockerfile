@@ -8,13 +8,16 @@ RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 
 WORKDIR /app
 
-# Copy manifest files — no lockfile so pnpm resolves fresh and avoids the
-# pnpm v10 minimumReleaseAge supply-chain check on recently published packages
-COPY package.json .npmrc pnpm-workspace.yaml ./
+# Copy manifest files. The lockfile pins the resolved tree to match local dev
+# exactly — pnpm-workspace.yaml's auditConfig.minimumReleaseAge: 0 already
+# disables the supply-chain check that an earlier version of this file worked
+# around by omitting the lockfile (which caused an unpinned resolve where
+# Prisma's config loader couldn't reach the `dotenv` transitive dependency).
+COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml ./
 
 # 1. Install without running any lifecycle scripts (avoids ERR_PNPM_IGNORED_BUILDS)
 # 2. Then explicitly rebuild only the packages that need their scripts
-RUN pnpm install --ignore-scripts \
+RUN pnpm install --frozen-lockfile --ignore-scripts \
     && pnpm rebuild @prisma/engines prisma unrs-resolver
 
 # ──────────────────────────────────────────────────────────────────
@@ -28,6 +31,11 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Prisma 7's config file eagerly validates env('DATABASE_URL') even for a
+# schema-only `generate` step. The real value is injected at container
+# runtime (see CMD below) — this placeholder only needs to be a parseable URL.
+ENV DATABASE_URL="postgresql://user:password@localhost:5432/db"
 
 # Generate Prisma client
 RUN pnpm prisma generate
@@ -55,6 +63,10 @@ COPY --from=builder --chown=nestjs:nodejs /app/prisma          ./prisma
 COPY --from=builder --chown=nestjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder --chown=nestjs:nodejs /app/package.json    ./package.json
 
+# LocalStorageService creates this at boot when STORAGE_PROVIDER=LOCAL (the
+# default) — must pre-exist and be writable by the non-root runtime user.
+RUN mkdir -p /app/uploads && chown nestjs:nodejs /app/uploads
+
 USER nestjs
 
 ENV NODE_ENV=production
@@ -63,4 +75,4 @@ ENV PORT=3000
 EXPOSE 3000
 
 # Run DB migrations then start the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]

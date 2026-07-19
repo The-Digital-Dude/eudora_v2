@@ -122,7 +122,9 @@ jobs:
   deploy:
     name: Deploy to GCP
     needs: [frontend, backend]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # GCP deploy is paused while the app runs on Railway — flip on by setting
+    # the GCP_DEPLOY_ENABLED repo variable to "true" once GCP billing/secrets are wired back up.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.GCP_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     
     permissions:

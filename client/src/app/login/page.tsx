@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useGoogleLogin } from "@react-oauth/google";
 import { ArrowRight, Eye, EyeOff, Lock, Mail, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useGoogleLoginMutation, useLoginMutation } from "@/features/auth/authApi";
+import { useLoginMutation } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
 import { getPrimaryRole, getRoleHome } from "@/lib/access-control";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -46,7 +45,6 @@ export default function LoginPage() {
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const user = useAppSelector((state) => state.auth.user) as any;
   const [loginMutation, { isLoading: loading }] = useLoginMutation();
-  const [googleLoginMutation, { isLoading: googleLoading }] = useGoogleLoginMutation();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema as any),
@@ -99,27 +97,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        const loggedInUser = await googleLoginMutation({
-          token: tokenResponse.access_token,
-          role: loginAs === "guardian" ? "GUARDIAN" : "USER",
-        }).unwrap();
-        dispatch(login({ user: loggedInUser, token: null }));
-        toast.success("Successfully logged in with Google!");
-        checkRedirect(loggedInUser);
-      } catch (err: any) {
-        console.error(err);
-        const errMsg = err?.data?.message || "Google authentication failed. Please try again.";
-        toast.error(errMsg);
-      }
-    },
-    onError: () => {
-      toast.error("Google authentication failed. Please try again.");
-    },
-  });
-
   return (
     <div className="dot-grid bg-background text-foreground relative flex min-h-screen flex-col items-center justify-center px-4 py-12 font-sans select-none">
       <div className="animate-fade-in-up w-full max-w-[440px] space-y-8">
@@ -167,8 +144,6 @@ export default function LoginPage() {
           <div className="mb-6 grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => handleGoogleLogin()}
-              disabled={googleLoading || loading}
               className="border-border bg-card text-card-foreground hover:bg-accent flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-sm transition-all active:scale-98 disabled:opacity-50"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">

@@ -83,6 +83,26 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, user, checkRedirect]);
 
+  // The Apple callback cannot render a toast itself — it is a server-side
+  // redirect — so it hands back a fixed slug for us to translate here.
+  // Read from location rather than useSearchParams: the latter would force the
+  // whole page behind a Suspense boundary to keep prerendering working.
+  useEffect(() => {
+    const error = new URLSearchParams(window.location.search).get("error");
+    if (!error) return;
+
+    const messages: Record<string, string> = {
+      apple_cancelled: "Apple sign-in was cancelled.",
+      apple_rejected:
+        "Apple sign-in was rejected. If this email already has an account, sign in with your password first.",
+      apple_failed: "Apple sign-in failed. Please try again.",
+    };
+    if (messages[error]) {
+      toast.error(messages[error]);
+      router.replace("/login");
+    }
+  }, [router]);
+
   const handleLogin = async (values: LoginFormValues) => {
     try {
       const loggedInUser = await loginMutation({
@@ -191,21 +211,20 @@ export default function LoginPage() {
               </svg>
               Google
             </button>
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              className="border-border bg-card text-card-foreground flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold opacity-50 shadow-sm"
+            {/*
+              Apple is a plain navigation, not a fetch: the flow is a
+              server-side redirect that ends in a cross-site form_post back to
+              /api/auth/apple/callback, which sets the session cookies itself.
+            */}
+            <a
+              href={`/api/auth/apple/start?role=${loginAs === "guardian" ? "GUARDIAN" : "USER"}`}
+              className="border-border bg-card text-card-foreground hover:bg-accent flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-sm transition-all active:scale-98"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.164 22 16.418 22 12c0-5.523-4.477-10-10-10z"
-                />
+                <path d="M17.05 12.54c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.48.83-.72 0-1.83-.81-3-.79-1.55.02-2.98.9-3.77 2.28-1.61 2.79-.41 6.92 1.15 9.18.76 1.11 1.67 2.35 2.87 2.31 1.15-.05 1.58-.74 2.97-.74 1.39 0 1.78.74 3 .72 1.24-.02 2.02-1.13 2.78-2.24.88-1.29 1.24-2.54 1.26-2.6-.03-.01-2.41-.93-2.42-3.69zM14.79 5.4c.63-.77 1.06-1.83.94-2.9-.91.04-2.01.61-2.67 1.37-.59.68-1.1 1.77-.96 2.81 1.01.08 2.05-.51 2.69-1.28z" />
               </svg>
-              GitHub
-            </button>
+              Apple
+            </a>
           </div>
 
           {/* Divider */}

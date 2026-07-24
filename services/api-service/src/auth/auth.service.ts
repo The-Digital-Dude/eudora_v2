@@ -7,19 +7,35 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '../prisma/prisma.service';
+import { NormalizedOAuthProfile, resolveSelfSignupRole } from './oauth/types';
+import { GoogleOAuthProvider } from './oauth/providers/google.provider';
+import { AppleOAuthProvider } from './oauth/providers/apple.provider';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { GoogleLoginDto } from './dto/google.dto';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
+  /** Relations every session-issuing path needs loaded on the user. */
+  private static readonly USER_SESSION_INCLUDE = {
+    roles: {
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+      },
+    },
+    guardianProfile: { include: { students: true } },
+    studentProfile: true,
+  } as const;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly googleProvider: GoogleOAuthProvider,
+    private readonly appleProvider: AppleOAuthProvider,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -153,7 +169,9 @@ export class AuthService {
     }
 
     if (!user.password) {
-      throw new UnauthorizedException('Please log in using Google');
+      throw new UnauthorizedException(
+        'This account has no password. Please sign in with your linked provider.',
+      );
     }
 
     const passwordMatches = await bcrypt.compare(dto.password, user.password);
@@ -233,113 +251,172 @@ export class AuthService {
   }
 
   async loginWithGoogle(
-    dto: any,
+    dto: GoogleLoginDto,
     userAgent?: string | null,
     ipAddress?: string | null,
   ) {
-    const { token, role } = dto;
-    const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
-    if (!googleClientId) {
-      throw new BadRequestException('Google sign-in is not configured');
-    }
-    const client = new OAuth2Client(googleClientId);
+    const profile = await this.googleProvider.verify(dto.token);
+    return this.linkOrCreateOAuthUser(profile, dto.role, userAgent, ipAddress);
+  }
 
-    let email: string | undefined;
-    let googleId: string | undefined;
-    let firstName: string | undefined;
-    let lastName: string | undefined;
+  /**
+   * Builds the Apple authorization URL and the state that protects it.
+   *
+   * State is a signed JWT carrying a nonce plus the role hint. The nonce is
+   * also set as a cookie, so the callback can confirm the response belongs to
+   * the browser that started the flow — a signature alone would not stop an
+   * attacker replaying their own valid state to log a victim into the
+   * attacker's account.
+   */
+  buildAppleAuthorization(roleHint?: string | null): {
+    url: string;
+    nonce: string;
+  } {
+    const nonce = crypto.randomBytes(32).toString('hex');
+    const state = this.jwtService.sign(
+      { typ: 'apple_state', nonce, roleHint: roleHint ?? null },
+      { expiresIn: '10m' },
+    );
+    return { url: this.appleProvider.buildAuthorizationUrl(state), nonce };
+  }
 
-    if (token.startsWith('ey')) {
-      // JWT (ID Token)
-      let ticket;
-      try {
-        ticket = await client.verifyIdToken({
-          idToken: token,
-          audience: googleClientId,
-        });
-      } catch (error) {
-        throw new UnauthorizedException('Invalid Google ID token');
-      }
-
-      const payload = ticket.getPayload();
-      if (!payload) {
-        throw new UnauthorizedException('Invalid Google ID token payload');
-      }
-
-      email = payload.email;
-      googleId = payload.sub;
-      firstName = payload.given_name;
-      lastName = payload.family_name;
-    } else {
-      // Access Token — verify the token was issued for THIS application before
-      // trusting any claims. Without this check, an access token minted for a
-      // different Google client (e.g. a malicious third-party app the victim
-      // signed into) would be accepted, allowing account takeover.
-      let tokenInfo;
-      try {
-        tokenInfo = await client.getTokenInfo(token);
-      } catch (err) {
-        throw new UnauthorizedException('Invalid Google access token');
-      }
-
-      if (tokenInfo.aud !== googleClientId) {
-        throw new UnauthorizedException(
-          'Google access token was not issued for this application',
-        );
-      }
-
-      email = tokenInfo.email;
-      googleId = tokenInfo.sub;
-
-      // Names are not returned by tokeninfo; enrich from userinfo best-effort.
-      try {
-        const response = await fetch(
-          `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`,
-        );
-        const payload = await response.json();
-        if (payload && !payload.error && !payload.error_description) {
-          firstName = payload.given_name;
-          lastName = payload.family_name;
-        }
-      } catch (err) {
-        // Profile enrichment is optional; ignore failures here.
-      }
+  async loginWithApple(
+    params: {
+      code: string;
+      state: string;
+      user?: string;
+      cookieNonce?: string;
+    },
+    userAgent?: string | null,
+    ipAddress?: string | null,
+  ) {
+    let statePayload: {
+      typ?: string;
+      nonce?: string;
+      roleHint?: string | null;
+    };
+    try {
+      statePayload = this.jwtService.verify(params.state);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired Apple sign-in state');
     }
 
-    if (!email) {
-      throw new BadRequestException('Google token does not provide email');
+    if (statePayload.typ !== 'apple_state' || !statePayload.nonce) {
+      throw new UnauthorizedException('Invalid Apple sign-in state');
     }
 
-    let user = await this.prisma.user.findFirst({
+    const expected = Buffer.from(statePayload.nonce);
+    const received = Buffer.from(params.cookieNonce ?? '');
+    // timingSafeEqual throws on a length mismatch, and the length is
+    // attacker-controlled, so compare sizes first.
+    if (
+      expected.length !== received.length ||
+      !crypto.timingSafeEqual(expected, received)
+    ) {
+      throw new UnauthorizedException(
+        'Apple sign-in state did not match this browser session',
+      );
+    }
+
+    const profile = await this.appleProvider.verifyCallback(
+      params.code,
+      params.user,
+    );
+    return this.linkOrCreateOAuthUser(
+      profile,
+      statePayload.roleHint,
+      userAgent,
+      ipAddress,
+    );
+  }
+
+  /**
+   * Shared tail of every OAuth sign-in, regardless of provider. Resolves the
+   * verified profile to a user in one of three ways:
+   *
+   *   1. A UserIdentity already exists for (provider, sub) -> log that user in.
+   *   2. No identity, but a user holds the same email -> link, but ONLY if the
+   *      provider asserts the email is verified. Linking on an unverified email
+   *      would let anyone who can get a provider to emit an arbitrary address
+   *      take over an existing password account.
+   *   3. Nothing matches -> create a user, but only for self-signup roles.
+   */
+  private async linkOrCreateOAuthUser(
+    profile: NormalizedOAuthProfile,
+    roleHint: string | null | undefined,
+    userAgent?: string | null,
+    ipAddress?: string | null,
+  ) {
+    const email = profile.email.trim().toLowerCase();
+    const provider = profile.provider;
+    const providerLabel = provider.toLowerCase();
+
+    const identity = await this.prisma.userIdentity.findUnique({
       where: {
-        OR: [{ googleId }, { email: email.toLowerCase().trim() }],
-      },
-      include: {
-        roles: {
-          include: {
-            role: {
-              include: {
-                permissions: {
-                  include: {
-                    permission: true,
-                  },
-                },
-              },
-            },
-          },
+        provider_providerUserId: {
+          provider,
+          providerUserId: profile.providerUserId,
         },
-        guardianProfile: {
-          include: {
-            students: true,
-          },
-        },
-        studentProfile: true,
       },
+      select: { userId: true },
     });
 
+    let user = identity
+      ? await this.prisma.user.findUnique({
+          where: { id: identity.userId },
+          include: AuthService.USER_SESSION_INCLUDE,
+        })
+      : null;
+
     if (!user) {
-      // New signup!
-      const targetRole = role === 'GUARDIAN' ? 'GUARDIAN' : 'USER';
+      const existingByEmail = await this.prisma.user.findUnique({
+        where: { email },
+        include: AuthService.USER_SESSION_INCLUDE,
+      });
+
+      if (existingByEmail) {
+        if (!profile.emailVerified) {
+          await this.audit(
+            existingByEmail.id,
+            `auth.link.${providerLabel}.rejected`,
+            'user',
+            existingByEmail.id,
+            ipAddress,
+            userAgent,
+            { reason: 'email_not_verified', email },
+          );
+          throw new UnauthorizedException(
+            'This email is already registered. Sign in with your password, then link this provider from account settings.',
+          );
+        }
+
+        await this.prisma.userIdentity.create({
+          data: {
+            userId: existingByEmail.id,
+            provider,
+            providerUserId: profile.providerUserId,
+            email,
+            emailVerified: profile.emailVerified,
+            isPrivateRelay: profile.isPrivateRelay ?? false,
+            lastLoginAt: new Date(),
+          },
+        });
+        await this.audit(
+          existingByEmail.id,
+          `auth.link.${providerLabel}`,
+          'user',
+          existingByEmail.id,
+          ipAddress,
+          userAgent,
+        );
+        user = existingByEmail;
+      }
+    }
+
+    if (!user) {
+      // New account. The role is resolved server-side from an allowlist; a
+      // roleHint naming TEACHER/STAFF/ADMIN is ignored rather than honoured.
+      const targetRole = resolveSelfSignupRole(roleHint);
       const dbRole = await this.prisma.role.findUnique({
         where: { name: targetRole },
       });
@@ -351,78 +428,53 @@ export class AuthService {
 
       user = await this.prisma.user.create({
         data: {
-          email: email.toLowerCase().trim(),
-          googleId,
-          firstName: firstName || '',
-          lastName: lastName || '',
-          roles: {
+          email,
+          firstName: profile.firstName || '',
+          lastName: profile.lastName || '',
+          roles: { create: { roleId: dbRole.id } },
+          identities: {
             create: {
-              roleId: dbRole.id,
+              provider,
+              providerUserId: profile.providerUserId,
+              email,
+              emailVerified: profile.emailVerified,
+              isPrivateRelay: profile.isPrivateRelay ?? false,
+              lastLoginAt: new Date(),
             },
           },
         },
-        include: {
-          roles: {
-            include: {
-              role: {
-                include: {
-                  permissions: {
-                    include: {
-                      permission: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          guardianProfile: {
-            include: {
-              students: true,
-            },
-          },
-          studentProfile: true,
-        },
+        include: AuthService.USER_SESSION_INCLUDE,
       });
       await this.audit(
         user.id,
-        'auth.signup.google',
+        `auth.signup.${providerLabel}`,
         'user',
         user.id,
         ipAddress,
         userAgent,
       );
     } else {
-      // User exists. Let's make sure googleId is linked if not set.
-      if (!user.googleId) {
-        user = await this.prisma.user.update({
-          where: { id: user.id },
-          data: { googleId },
-          include: {
-            roles: {
-              include: {
-                role: {
-                  include: {
-                    permissions: {
-                      include: {
-                        permission: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            guardianProfile: {
-              include: {
-                students: true,
-              },
-            },
-            studentProfile: true,
-          },
-        });
+      // Mirrors the password path: a deactivated or soft-deleted account must
+      // not be reachable just because it holds a linked provider identity.
+      if (user.deletedAt || !user.isActive) {
+        await this.audit(
+          user.id,
+          `auth.login.${providerLabel}.inactive`,
+          'user',
+          user.id,
+          ipAddress,
+          userAgent,
+        );
+        throw new UnauthorizedException('Account is not active');
       }
+
+      await this.prisma.userIdentity.updateMany({
+        where: { userId: user.id, provider },
+        data: { lastLoginAt: new Date() },
+      });
       await this.audit(
         user.id,
-        'auth.login.google',
+        `auth.login.${providerLabel}`,
         'user',
         user.id,
         ipAddress,
@@ -437,10 +489,7 @@ export class AuthService {
     );
 
     const { password: _, ...result } = user;
-    return {
-      user: result,
-      tokens,
-    };
+    return { user: result, tokens };
   }
 
   async refreshSession(

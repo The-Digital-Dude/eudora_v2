@@ -39,11 +39,18 @@ export function getUserPermissions(user: AuthUser | null | undefined): AuthPermi
   return Array.isArray(user?.permissions) ? user!.permissions! : [];
 }
 
-/** SUPER_ADMIN always passes, matching the backend RolesGuard/PermissionsGuard bypass. */
+/**
+ * SUPER_ADMIN always passes permission checks, matching the backend RolesGuard/PermissionsGuard
+ * bypass. `roles` requirements are exempt: they name their intended audience explicitly (admin
+ * screens spread ADMIN_ROLES in), so a blanket bypass would defeat lists that deliberately
+ * exclude admins, like the parent/student/teacher portals.
+ */
 export function hasAccess(user: AuthUser | null | undefined, requirement: NavRequirement): boolean {
   const roles = getUserRoles(user);
-  if (roles.includes("SUPER_ADMIN")) return true;
   if (roles.length === 0) return false;
+  // Old blanket bypass — restore this instead of the line below to make SUPER_ADMIN pass every requirement again.
+  // if (roles.includes("SUPER_ADMIN")) return true;
+  if (requirement.type !== "roles" && roles.includes("SUPER_ADMIN")) return true;
 
   switch (requirement.type) {
     case "always":

@@ -1,6 +1,8 @@
 ﻿"use client";
 
-import { useRive } from "@rive-app/react-canvas";
+import type { DotLottie } from "@lottiefiles/dotlottie-react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { Flame } from "lucide-react";
 import React, { useEffect, useRef,useState } from "react";
 
 interface GamificationHUDProps {
@@ -21,27 +23,14 @@ export function GamificationHUD({
   const [displayedXp, setDisplayedXp] = useState(sessionXp);
   const [animateXp, setAnimateXp] = useState(false);
   const prevXpRef = useRef(sessionXp);
-
-  // Rive animation for streak flame
-  const { RiveComponent: StreakFlameComponent } = useRive({
-    src: "/rive/streak-flame.riv",
-    autoplay: true,
-  });
-
-  // Rive animation for XP burst particle effect
-  const { rive: xpRive, RiveComponent: XpBurstComponent } = useRive({
-    src: "/rive/xp-burst.riv",
-    autoplay: false,
-  });
+  const xpBurstRef = useRef<DotLottie | null>(null);
 
   useEffect(() => {
     if (sessionXp > prevXpRef.current) {
       // Trigger animations
       setAnimateXp(true);
-      if (xpRive) {
-        xpRive.stop();
-        xpRive.play();
-      }
+      xpBurstRef.current?.setFrame(0);
+      xpBurstRef.current?.play();
 
       // Animate the XP counter counting up
       const diff = sessionXp - prevXpRef.current;
@@ -71,7 +60,7 @@ export function GamificationHUD({
       setDisplayedXp(sessionXp);
       prevXpRef.current = sessionXp;
     }
-  }, [sessionXp, xpRive]);
+  }, [sessionXp]);
 
   return (
     <header className="border-border bg-background/80 relative z-40 flex h-16 w-full items-center justify-between border-b px-4 backdrop-blur-md select-none md:px-6">
@@ -124,11 +113,7 @@ export function GamificationHUD({
         {/* Streak Stats */}
         <div className="bg-muted/30 border-border flex items-center gap-1 rounded-xl border py-1 pr-3 pl-2">
           <div className="flex h-7 w-7 items-center justify-center">
-            {StreakFlameComponent ? (
-              <StreakFlameComponent className="h-full w-full object-contain" />
-            ) : (
-              <span className="text-lg text-orange-500">🔥</span>
-            )}
+            <Flame className="h-5 w-5 animate-pulse text-orange-500 dark:text-orange-400" />
           </div>
           <div className="flex flex-col">
             <span className="text-muted-foreground text-[9px] leading-none font-bold">STREAK</span>
@@ -149,12 +134,23 @@ export function GamificationHUD({
             .filter(Boolean)
             .join(" ")}
         >
-          {/* XP Burst Canvas Overlay */}
-          {animateXp && XpBurstComponent && (
-            <div className="pointer-events-none absolute -top-12 -left-12 h-32 w-32">
-              <XpBurstComponent className="h-full w-full" />
-            </div>
-          )}
+          {/* XP Burst Overlay */}
+          <div
+            className={[
+              "pointer-events-none absolute -top-12 -left-12 h-32 w-32 transition-opacity duration-300",
+              animateXp ? "opacity-100" : "opacity-0",
+            ].join(" ")}
+          >
+            <DotLottieReact
+              src="/lottie/bubble-explosion-from-center.lottie"
+              loop={false}
+              autoplay={false}
+              dotLottieRefCallback={(instance) => {
+                xpBurstRef.current = instance;
+              }}
+              className="h-full w-full"
+            />
+          </div>
 
           <div className="flex flex-col items-end">
             <span className="text-muted-foreground text-[9px] leading-none font-bold">

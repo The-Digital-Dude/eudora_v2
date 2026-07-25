@@ -1,110 +1,62 @@
-# Clio mascot — design & rig spec
+# Clio mascot — Lottie contract
 
-Single source of truth for the Clio Rive mascot. The **Rive editor work** (art import,
-rig, state machine) and the **React integration** ([RiveClioMascot.tsx](./RiveClioMascot.tsx))
-both build against the contracts in this doc. Change a name here → change it in both places.
+Single source of truth for the Clio mascot's state/variant → animation mapping.
+Both the animation files in `public/lottie/` and the lookup table in
+[ClioMascot.tsx](./ClioMascot.tsx) build against the contract in this doc.
+Change a mapping here → change it in `ClioMascot.tsx`.
 
-- Source art: [`public/clio/clio-source.svg`](../../../public/clio/clio-source.svg) (layered, named groups)
-- Built artboard target: `public/rive/clio-mascot.riv`
+- Assets: `public/lottie/*.lottie` (dotLottie exports — see `MASCOT_ANIMATIONS` in
+  [ClioMascot.tsx](./ClioMascot.tsx) for the exact filenames in use).
+- Player: [`@lottiefiles/dotlottie-react`](https://www.npmjs.com/package/@lottiefiles/dotlottie-react),
+  which plays `.lottie` archives directly (no manual unzip/JSON extraction needed).
 
----
+## States
 
-## 1. Art direction
+The `state` prop is unchanged from the original Rive-era contract — call sites don't
+need to change when new variants/assets are added.
 
-Orange gel-blob bear. The appeal is **squash / stretch / jiggle** + oversized eyes — not a
-rigid sprite. Emotion lives almost entirely in **eyes + mouth + brows**.
-
-| Token | Hex | Use |
-|---|---|---|
-| outline | `#B8530D` | all linework |
-| body | `#F4923B` (→`#E07B22` shade) | blob fill |
-| arm | `#EE8326` | tentacle arms |
-| belly | `#FBC685` (→`#FFE4BC`) | muzzle / front patch |
-| sheen | `#FFF0DB` | top-left highlight |
-| cheek | `#F2926A` @ 0.5 | rosy accents |
-| pupil | `#241A10` | eyes |
-| nose / mouth | `#7A3406` | features |
-| inner mouth | `#C8506A` | open-mouth grin |
-
-## 2. Layer contract
-
-Every part is a named `<g>` in the source SVG. Do **not** flatten on import.
-
-| Layer | Rig role |
+| `state` | Meaning |
 |---|---|
-| `arm_left`, `arm_right` | bones — swing (idle), raise (celebrate), chin (thinking) |
-| `body` | **mesh + bones** — breathing, squash/stretch, jiggle |
-| `belly`, `belly_sheen` | parented to body, deform with it |
-| `cheeks` | opacity/scale on celebrate & encourage |
-| `brows` | small rotate/translate — biggest cheap emotion lever |
-| `eye_L`/`eye_R` → `eye_white`, `pupil`, `glint`, `eyelid` | pupil = free for look tracking; eyelid = body-colored rect parked **above** the eye, clipped to the eye circle → invisible at rest; rig slides it **down** ~96px to blink/squint |
-| `nose` | static |
-| `mouth` | **swappable** — see mouth set below |
-| `fx_anchor` | empty marker; confetti / sparkle / thought-dots attach here |
+| `idle` | Default resting loop |
+| `thinking` | Student is actively interacting with a widget, hasn't submitted |
+| `celebrate` | Correct-answer one-shot |
+| `encourage` | Friendly nudge (no strong trigger, just supportive) |
+| `wrong` | Wrong-answer one-shot |
+| `greeting` | Session/lesson start |
+| `confused` | Student seems stuck |
+| `hint` | A hint is being shown/explained |
+| `milestone` | Level-up / big win one-shot |
 
-### Mouth set (designer draws these as mouth variants)
-- `smile` (default): `M222,310 Q256,348 290,310`
-- `grin_open`: filled `M222,308 Q256,352 290,308 Q256,322 222,308 Z` + inner `#C8506A`
-- `o` (surprise/thinking): small circle r≈12 at (256,318), `#7A3406`
-- `flat` (confused/hint): `M232,318 L280,318`
-- `frown` (wrong, brief): `M222,326 Q256,300 290,326`
+## Variants
 
-## 3. State machine: `ClioBrain`
+Different UI surfaces can show a different **posture** of Clio for the same state.
+`variant` defaults to `"standing"`. More variants (and more per-state coverage within
+existing variants) get added over time as new use cases and art show up — a variant is
+just a new column in `MASCOT_ANIMATIONS`.
 
-One state machine, four layers. **Rive owns transitions/blends** — React only sets inputs.
-
-```
-Layer 1 Locomotion : Idle ⇄ Thinking ⇄ Confused ⇄ Hint    (blended by `mood`)
-Layer 2 One-shots  : celebrate / wrong / levelUp triggers → play → auto-return to Idle
-Layer 3 Blink      : independent random-interval loop (always on)
-Layer 4 Look       : lookX / lookY → pupil offset + slight head/body lean
-```
-
-### Inputs
-
-| Input | Type | Range | Drives |
-|---|---|---|---|
-| `mood` | number | 0–8 | locomotion blend (see state map) |
-| `celebrate` | trigger | — | correct-answer one-shot |
-| `wrong` | trigger | — | wrong-answer one-shot |
-| `levelUp` | trigger | — | milestone / level-up burst |
-| `lookX` | number | −1..1 | pupil/head horizontal |
-| `lookY` | number | −1..1 | pupil/head vertical |
-| `energy` | number | 0..1 | idle jiggle intensity (tie to streak) |
-
-### `mood` → state map (preserves existing 9-state prop)
-
-| prop `state` | mechanism |
+| Variant | Used by |
 |---|---|
-| `idle` | `mood=0` |
-| `thinking` | `mood=1` |
-| `confused` | `mood=2` |
-| `hint` | `mood=3` |
-| `greeting` | `mood=4` (wave via arm bone) |
-| `encourage` | `mood=5` |
-| `celebrate` | `celebrate` trigger |
-| `wrong` | `wrong` trigger |
-| `milestone` | `levelUp` trigger |
+| `standing` | Default — `LessonCompleteModal`, and fallback for any state a variant doesn't cover |
+| `chair` | Active-learning lesson page (`/learn/[lessonId]`) — Clio sits alongside the student |
 
-## 4. React integration (next round, after `.riv` is built)
+## Resolution order
 
-[RiveClioMascot.tsx](./RiveClioMascot.tsx) currently plays animations **by name**
-(`rive.play(state)`) — hard cuts, no blending. Migrate to state-machine inputs:
+For a given `(state, variant)`, `resolveAnimation()` in `ClioMascot.tsx` picks the first
+match: **the requested variant → `standing` → `idle`/`standing`**. This is why several
+states (e.g. `idle`, `greeting`, `milestone` under the `chair` variant) don't need an
+explicit chair-posed clip yet — they gracefully fall back to standing until dedicated
+seated art exists.
 
-- `useRive({ src, stateMachines: "ClioBrain", autoplay: true })`
-- `useStateMachineInput(rive, "ClioBrain", "mood" | "lookX" | ...)`
-- Keep the existing `state` prop signature identical → no downstream breakage.
-- Map `state` → set `mood` number or `.fire()` the matching trigger.
+## Playback
 
-### Eye tracking
-- Throttled `pointermove` → normalize cursor to −1..1 around Clio's bounding center → set `lookX`/`lookY`.
-- In a question/answer view, snap target to the **focused input's** center instead of raw cursor.
-- Idle drift when no pointer for ~3s (small sine wander) so eyes never freeze.
+- **Loop** (`loop: true`): continuous mood states (`idle`, `thinking`, `greeting`,
+  `encourage`, `confused`, `hint`) play on repeat.
+- **One-shot** (`loop: false`): trigger states (`celebrate`, `wrong`, `milestone`) play
+  once and hold their final frame — the Lottie equivalent of a Rive trigger that
+  auto-returns to idle, without needing completion-callback plumbing.
 
-## 5. Build order
-1. ✅ Layered source art (`clio-source.svg`)
-2. Import to Rive editor → mesh+bones on `body`, parent belly, rig arms/eyes/mouth
-3. Build `ClioBrain` state machine + inputs above
-4. Export `clio-mascot.riv` → `public/rive/`
-5. Rewrite `RiveClioMascot.tsx` to the input contract + add eye tracking
-6. Verify all 9 `state` values + triggers across learn flow, lesson-complete modal, HUD
+## Adding a new state or variant
+
+1. Drop the `.lottie` file into `public/lottie/`.
+2. Add/extend the entry in `MASCOT_ANIMATIONS` in `ClioMascot.tsx`.
+3. Update the tables above.

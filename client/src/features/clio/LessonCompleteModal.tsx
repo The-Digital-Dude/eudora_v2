@@ -1,9 +1,9 @@
 ﻿"use client";
 
-import { useRive } from "@rive-app/react-canvas";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import React from "react";
 
-import { RiveClioMascot } from "./RiveClioMascot";
+import { ClioMascot } from "./ClioMascot";
 
 interface LessonCompleteModalProps {
   isOpen: boolean;
@@ -22,22 +22,19 @@ export function LessonCompleteModal({
   onBackToLessons,
   onNextLesson,
 }: LessonCompleteModalProps) {
-  // Rive confetti animation background
-  const { RiveComponent: ConfettiComponent } = useRive({
-    src: "/rive/confetti.riv",
-    autoplay: true,
-  });
-
   if (!isOpen) return null;
 
   return (
     <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center px-4 backdrop-blur-md transition-opacity duration-300">
-      {/* Rive Confetti Overlay in background */}
-      {ConfettiComponent && (
-        <div className="pointer-events-none absolute inset-0 opacity-60">
-          <ConfettiComponent className="h-full w-full object-cover" />
-        </div>
-      )}
+      {/* Confetti overlay in background */}
+      <div className="pointer-events-none absolute inset-0 opacity-60">
+        <DotLottieReact
+          src="/lottie/confetti-effect-from-bottom-multiple-source-left-right.lottie"
+          autoplay
+          loop={false}
+          className="h-full w-full object-cover"
+        />
+      </div>
 
       {/* Modal Card */}
       <div className="border-border bg-card animate-fade-in-up relative flex w-full max-w-md flex-col items-center rounded-3xl border p-8 text-center shadow-2xl shadow-primary/5 backdrop-blur-xl">
@@ -46,7 +43,7 @@ export function LessonCompleteModal({
 
         {/* Mascot companion celebrating */}
         <div className="relative mb-4">
-          <RiveClioMascot state="celebrate" size={140} />
+          <ClioMascot state="celebrate" size={140} />
           {/* Animated sparkles */}
           <div className="absolute -top-2 -left-2 h-4 w-4 animate-ping rounded-full bg-warning" />
           <div className="absolute -right-2 -bottom-2 h-3 w-3 animate-ping rounded-full bg-primary" />

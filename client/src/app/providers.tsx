@@ -76,12 +76,25 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
 export default function Providers({ children }: { children: React.ReactNode }) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
+  const body = (
+    <>
+      <AuthInitializer>{children}</AuthInitializer>
+      <Toaster />
+    </>
+  );
+
   return (
     <Provider store={store}>
-      <GoogleOAuthProvider clientId={googleClientId}>
-        <AuthInitializer>{children}</AuthInitializer>
-        <Toaster />
-      </GoogleOAuthProvider>
+      {/* Mounting GoogleOAuthProvider loads Google's GSI script, and any
+          useGoogleLogin() consumer then calls initTokenClient() with
+          whatever clientId is in context — an empty string makes that call
+          throw. Skip the provider entirely when unconfigured so the login
+          page's Google button can safely no-op instead of crashing. */}
+      {googleClientId ? (
+        <GoogleOAuthProvider clientId={googleClientId}>{body}</GoogleOAuthProvider>
+      ) : (
+        body
+      )}
     </Provider>
   );
 }

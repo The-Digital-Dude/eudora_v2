@@ -32,10 +32,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Prisma 7's config file eagerly validates env('DATABASE_URL') even for a
-# schema-only `generate` step. The real value is injected at container
-# runtime (see CMD below) — this placeholder only needs to be a parseable URL.
-ENV DATABASE_URL="postgresql://user:password@localhost:5432/db"
+# `prisma generate` only needs DATABASE_URL to resolve prisma.config.ts — it
+# doesn't connect to a database. The real value is supplied at runtime via
+# env_file in docker-compose.yml.
+ENV DATABASE_URL="postgresql://postgres:postgres@postgres:5432/eudora_db"
 
 # Generate Prisma client
 RUN pnpm prisma generate
@@ -63,8 +63,8 @@ COPY --from=builder --chown=nestjs:nodejs /app/prisma          ./prisma
 COPY --from=builder --chown=nestjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder --chown=nestjs:nodejs /app/package.json    ./package.json
 
-# LocalStorageService creates this at boot when STORAGE_PROVIDER=LOCAL (the
-# default) — must pre-exist and be writable by the non-root runtime user.
+# LocalStorageService creates this at boot — must exist and be writable by
+# the non-root user before USER switches away from root.
 RUN mkdir -p /app/uploads && chown nestjs:nodejs /app/uploads
 
 USER nestjs

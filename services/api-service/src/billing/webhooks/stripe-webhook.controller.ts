@@ -8,8 +8,8 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import Stripe from 'stripe';
 import { StripeWebhookService } from './stripe-webhook.service';
+import type { StripeEvent } from '../stripe/stripe.types';
 import { Public } from '../../auth/decorators/public.decorator';
 
 /**
@@ -43,7 +43,7 @@ export class StripeWebhookController {
       );
     }
 
-    let event: any;
+    let event: StripeEvent;
     try {
       event = this.webhookService.constructEvent(rawBody, signature);
     } catch (err: any) {

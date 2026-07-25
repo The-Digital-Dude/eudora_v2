@@ -168,7 +168,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                           isActive
                             ? "bg-sidebar-primary font-bold text-sidebar-primary-foreground shadow-sm"
                             : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        }`}
+                        } ${item.highlight && !isActive ? "nav-pulse" : ""}`}
                       >
                         <Link
                           href={item.url}

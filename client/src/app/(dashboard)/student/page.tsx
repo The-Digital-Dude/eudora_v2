@@ -42,7 +42,7 @@ export default function StudentPage() {
   const attendanceSummary = snapshot?.attendanceSummary;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-portal="student">
       {/* Welcome Banner */}
       <div>
         <h1 className="text-2xl font-black tracking-tight text-foreground">

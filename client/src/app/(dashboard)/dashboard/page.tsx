@@ -32,6 +32,9 @@ import {
 import { useAppSelector } from "@/store/hooks";
 
 import { ChartAreaInteractive } from "./components/chart-area-interactive";
+import { ChartBarEnrollment } from "./components/chart-bar-enrollment";
+import { ChartBarHomework } from "./components/chart-bar-homework";
+import { ChartDonutAttendance } from "./components/chart-donut-attendance";
 
 export default function DashboardOverview() {
   const auth = useAppSelector((state) => state.auth);
@@ -846,6 +849,17 @@ export default function DashboardOverview() {
       {/* Enrollment and Revenue Trends Visuals */}
       <div className="grid gap-6 md:grid-cols-1">
         <ChartAreaInteractive />
+      </div>
+
+      {/* Academic Operations Visuals */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <ChartBarHomework />
+        </div>
+        <ChartDonutAttendance />
+        <div className="md:col-span-2 lg:col-span-3">
+          <ChartBarEnrollment />
+        </div>
       </div>
 
       {/* Admin Dashboard Operations items */}

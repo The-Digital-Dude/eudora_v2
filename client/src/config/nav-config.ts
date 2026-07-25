@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  BookOpen,
   CalendarCheck,
   CalendarRange,
   ClipboardCheck,
@@ -37,6 +38,8 @@ export interface NavLeaf {
   requirement: NavRequirement;
   /** Feature has no backing page/API yet — shown greyed out with a "Soon" badge, not linked. */
   disabled?: boolean;
+  /** Draws a calm pulsing outline (theme-colored) to call attention to this item while inactive. */
+  highlight?: boolean;
 }
 
 export interface NavParent {
@@ -72,25 +75,29 @@ export const navGroups: NavGroup[] = [
         title: "Parent Portal",
         url: "/parent",
         icon: HeartHandshake,
-        requirement: { type: "roles", roles: ["GUARDIAN", ...ADMIN_ROLES] },
+        // Admins used to see this too via ...ADMIN_ROLES; re-add the spread to restore that.
+        requirement: { type: "roles", roles: ["GUARDIAN"] /* , ...ADMIN_ROLES */ },
       },
       {
         title: "Student Portal",
         url: "/student",
         icon: GraduationCap,
-        requirement: { type: "roles", roles: ["USER", ...ADMIN_ROLES] },
+        // Admins used to see this too via ...ADMIN_ROLES; re-add the spread to restore that.
+        requirement: { type: "roles", roles: ["USER"] /* , ...ADMIN_ROLES */ },
       },
       {
         title: "Teacher Portal",
         url: "/teacher",
         icon: Presentation,
-        requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
+        // Admins used to see this too via ...ADMIN_ROLES; re-add the spread to restore that.
+        requirement: { type: "roles", roles: ["TEACHER"] /* , ...ADMIN_ROLES */ },
       },
       {
         title: "Active Learning",
         url: "/learning",
         icon: Sparkles,
         requirement: { type: "roles", roles: ["TEACHER", "USER", ...ADMIN_ROLES] },
+        highlight: true,
       },
       {
         title: "Schedule",
@@ -168,6 +175,12 @@ export const navGroups: NavGroup[] = [
             url: "/diagnostics",
             icon: Stethoscope,
             requirement: { type: "permission", action: "read", subject: "Diagnostic" },
+          },
+          {
+            title: "Courses",
+            url: "/courses",
+            icon: BookOpen,
+            requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
           },
         ],
       },

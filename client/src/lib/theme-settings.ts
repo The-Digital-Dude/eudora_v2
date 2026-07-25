@@ -7,7 +7,7 @@ const STORAGE_KEY = "eudora-theme-settings";
 
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
   kind: "shadcn",
-  shadcnTheme: "default",
+  shadcnTheme: "eudora-professional",
   tweakcnTheme: "",
   importedTheme: null,
   brandColors: {},
@@ -126,6 +126,13 @@ export function applyThemeSettings(settings: ThemeSettings, isDarkMode: boolean)
   } else {
     root.classList.remove("theme-glass");
   }
+
+  // 1b. "Eudora Professional" ships a student-portal accent variant scoped via
+  //     CSS in globals.css — mark the root so those overrides can activate.
+  root.classList.toggle(
+    "theme-eudora-pro",
+    settings.kind === "shadcn" && settings.shadcnTheme === "eudora-professional",
+  );
 
   // 2. Colors — clear known color vars, then apply the resolved palette.
   COLOR_VARS.forEach((name) => root.style.removeProperty(`--${name}`));

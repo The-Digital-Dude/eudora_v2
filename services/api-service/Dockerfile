@@ -8,13 +8,16 @@ RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 
 WORKDIR /app
 
-# Copy manifest files — no lockfile so pnpm resolves fresh and avoids the
-# pnpm v10 minimumReleaseAge supply-chain check on recently published packages
-COPY package.json .npmrc pnpm-workspace.yaml ./
+# Copy manifest files. The lockfile pins the resolved tree to match local dev
+# exactly — pnpm-workspace.yaml's auditConfig.minimumReleaseAge: 0 already
+# disables the supply-chain check that an earlier version of this file worked
+# around by omitting the lockfile (which caused an unpinned resolve where
+# Prisma's config loader couldn't reach the `dotenv` transitive dependency).
+COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml ./
 
 # 1. Install without running any lifecycle scripts (avoids ERR_PNPM_IGNORED_BUILDS)
 # 2. Then explicitly rebuild only the packages that need their scripts
-RUN pnpm install --ignore-scripts \
+RUN pnpm install --frozen-lockfile --ignore-scripts \
     && pnpm rebuild @prisma/engines prisma unrs-resolver
 
 # ──────────────────────────────────────────────────────────────────

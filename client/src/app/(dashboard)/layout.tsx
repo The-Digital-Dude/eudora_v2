@@ -77,10 +77,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     try {
       await logoutMutation().unwrap();
       dispatch(logout());
-      router.push("/login");
+      router.push("/");
     } catch {
       dispatch(logout());
-      router.push("/login");
+      router.push("/");
     }
   };
 

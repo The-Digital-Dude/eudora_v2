@@ -7,7 +7,7 @@ const STORAGE_KEY = "eudora-theme-settings";
 
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
   kind: "shadcn",
-  shadcnTheme: "default",
+  shadcnTheme: "eudora-professional",
   tweakcnTheme: "",
   importedTheme: null,
   brandColors: {},

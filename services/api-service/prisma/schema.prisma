@@ -13,6 +13,8 @@ model User {
   id                 String    @id @default(uuid())
   email              String    @unique
   password           String?
+  /// Deprecated: superseded by UserIdentity. Retained for one release so a
+  /// rollback keeps working; drop once no code reads it.
   googleId           String?   @unique
   firstName          String
   lastName           String
@@ -26,6 +28,7 @@ model User {
   updatedAt          DateTime  @updatedAt
 
   roles                   UserRole[]
+  identities              UserIdentity[]
   studentProfile          StudentProfile?
   guardianProfile         GuardianProfile?
   teacherProfile          TeacherProfile?
@@ -42,6 +45,32 @@ model User {
   hostedLiveClassSessions LiveClassSession[]     @relation("HostedLiveClassSessions")
 
   @@map("users")
+}
+
+enum AuthProvider {
+  GOOGLE
+  APPLE
+}
+
+/// A federated identity linked to a user. One row per (provider, account).
+model UserIdentity {
+  id             String       @id @default(uuid())
+  userId         String
+  provider       AuthProvider
+  providerUserId String // Google `sub` / Apple `sub`
+  email          String? // email as asserted by the provider, may differ from User.email
+  emailVerified  Boolean      @default(false)
+  isPrivateRelay Boolean      @default(false) // Apple "Hide My Email" relay address
+  lastLoginAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@unique([userId, provider])
+  @@index([userId])
+  @@map("user_identities")
 }
 
 model Role {
@@ -512,6 +541,7 @@ model Plan {
   priceMonthly         Decimal  @db.Decimal(10, 2)
   priceAnnual          Decimal  @db.Decimal(10, 2)
   currency             String   @default("USD")
+  stripeProductId      String?
   stripePriceIdMonthly String?
   stripePriceIdAnnual  String?
   maxStudents          Int? // null = unlimited
@@ -587,6 +617,17 @@ model Payment {
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@map("payments")
+}
+
+/// Records every Stripe event we have already processed.
+/// Stripe delivers webhooks at-least-once, so handlers must be idempotent;
+/// inserting the event id under a unique constraint is the dedup mechanism.
+model StripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+
+  @@map("stripe_events")
 }
 
 // ─── Attendance ──────────────────────────────────────────────────────────────

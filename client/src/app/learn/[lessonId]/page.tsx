@@ -14,6 +14,7 @@ import React, { useEffect, useState } from "react";
 
 import { MathRenderer } from "@/components/MathRenderer";
 import { ClioCard,useGetLessonFlowQuery, useSubmitCardMutation } from "@/features/clio/clioApi";
+import { ClioMascot, type MascotState } from "@/features/clio/ClioMascot";
 import { GamificationHUD } from "@/features/clio/GamificationHUD";
 import { LessonCompleteModal } from "@/features/clio/LessonCompleteModal";
 import {
@@ -33,7 +34,6 @@ import {
   setWidgetState,
   showExplanation,
 } from "@/features/clio/lessonSlice";
-import { RiveClioMascot } from "@/features/clio/RiveClioMascot";
 import { WidgetSelector } from "@/features/clio/widgets/WidgetSelector";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
@@ -59,17 +59,7 @@ export default function LessonFlowPage() {
   const sessionXp = useAppSelector(selectSessionXp);
   const cardStartedAt = useAppSelector(selectCardStartedAt);
 
-  const [mascotState, setMascotState] = useState<
-    | "idle"
-    | "thinking"
-    | "celebrate"
-    | "encourage"
-    | "wrong"
-    | "greeting"
-    | "confused"
-    | "hint"
-    | "milestone"
-  >("idle");
+  const [mascotState, setMascotState] = useState<MascotState>("idle");
 
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
@@ -391,7 +381,7 @@ export default function LessonFlowPage() {
 
           {/* Mascot canvas container */}
           <div className="border-border bg-muted/40 flex shrink-0 flex-col items-center justify-center rounded-2xl border p-2 shadow-inner backdrop-blur-sm">
-            <RiveClioMascot state={mascotState} size={150} />
+            <ClioMascot state={mascotState} variant="chair" size={150} />
             <span className="text-muted-foreground/50 mt-2 text-[10px] font-bold tracking-widest uppercase">
               CLIO COMPANION
             </span>

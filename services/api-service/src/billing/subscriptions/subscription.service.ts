@@ -22,12 +22,12 @@ export class SubscriptionService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {
-    this.stripe = new Stripe(
-      this.config.get<string>('STRIPE_SECRET_KEY') ?? '',
-      {
-        apiVersion: '2026-05-27.dahlia',
-      },
-    );
+    const secretKey = this.config.get<string>('STRIPE_SECRET_KEY')?.trim();
+    this.stripe = secretKey
+      ? new Stripe(secretKey, {
+          apiVersion: '2026-06-24.dahlia',
+        })
+      : null;
   }
 
   // ─── Create Subscription ────────────────────────────────────────────────────
@@ -61,7 +61,7 @@ export class SubscriptionService {
     const isFree =
       Number(plan.priceMonthly) === 0 && Number(plan.priceAnnual) === 0;
 
-    if (!isFree && stripePriceId) {
+    if (!isFree && stripePriceId && this.stripe) {
       // Create Stripe customer for campus
       const customer = await this.stripe.customers.create({
         name: campus.name,

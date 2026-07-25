@@ -17,14 +17,17 @@ export class StripeWebhookService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {
-    this.stripe = new Stripe(
-      this.config.get<string>('STRIPE_SECRET_KEY') ?? '',
-      { apiVersion: '2026-05-27.dahlia' },
-    );
+    const secretKey = this.config.get<string>('STRIPE_SECRET_KEY')?.trim();
+    this.stripe = secretKey
+      ? new Stripe(secretKey, { apiVersion: '2026-06-24.dahlia' })
+      : null;
   }
 
   constructEvent(payload: Buffer, signature: string): any {
     const secret = this.config.get<string>('STRIPE_WEBHOOK_SECRET') ?? '';
+    if (!this.stripe) {
+      throw new Error('Stripe is not configured');
+    }
     return this.stripe.webhooks.constructEvent(payload, signature, secret);
   }
 

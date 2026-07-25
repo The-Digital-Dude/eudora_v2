@@ -29,6 +29,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# `prisma generate` only needs DATABASE_URL to resolve prisma.config.ts — it
+# doesn't connect to a database. The real value is supplied at runtime via
+# env_file in docker-compose.yml.
+ENV DATABASE_URL="postgresql://postgres:postgres@postgres:5432/eudora_db"
+
 # Generate Prisma client
 RUN pnpm prisma generate
 
@@ -55,6 +60,10 @@ COPY --from=builder --chown=nestjs:nodejs /app/prisma          ./prisma
 COPY --from=builder --chown=nestjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder --chown=nestjs:nodejs /app/package.json    ./package.json
 
+# LocalStorageService creates this at boot — must exist and be writable by
+# the non-root user before USER switches away from root.
+RUN mkdir -p /app/uploads && chown nestjs:nodejs /app/uploads
+
 USER nestjs
 
 ENV NODE_ENV=production
@@ -63,4 +72,4 @@ ENV PORT=3000
 EXPOSE 3000
 
 # Run DB migrations then start the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]

@@ -1,6 +1,6 @@
 # Eudora 🌟
 
-Eudora is a state-of-the-art educational management system and interactive, gamified active learning platform. It provides school administrators with robust tools to manage academic setups, billing, student records, and grading rubrics, while offering students a highly engaging, gamified interface to complete interactive learning cards guided by a Rive mascot named **Clio**.
+Eudora is a state-of-the-art educational management system and interactive, gamified active learning platform. It provides school administrators with robust tools to manage academic setups, billing, student records, and grading rubrics, while offering students a highly engaging, gamified interface to complete interactive learning cards guided by a Lottie-animated mascot named **Clio**.
 
 ---
 
@@ -15,7 +15,7 @@ graph TD
         Auth["Auth (Login/Register)"]
         Dashboard["Admin Dashboard (/dashboard)"]
         Learn["Active Student Learning (/learn)"]
-        Clio["Rive Mascot (Clio)"]
+        Clio["Lottie Mascot (Clio)"]
         Widgets["Interactive Widgets"]
     end
 
@@ -49,7 +49,7 @@ graph TD
 *   **Framework**: Next.js 16 (App Router, React 19)
 *   **State Management**: Redux Toolkit & React Redux
 *   **Styling**: Tailwind CSS v4, Lucide React, and Shadcn UI (Radix)
-*   **Gamification/Interactivity**: Rive Canvas (`@rive-app/react-canvas`) for interactive mascot animations
+*   **Gamification/Interactivity**: dotLottie (`@lottiefiles/dotlottie-react`) for interactive mascot animations
 
 ### Backend API Service (`/services/api-service`)
 *   **Framework**: NestJS (Node.js progressive framework)
@@ -65,7 +65,7 @@ graph TD
 ```
 eudora/
 ├── client/                     # Next.js frontend application
-│   ├── public/rive/            # Rive animation files (.riv) for Clio & gamification
+│   ├── public/lottie/          # Lottie animation files (.lottie) for Clio & gamification
 │   ├── src/app/                # App router pages (dashboard, learn, landing, login)
 │   ├── src/features/           # Domain features (auth, clio, dashboard)
 │   └── src/store/              # Redux global store configurations
@@ -184,8 +184,8 @@ Under the `/learn` section, students interact with concept cards. Cards support 
 *   **`CODE_PLAYGROUND`**: Sandboxed environment for running code.
 *   **`GRID_MATCHING`**: Drag-and-drop matching of variables.
 
-### Clio the Rive Mascot
-The learning experience features **Clio**, a reactive mascot built with **Rive**, who responds to student actions:
+### Clio the Lottie Mascot
+The learning experience features **Clio**, a reactive mascot built with **Lottie**, who responds to student actions:
 *   Correct responses trigger XP bursts, confetti, and happy animations.
 *   Wrong responses prompt supportive gestures.
 *   Streaks and XP levels update in real-time on the student's gamification HUD.

@@ -4,7 +4,11 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateConceptDto, CreateCompetencyDto } from './dto/curriculum.dto';
+import {
+  CreateConceptDto,
+  UpdateConceptDto,
+  CreateCompetencyDto,
+} from './dto/curriculum.dto';
 import { CreateRubricDto } from './dto/rubric.dto';
 import { RecordEvidenceDto, CreateAssessmentDto } from './dto/assessment.dto';
 
@@ -26,9 +30,13 @@ export class EvaluationService {
     });
   }
 
-  async getConcepts() {
+  async getConcepts(courseId?: string) {
     return this.prisma.concept.findMany({
-      orderBy: { name: 'asc' },
+      where: courseId ? { courseId } : {},
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      include: {
+        course: { select: { id: true, title: true } },
+      },
     });
   }
 
@@ -43,6 +51,28 @@ export class EvaluationService {
       throw new NotFoundException('Concept not found');
     }
     return concept;
+  }
+
+  async updateConcept(id: string, dto: UpdateConceptDto) {
+    const concept = await this.prisma.concept.findUnique({ where: { id } });
+    if (!concept) {
+      throw new NotFoundException('Concept not found');
+    }
+    return this.prisma.concept.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description }
+          : {}),
+        ...(dto.courseId !== undefined ? { courseId: dto.courseId } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+        ...(dto.kind !== undefined ? { kind: dto.kind } : {}),
+        ...(dto.passThresholdPercent !== undefined
+          ? { passThresholdPercent: dto.passThresholdPercent }
+          : {}),
+      },
+    });
   }
 
   // ─── Competency Operations ───────────────────────────────────────────────────

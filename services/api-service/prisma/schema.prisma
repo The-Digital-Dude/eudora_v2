@@ -755,13 +755,107 @@ enum EvidenceSourceType {
   CLASSROOM_ACTIVITY
 }
 
-model Concept {
+// ─── Learning Catalog ───────────────────────────────────────────────────────
+
+enum CatalogStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PathUnlockMode {
+  FREE_ROAM
+  SEQUENTIAL
+}
+
+enum ConceptKind {
+  CHAPTER
+  CHECKPOINT
+}
+
+model LearningSubject {
   id          String   @id @default(uuid())
-  name        String   @unique
+  code        String   @unique
+  name        String
   description String?
+  icon        String?
+  sortOrder   Int      @default(0)
+  status      String   @default("active")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  courses Course[]
+  paths   LearningPath[]
+
+  @@map("learning_subjects")
+}
+
+model Course {
+  id                String        @id @default(uuid())
+  learningSubjectId String
+  title             String
+  slug              String        @unique
+  description       String?
+  estimatedHours    Int?
+  status            CatalogStatus @default(DRAFT)
+  sortOrder         Int           @default(0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+  deletedById       String?
+
+  learningSubject LearningSubject      @relation(fields: [learningSubjectId], references: [id], onDelete: Cascade)
+  concepts        Concept[]
+  pathCourses     LearningPathCourse[]
+
+  @@map("courses")
+}
+
+model LearningPath {
+  id                String         @id @default(uuid())
+  learningSubjectId String
+  title             String
+  slug              String         @unique
+  description       String?
+  unlockMode        PathUnlockMode @default(SEQUENTIAL)
+  status            CatalogStatus  @default(DRAFT)
+  sortOrder         Int            @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  learningSubject LearningSubject      @relation(fields: [learningSubjectId], references: [id], onDelete: Cascade)
+  pathCourses     LearningPathCourse[]
+
+  @@map("learning_paths")
+}
+
+model LearningPathCourse {
+  id         String   @id @default(uuid())
+  pathId     String
+  courseId   String
+  sortOrder  Int      @default(0)
+  isRequired Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  path   LearningPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([pathId, courseId])
+  @@map("learning_path_courses")
+}
+
+model Concept {
+  id                   String      @id @default(uuid())
+  name                 String      @unique
+  description          String?
+  courseId             String?
+  sortOrder            Int         @default(1)
+  kind                 ConceptKind @default(CHAPTER)
+  passThresholdPercent Int?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
   competencies Competency[]
   lessons      Lesson[]
 

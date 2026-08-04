@@ -327,6 +327,8 @@ async function main() {
 
   // Questions for assessments
   const makeQ = async (subjectId: string, levelId: string, prompt: string, options: { label: string; text: string; correct: boolean }[], explanation: string) => {
+    const existing = await prisma.question.findFirst({ where: { prompt } });
+    if (existing) return existing;
     const q = await prisma.question.create({ data: { subjectId, levelId, questionType: 'mcq', prompt, widgetType: 'STANDARD_MCQ', isGraded: true, explanation, hints: [] } });
     for (const o of options) {
       await prisma.questionOption.create({ data: { questionId: q.id, optionLabel: o.label, optionText: o.text, isCorrect: o.correct } });
@@ -343,6 +345,11 @@ async function main() {
 
   // Create assessments
   const createAssessment = async (typeId: string, subjectId: string, levelId: string, tId: string, title: string, totalMarks: number, status: string, weekNumber: number | null) => {
+    const existing = await prisma.assessment.findFirst({ where: { title } });
+    if (existing) {
+      const existingSection = await prisma.assessmentSection.findFirstOrThrow({ where: { assessmentId: existing.id } });
+      return { assessment: existing, section: existingSection };
+    }
     const a = await prisma.assessment.create({
       data: { assessmentTypeId: typeId, subjectId, levelId, termId: tId, title, totalMarks, estimatedDurationMinutes: 30, status, weekNumber, publishedAt: status === 'published' ? new Date() : null },
     });
@@ -351,14 +358,14 @@ async function main() {
   };
 
   const { assessment: mathQuiz1, section: mathQ1Section } = await createAssessment(quizType.id, mathSubject.id, gradeLevel.id, term.id, 'Week 1 Math Quiz — Fractions', 30, 'published', 1);
-  await prisma.assessmentQuestion.create({ data: { assessmentId: mathQuiz1.id, sectionId: mathQ1Section.id, questionId: mathQ1.id, questionNumber: 1, marksAvailable: 10 } });
-  await prisma.assessmentQuestion.create({ data: { assessmentId: mathQuiz1.id, sectionId: mathQ1Section.id, questionId: mathQ2.id, questionNumber: 2, marksAvailable: 10 } });
-  await prisma.assessmentQuestion.create({ data: { assessmentId: mathQuiz1.id, sectionId: mathQ1Section.id, questionId: mathQ3.id, questionNumber: 3, marksAvailable: 10 } });
+  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: mathQuiz1.id, questionId: mathQ1.id } }, update: {}, create: { assessmentId: mathQuiz1.id, sectionId: mathQ1Section.id, questionId: mathQ1.id, questionNumber: 1, marksAvailable: 10 } });
+  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: mathQuiz1.id, questionId: mathQ2.id } }, update: {}, create: { assessmentId: mathQuiz1.id, sectionId: mathQ1Section.id, questionId: mathQ2.id, questionNumber: 2, marksAvailable: 10 } });
+  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: mathQuiz1.id, questionId: mathQ3.id } }, update: {}, create: { assessmentId: mathQuiz1.id, sectionId: mathQ1Section.id, questionId: mathQ3.id, questionNumber: 3, marksAvailable: 10 } });
 
   const { assessment: csQuiz1, section: csQ1Section } = await createAssessment(quizType.id, csSubject.id, gradeLevel.id, term.id, 'Week 2 CS Quiz — Data Structures', 30, 'published', 2);
-  await prisma.assessmentQuestion.create({ data: { assessmentId: csQuiz1.id, sectionId: csQ1Section.id, questionId: csQ1.id, questionNumber: 1, marksAvailable: 10 } });
-  await prisma.assessmentQuestion.create({ data: { assessmentId: csQuiz1.id, sectionId: csQ1Section.id, questionId: csQ2.id, questionNumber: 2, marksAvailable: 10 } });
-  await prisma.assessmentQuestion.create({ data: { assessmentId: csQuiz1.id, sectionId: csQ1Section.id, questionId: csQ3.id, questionNumber: 3, marksAvailable: 10 } });
+  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: csQuiz1.id, questionId: csQ1.id } }, update: {}, create: { assessmentId: csQuiz1.id, sectionId: csQ1Section.id, questionId: csQ1.id, questionNumber: 1, marksAvailable: 10 } });
+  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: csQuiz1.id, questionId: csQ2.id } }, update: {}, create: { assessmentId: csQuiz1.id, sectionId: csQ1Section.id, questionId: csQ2.id, questionNumber: 2, marksAvailable: 10 } });
+  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: csQuiz1.id, questionId: csQ3.id } }, update: {}, create: { assessmentId: csQuiz1.id, sectionId: csQ1Section.id, questionId: csQ3.id, questionNumber: 3, marksAvailable: 10 } });
 
   const { assessment: mathMidterm } = await createAssessment(midtermType.id, mathSubject.id, gradeLevel.id, term.id, 'Fall Midterm — Mathematics', 100, 'published', 8);
   const { assessment: csMidterm } = await createAssessment(midtermType.id, csSubject.id, gradeLevel.id, term.id, 'Fall Midterm — Computer Science', 100, 'published', 8);
@@ -1290,6 +1297,80 @@ async function main() {
     ],
   });
   console.log('✅ Seeded teacher & guardian notifications');
+
+  // ─── Learning Catalog (Subjects, Courses, Learning Paths) ────────────────────
+  console.log('🌱 Seeding learning catalog...');
+
+  const mathLearningSubject = await prisma.learningSubject.upsert({
+    where: { code: 'MATH' },
+    update: {},
+    create: { code: 'MATH', name: 'Mathematics', description: 'Numbers, algebra, geometry, and more.', sortOrder: 1 },
+  });
+
+  const algebraCourse = await prisma.course.upsert({
+    where: { slug: 'algebra-foundations' },
+    update: {},
+    create: {
+      learningSubjectId: mathLearningSubject.id,
+      title: 'Algebra Foundations',
+      slug: 'algebra-foundations',
+      description: 'Build a solid foundation in algebraic thinking, from variables to solving equations.',
+      estimatedHours: 8,
+      status: 'PUBLISHED',
+      sortOrder: 1,
+    },
+  });
+
+  const variablesChapter = await prisma.concept.upsert({
+    where: { name: 'Variables and Expressions' },
+    update: { courseId: algebraCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+    create: { name: 'Variables and Expressions', description: 'Introducing algebraic variables and how to form expressions with them.', courseId: algebraCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+  });
+
+  let variablesLesson = await prisma.lesson.findFirst({ where: { title: 'Intro to Variables', conceptId: variablesChapter.id } });
+  if (!variablesLesson) {
+    variablesLesson = await prisma.lesson.create({ data: { conceptId: variablesChapter.id, title: 'Intro to Variables', description: "What a variable is and how it stands in for a number.", sortOrder: 1, xpReward: 50 } });
+    await prisma.card.create({ data: { lessonId: variablesLesson.id, title: 'What is a Variable?', sortOrder: 1, cardType: 'CONCEPTUAL', content: "A variable is a symbol — usually a letter like $$x$$ or $$y$$ — that stands in for a number we don't know yet." } });
+  }
+
+  const linearEquationsChapter = await prisma.concept.upsert({
+    where: { name: 'Linear Equations' },
+    update: { courseId: algebraCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Linear Equations', description: 'Solving one-variable linear equations step by step.', courseId: algebraCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let linearEquationsLesson = await prisma.lesson.findFirst({ where: { title: 'Solving for X', conceptId: linearEquationsChapter.id } });
+  if (!linearEquationsLesson) {
+    linearEquationsLesson = await prisma.lesson.create({ data: { conceptId: linearEquationsChapter.id, title: 'Solving for X', description: 'Isolating the variable to solve a simple linear equation.', sortOrder: 1, xpReward: 60 } });
+    await prisma.card.create({ data: { lessonId: linearEquationsLesson.id, title: 'Balancing the Equation', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Whatever you do to one side of an equation, you must do to the other to keep it balanced.' } });
+    const linEqQ = await prisma.question.create({ data: { subjectId: mathSubject.id, levelId: gradeLevel.id, questionType: 'mcq', prompt: 'Solve: $$x + 5 = 12$$. What is $$x$$?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'Subtract 5 from both sides: x = 12 - 5 = 7.', hints: ['Subtract 5 from both sides.'] } });
+    await prisma.questionOption.create({ data: { questionId: linEqQ.id, optionLabel: 'A', optionText: '7', isCorrect: true } });
+    await prisma.questionOption.create({ data: { questionId: linEqQ.id, optionLabel: 'B', optionText: '17', isCorrect: false } });
+    await prisma.questionOption.create({ data: { questionId: linEqQ.id, optionLabel: 'C', optionText: '5', isCorrect: false } });
+    await prisma.card.create({ data: { lessonId: linearEquationsLesson.id, title: 'Solve It', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Now try solving one yourself.', questionId: linEqQ.id } });
+  }
+
+  const foundationalMathPath = await prisma.learningPath.upsert({
+    where: { slug: 'foundational-math' },
+    update: {},
+    create: {
+      learningSubjectId: mathLearningSubject.id,
+      title: 'Foundational Math',
+      slug: 'foundational-math',
+      description: 'A guided, step-by-step path from foundational algebra onward.',
+      unlockMode: 'SEQUENTIAL',
+      status: 'PUBLISHED',
+      sortOrder: 1,
+    },
+  });
+
+  await prisma.learningPathCourse.upsert({
+    where: { pathId_courseId: { pathId: foundationalMathPath.id, courseId: algebraCourse.id } },
+    update: {},
+    create: { pathId: foundationalMathPath.id, courseId: algebraCourse.id, sortOrder: 1, isRequired: true },
+  });
+
+  console.log('✅ Seeded learning catalog');
 
   console.log('🎉 Seeding completed successfully!');
 }

@@ -6,3 +6,8 @@ onlyBuiltDependencies:
 
 auditConfig:
   minimumReleaseAge: 0
+
+allowBuilds:
+  '@prisma/engines': true
+  prisma: true
+  unrs-resolver: true

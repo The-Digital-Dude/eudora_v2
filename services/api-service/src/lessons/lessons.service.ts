@@ -12,6 +12,9 @@ import {
   UpdateCardDto,
   ReorderCardsDto,
 } from './dto/lessons.dto';
+import { deriveSeed } from '../common/widgets/seed.util';
+import { generateWidgetInstance } from '../common/widgets/widget-generator';
+import { gradeWidgetSubmission } from '../common/widgets/widget-grader';
 
 @Injectable()
 export class LessonsService {
@@ -106,9 +109,38 @@ export class LessonsService {
     }
 
     return {
-      lesson,
+      lesson: {
+        ...lesson,
+        cards: this.enrichCardsForAttempt(lesson.cards, attempt.id),
+      },
       attempt,
     };
+  }
+
+  // Replaces each card's stored question config/options with the instance
+  // generated for this specific attempt — a no-op for fixed/legacy questions
+  // (the generator resolves to the exact same stored shape), and the actual
+  // per-attempt randomization for parameterized ones. Same (attemptId, cardId)
+  // always regenerates the same instance, so this stays stable across
+  // refreshes and retries within one attempt.
+  private enrichCardsForAttempt<
+    T extends { id: string; question: Parameters<typeof generateWidgetInstance>[0] | null },
+  >(cards: T[], attemptId: string): T[] {
+    return cards.map((card) => {
+      if (!card.question) {
+        return card;
+      }
+      const seed = deriveSeed(attemptId, card.id);
+      const instance = generateWidgetInstance(card.question, seed);
+      return {
+        ...card,
+        question: {
+          ...card.question,
+          widgetConfig: instance.displayConfig,
+          options: instance.options ?? card.question.options,
+        },
+      };
+    });
   }
 
   async submitCardResponse(
@@ -152,40 +184,28 @@ export class LessonsService {
       });
     }
 
-    // Evaluate correctness
+    // Evaluate correctness via the shared widget grader — recomputes the
+    // same per-attempt generated instance used to render this card, so a
+    // parameterized question is graded against whatever was actually shown,
+    // never against anything the client could have altered.
     let isCorrect = true;
+    let correctReveal: unknown;
     const explanation = card.question?.explanation || 'Card completed.';
 
     if (card.cardType !== 'CONCEPTUAL' && card.question) {
-      const q = card.question;
-      if (q.questionType === 'mcq' || q.widgetType === 'STANDARD_MCQ') {
-        const correctOpt = q.options.find((o) => o.isCorrect);
-        isCorrect = submission.selectedOptionId === correctOpt?.id;
-      } else if (q.widgetType === 'SLIDER_MANIPULATIVE') {
-        // Slider validation: matches exact coordinate or config threshold
-        const target = q.correctAnswer ? parseFloat(q.correctAnswer) : null;
-        const inputVal =
-          submission.interactionState?.finalValue !== undefined
-            ? parseFloat(submission.interactionState.finalValue)
-            : null;
-
-        if (target !== null && inputVal !== null) {
-          isCorrect = Math.abs(inputVal - target) <= 0.1; // Default tolerance margin
-        } else {
-          isCorrect = false;
-        }
-      } else if (q.questionType === 'numeric') {
-        const target = q.correctAnswer ? parseFloat(q.correctAnswer) : null;
-        const val = submission.responseText
-          ? parseFloat(submission.responseText)
-          : null;
-        isCorrect =
-          target !== null && val !== null && Math.abs(val - target) <= 0.001;
-      } else {
-        // Text fallbacks
-        isCorrect =
-          submission.responseText?.trim().toLowerCase() ===
-          q.correctAnswer?.trim().toLowerCase();
+      const seed = deriveSeed(attempt.id, card.id);
+      const instance = generateWidgetInstance(card.question, seed);
+      const graded = gradeWidgetSubmission(instance.resolvedAnswer, {
+        selectedOptionId: submission.selectedOptionId,
+        responseText: submission.responseText,
+        interactionState: submission.interactionState,
+      });
+      isCorrect = graded.isCorrect ?? true;
+      // Only ever reveal the correct-answer data once the student has
+      // actually gotten it wrong — never leak it alongside a correct
+      // submission, and never before one exists at all.
+      if (!isCorrect) {
+        correctReveal = graded.correctReveal;
       }
     }
 
@@ -295,6 +315,7 @@ export class LessonsService {
       explanation,
       xpEarned,
       isLessonComplete: allCompleted,
+      ...(correctReveal !== undefined ? { correctReveal } : {}),
     };
   }
 

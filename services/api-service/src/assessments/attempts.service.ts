@@ -27,6 +27,7 @@ import {
   toPage,
   audit,
 } from './assessments.common';
+import { deriveSeed } from '../common/widgets/seed.util';
 
 @Injectable()
 export class AttemptsService {
@@ -292,6 +293,7 @@ export class AttemptsService {
       where: { assessmentAttemptId },
       select: {
         id: true,
+        questionId: true,
         selectedOptionId: true,
         responseText: true,
         interactionState: true,
@@ -315,6 +317,7 @@ export class AttemptsService {
           response.responseText,
           response.interactionState as any,
           response.marksAvailable,
+          deriveSeed(assessmentAttemptId, response.questionId),
         );
         if (marked.isCorrect === undefined) {
           return Promise.resolve();

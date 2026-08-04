@@ -66,12 +66,16 @@ export interface SubmitCardResult {
   explanation: string;
   xpEarned: number;
   isLessonComplete: boolean;
+  // Only present once the student has answered incorrectly — never sent
+  // alongside a correct submission, and never before one exists.
+  correctReveal?: { correctValue?: number };
 }
 
 export interface ConceptSummary {
   id: string;
   name: string;
   description: string | null;
+  course: { id: string; title: string } | null;
 }
 
 export interface CreateLessonPayload {

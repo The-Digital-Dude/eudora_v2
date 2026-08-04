@@ -18,6 +18,7 @@ import {
   toPage,
   audit,
 } from './assessments.common';
+import { deriveSeed } from '../common/widgets/seed.util';
 
 @Injectable()
 export class StudentResponsesService {
@@ -63,6 +64,7 @@ export class StudentResponsesService {
       input.responseText,
       input.interactionState,
       context.marksAvailable,
+      deriveSeed(input.assessmentAttemptId, input.questionId),
     );
     const response = await this.prisma.studentResponse.upsert({
       where: {

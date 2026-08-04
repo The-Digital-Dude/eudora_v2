@@ -14,13 +14,27 @@ interface SliderWidgetProps {
   value: number;
   onChange: (val: number) => void;
   locked: boolean;
+  isCorrect?: boolean | null;
+  // Only present after an incorrect submission — never available beforehand.
+  correctValue?: number;
 }
 
-export function SliderWidget({ config, value, onChange, locked }: SliderWidgetProps) {
+export function SliderWidget({
+  config,
+  value,
+  onChange,
+  locked,
+  isCorrect,
+  correctValue,
+}: SliderWidgetProps) {
   const { min = 0, max = 100, step = 1, unit = "" } = config;
 
   // Calculate percentage for progress fill
   const percentage = ((value - min) / (max - min)) * 100;
+  const showReveal = locked && isCorrect === false && correctValue !== undefined;
+  const revealPercentage = showReveal
+    ? Math.min(100, Math.max(0, ((correctValue! - min) / (max - min)) * 100))
+    : null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!locked) {
@@ -31,27 +45,63 @@ export function SliderWidget({ config, value, onChange, locked }: SliderWidgetPr
   return (
     <div className="border-border bg-card flex flex-col items-center justify-center rounded-2xl border p-8 transition-all duration-300 select-none">
       <div className="relative w-full max-w-md py-6">
-        {/* Floating tooltip/value indicator */}
+        {/* Floating tooltip/value indicator — the student's own answer */}
         <div
           className="absolute -top-4 flex flex-col items-center justify-center transition-all duration-150 ease-out"
           style={{
             left: `calc(${percentage}% - 24px)`,
           }}
         >
-          <div className="rounded-lg bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20">
+          <div
+            className={[
+              "rounded-lg px-2.5 py-1 text-xs font-bold shadow-lg",
+              showReveal
+                ? "bg-destructive text-destructive-foreground shadow-destructive/20"
+                : "bg-primary text-primary-foreground shadow-primary/20",
+            ].join(" ")}
+          >
             {value}
             {unit}
           </div>
-          <div className="-mt-1 h-1.5 w-1.5 rotate-45 bg-primary" />
+          <div
+            className={`-mt-1 h-1.5 w-1.5 rotate-45 ${showReveal ? "bg-destructive" : "bg-primary"}`}
+          />
         </div>
+
+        {/* Correct-answer reveal tooltip, shown only after a wrong answer */}
+        {showReveal && revealPercentage !== null && (
+          <div
+            className="animate-fade-in absolute -top-4 flex flex-col items-center justify-center"
+            style={{ left: `calc(${revealPercentage}% - 24px)` }}
+          >
+            <div className="rounded-lg bg-success px-2.5 py-1 text-xs font-bold text-success-foreground shadow-lg shadow-success/20">
+              {correctValue}
+              {unit}
+            </div>
+            <div className="-mt-1 h-1.5 w-1.5 rotate-45 bg-success" />
+          </div>
+        )}
 
         {/* Custom Range Track Container */}
         <div className="bg-muted relative flex h-2 w-full items-center rounded-full">
-          {/* Progress fill */}
+          {/* Progress fill — the student's own answer */}
           <div
-            className="absolute h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+            className={[
+              "absolute h-full rounded-full",
+              showReveal
+                ? "bg-destructive/50"
+                : "bg-gradient-to-r from-violet-500 to-fuchsia-500",
+            ].join(" ")}
             style={{ width: `${percentage}%` }}
           />
+
+          {/* Correct-answer reveal marker on the track */}
+          {showReveal && revealPercentage !== null && (
+            <div
+              className="absolute top-1/2 z-10 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-success"
+              style={{ left: `${revealPercentage}%` }}
+            />
+          )}
 
           {/* Actual range input */}
           <input

@@ -117,6 +117,12 @@ export const authApi = createApi({
     // Clio active learning
     "Lessons",
     "LessonFlow",
+    // Learning catalog
+    "LearningSubjects",
+    "Courses",
+    "CourseDetail",
+    "LearningPaths",
+    "LearningPathDetail",
     "Teachers",
     "Notifications",
     "Timetables",

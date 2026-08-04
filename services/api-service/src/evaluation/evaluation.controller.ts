@@ -10,7 +10,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { EvaluationService } from './evaluation.service';
-import { CreateConceptDto, CreateCompetencyDto } from './dto/curriculum.dto';
+import {
+  CreateConceptDto,
+  UpdateConceptDto,
+  CreateCompetencyDto,
+} from './dto/curriculum.dto';
 import { CreateRubricDto } from './dto/rubric.dto';
 import { RecordEvidenceDto, CreateAssessmentDto } from './dto/assessment.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -34,14 +38,20 @@ export class EvaluationController {
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('concepts')
-  getConcepts() {
-    return this.evaluationService.getConcepts();
+  getConcepts(@Query('courseId') courseId?: string) {
+    return this.evaluationService.getConcepts(courseId);
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('concepts/:id')
   getConceptById(@Param('id') id: string) {
     return this.evaluationService.getConceptById(id);
+  }
+
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Patch('concepts/:id')
+  updateConcept(@Param('id') id: string, @Body() dto: UpdateConceptDto) {
+    return this.evaluationService.updateConcept(id, dto);
   }
 
   // ─── Competency Endpoints ────────────────────────────────────────────────────

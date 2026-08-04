@@ -6,12 +6,14 @@ import {
   IsUUID,
   IsDateString,
   IsEnum,
+  IsNotEmpty,
   ValidateNested,
   IsNumber,
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { WidgetType } from '../../lessons/dto/lessons.dto';
+import { IsValidWidgetConfig } from '../../common/widgets/widget-config.validator';
 
 export class ListAssessmentsQueryDto {
   @IsOptional()
@@ -254,12 +256,25 @@ export class CreateQuestionDto {
   widgetType?: WidgetType;
 
   @IsOptional()
+  @IsValidWidgetConfig()
   widgetConfig?: any;
 
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => QuestionOptionDto)
   options?: QuestionOptionDto[];
+}
+
+export class PreviewWidgetInstanceDto {
+  @IsEnum(WidgetType)
+  widgetType: WidgetType;
+
+  @IsNotEmpty()
+  widgetConfig: any;
+
+  @IsOptional()
+  @IsInt()
+  seed?: number;
 }
 
 export class UpdateQuestionDto {
@@ -296,6 +311,7 @@ export class UpdateQuestionDto {
   widgetType?: WidgetType;
 
   @IsOptional()
+  @IsValidWidgetConfig()
   widgetConfig?: any;
 
   @IsOptional()

@@ -24,6 +24,7 @@ import { DiagnosticsModule } from './diagnostics/diagnostics.module';
 import { LiveClassesModule } from './live-classes/live-classes.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { LessonsModule } from './lessons/lessons.module';
+import { CatalogModule } from './catalog/catalog.module';
 import { LeadsModule } from './leads/leads.module';
 import { CommunicationModule } from './communication/communication.module';
 import { MakeupModule } from './makeup/makeup.module';
@@ -65,6 +66,7 @@ import { AuditModule } from './common/audit/audit.module';
     LiveClassesModule,
     AssessmentsModule,
     LessonsModule,
+    CatalogModule,
     LeadsModule,
     CommunicationModule,
     MakeupModule,

@@ -123,6 +123,8 @@ export const authApi = createApi({
     "CourseDetail",
     "LearningPaths",
     "LearningPathDetail",
+    "Discussion",
+    "GamificationToday",
     "Teachers",
     "Notifications",
     "Timetables",

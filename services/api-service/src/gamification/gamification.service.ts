@@ -40,6 +40,80 @@ export class GamificationService {
     };
   }
 
+  // Daily "Today's goals" checklist — computed live from timestamps that
+  // already exist (LessonAttempt.completedAt, ModuleItemProgress.completedAt)
+  // rather than a new persisted daily counter. Targets are hardcoded for v1;
+  // admin-configurable targets are future work.
+  async getToday(userId: string) {
+    const student = await this.prisma.studentProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (!student) {
+      throw new NotFoundException('Student profile not found');
+    }
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const [lessonsToday, videosToday, readingsToday, moduleItemsToday] =
+      await Promise.all([
+        this.prisma.lessonAttempt.count({
+          where: {
+            studentProfileId: student.id,
+            status: 'COMPLETED',
+            completedAt: { gte: startOfToday },
+          },
+        }),
+        this.prisma.moduleItemProgress.count({
+          where: {
+            studentProfileId: student.id,
+            completedAt: { gte: startOfToday },
+            moduleItem: { kind: 'VIDEO' },
+          },
+        }),
+        this.prisma.moduleItemProgress.count({
+          where: {
+            studentProfileId: student.id,
+            completedAt: { gte: startOfToday },
+            moduleItem: { kind: 'READING' },
+          },
+        }),
+        this.prisma.moduleItemProgress.count({
+          where: {
+            studentProfileId: student.id,
+            completedAt: { gte: startOfToday },
+          },
+        }),
+      ]);
+
+    const targets = { items: 3, videos: 3, readings: 2 };
+    const itemsCompleted = lessonsToday + moduleItemsToday;
+
+    return {
+      goals: [
+        {
+          key: 'items',
+          label: 'Complete any 3 learning items',
+          target: targets.items,
+          progress: Math.min(itemsCompleted, targets.items),
+        },
+        {
+          key: 'videos',
+          label: 'Watch 3 videos',
+          target: targets.videos,
+          progress: Math.min(videosToday, targets.videos),
+        },
+        {
+          key: 'readings',
+          label: 'Complete 2 readings',
+          target: targets.readings,
+          progress: Math.min(readingsToday, targets.readings),
+        },
+      ],
+    };
+  }
+
   async getLeaderboard(userId: string, scope: 'class' | 'year' = 'class') {
     const student = await this.prisma.studentProfile.findUnique({
       where: { userId },

@@ -1372,6 +1372,318 @@ async function main() {
 
   console.log('✅ Seeded learning catalog');
 
+  // ─── Module Items: Video / Reading / Discussion / Assessment variety ────────
+  console.log('🌱 Seeding module items (video, reading, discussion, assessment)...');
+
+  const practiceQuizQ = await makeQ(
+    mathSubject.id,
+    gradeLevel.id,
+    'Solve: 3x - 4 = 11. What is x?',
+    [
+      { label: 'A', text: '5', correct: true },
+      { label: 'B', text: '3', correct: false },
+      { label: 'C', text: '25', correct: false },
+    ],
+    'Add 4 to both sides: 3x = 15. Divide by 3: x = 5.',
+  );
+
+  let linearEquationsPractice = await prisma.assessment.findFirst({ where: { title: 'Practice Quiz — Solving for X' } });
+  if (!linearEquationsPractice) {
+    linearEquationsPractice = await prisma.assessment.create({
+      data: {
+        assessmentTypeId: quizType.id,
+        subjectId: mathSubject.id,
+        levelId: gradeLevel.id,
+        termId: term.id,
+        title: 'Practice Quiz — Solving for X',
+        description: 'Low-stakes practice before the graded check-in. Attempt as many times as you like within the cap.',
+        totalMarks: 10,
+        estimatedDurationMinutes: 10,
+        status: 'published',
+        countsTowardGrade: false,
+        maxAttempts: 2,
+        weekNumber: 2,
+        publishedAt: new Date(),
+      },
+    });
+    const section = await prisma.assessmentSection.create({ data: { assessmentId: linearEquationsPractice.id, title: 'Section 1', sortOrder: 1 } });
+    await prisma.assessmentQuestion.create({ data: { assessmentId: linearEquationsPractice.id, sectionId: section.id, questionId: practiceQuizQ.id, questionNumber: 1, marksAvailable: 10 } });
+  }
+
+  const checkInQ = await makeQ(
+    mathSubject.id,
+    gradeLevel.id,
+    'Solve: 5x + 2 = 27. What is x?',
+    [
+      { label: 'A', text: '5', correct: true },
+      { label: 'B', text: '29', correct: false },
+      { label: 'C', text: '4', correct: false },
+    ],
+    'Subtract 2 from both sides: 5x = 25. Divide by 5: x = 5.',
+  );
+
+  let linearEquationsCheckIn = await prisma.assessment.findFirst({ where: { title: 'Graded Check-In — Solving for X' } });
+  if (!linearEquationsCheckIn) {
+    linearEquationsCheckIn = await prisma.assessment.create({
+      data: {
+        assessmentTypeId: quizType.id,
+        subjectId: mathSubject.id,
+        levelId: gradeLevel.id,
+        termId: term.id,
+        title: 'Graded Check-In — Solving for X',
+        description: 'One graded attempt to confirm you can solve linear equations on your own.',
+        totalMarks: 10,
+        estimatedDurationMinutes: 10,
+        status: 'published',
+        countsTowardGrade: true,
+        maxAttempts: 1,
+        weekNumber: 2,
+        publishedAt: new Date(),
+      },
+    });
+    const section = await prisma.assessmentSection.create({ data: { assessmentId: linearEquationsCheckIn.id, title: 'Section 1', sortOrder: 1 } });
+    await prisma.assessmentQuestion.create({ data: { assessmentId: linearEquationsCheckIn.id, sectionId: section.id, questionId: checkInQ.id, questionNumber: 1, marksAvailable: 10 } });
+  }
+
+  const practiceChapter = await prisma.concept.upsert({
+    where: { name: 'Solving Equations in Practice' },
+    update: { courseId: algebraCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+    create: {
+      name: 'Solving Equations in Practice',
+      description: 'Apply what you learned about linear equations through video, reading, discussion, and quizzes.',
+      courseId: algebraCourse.id,
+      sortOrder: 3,
+      kind: 'CHAPTER',
+    },
+  });
+
+  let videoItem = await prisma.moduleItem.findFirst({ where: { conceptId: practiceChapter.id, kind: 'VIDEO' } });
+  if (!videoItem) {
+    videoItem = await prisma.moduleItem.create({
+      data: {
+        conceptId: practiceChapter.id,
+        kind: 'VIDEO',
+        title: 'Watch: Solving Linear Equations Walkthrough',
+        sortOrder: 1,
+        status: 'PUBLISHED',
+        videoUrl: 'https://www.youtube.com/watch?v=Qyd_v3DGzTM',
+        videoDurationSeconds: 341,
+      },
+    });
+  }
+
+  let readingItem = await prisma.moduleItem.findFirst({ where: { conceptId: practiceChapter.id, kind: 'READING' } });
+  if (!readingItem) {
+    readingItem = await prisma.moduleItem.create({
+      data: {
+        conceptId: practiceChapter.id,
+        kind: 'READING',
+        title: 'Reading: Why Balance Matters',
+        sortOrder: 2,
+        status: 'PUBLISHED',
+        readingContent:
+          "An equation like $$3x - 4 = 11$$ is a statement that both sides are equal. Whatever operation you " +
+          'apply to one side, you must apply to the other — otherwise the equality breaks. This is why we add, ' +
+          'subtract, multiply, or divide both sides together when isolating a variable: it keeps the scale balanced ' +
+          'while peeling away everything that is not the variable itself.',
+      },
+    });
+  }
+
+  let discussionItem = await prisma.moduleItem.findFirst({ where: { conceptId: practiceChapter.id, kind: 'DISCUSSION' } });
+  if (!discussionItem) {
+    discussionItem = await prisma.moduleItem.create({
+      data: {
+        conceptId: practiceChapter.id,
+        kind: 'DISCUSSION',
+        title: 'Discuss: Real-World Equations',
+        sortOrder: 3,
+        status: 'PUBLISHED',
+      },
+    });
+  }
+
+  let discussionThread = await prisma.discussionThread.findUnique({ where: { moduleItemId: discussionItem.id } });
+  if (!discussionThread) {
+    discussionThread = await prisma.discussionThread.create({
+      data: {
+        moduleItemId: discussionItem.id,
+        prompt: 'Where have you seen a linear equation used in real life? Share an example and try setting it up as an equation.',
+      },
+    });
+
+    const charlotteProfileForThread = studentProfiles.find((p) => p.firstName === 'Charlotte');
+    const ariaProfileForThread = studentProfiles.find((p) => p.firstName === 'Aria');
+    const noahProfileForThread = studentProfiles.find((p) => p.firstName === 'Noah');
+
+    if (charlotteProfileForThread) {
+      const post1 = await prisma.discussionPost.create({
+        data: {
+          discussionThreadId: discussionThread.id,
+          studentProfileId: charlotteProfileForThread.id,
+          body: "If I have $20 and save $5 a week, the week 'w' where I hit $50 is 20 + 5w = 50!",
+        },
+      });
+      if (ariaProfileForThread) {
+        await prisma.discussionPost.create({
+          data: {
+            discussionThreadId: discussionThread.id,
+            studentProfileId: ariaProfileForThread.id,
+            parentPostId: post1.id,
+            body: 'Nice example! That solves to w = 6 weeks.',
+          },
+        });
+      }
+    }
+    if (noahProfileForThread) {
+      await prisma.discussionPost.create({
+        data: {
+          discussionThreadId: discussionThread.id,
+          studentProfileId: noahProfileForThread.id,
+          body: 'A taxi fare of $3 plus $2 per mile is 3 + 2m = total fare — I used this to figure out how far I could go with $15.',
+        },
+      });
+    }
+  }
+
+  let practiceQuizItem = await prisma.moduleItem.findFirst({ where: { conceptId: practiceChapter.id, assessmentId: linearEquationsPractice.id } });
+  if (!practiceQuizItem) {
+    practiceQuizItem = await prisma.moduleItem.create({
+      data: {
+        conceptId: practiceChapter.id,
+        kind: 'ASSESSMENT',
+        title: 'Practice Quiz: Solving for X',
+        sortOrder: 4,
+        status: 'PUBLISHED',
+        assessmentId: linearEquationsPractice.id,
+      },
+    });
+  }
+
+  let checkInItem = await prisma.moduleItem.findFirst({ where: { conceptId: practiceChapter.id, assessmentId: linearEquationsCheckIn.id } });
+  if (!checkInItem) {
+    checkInItem = await prisma.moduleItem.create({
+      data: {
+        conceptId: practiceChapter.id,
+        kind: 'ASSESSMENT',
+        title: 'Graded Check-In: Solving for X',
+        sortOrder: 5,
+        status: 'PUBLISHED',
+        assessmentId: linearEquationsCheckIn.id,
+      },
+    });
+  }
+
+  // A couple of students have already watched the video & read the reading —
+  // gives the outline checkmarks and course-progress views something to show.
+  for (const name of ['Charlotte', 'Aria']) {
+    const profile = studentProfiles.find((p) => p.firstName === name);
+    if (!profile) continue;
+    for (const item of [videoItem, readingItem]) {
+      const existing = await prisma.moduleItemProgress.findUnique({
+        where: { moduleItemId_studentProfileId: { moduleItemId: item.id, studentProfileId: profile.id } },
+      });
+      if (!existing) {
+        await prisma.moduleItemProgress.create({
+          data: {
+            moduleItemId: item.id,
+            studentProfileId: profile.id,
+            completedAt: new Date('2026-09-11'),
+            lastPositionSeconds: item.kind === 'VIDEO' ? item.videoDurationSeconds ?? undefined : undefined,
+          },
+        });
+      }
+    }
+  }
+
+  // Assign the two new quizzes to a few students so the "Start assignment"
+  // path in AssessmentItemView resolves to a real assignment for their login.
+  for (const name of ['Charlotte', 'Aria', 'Noah']) {
+    const profile = studentProfiles.find((p) => p.firstName === name);
+    if (!profile) continue;
+    for (const assessment of [linearEquationsPractice, linearEquationsCheckIn]) {
+      const existingAssignment = await prisma.assessmentAssignment.findFirst({
+        where: { assessmentId: assessment.id, studentProfileId: profile.id },
+      });
+      if (!existingAssignment) {
+        await prisma.assessmentAssignment.create({
+          data: {
+            assessmentId: assessment.id,
+            studentProfileId: profile.id,
+            classSectionId: sectionA.id,
+            assignedByUserId: superAdminUser.id,
+            opensAt,
+            dueAt,
+            status: 'assigned',
+          },
+        });
+      }
+    }
+  }
+
+  console.log('✅ Seeded module items (video, reading, discussion, assessment)');
+
+  // ─── Checkpoint Concept ───────────────────────────────────────────────────────
+  console.log('🌱 Seeding checkpoint chapter...');
+
+  const checkpointChapter = await prisma.concept.upsert({
+    where: { name: 'Algebra Foundations Checkpoint' },
+    update: { courseId: algebraCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: {
+      name: 'Algebra Foundations Checkpoint',
+      description: 'A short checkpoint quiz covering variables and linear equations — pass at 70% or better on the first try to complete this chapter.',
+      courseId: algebraCourse.id,
+      sortOrder: 4,
+      kind: 'CHECKPOINT',
+      passThresholdPercent: 70,
+    },
+  });
+
+  let checkpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Algebra Foundations', conceptId: checkpointChapter.id } });
+  if (!checkpointLesson) {
+    checkpointLesson = await prisma.lesson.create({
+      data: {
+        conceptId: checkpointChapter.id,
+        title: 'Checkpoint: Algebra Foundations',
+        description: 'Confirm your understanding of variables, expressions, and solving linear equations.',
+        sortOrder: 1,
+        xpReward: 75,
+      },
+    });
+    await prisma.card.create({
+      data: {
+        lessonId: checkpointLesson.id,
+        title: 'Before You Start',
+        sortOrder: 1,
+        cardType: 'CONCEPTUAL',
+        content: "This checkpoint checks first-try accuracy — retries won't count toward passing, so take your time on the question ahead.",
+      },
+    });
+    const checkpointQ = await makeQ(
+      mathSubject.id,
+      gradeLevel.id,
+      'Solve: 4x + 3 = 19. What is x?',
+      [
+        { label: 'A', text: '4', correct: true },
+        { label: 'B', text: '5.5', correct: false },
+        { label: 'C', text: '16', correct: false },
+      ],
+      'Subtract 3 from both sides: 4x = 16. Divide by 4: x = 4.',
+    );
+    await prisma.card.create({
+      data: {
+        lessonId: checkpointLesson.id,
+        title: 'Checkpoint Question',
+        sortOrder: 2,
+        cardType: 'CHECKPOINT',
+        content: 'Solve this on your own, no hints — this is what determines whether you pass.',
+        questionId: checkpointQ.id,
+      },
+    });
+  }
+
+  console.log('✅ Seeded checkpoint chapter');
+
   console.log('🎉 Seeding completed successfully!');
 }
 

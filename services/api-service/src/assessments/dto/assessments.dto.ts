@@ -127,12 +127,24 @@ export class CreateAssessmentDto {
   @IsString()
   title: string;
 
+  @IsOptional()
+  @IsString()
+  description?: string | null;
+
   @IsInt()
   totalMarks: number;
 
   @IsOptional()
   @IsInt()
   estimatedDurationMinutes?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  countsTowardGrade?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  maxAttempts?: number | null;
 
   @IsOptional()
   @ValidateNested({ each: true })
@@ -166,12 +178,24 @@ export class UpdateAssessmentDto {
   title?: string;
 
   @IsOptional()
+  @IsString()
+  description?: string | null;
+
+  @IsOptional()
   @IsInt()
   totalMarks?: number;
 
   @IsOptional()
   @IsInt()
   estimatedDurationMinutes?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  countsTowardGrade?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  maxAttempts?: number | null;
 
   @IsOptional()
   @ValidateNested({ each: true })

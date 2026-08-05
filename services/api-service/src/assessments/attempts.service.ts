@@ -80,6 +80,7 @@ export class AttemptsService {
         studentProfileId: true,
         classSectionId: true,
         status: true,
+        assessment: { select: { maxAttempts: true } },
       },
     });
     const resolvedAssignment = requireRecord(
@@ -118,6 +119,12 @@ export class AttemptsService {
       const existingCount = await tx.assessmentAttempt.count({
         where: { assessmentAssignmentId: resolvedAssignment.id },
       });
+      const maxAttempts = resolvedAssignment.assessment?.maxAttempts;
+      if (maxAttempts != null && existingCount >= maxAttempts) {
+        throw new ConflictException(
+          `Maximum of ${maxAttempts} attempt(s) already used for this assessment`,
+        );
+      }
       await tx.assessmentAttempt.updateMany({
         where: {
           assessmentAssignmentId: resolvedAssignment.id,

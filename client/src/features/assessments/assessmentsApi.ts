@@ -35,9 +35,12 @@ export interface Assessment {
   termId?: string | null;
   weekNumber?: number | null;
   title: string;
+  description?: string | null;
   totalMarks: number;
   estimatedDurationMinutes: number;
   status: "draft" | "published" | "archived";
+  countsTowardGrade?: boolean;
+  maxAttempts?: number | null;
   publishedAt?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -59,7 +62,15 @@ export interface Assignment {
   status: "assigned" | "started" | "submitted" | "overdue" | "exempted" | "cancelled";
   reminderCount: number;
   createdAt: string;
-  assessment?: { id: string; title: string; status: string; totalMarks: number };
+  assessment?: {
+    id: string;
+    title: string;
+    description?: string | null;
+    status: string;
+    totalMarks: number;
+    countsTowardGrade?: boolean;
+    maxAttempts?: number | null;
+  };
   studentProfile?: { id: string; fullName: string };
   classSection?: { id: string; code: string; name: string };
 }

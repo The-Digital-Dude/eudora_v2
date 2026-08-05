@@ -12,6 +12,22 @@ export interface LearningSubject {
   status: string;
 }
 
+export type ModuleItemKind = "VIDEO" | "READING" | "DISCUSSION" | "ASSESSMENT";
+
+export interface ModuleItem {
+  id: string;
+  conceptId: string;
+  kind: ModuleItemKind;
+  title: string;
+  sortOrder: number;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  videoUrl: string | null;
+  videoDurationSeconds: number | null;
+  readingContent: string | null;
+  assessmentId: string | null;
+  isDone: boolean;
+}
+
 export interface CourseConcept {
   id: string;
   name: string;
@@ -20,8 +36,39 @@ export interface CourseConcept {
   kind: "CHAPTER" | "CHECKPOINT";
   passThresholdPercent: number | null;
   lessons: { id: string; title: string; sortOrder: number; xpReward: number }[];
+  items: ModuleItem[];
   isDone: boolean;
   isLocked: boolean;
+}
+
+export interface CreateModuleItemPayload {
+  conceptId: string;
+  kind: ModuleItemKind;
+  title: string;
+  sortOrder?: number;
+  status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  videoUrl?: string;
+  videoDurationSeconds?: number;
+  readingContent?: string;
+  assessmentId?: string;
+  discussionPrompt?: string;
+}
+
+export interface DiscussionPost {
+  id: string;
+  discussionThreadId: string;
+  studentProfileId: string;
+  parentPostId: string | null;
+  body: string;
+  createdAt: string;
+  studentProfile: { id: string; fullName: string };
+}
+
+export interface DiscussionThread {
+  id: string;
+  moduleItemId: string;
+  prompt: string;
+  posts: DiscussionPost[];
 }
 
 export interface CourseSummary {
@@ -208,6 +255,68 @@ export const catalogApi = authApi.injectEndpoints({
         { type: "LearningPathDetail" as any, id: pathId },
       ],
     } as any),
+
+    // Module items (Coursera-style Video/Reading/Discussion/Assessment items)
+    createModuleItem: builder.mutation<ModuleItem, CreateModuleItemPayload>({
+      query: (body: any) => ({
+        url: "/catalog/module-items",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Courses" as any, "CourseDetail" as any],
+    } as any),
+
+    updateModuleItem: builder.mutation<ModuleItem, { id: string; body: Partial<CreateModuleItemPayload> }>({
+      query: ({ id, body }: any) => ({
+        url: `/catalog/module-items/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["CourseDetail" as any],
+    } as any),
+
+    deleteModuleItem: builder.mutation<void, string>({
+      query: (id: string) => ({
+        url: `/catalog/module-items/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["CourseDetail" as any],
+    } as any),
+
+    updateModuleItemProgress: builder.mutation<
+      any,
+      { id: string; completed?: boolean; lastPositionSeconds?: number; notes?: string }
+    >({
+      query: ({ id, ...body }: any) => ({
+        url: `/catalog/module-items/${id}/progress`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["CourseDetail" as any, "GamificationToday" as any],
+    } as any),
+
+    getMyAssignmentForItem: builder.query<
+      { assignment: { id: string; status: string; dueAt: string } | null },
+      string
+    >({
+      query: (moduleItemId: string) => `/catalog/module-items/${moduleItemId}/my-assignment`,
+    } as any),
+
+    getDiscussion: builder.query<DiscussionThread, string>({
+      query: (moduleItemId: string) => `/catalog/module-items/${moduleItemId}/discussion`,
+      providesTags: (_result: any, _err: any, id: any) => [{ type: "Discussion" as any, id }],
+    } as any),
+
+    addDiscussionPost: builder.mutation<DiscussionPost, { moduleItemId: string; body: string; parentPostId?: string }>({
+      query: ({ moduleItemId, ...body }: any) => ({
+        url: `/catalog/module-items/${moduleItemId}/discussion/posts`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result: any, _err: any, { moduleItemId }: any) => [
+        { type: "Discussion" as any, id: moduleItemId },
+      ],
+    } as any),
   }),
 });
 
@@ -224,4 +333,11 @@ export const {
   useAddCourseToPathMutation,
   useReorderPathCoursesMutation,
   useRemoveCourseFromPathMutation,
+  useCreateModuleItemMutation,
+  useUpdateModuleItemMutation,
+  useDeleteModuleItemMutation,
+  useUpdateModuleItemProgressMutation,
+  useGetMyAssignmentForItemQuery,
+  useGetDiscussionQuery,
+  useAddDiscussionPostMutation,
 } = catalogApi;

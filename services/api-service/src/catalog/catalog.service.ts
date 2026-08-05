@@ -135,6 +135,10 @@ export class CatalogService {
                 xpReward: true,
               },
             },
+            items: {
+              where: { deletedAt: null },
+              orderBy: { sortOrder: 'asc' },
+            },
           },
         },
       },
@@ -152,14 +156,43 @@ export class CatalogService {
     );
     const stateByConcept = new Map(unlockState.map((s) => [s.conceptId, s]));
 
+    const allItemIds = course.concepts.flatMap((c) =>
+      c.items.map((i) => i.id),
+    );
+    const completedItemIds = studentProfileId
+      ? await this.getCompletedModuleItemIds(studentProfileId, allItemIds)
+      : new Set<string>();
+
     return {
       ...course,
       concepts: course.concepts.map((concept) => ({
         ...concept,
         isDone: stateByConcept.get(concept.id)?.isDone ?? false,
         isLocked: stateByConcept.get(concept.id)?.isLocked ?? false,
+        items: concept.items.map((item) => ({
+          ...item,
+          isDone: completedItemIds.has(item.id),
+        })),
       })),
     };
+  }
+
+  private async getCompletedModuleItemIds(
+    studentProfileId: string,
+    moduleItemIds: string[],
+  ): Promise<Set<string>> {
+    if (moduleItemIds.length === 0) {
+      return new Set();
+    }
+    const completed = await this.prisma.moduleItemProgress.findMany({
+      where: {
+        studentProfileId,
+        moduleItemId: { in: moduleItemIds },
+        completedAt: { not: null },
+      },
+      select: { moduleItemId: true },
+    });
+    return new Set(completed.map((c) => c.moduleItemId));
   }
 
   async updateCourse(id: string, dto: UpdateCourseDto) {

@@ -28,4 +28,9 @@ export class GamificationController {
   async getBadges(@CurrentUser() user: CurrentUserDto) {
     return this.gamificationService.getBadges(user.id);
   }
+
+  @Get('today')
+  async getToday(@CurrentUser() user: CurrentUserDto) {
+    return this.gamificationService.getToday(user.id);
+  }
 }

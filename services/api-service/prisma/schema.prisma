@@ -374,6 +374,8 @@ model StudentProfile {
   learningGaps             LearningGap[]
   nextActions              NextAction[]
   placementRecommendations PlacementRecommendation[]
+  moduleItemProgress       ModuleItemProgress[]
+  discussionPosts          DiscussionPost[]
 
   @@map("student_profiles")
 }
@@ -858,8 +860,91 @@ model Concept {
   course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
   competencies Competency[]
   lessons      Lesson[]
+  items        ModuleItem[]
 
   @@map("concepts")
+}
+
+// ─── Coursera-style Module Items ─────────────────────────────────────────────
+// A second, coexisting content shape alongside Concept -> Lesson -> Card: a
+// module (Concept) can also hold a flat, ordered sequence of ModuleItems —
+// Video/Reading/Discussion/Assessment today. Deliberately no LESSON kind yet
+// (folding existing Lesson/Card content in as a 5th kind is future work);
+// enums are additive-safe so it can be appended later without a migration.
+
+enum ModuleItemKind {
+  VIDEO
+  READING
+  DISCUSSION
+  ASSESSMENT
+}
+
+model ModuleItem {
+  id                   String         @id @default(uuid())
+  conceptId            String
+  kind                 ModuleItemKind
+  title                String
+  sortOrder            Int            @default(1)
+  status               CatalogStatus  @default(DRAFT)
+  videoUrl             String?
+  videoDurationSeconds Int?
+  readingContent       String?
+  assessmentId         String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  deletedAt            DateTime?
+
+  concept    Concept              @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  assessment Assessment?          @relation(fields: [assessmentId], references: [id], onDelete: SetNull)
+  progress   ModuleItemProgress[]
+  discussion DiscussionThread?
+
+  @@map("module_items")
+}
+
+model ModuleItemProgress {
+  id                  String    @id @default(uuid())
+  moduleItemId        String
+  studentProfileId    String
+  completedAt         DateTime?
+  lastPositionSeconds Int?
+  notes               String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  moduleItem     ModuleItem     @relation(fields: [moduleItemId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleItemId, studentProfileId])
+  @@map("module_item_progress")
+}
+
+model DiscussionThread {
+  id           String   @id @default(uuid())
+  moduleItemId String   @unique
+  prompt       String
+  createdAt    DateTime @default(now())
+
+  moduleItem ModuleItem       @relation(fields: [moduleItemId], references: [id], onDelete: Cascade)
+  posts      DiscussionPost[]
+
+  @@map("discussion_threads")
+}
+
+model DiscussionPost {
+  id                 String   @id @default(uuid())
+  discussionThreadId String
+  studentProfileId   String
+  parentPostId       String?
+  body               String
+  createdAt          DateTime @default(now())
+
+  thread         DiscussionThread @relation(fields: [discussionThreadId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  parentPost     DiscussionPost?  @relation("Replies", fields: [parentPostId], references: [id], onDelete: SetNull)
+  replies        DiscussionPost[] @relation("Replies")
+
+  @@map("discussion_posts")
 }
 
 model Competency {
@@ -1179,9 +1264,12 @@ model Assessment {
   termId                   String?
   weekNumber               Int?
   title                    String
+  description              String?
   totalMarks               Int       @default(0)
   estimatedDurationMinutes Int       @default(0)
   status                   String    @default("draft") // draft, published, archived
+  countsTowardGrade        Boolean   @default(true)
+  maxAttempts              Int? // null = unlimited (matches today's real unconditional behavior)
   publishedAt              DateTime?
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
@@ -1196,6 +1284,7 @@ model Assessment {
   sections    AssessmentSection[]
   questions   AssessmentQuestion[]
   assignments AssessmentAssignment[]
+  moduleItems ModuleItem[]
 
   @@map("assessments")
 }

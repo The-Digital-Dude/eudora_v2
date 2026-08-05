@@ -213,6 +213,7 @@ export class AssessmentSetupService {
       input.estimatedDurationMinutes,
       'estimatedDurationMinutes',
     );
+    assertNullablePositiveInteger(input.maxAttempts, 'maxAttempts');
     const assessment = await this.prisma.assessment.create({
       data: {
         assessmentTypeId: requireText(
@@ -224,8 +225,11 @@ export class AssessmentSetupService {
         termId: input.termId ? requireText(input.termId, 'termId') : null,
         weekNumber: input.weekNumber ?? null,
         title: requireText(input.title, 'title'),
+        description: input.description?.trim() || null,
         totalMarks: input.totalMarks,
         estimatedDurationMinutes: input.estimatedDurationMinutes ?? undefined,
+        countsTowardGrade: input.countsTowardGrade ?? undefined,
+        maxAttempts: input.maxAttempts ?? null,
         ...(input.sections
           ? { sections: { create: normalizeSections(input.sections) } }
           : {}),
@@ -255,6 +259,7 @@ export class AssessmentSetupService {
       input.estimatedDurationMinutes,
       'estimatedDurationMinutes',
     );
+    assertNullablePositiveInteger(input.maxAttempts, 'maxAttempts');
 
     const assessment = await this.prisma.$transaction(async (tx) => {
       if (input.sections) {
@@ -282,12 +287,21 @@ export class AssessmentSetupService {
       if (input.title !== undefined) {
         data.title = requireText(input.title, 'title');
       }
+      if (input.description !== undefined) {
+        data.description = input.description?.trim() || null;
+      }
       if (input.totalMarks !== undefined) {
         data.totalMarks = input.totalMarks;
       }
       if (input.estimatedDurationMinutes !== undefined) {
         data.estimatedDurationMinutes =
           input.estimatedDurationMinutes ?? undefined;
+      }
+      if (input.countsTowardGrade !== undefined) {
+        data.countsTowardGrade = input.countsTowardGrade;
+      }
+      if (input.maxAttempts !== undefined) {
+        data.maxAttempts = input.maxAttempts;
       }
       if (input.sections) {
         data.sections = { create: normalizeSections(input.sections) };

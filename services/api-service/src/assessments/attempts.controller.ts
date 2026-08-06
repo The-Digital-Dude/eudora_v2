@@ -21,12 +21,16 @@ import {
 } from './dto/assessments.dto';
 import { AttemptsService } from './attempts.service';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { GuardianAccessService } from '../family/guardian-access.service';
 
 @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller()
 @UseGuards(CsrfGuard, PermissionsGuard)
 export class AttemptsController {
-  constructor(private readonly attemptsService: AttemptsService) {}
+  constructor(
+    private readonly attemptsService: AttemptsService,
+    private readonly guardianAccessService: GuardianAccessService,
+  ) {}
 
   @Get('attempts')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
@@ -39,6 +43,16 @@ export class AttemptsController {
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
   async getAttempt(@Param('id') id: string) {
     return this.attemptsService.getAttempt(id);
+  }
+
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
+  @Get('attempts/:id/questions')
+  @RequirePermissions({ action: 'attempt', subject: 'Assessment' })
+  async getAttemptQuestions(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
+    return this.attemptsService.getAttemptQuestions(id, user.id, user.roles);
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
@@ -88,7 +102,9 @@ export class AttemptsController {
   async listStudentAttempts(
     @Param('id') id: string,
     @Query() query: ListAttemptsQueryDto,
+    @CurrentUser() user: CurrentUserDto,
   ) {
+    await this.guardianAccessService.assertCanAccessStudentRecord(user, id);
     return this.attemptsService.listAttempts({
       ...query,
       studentProfileId: id,

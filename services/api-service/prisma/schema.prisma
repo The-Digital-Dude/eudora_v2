@@ -37,6 +37,7 @@ model User {
   assignedAssignments     AssessmentAssignment[] @relation("AssignedAssignments")
   markedAttempts          AssessmentAttempt[]    @relation("MarkedAttempts")
   notifications           Notification[]
+  deviceTokens            DeviceToken[]
   fileUploads             FileUpload[]
   guardianThreads         MessageThread[]        @relation("GuardianThreads")
   teacherThreads          MessageThread[]        @relation("TeacherThreads")
@@ -347,6 +348,12 @@ model StudentProfile {
   birthDate   DateTime
   gender      Gender
   status      StudentStatus @default(ACTIVE)
+  // Self-service profile-completion fields (mobile/web Settings) — nullable
+  // because every existing StudentProfile was created without them.
+  phone                  String?
+  address                String?
+  emergencyContactName   String?
+  emergencyContactPhone  String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   deletedAt   DateTime?
@@ -1186,6 +1193,12 @@ model AuthSession {
   id               String    @id @default(uuid())
   userId           String
   refreshTokenHash String    @unique
+  // The hash rotated away on the most recent refresh, kept only long enough to
+  // recognise a benign retry (network flake, app resumed mid-refresh) and tell
+  // it apart from genuine token theft. Not unique: a replayed hash may briefly
+  // coexist across rows, and colliding here would 500 rather than authenticate.
+  previousRefreshTokenHash String?
+  rotatedAt                DateTime?
   userAgent        String?
   ipAddress        String?
   createdAt        DateTime  @default(now())
@@ -1196,6 +1209,7 @@ model AuthSession {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([previousRefreshTokenHash])
   @@map("auth_sessions")
 }
 
@@ -1681,6 +1695,26 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+/**
+ * One row per (user, installation) — a user signed into the app on two
+ * phones holds two rows. `token` is unique on its own (not composite with
+ * userId) because Expo push tokens are reissued per-install, not per-user;
+ * registering the same token again just re-points it, e.g. after a
+ * different account logs into the same device.
+ */
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  platform  String // 'ios' | 'android' | 'web'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("device_tokens")
 }
 
 model FileUpload {

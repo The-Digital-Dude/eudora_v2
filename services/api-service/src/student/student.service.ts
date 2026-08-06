@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateStudentProfileDto,
+  UpdateMyStudentProfileDto,
   UpdateStudentProfileDto,
 } from './dto/student-profile.dto';
 import { CreatePlacementDto, UpdatePlacementDto } from './dto/placement.dto';
@@ -17,6 +18,21 @@ export class StudentService {
   constructor(private readonly prisma: PrismaService) {}
 
   // --- Student Profile Operations ---
+
+  /** Self-service — `userId` comes from the JWT, never the request body. */
+  async updateMyProfile(userId: string, dto: UpdateMyStudentProfileDto) {
+    const profile = await this.prisma.studentProfile.findUnique({
+      where: { userId },
+    });
+    if (!profile) {
+      throw new NotFoundException('Student profile not found');
+    }
+
+    return this.prisma.studentProfile.update({
+      where: { userId },
+      data: dto,
+    });
+  }
 
   async createProfile(dto: CreateStudentProfileDto) {
     const user = await this.prisma.user.findUnique({

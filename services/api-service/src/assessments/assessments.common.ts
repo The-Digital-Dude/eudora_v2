@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { WidgetConfig, InteractionState } from './types/widget-config';
 import { generateWidgetInstance } from '../common/widgets/widget-generator';
 import { gradeWidgetSubmission } from '../common/widgets/widget-grader';
+import { deriveSeed } from '../common/widgets/seed.util';
 
 export const lookupSelect = {
   id: true,
@@ -126,6 +127,7 @@ export const assignmentSelect = {
       description: true,
       status: true,
       totalMarks: true,
+      estimatedDurationMinutes: true,
       countsTowardGrade: true,
       maxAttempts: true,
     },
@@ -133,6 +135,93 @@ export const assignmentSelect = {
   studentProfile: { select: { id: true, fullName: true } },
   classSection: { select: { id: true, code: true, name: true } },
 };
+
+/**
+ * Raw question data for an attempt — includes `correctAnswer` and
+ * `option.isCorrect` because `generateWidgetInstance` needs them to resolve
+ * the per-attempt instance. Never send this select's result to a student
+ * directly; pass it through `toStudentSafeAttemptQuestions` first.
+ */
+export const attemptQuestionsSelect = {
+  id: true,
+  sectionId: true,
+  questionNumber: true,
+  marksAvailable: true,
+  section: { select: { id: true, title: true, sortOrder: true } },
+  question: {
+    select: {
+      id: true,
+      questionType: true,
+      prompt: true,
+      correctAnswer: true,
+      widgetType: true,
+      widgetConfig: true,
+      hints: true,
+      options: {
+        orderBy: { optionLabel: 'asc' as const },
+        select: {
+          id: true,
+          optionLabel: true,
+          optionText: true,
+          isCorrect: true,
+        },
+      },
+    },
+  },
+};
+
+type RawAttemptQuestion = {
+  id: string;
+  sectionId: string;
+  questionNumber: number;
+  marksAvailable: number;
+  section: { id: string; title: string; sortOrder: number };
+  question: Parameters<typeof generateWidgetInstance>[0] & {
+    id: string;
+    prompt: string;
+    hints: string[];
+  };
+};
+
+/**
+ * Maps raw attempt questions (server-side shape, includes the answer key) to
+ * what a student taking the assessment receives — regenerates each
+ * question's widget instance from the same per-(attempt, question) seed used
+ * for grading (mirrors `LessonsService.enrichCardsForAttempt`), so a
+ * parameterized widget's answer can never be read off the raw config, and
+ * explicitly omits `correctAnswer`/`option.isCorrect` rather than relying on
+ * the generated instance alone to withhold them.
+ */
+export function toStudentSafeAttemptQuestions(
+  assessmentQuestions: RawAttemptQuestion[],
+  attemptId: string,
+) {
+  return assessmentQuestions.map((aq) => {
+    const seed = deriveSeed(attemptId, aq.question.id);
+    const instance = generateWidgetInstance(aq.question, seed);
+    const options = instance.options ?? aq.question.options;
+    return {
+      id: aq.id,
+      sectionId: aq.sectionId,
+      questionNumber: aq.questionNumber,
+      marksAvailable: aq.marksAvailable,
+      section: aq.section,
+      question: {
+        id: aq.question.id,
+        questionType: aq.question.questionType,
+        prompt: aq.question.prompt,
+        widgetType: aq.question.widgetType,
+        widgetConfig: instance.displayConfig,
+        hints: aq.question.hints,
+        options: options.map((o) => ({
+          id: o.id,
+          optionLabel: o.optionLabel,
+          optionText: o.optionText,
+        })),
+      },
+    };
+  });
+}
 
 export const attemptSelect = {
   id: true,

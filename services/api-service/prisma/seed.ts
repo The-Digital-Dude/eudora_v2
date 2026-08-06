@@ -1684,6 +1684,333 @@ async function main() {
 
   console.log('✅ Seeded checkpoint chapter');
 
+  // ─── Phase 3.5: Practice-chapter recap lesson ────────────────────────────────
+  // computeConceptDoneMap requires concept.lessons.length > 0 — practiceChapter
+  // had none (module items only), so its CHECKPOINT sibling could never
+  // actually become unlockable. One short lesson fixes that without touching
+  // progression logic.
+  console.log('🌱 Seeding practice recap lesson...');
+  let practiceRecapLesson = await prisma.lesson.findFirst({ where: { title: 'Practice Recap', conceptId: practiceChapter.id } });
+  if (!practiceRecapLesson) {
+    practiceRecapLesson = await prisma.lesson.create({ data: { conceptId: practiceChapter.id, title: 'Practice Recap', description: 'A short recap tying together the video, reading, and discussion above.', sortOrder: 6, xpReward: 20 } });
+    await prisma.card.create({ data: { lessonId: practiceRecapLesson.id, title: 'Recap', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'You just watched a walkthrough, read about why balance matters, and discussed a real-world equation. Ready for the checkpoint next.' } });
+  }
+  console.log('✅ Seeded practice recap lesson');
+
+  // ─── Phase 3.5: Additional courses ────────────────────────────────────────────
+  console.log('🌱 Seeding Phase 3.5 courses...');
+
+  const csLearningSubject = await prisma.learningSubject.upsert({
+    where: { code: 'CS' },
+    update: {},
+    create: { code: 'CS', name: 'Computer Science', description: 'Algorithms, data structures, and how programs work.', sortOrder: 2 },
+  });
+
+  // Course: Fractions & Algebra Basics — reparents the two orphaned legacy
+  // Concepts ('Fractions', 'Algebra Fundamentals') that already had real
+  // lesson content but were never attached to any Course.
+  const fractionsCourse = await prisma.course.upsert({
+    where: { slug: 'fractions-and-algebra-basics' },
+    update: {},
+    create: {
+      learningSubjectId: mathLearningSubject.id,
+      title: 'Fractions & Algebra Basics',
+      slug: 'fractions-and-algebra-basics',
+      description: 'Compare and combine fractions, then take your first steps into algebraic thinking.',
+      estimatedHours: 6,
+      status: 'PUBLISHED',
+      sortOrder: 2,
+    },
+  });
+
+  await prisma.concept.update({ where: { id: fractionsConc.id }, data: { courseId: fractionsCourse.id, sortOrder: 1, kind: 'CHAPTER' } });
+  await prisma.concept.update({ where: { id: algebraConc.id }, data: { courseId: fractionsCourse.id, sortOrder: 2, kind: 'CHAPTER' } });
+
+  const fractionsPracticeChapter = await prisma.concept.upsert({
+    where: { name: 'Fractions & Algebra in Practice' },
+    update: { courseId: fractionsCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+    create: {
+      name: 'Fractions & Algebra in Practice',
+      description: 'Apply what you learned through video, reading, discussion, and a practice quiz.',
+      courseId: fractionsCourse.id,
+      sortOrder: 3,
+      kind: 'CHAPTER',
+    },
+  });
+
+  let fracPracticeLesson = await prisma.lesson.findFirst({ where: { title: 'Fractions Recap', conceptId: fractionsPracticeChapter.id } });
+  if (!fracPracticeLesson) {
+    fracPracticeLesson = await prisma.lesson.create({ data: { conceptId: fractionsPracticeChapter.id, title: 'Fractions Recap', description: 'Tying fractions and algebra together with one more example.', sortOrder: 1, xpReward: 40 } });
+    const fracQ = await makeQ(mathSubject.id, gradeLevel.id, 'A recipe needs 3/4 cup of sugar. If you double the recipe, how much sugar do you need?', [{ label: 'A', text: '1 1/2 cups', correct: true }, { label: 'B', text: '3/8 cup', correct: false }, { label: 'C', text: '1 1/4 cups', correct: false }], 'Doubling 3/4 gives 6/4, which simplifies to 1 1/2 cups.');
+    await prisma.card.create({ data: { lessonId: fracPracticeLesson.id, title: 'Doubling a Recipe', sortOrder: 1, cardType: 'INTERACTIVE', content: 'Fractions show up constantly in everyday cooking.', questionId: fracQ.id } });
+  }
+
+  let fracVideoItem = await prisma.moduleItem.findFirst({ where: { conceptId: fractionsPracticeChapter.id, kind: 'VIDEO' } });
+  if (!fracVideoItem) {
+    fracVideoItem = await prisma.moduleItem.create({ data: { conceptId: fractionsPracticeChapter.id, kind: 'VIDEO', title: 'Watch: Fractions in Everyday Life', sortOrder: 2, status: 'PUBLISHED', videoUrl: 'https://www.youtube.com/watch?v=1TSF2ihoSaU', videoDurationSeconds: 300 } });
+  }
+
+  let fracReadingItem = await prisma.moduleItem.findFirst({ where: { conceptId: fractionsPracticeChapter.id, kind: 'READING' } });
+  if (!fracReadingItem) {
+    fracReadingItem = await prisma.moduleItem.create({ data: { conceptId: fractionsPracticeChapter.id, kind: 'READING', title: 'Reading: Common Denominators', sortOrder: 3, status: 'PUBLISHED', readingContent: 'To add or compare fractions with different denominators, first rewrite them with a common denominator — the least common multiple of the two denominators. Once the denominators match, you can add, subtract, or compare the numerators directly.' } });
+  }
+
+  let fracDiscussionItem = await prisma.moduleItem.findFirst({ where: { conceptId: fractionsPracticeChapter.id, kind: 'DISCUSSION' } });
+  if (!fracDiscussionItem) {
+    fracDiscussionItem = await prisma.moduleItem.create({ data: { conceptId: fractionsPracticeChapter.id, kind: 'DISCUSSION', title: 'Discuss: Fractions You Use Daily', sortOrder: 4, status: 'PUBLISHED' } });
+    const fracThread = await prisma.discussionThread.create({ data: { moduleItemId: fracDiscussionItem.id, prompt: 'Where do you use fractions in everyday life — cooking, sports, money? Share an example.' } });
+    if (charlotteProfile) {
+      await prisma.discussionPost.create({ data: { discussionThreadId: fracThread.id, studentProfileId: charlotteProfile.id, body: "When I split a pizza with 3 friends, we each get 1/4 — that's a fraction I use all the time!" } });
+    }
+  }
+
+  const fracQuizQ = await makeQ(mathSubject.id, gradeLevel.id, 'What is 1/3 + 1/6?', [{ label: 'A', text: '1/2', correct: true }, { label: 'B', text: '2/9', correct: false }, { label: 'C', text: '1/9', correct: false }], 'Rewrite 1/3 as 2/6. Then 2/6 + 1/6 = 3/6 = 1/2.');
+  let fracQuiz = await prisma.assessment.findFirst({ where: { title: 'Practice Quiz — Fractions & Algebra' } });
+  if (!fracQuiz) {
+    fracQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: mathSubject.id, levelId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Fractions & Algebra', description: 'Low-stakes practice on fractions and basic algebra.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 2, publishedAt: new Date() } });
+    const fracSection = await prisma.assessmentSection.create({ data: { assessmentId: fracQuiz.id, title: 'Section 1', sortOrder: 1 } });
+    await prisma.assessmentQuestion.create({ data: { assessmentId: fracQuiz.id, sectionId: fracSection.id, questionId: fracQuizQ.id, questionNumber: 1, marksAvailable: 10 } });
+  }
+  let fracAssessmentItem = await prisma.moduleItem.findFirst({ where: { conceptId: fractionsPracticeChapter.id, assessmentId: fracQuiz.id } });
+  if (!fracAssessmentItem) {
+    fracAssessmentItem = await prisma.moduleItem.create({ data: { conceptId: fractionsPracticeChapter.id, kind: 'ASSESSMENT', title: 'Practice Quiz: Fractions & Algebra', sortOrder: 5, status: 'PUBLISHED', assessmentId: fracQuiz.id } });
+  }
+  if (charlotteProfile) {
+    const existingFracAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: fracQuiz.id, studentProfileId: charlotteProfile.id } });
+    if (!existingFracAssignment) {
+      await prisma.assessmentAssignment.create({ data: { assessmentId: fracQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+    }
+  }
+
+  const fractionsCheckpoint = await prisma.concept.upsert({
+    where: { name: 'Fractions & Algebra Checkpoint' },
+    update: { courseId: fractionsCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: { name: 'Fractions & Algebra Checkpoint', description: 'A short checkpoint covering fractions and basic algebra — pass at 70% or better on the first try.', courseId: fractionsCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+  });
+  let fracCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Fractions & Algebra', conceptId: fractionsCheckpoint.id } });
+  if (!fracCheckpointLesson) {
+    fracCheckpointLesson = await prisma.lesson.create({ data: { conceptId: fractionsCheckpoint.id, title: 'Checkpoint: Fractions & Algebra', description: 'Confirm your understanding of fractions and basic algebra.', sortOrder: 1, xpReward: 70 } });
+    await prisma.card.create({ data: { lessonId: fracCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: "This checkpoint checks first-try accuracy — retries won't count toward passing." } });
+    const fracCheckpointQ = await makeQ(mathSubject.id, gradeLevel.id, 'What is 2/5 + 1/5?', [{ label: 'A', text: '3/5', correct: true }, { label: 'B', text: '3/10', correct: false }, { label: 'C', text: '2/25', correct: false }], 'Same denominator: add numerators. 2/5 + 1/5 = 3/5.');
+    await prisma.card.create({ data: { lessonId: fracCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Solve this on your own, no hints.', questionId: fracCheckpointQ.id } });
+  }
+
+  // Course: Intro to Algorithms — reparents the orphaned 'Sorting Algorithms'
+  // Concept, adds a GRID_MATCHING question (this widget type's first seed
+  // coverage anywhere).
+  const algorithmsCourse = await prisma.course.upsert({
+    where: { slug: 'intro-to-algorithms' },
+    update: {},
+    create: {
+      learningSubjectId: csLearningSubject.id,
+      title: 'Intro to Algorithms',
+      slug: 'intro-to-algorithms',
+      description: 'How computers sort, search, and reason about the cost of getting things done.',
+      estimatedHours: 6,
+      status: 'PUBLISHED',
+      sortOrder: 1,
+    },
+  });
+
+  await prisma.concept.update({ where: { id: sortingConc.id }, data: { courseId: algorithmsCourse.id, sortOrder: 1, kind: 'CHAPTER' } });
+
+  const complexityChapter = await prisma.concept.upsert({
+    where: { name: 'Algorithm Complexity' },
+    update: { courseId: algorithmsCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Algorithm Complexity', description: 'Matching common algorithms to how their runtime scales.', courseId: algorithmsCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let complexityLesson = await prisma.lesson.findFirst({ where: { title: 'Matching Algorithms to Complexity', conceptId: complexityChapter.id } });
+  if (!complexityLesson) {
+    complexityLesson = await prisma.lesson.create({ data: { conceptId: complexityChapter.id, title: 'Matching Algorithms to Complexity', description: 'Pair each algorithm with its worst-case time complexity.', sortOrder: 1, xpReward: 60 } });
+    await prisma.card.create({ data: { lessonId: complexityLesson.id, title: 'Why Complexity Matters', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Big-O notation describes how an algorithm's running time grows as the input gets larger — it tells you what to expect at scale, not the exact speed on any one machine." } });
+
+    const gridQ = await prisma.question.create({
+      data: {
+        subjectId: csSubject.id,
+        levelId: gradeLevel.id,
+        questionType: 'interactive',
+        prompt: 'Match each algorithm to its worst-case time complexity.',
+        correctAnswer: null,
+        widgetType: 'GRID_MATCHING',
+        isGraded: true,
+        explanation: 'Bubble Sort compares every pair in nested loops (O(n²)). Binary Search halves the search space each step (O(log n)). Linear Search may need to check every element once (O(n)).',
+        hints: ['Think about how many comparisons each algorithm needs in the worst case.'],
+        widgetConfig: {
+          left: [
+            { id: 'bubble', text: 'Bubble Sort' },
+            { id: 'binary', text: 'Binary Search' },
+            { id: 'linear', text: 'Linear Search' },
+          ],
+          right: [
+            { id: 'on2', text: 'O(n²)' },
+            { id: 'ologn', text: 'O(log n)' },
+            { id: 'on', text: 'O(n)' },
+          ],
+          correctPairs: [['bubble', 'on2'], ['binary', 'ologn'], ['linear', 'on']],
+        },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: complexityLesson.id, title: 'Match Them Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap an algorithm, then tap its matching complexity.', questionId: gridQ.id } });
+  }
+
+  const algorithmsPracticeChapter = await prisma.concept.upsert({
+    where: { name: 'Algorithms in Practice' },
+    update: { courseId: algorithmsCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+    create: { name: 'Algorithms in Practice', description: 'A closer look at how sorting algorithms are actually used.', courseId: algorithmsCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+  });
+
+  let algoRecapLesson = await prisma.lesson.findFirst({ where: { title: 'Sorting in the Real World', conceptId: algorithmsPracticeChapter.id } });
+  if (!algoRecapLesson) {
+    algoRecapLesson = await prisma.lesson.create({ data: { conceptId: algorithmsPracticeChapter.id, title: 'Sorting in the Real World', description: 'Where sorting and searching show up outside the classroom.', sortOrder: 1, xpReward: 30 } });
+    await prisma.card.create({ data: { lessonId: algoRecapLesson.id, title: 'Everywhere You Look', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Every time you sort a spreadsheet column, search a contact list, or get search results ranked by relevance, an algorithm like the ones you just studied is doing the work.' } });
+  }
+
+  let algoVideoItem = await prisma.moduleItem.findFirst({ where: { conceptId: algorithmsPracticeChapter.id, kind: 'VIDEO' } });
+  if (!algoVideoItem) {
+    algoVideoItem = await prisma.moduleItem.create({ data: { conceptId: algorithmsPracticeChapter.id, kind: 'VIDEO', title: 'Watch: Sorting Algorithms Visualized', sortOrder: 2, status: 'PUBLISHED', videoUrl: 'https://www.youtube.com/watch?v=kPRA0W1kECg', videoDurationSeconds: 291 } });
+  }
+
+  let algoReadingItem = await prisma.moduleItem.findFirst({ where: { conceptId: algorithmsPracticeChapter.id, kind: 'READING' } });
+  if (!algoReadingItem) {
+    algoReadingItem = await prisma.moduleItem.create({ data: { conceptId: algorithmsPracticeChapter.id, kind: 'READING', title: 'Reading: Choosing the Right Algorithm', sortOrder: 3, status: 'PUBLISHED', readingContent: 'A simple algorithm like Bubble Sort is easy to understand but slow on large inputs. Real systems typically use faster algorithms like Merge Sort or Quick Sort, which scale much better as the amount of data grows.' } });
+  }
+
+  const algorithmsCheckpoint = await prisma.concept.upsert({
+    where: { name: 'Intro to Algorithms Checkpoint' },
+    update: { courseId: algorithmsCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: { name: 'Intro to Algorithms Checkpoint', description: 'A short checkpoint covering sorting and complexity — pass at 70% or better on the first try.', courseId: algorithmsCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+  });
+  let algoCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Intro to Algorithms', conceptId: algorithmsCheckpoint.id } });
+  if (!algoCheckpointLesson) {
+    algoCheckpointLesson = await prisma.lesson.create({ data: { conceptId: algorithmsCheckpoint.id, title: 'Checkpoint: Intro to Algorithms', description: 'Confirm your understanding of sorting and algorithm complexity.', sortOrder: 1, xpReward: 80 } });
+    await prisma.card.create({ data: { lessonId: algoCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: "This checkpoint checks first-try accuracy — retries won't count toward passing." } });
+    const algoCheckpointQ = await makeQ(csSubject.id, gradeLevel.id, 'Which search algorithm requires the list to already be sorted?', [{ label: 'A', text: 'Binary Search', correct: true }, { label: 'B', text: 'Linear Search', correct: false }, { label: 'C', text: 'Bubble Sort', correct: false }], 'Binary Search repeatedly halves the search range, which only works correctly on a sorted list.');
+    await prisma.card.create({ data: { lessonId: algoCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Solve this on your own, no hints.', questionId: algoCheckpointQ.id } });
+  }
+
+  console.log('✅ Seeded Phase 3.5 courses');
+
+  // ─── Phase 3.5: Fully-unlocked test account (Charlotte) ──────────────────────
+  // Seed-data only — no debug bypass code. Re-visiting a completed lesson
+  // still creates a fresh LessonAttempt (lessons.service.ts's getLessonFlow/
+  // submitCardResponse only look for an IN_PROGRESS one), so this doesn't
+  // make her account read-only for hands-on testing.
+  console.log('🌱 Seeding fully-unlocked test account (Charlotte)...');
+
+  if (charlotteProfile) {
+    // Queried by conceptId rather than a hand-maintained lesson list — a
+    // concept only counts as "done" once *every* one of its lessons has a
+    // COMPLETED attempt (progression.service.ts's computeConceptDoneMap), so
+    // any stray lesson under these concepts (e.g. leftover authoring-UI test
+    // content unrelated to this seed) would otherwise silently keep the
+    // concept — and everything gated behind it — locked.
+    const gatingConceptIds = [
+      variablesChapter.id, linearEquationsChapter.id, practiceChapter.id, checkpointChapter.id,
+      fractionsConc.id, algebraConc.id, fractionsPracticeChapter.id, fractionsCheckpoint.id,
+      sortingConc.id, complexityChapter.id, algorithmsPracticeChapter.id, algorithmsCheckpoint.id,
+    ];
+    const allGatingLessons = await prisma.lesson.findMany({ where: { conceptId: { in: gatingConceptIds } } });
+    for (const lesson of allGatingLessons) {
+      const existing = await prisma.lessonAttempt.findFirst({ where: { lessonId: lesson.id, studentProfileId: charlotteProfile.id } });
+      if (!existing) {
+        await prisma.lessonAttempt.create({ data: { lessonId: lesson.id, studentProfileId: charlotteProfile.id, status: 'COMPLETED', xpEarned: lesson.xpReward, startedAt: new Date('2026-09-10'), completedAt: new Date('2026-09-10'), timeSpentSeconds: 300 } });
+      } else if (existing.status !== 'COMPLETED') {
+        await prisma.lessonAttempt.update({ where: { id: existing.id }, data: { status: 'COMPLETED', completedAt: new Date('2026-09-10') } });
+      }
+    }
+
+    // First-try-correct StudentCardResponse rows for the two new checkpoint
+    // cards, so computeConceptDoneMap's pass-threshold check succeeds too.
+    for (const checkpointLessonRow of [fracCheckpointLesson, algoCheckpointLesson]) {
+      if (!checkpointLessonRow) continue;
+      const attempt = await prisma.lessonAttempt.findFirst({ where: { lessonId: checkpointLessonRow.id, studentProfileId: charlotteProfile.id } });
+      const card = await prisma.card.findFirst({ where: { lessonId: checkpointLessonRow.id, cardType: 'CHECKPOINT' } });
+      if (attempt && card) {
+        const existingResponse = await prisma.studentCardResponse.findFirst({ where: { lessonAttemptId: attempt.id, cardId: card.id } });
+        if (!existingResponse) {
+          await prisma.studentCardResponse.create({ data: { lessonAttemptId: attempt.id, cardId: card.id, isCorrect: true, attemptsCount: 1 } });
+        }
+      }
+    }
+
+    // High XP + streak — pure threshold checks in gamification.service.ts's
+    // getBadges(), so this alone earns all 6 badges (the two lesson-count
+    // badges are already covered by the completions above).
+    await prisma.studentExperience.upsert({
+      where: { studentProfileId: charlotteProfile.id },
+      update: { totalXp: 1600, level: 8 },
+      create: { studentProfileId: charlotteProfile.id, totalXp: 1600, level: 8, nextLevelXp: 500 },
+    });
+    await prisma.studentStreak.upsert({
+      where: { studentProfileId: charlotteProfile.id },
+      update: { currentStreak: 10, longestStreak: 15 },
+      create: { studentProfileId: charlotteProfile.id, currentStreak: 10, longestStreak: 15, lastActiveDate: new Date('2026-11-01'), streakCharges: 1 },
+    });
+
+    // Real pending (unsubmitted) homework — every existing Homework row for
+    // Charlotte's classes was already graded, leaving nothing to exercise
+    // the actual submission flow with. One per class she doesn't already
+    // have a homework in, so the "Due" list has real variety to tap into.
+    const pendingHomeworkSpecs = [
+      { title: 'DSA Problem Set 2', courseClass: dsaClass, description: 'Implement a binary search tree with insert, delete, and in-order traversal.', dueDate: new Date('2026-08-20'), maxPoints: 100 },
+      { title: 'Algorithms Quiz Prep', courseClass: algClass, description: 'Write pseudocode for binary search and bubble sort, and note each one’s worst-case complexity.', dueDate: new Date('2026-08-13'), maxPoints: 50 },
+      { title: 'Essay: Persuasive Writing', courseClass: engClass, description: 'Write a 500-word persuasive essay on a topic of your choice.', dueDate: new Date('2026-08-18'), maxPoints: 100 },
+    ];
+    for (const spec of pendingHomeworkSpecs) {
+      const existingHw = await prisma.homework.findFirst({ where: { title: spec.title, courseClassId: spec.courseClass.id } });
+      if (!existingHw) {
+        await prisma.homework.create({ data: { courseClassId: spec.courseClass.id, title: spec.title, description: spec.description, dueDate: spec.dueDate, maxPoints: spec.maxPoints, recordedById: turingUser.id } });
+      }
+    }
+
+    // Dual profile — Charlotte also holds a GuardianProfile watching Aria, a
+    // deliberately test-only secondary-guardian pairing (not a real family
+    // relationship) so one login reaches both the student and guardian views.
+    const charlotteGuardianProfile = await prisma.guardianProfile.upsert({
+      where: { userId: charlotteProfile.userId },
+      update: {},
+      create: { userId: charlotteProfile.userId, fullName: 'Charlotte Harris', email: 'charlotte@example.com', phone: '(555) 019-8832', status: 'ACTIVE' },
+    });
+    // A GuardianProfile row alone doesn't grant guardian-scoped API access —
+    // /parent/* is @Roles('GUARDIAN') gated, so the role has to be assigned
+    // too (mirrors every other guardian account below).
+    await prisma.userRole.upsert({ where: { userId_roleId: { userId: charlotteProfile.userId, roleId: guardianRole.id } }, update: {}, create: { userId: charlotteProfile.userId, roleId: guardianRole.id } });
+    if (ariaProfile) {
+      const existingRel = await prisma.guardianStudentRelationship.findFirst({ where: { guardianProfileId: charlotteGuardianProfile.id, studentProfileId: ariaProfile.id } });
+      if (!existingRel) {
+        await prisma.guardianStudentRelationship.create({ data: { guardianProfileId: charlotteGuardianProfile.id, studentProfileId: ariaProfile.id, relationshipType: 'OTHER', isPrimary: false, hasFinancialResponsibility: false, hasAcademicAccess: true, hasEmergencyContact: false } });
+      }
+    }
+
+    const existingCharlotteFamily = await prisma.family.findFirst({ where: { householdName: 'Harris Family (Test Guardian)' } });
+    const charlotteFamily = existingCharlotteFamily ?? await prisma.family.create({ data: { householdName: 'Harris Family (Test Guardian)', status: 'ACTIVE' } });
+    if (ariaProfile) {
+      const existingFS = await prisma.familyStudent.findFirst({ where: { familyId: charlotteFamily.id, studentProfileId: ariaProfile.id } });
+      if (!existingFS) await prisma.familyStudent.create({ data: { familyId: charlotteFamily.id, studentProfileId: ariaProfile.id } });
+    }
+    const existingFG = await prisma.familyGuardian.findFirst({ where: { familyId: charlotteFamily.id, guardianProfileId: charlotteGuardianProfile.id } });
+    if (!existingFG) await prisma.familyGuardian.create({ data: { familyId: charlotteFamily.id, guardianProfileId: charlotteGuardianProfile.id } });
+
+    const existingCharlotteInv = await prisma.familyInvoice.findFirst({ where: { familyId: charlotteFamily.id } });
+    const charlotteInvoice = existingCharlotteInv ?? await prisma.familyInvoice.create({ data: { familyId: charlotteFamily.id, amount: 800, currency: 'USD', description: 'Fall Semester 2026 Tuition (Test)', issueDate: new Date('2026-08-01'), dueDate: new Date('2026-09-01'), status: 'PAID' } });
+    const existingCharlottePay = await prisma.familyPayment.findFirst({ where: { familyId: charlotteFamily.id } });
+    if (!existingCharlottePay) {
+      await prisma.familyPayment.create({ data: { familyId: charlotteFamily.id, invoiceId: charlotteInvoice.id, amount: 800, currency: 'USD', paymentDate: new Date('2026-08-28'), method: 'BANK_TRANSFER', reference: 'TXN-TEST-CHARLOTTE-001', notes: 'Test guardian-view payment.' } });
+    }
+
+    if (ariaProfile) {
+      const existingThread = await prisma.messageThread.findFirst({ where: { subject: "Aria's Progress Check-In", studentProfileId: ariaProfile.id, guardianUserId: charlotteProfile.userId } });
+      if (!existingThread) {
+        const t = await prisma.messageThread.create({ data: { subject: "Aria's Progress Check-In", studentProfileId: ariaProfile.id, guardianUserId: charlotteProfile.userId, teacherUserId: turingU.id, status: 'OPEN', lastMessageAt: new Date('2026-10-15T10:00:00') } });
+        await prisma.message.create({ data: { threadId: t.id, senderUserId: charlotteProfile.userId, body: 'Hi Prof. Turing, just checking in on how Aria is doing this term.', readAt: new Date('2026-10-15T10:00:00'), createdAt: new Date('2026-10-14T18:00:00') } });
+        await prisma.message.create({ data: { threadId: t.id, senderUserId: turingU.id, body: "She's doing great — consistently scoring above 90% on assessments.", readAt: null, createdAt: new Date('2026-10-15T10:00:00') } });
+      }
+    }
+  }
+
+  console.log('✅ Seeded fully-unlocked test account');
+
   console.log('🎉 Seeding completed successfully!');
 }
 

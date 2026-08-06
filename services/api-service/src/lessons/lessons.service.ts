@@ -15,10 +15,14 @@ import {
 import { deriveSeed } from '../common/widgets/seed.util';
 import { generateWidgetInstance } from '../common/widgets/widget-generator';
 import { gradeWidgetSubmission } from '../common/widgets/widget-grader';
+import { ProgressionService } from '../progression/progression.service';
 
 @Injectable()
 export class LessonsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly progression: ProgressionService,
+  ) {}
 
   async listLessons(conceptId?: string) {
     const where = conceptId ? { conceptId } : {};
@@ -158,12 +162,17 @@ export class LessonsService {
             options: true,
           },
         },
+        lesson: { select: { conceptId: true } },
       },
     });
 
     if (!card) {
       throw new NotFoundException('Card not found');
     }
+
+    // Checked before any grading or XP award, so a locked chapter cannot be
+    // completed out of order by calling this endpoint directly.
+    await this.progression.assertConceptUnlocked(userId, card.lesson.conceptId);
 
     // Retrieve active attempt
     let attempt = await this.prisma.lessonAttempt.findFirst({

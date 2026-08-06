@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
-import { UpdateTeacherDto } from './dto/update-teacher.dto';
+import {
+  UpdateMyTeacherProfileDto,
+  UpdateTeacherDto,
+} from './dto/update-teacher.dto';
 import { AssignClassDto } from './dto/assign-class.dto';
 import { TeacherStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -131,6 +134,21 @@ export class TeacherService {
       throw new NotFoundException('Teacher profile not found');
     }
     return teacher;
+  }
+
+  /** Self-service — `userId` comes from the JWT, never the request body. */
+  async updateMyProfile(userId: string, dto: UpdateMyTeacherProfileDto) {
+    const teacher = await this.prisma.teacherProfile.findFirst({
+      where: { userId, user: { deletedAt: null } },
+    });
+    if (!teacher) {
+      throw new NotFoundException('Teacher profile not found for this user');
+    }
+
+    return this.prisma.teacherProfile.update({
+      where: { id: teacher.id },
+      data: dto,
+    });
   }
 
   async findByUserId(userId: string) {

@@ -1,0 +1,18 @@
+# Metro resolves modules by walking node_modules directories and does not
+# follow pnpm's symlinked layout reliably, which shows up as "module not found"
+# at bundle time for packages that are plainly present on disk. A flat tree
+# matches what React Native expects.
+#
+# Note this lives here rather than in .npmrc: pnpm 10+ reads its own settings
+# from pnpm-workspace.yaml, and a node-linker line in .npmrc is silently
+# ignored (`pnpm config get node-linker` returns undefined).
+nodeLinker: hoisted
+
+minimumReleaseAgeExclude:
+  - '@expo/cli@57.0.12'
+  - '@expo/router-server@57.0.5'
+  - expo-constants@57.0.9
+  - expo-modules-core@57.0.9
+  - expo@57.0.10
+  - expo-linking@57.0.5
+  - expo-router@57.0.10

@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { AuthTokenController } from './auth-token.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleOAuthProvider } from './oauth/providers/google.provider';
 import { AppleOAuthProvider } from './oauth/providers/apple.provider';
@@ -26,7 +27,7 @@ import { getJwtSecret } from './utils/jwt-config';
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, AuthTokenController],
   providers: [
     AuthService,
     JwtStrategy,

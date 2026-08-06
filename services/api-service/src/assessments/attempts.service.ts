@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -12,6 +13,7 @@ import {
   UpdateAttemptDto,
 } from './dto/assessments.dto';
 import {
+  attemptQuestionsSelect,
   attemptSelect,
   autoMarkResponse,
   emptyToNull,
@@ -25,9 +27,12 @@ import {
   requireRecord,
   requireText,
   toPage,
+  toStudentSafeAttemptQuestions,
   audit,
 } from './assessments.common';
 import { deriveSeed } from '../common/widgets/seed.util';
+
+const STAFF_ROLES = new Set(['SUPER_ADMIN', 'ADMIN', 'TEACHER']);
 
 @Injectable()
 export class AttemptsService {
@@ -35,6 +40,47 @@ export class AttemptsService {
     private readonly prisma: PrismaService,
     private readonly gradebookService: GradebookService,
   ) {}
+
+  /**
+   * Student-safe question list for an in-progress attempt — ownership-
+   * checked (staff may preview any attempt; a student may only read their
+   * own), with each question's widget instance regenerated from the same
+   * seed `submitResponse`/`autoMarkResponse` will grade against.
+   */
+  async getAttemptQuestions(
+    id: string,
+    userId: string,
+    roles: string[],
+  ) {
+    const attempt = await this.prisma.assessmentAttempt.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        studentProfileId: true,
+        assignment: { select: { assessmentId: true } },
+      },
+    });
+    requireRecord(attempt, 'Attempt not found');
+
+    const isStaff = roles.some((r) => STAFF_ROLES.has(r));
+    if (!isStaff) {
+      const student = await this.prisma.studentProfile.findUnique({
+        where: { userId },
+        select: { id: true },
+      });
+      if (!student || student.id !== attempt!.studentProfileId) {
+        throw new ForbiddenException("You don't have access to this attempt");
+      }
+    }
+
+    const questions = await this.prisma.assessmentQuestion.findMany({
+      where: { assessmentId: attempt!.assignment.assessmentId },
+      orderBy: [{ section: { sortOrder: 'asc' } }, { questionNumber: 'asc' }],
+      select: attemptQuestionsSelect,
+    });
+
+    return toStudentSafeAttemptQuestions(questions, id);
+  }
 
   async listAttempts(query: ListAttemptsQueryDto = {}) {
     const pagination = normalizePagination(query);

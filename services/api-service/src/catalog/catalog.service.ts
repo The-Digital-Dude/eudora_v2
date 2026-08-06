@@ -14,18 +14,14 @@ import {
   AddCourseToPathDto,
   ReorderPathCoursesDto,
 } from './dto/catalog.dto';
-
-type ConceptWithLessons = {
-  id: string;
-  sortOrder: number;
-  kind: string;
-  passThresholdPercent: number | null;
-  lessons: { id: string }[];
-};
+import { ProgressionService } from '../progression/progression.service';
 
 @Injectable()
 export class CatalogService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly progression: ProgressionService,
+  ) {}
 
   // ─── Learning Subjects ───────────────────────────────────────────────────
 
@@ -148,9 +144,9 @@ export class CatalogService {
     }
 
     const studentProfileId = userId
-      ? await this.resolveStudentProfileId(userId)
+      ? await this.progression.resolveStudentProfileId(userId)
       : null;
-    const unlockState = await this.computeConceptUnlockState(
+    const unlockState = await this.progression.computeConceptUnlockState(
       studentProfileId,
       course.concepts,
     );
@@ -289,7 +285,7 @@ export class CatalogService {
     };
 
     const studentProfileId = userId
-      ? await this.resolveStudentProfileId(userId)
+      ? await this.progression.resolveStudentProfileId(userId)
       : null;
 
     if (!studentProfileId || path.unlockMode === 'FREE_ROAM') {
@@ -305,7 +301,7 @@ export class CatalogService {
     }
 
     const allConcepts = path.pathCourses.flatMap((pc) => pc.course.concepts);
-    const doneMap = await this.computeConceptDoneMap(studentProfileId, allConcepts);
+    const doneMap = await this.progression.computeConceptDoneMap(studentProfileId, allConcepts);
 
     let previousDone = true;
     const pathCourses = path.pathCourses.map((pc) => {
@@ -410,147 +406,4 @@ export class CatalogService {
     });
   }
 
-  // ─── Unlock-state helpers ────────────────────────────────────────────────
-  // Chapters/courses unlock strictly in sortOrder: item N+1 unlocks once item
-  // N is fully completed. Derived at query time from LessonAttempt rather
-  // than a prerequisite graph table, since the catalog's ordering is linear.
-
-  private async resolveStudentProfileId(
-    userId: string,
-  ): Promise<string | null> {
-    const student = await this.prisma.studentProfile.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
-    return student?.id ?? null;
-  }
-
-  private async getCompletedLessonIds(
-    studentProfileId: string,
-    lessonIds: string[],
-  ): Promise<Set<string>> {
-    if (lessonIds.length === 0) {
-      return new Set();
-    }
-    const completed = await this.prisma.lessonAttempt.findMany({
-      where: {
-        studentProfileId,
-        lessonId: { in: lessonIds },
-        status: 'COMPLETED',
-      },
-      select: { lessonId: true },
-    });
-    return new Set(completed.map((a) => a.lessonId));
-  }
-
-  private async computeConceptUnlockState(
-    studentProfileId: string | null,
-    concepts: ConceptWithLessons[],
-  ): Promise<{ conceptId: string; isDone: boolean; isLocked: boolean }[]> {
-    const ordered = [...concepts].sort((a, b) => a.sortOrder - b.sortOrder);
-
-    if (!studentProfileId) {
-      return ordered.map((concept) => ({
-        conceptId: concept.id,
-        isDone: false,
-        isLocked: false,
-      }));
-    }
-
-    const doneMap = await this.computeConceptDoneMap(studentProfileId, ordered);
-
-    let previousDone = true;
-    return ordered.map((concept) => {
-      const isDone = doneMap.get(concept.id) ?? false;
-      const isLocked = !previousDone;
-      previousDone = isDone;
-      return { conceptId: concept.id, isDone, isLocked };
-    });
-  }
-
-  // A concept is "done" once every lesson under it has a COMPLETED attempt.
-  // CHECKPOINT concepts additionally require a first-try accuracy of at
-  // least passThresholdPercent across their (non-conceptual) cards — a
-  // student who only got everything right after retries has completed the
-  // lesson, but hasn't passed the checkpoint.
-  private async computeConceptDoneMap(
-    studentProfileId: string,
-    concepts: ConceptWithLessons[],
-  ): Promise<Map<string, boolean>> {
-    const allLessonIds = concepts.flatMap((c) => c.lessons.map((l) => l.id));
-    const completedIds = await this.getCompletedLessonIds(
-      studentProfileId,
-      allLessonIds,
-    );
-
-    const checkpointConcepts = concepts.filter(
-      (c) => c.kind === 'CHECKPOINT' && c.passThresholdPercent != null,
-    );
-    const checkpointLessonIds = checkpointConcepts.flatMap((c) =>
-      c.lessons.map((l) => l.id),
-    );
-
-    const responses = checkpointLessonIds.length
-      ? await this.prisma.studentCardResponse.findMany({
-          where: {
-            attempt: {
-              studentProfileId,
-              lessonId: { in: checkpointLessonIds },
-              status: 'COMPLETED',
-            },
-            card: { cardType: { not: 'CONCEPTUAL' } },
-          },
-          select: {
-            attemptsCount: true,
-            isCorrect: true,
-            attempt: { select: { lessonId: true } },
-          },
-        })
-      : [];
-
-    const responsesByLesson = new Map<
-      string,
-      { attemptsCount: number; isCorrect: boolean }[]
-    >();
-    for (const r of responses) {
-      const lessonId = r.attempt.lessonId;
-      if (!responsesByLesson.has(lessonId)) {
-        responsesByLesson.set(lessonId, []);
-      }
-      responsesByLesson.get(lessonId)!.push(r);
-    }
-
-    const doneMap = new Map<string, boolean>();
-    for (const concept of concepts) {
-      const allLessonsCompleted =
-        concept.lessons.length > 0 &&
-        concept.lessons.every((l) => completedIds.has(l.id));
-
-      if (!allLessonsCompleted) {
-        doneMap.set(concept.id, false);
-        continue;
-      }
-
-      if (concept.kind !== 'CHECKPOINT' || concept.passThresholdPercent == null) {
-        doneMap.set(concept.id, true);
-        continue;
-      }
-
-      const checkpointResponses = concept.lessons.flatMap(
-        (l) => responsesByLesson.get(l.id) ?? [],
-      );
-      if (checkpointResponses.length === 0) {
-        doneMap.set(concept.id, true);
-        continue;
-      }
-
-      const firstTryCorrect = checkpointResponses.filter(
-        (r) => r.isCorrect && r.attemptsCount === 1,
-      ).length;
-      const scorePercent = (firstTryCorrect / checkpointResponses.length) * 100;
-      doneMap.set(concept.id, scorePercent >= concept.passThresholdPercent);
-    }
-
-    return doneMap;
-  }
 }

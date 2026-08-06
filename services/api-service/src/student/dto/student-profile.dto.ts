@@ -30,6 +30,29 @@ export class CreateStudentProfileDto {
   status?: StudentStatus;
 }
 
+/**
+ * Deliberately a distinct, narrower DTO from `UpdateStudentProfileDto` — a
+ * student updating their own profile may only touch the profile-completion
+ * contact fields, never `fullName`/`birthDate`/`gender`/`status`.
+ */
+export class UpdateMyStudentProfileDto {
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  emergencyContactName?: string;
+
+  @IsString()
+  @IsOptional()
+  emergencyContactPhone?: string;
+}
+
 export class UpdateStudentProfileDto {
   @IsUUID()
   @IsOptional()

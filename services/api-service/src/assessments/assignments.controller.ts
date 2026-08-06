@@ -21,12 +21,16 @@ import {
 } from './dto/assessments.dto';
 import { AssignmentsService } from './assignments.service';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { GuardianAccessService } from '../family/guardian-access.service';
 
 @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller()
 @UseGuards(CsrfGuard, PermissionsGuard)
 export class AssignmentsController {
-  constructor(private readonly assignmentsService: AssignmentsService) {}
+  constructor(
+    private readonly assignmentsService: AssignmentsService,
+    private readonly guardianAccessService: GuardianAccessService,
+  ) {}
 
   @Get('assignments')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
@@ -84,7 +88,9 @@ export class AssignmentsController {
   async listStudentAssignments(
     @Param('id') id: string,
     @Query() query: ListAssignmentsQueryDto,
+    @CurrentUser() user: CurrentUserDto,
   ) {
+    await this.guardianAccessService.assertCanAccessStudentRecord(user, id);
     return this.assignmentsService.listAssignments({
       ...query,
       studentProfileId: id,

@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { TimetableService } from './timetable.service';
 import { TimetableConflictService } from './timetable-conflict.service';
@@ -22,13 +23,20 @@ import {
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { GuardianAccessService } from '../family/guardian-access.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { TimetableStatus } from '@prisma/client';
+
+const STAFF_ROLES = ['SUPER_ADMIN', 'ADMIN', 'TEACHER'];
 
 @Controller('timetables')
 export class TimetableController {
   constructor(
     private readonly timetableService: TimetableService,
     private readonly conflictService: TimetableConflictService,
+    private readonly guardianAccessService: GuardianAccessService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Post()
@@ -60,7 +68,12 @@ export class TimetableController {
   @RequirePermissions({ action: 'read', subject: 'Timetable' })
   async getStudentSchedule(
     @Param('studentProfileId') studentProfileId: string,
+    @CurrentUser() user: CurrentUserDto,
   ) {
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      studentProfileId,
+    );
     return this.timetableService.getStudentSchedule(studentProfileId);
   }
 
@@ -68,10 +81,25 @@ export class TimetableController {
   @RequirePermissions({ action: 'read', subject: 'Timetable' })
   async getTeacherSchedule(
     @Param('teacherProfileId') teacherProfileId: string,
+    @CurrentUser() user: CurrentUserDto,
   ) {
+    if (!STAFF_ROLES.some((role) => user.roles.includes(role))) {
+      const ownProfile = await this.prisma.teacherProfile.findUnique({
+        where: { userId: user.id },
+      });
+      if (ownProfile?.id !== teacherProfileId) {
+        throw new ForbiddenException(
+          'You do not have permission to view this schedule.',
+        );
+      }
+    }
     return this.timetableService.getTeacherSchedule(teacherProfileId);
   }
 
+  // No per-student ownership concept applies to a whole class section —
+  // restrict to staff rather than trying to derive "does this caller belong
+  // to this section" from a student/guardian identity.
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   @Get('schedule/class-section/:classSectionId')
   @RequirePermissions({ action: 'read', subject: 'Timetable' })
   async getClassSectionSchedule(

@@ -26,15 +26,23 @@ export class FamilyService {
   // --- Guardian Profile Operations ---
 
   async createGuardianProfile(dto: CreateGuardianProfileDto) {
+    // Always populated by the time this runs: the controller forces it for
+    // a GUARDIAN-only caller; an admin/super-admin caller must supply a
+    // real one themselves (there's no "self" to default to for them).
+    if (!dto.userId) {
+      throw new BadRequestException('userId is required');
+    }
+    const userId = dto.userId;
+
     const user = await this.prisma.user.findUnique({
-      where: { id: dto.userId },
+      where: { id: userId },
     });
     if (!user || user.deletedAt) {
       throw new NotFoundException('User not found');
     }
 
     const existingProfile = await this.prisma.guardianProfile.findUnique({
-      where: { userId: dto.userId },
+      where: { userId },
     });
     if (existingProfile) {
       throw new ConflictException(
@@ -43,7 +51,7 @@ export class FamilyService {
     }
 
     return this.prisma.guardianProfile.create({
-      data: dto,
+      data: { ...dto, userId },
     });
   }
 

@@ -30,6 +30,7 @@ import { CommunicationModule } from './communication/communication.module';
 import { MakeupModule } from './makeup/makeup.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { DeviceTokensModule } from './device-tokens/device-tokens.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { TimetableModule } from './timetable/timetable.module';
 import { GradebookModule } from './gradebook/gradebook.module';
@@ -72,6 +73,7 @@ import { AuditModule } from './common/audit/audit.module';
     MakeupModule,
     TeacherModule,
     NotificationsModule,
+    DeviceTokensModule,
     UploadsModule,
     TimetableModule,
     GradebookModule,

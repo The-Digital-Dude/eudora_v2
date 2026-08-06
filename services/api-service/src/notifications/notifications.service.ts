@@ -1,13 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { DeviceTokensService } from '../device-tokens/device-tokens.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { EmailService } from './email.service';
+import { ExpoPushService } from './expo-push.service';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
+    private readonly deviceTokensService: DeviceTokensService,
+    private readonly expoPushService: ExpoPushService,
   ) {}
 
   async create(dto: CreateNotificationDto) {
@@ -32,6 +36,22 @@ export class NotificationsService {
           console.error('Failed to send notification email', err);
         });
     }
+
+    // Push, same fire-and-forget treatment as email above — every existing
+    // caller of `create()` (homework/grade alerts, guardian messaging) gets
+    // push for free rather than each needing its own trigger wiring.
+    await this.deviceTokensService
+      .getTokensForUser(dto.userId)
+      .then((tokens) =>
+        this.expoPushService.sendToTokens(tokens, {
+          title: dto.title,
+          body: dto.body,
+          data: { notificationId: notification.id, ...(dto.metadata as object) },
+        }),
+      )
+      .catch((err) => {
+        console.error('Failed to send push notification', err);
+      });
 
     return notification;
   }

@@ -22,6 +22,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+import { GuardianAccessService } from '../family/guardian-access.service';
 
 @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
 @Controller('gradebook')
@@ -31,6 +32,7 @@ export class GradebookController {
     private readonly gradebookService: GradebookService,
     private readonly gradeCalculationService: GradeCalculationService,
     private readonly prisma: PrismaService,
+    private readonly guardianAccessService: GuardianAccessService,
   ) {}
 
   @Post('manual-entry')
@@ -90,19 +92,29 @@ export class GradebookController {
 
   @Get('student/:studentProfileId')
   @RequirePermissions({ action: 'read', subject: 'Gradebook' })
-  getStudentGrades(
+  async getStudentGrades(
     @Param('studentProfileId') studentProfileId: string,
+    @CurrentUser() user: CurrentUserDto,
     @Query('termId') termId?: string,
   ) {
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      studentProfileId,
+    );
     return this.gradebookService.getStudentGrades(studentProfileId, termId);
   }
 
   @Get('student/:studentProfileId/summary')
   @RequirePermissions({ action: 'read', subject: 'Gradebook' })
-  getStudentSummary(
+  async getStudentSummary(
     @Param('studentProfileId') studentProfileId: string,
+    @CurrentUser() user: CurrentUserDto,
     @Query('termId') termId?: string,
   ) {
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      studentProfileId,
+    );
     return this.gradeCalculationService.calculateStudentAverages(
       studentProfileId,
       termId,

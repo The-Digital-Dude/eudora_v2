@@ -6,10 +6,14 @@ import {
   UpdateModuleItemProgressDto,
   CreateDiscussionPostDto,
 } from './dto/module-item.dto';
+import { ProgressionService } from '../progression/progression.service';
 
 @Injectable()
 export class ModuleItemsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly progression: ProgressionService,
+  ) {}
 
   async createModuleItem(dto: CreateModuleItemDto) {
     const concept = await this.prisma.concept.findUnique({
@@ -110,6 +114,12 @@ export class ModuleItemsService {
     if (!item || item.deletedAt) {
       throw new NotFoundException('Module item not found');
     }
+
+    // The lock is computed for the course-detail response, but until this call
+    // existed nothing re-checked it at the point of writing — so a client that
+    // skipped ahead (or any direct API call) could mark locked content done.
+    await this.progression.assertConceptUnlocked(userId, item.conceptId);
+
     const studentProfileId = await this.resolveStudentProfileId(userId);
     if (!studentProfileId) {
       throw new BadRequestException(

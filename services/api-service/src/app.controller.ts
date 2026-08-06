@@ -11,4 +11,10 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Public()
+  @Get('client/min-version')
+  getMinVersion() {
+    return this.appService.getMinVersion();
+  }
 }

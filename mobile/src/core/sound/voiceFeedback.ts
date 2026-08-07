@@ -17,3 +17,20 @@ export function playVoiceLine(key: PhraseKey, opts: { interrupt?: boolean } = {}
   if (interrupt) Speech.stop();
   Speech.speak(phrase, { rate: 0.95 });
 }
+
+/**
+ * Narrates arbitrary text rather than a fixed `PhraseKey` — for pre-readers
+ * who can't yet read a card's prompt/content themselves. Same underlying
+ * `Speech.speak` call as `playVoiceLine`; `Speech.speak` already accepts any
+ * string, so this needed no new plumbing beyond a wrapper that doesn't force
+ * callers through the enum-keyed phrase map. Not wired to auto-play — card
+ * text (unlike the fixed phrases above) isn't guaranteed to be short or
+ * always appropriate to speak aloud unprompted, so callers trigger it
+ * explicitly (e.g. a "Listen" button).
+ */
+export function playText(text: string, opts: { interrupt?: boolean } = {}) {
+  const { interrupt = true } = opts;
+  if (!text.trim()) return;
+  if (interrupt) Speech.stop();
+  Speech.speak(text, { rate: 0.9 });
+}

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { CheckCircle2, ChevronLeft, Circle } from 'lucide-react-native';
+import { CheckCircle2, ChevronLeft, ChevronRight, Circle, Tv } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -74,6 +74,17 @@ export function SettingsScreen() {
         </Pressable>
 
         <Text variant="title">Settings</Text>
+        <View style={{ height: t.spacing.xl }} />
+
+        <Pressable onPress={() => router.push('/tv-pairing')} accessibilityRole="button">
+          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
+            <Tv size={18} color={t.colors.primary} />
+            <Text variant="label" style={{ flex: 1 }}>
+              Link a TV
+            </Text>
+            <ChevronRight size={18} color={t.colors.mutedForeground} />
+          </Card>
+        </Pressable>
         <View style={{ height: t.spacing.xl }} />
 
         {me.studentProfile ? (

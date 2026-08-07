@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import type { CardQuestion } from '@/core/contracts';
@@ -28,11 +28,15 @@ export function McqWidget({
   isCorrect,
 }: McqWidgetProps) {
   const t = useTheme();
+  // Focus (not selection) — tracked separately so a D-pad remote gets visible
+  // feedback while moving between options, before a selection is ever made.
+  const [focusedOptionId, setFocusedOptionId] = useState<string | null>(null);
 
   return (
     <View style={{ gap: t.spacing.md }}>
-      {question.options.map((option) => {
+      {question.options.map((option, index) => {
         const selected = option.id === selectedOptionId;
+        const focused = option.id === focusedOptionId;
 
         // Correctness is only revealed after submitting; before that the
         // isCorrect flag on the option is never consulted.
@@ -47,6 +51,8 @@ export function McqWidget({
         } else if (selected) {
           borderColor = t.colors.primary;
           backgroundColor = t.colors.accent;
+        } else if (focused) {
+          borderColor = t.colors.primary;
         }
 
         return (
@@ -54,6 +60,13 @@ export function McqWidget({
             key={option.id}
             disabled={locked}
             onPress={() => onSelect(option.id)}
+            // TV/D-pad: focusable is a no-op on phone/tablet (Pressable already
+            // supports it there), hasTVPreferredFocus seeds the first option as
+            // the initial focus target so a fresh screen never has orphaned focus.
+            focusable={!locked}
+            hasTVPreferredFocus={index === 0}
+            onFocus={() => setFocusedOptionId(option.id)}
+            onBlur={() => setFocusedOptionId((current) => (current === option.id ? null : current))}
             accessibilityRole="radio"
             accessibilityState={{ selected, disabled: locked }}
             style={{

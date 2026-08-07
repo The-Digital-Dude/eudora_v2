@@ -257,6 +257,60 @@ export class AuthService {
     };
   }
 
+  /**
+   * Mints a session for a user who has already been verified through some
+   * other means (currently: device-code pairing, approved from an
+   * already-authenticated phone session). Deliberately reuses
+   * createSessionTokens rather than duplicating token-minting logic — the
+   * "how did we verify identity" step is the only thing that differs from
+   * password login.
+   */
+  async mintSessionForVerifiedUser(
+    userId: string,
+    userAgent?: string | null,
+    ipAddress?: string | null,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        guardianProfile: {
+          include: {
+            students: true,
+          },
+        },
+        studentProfile: true,
+      },
+    });
+
+    if (!user || user.deletedAt || !user.isActive) {
+      throw new UnauthorizedException('Account is not available');
+    }
+
+    const tokens = await this.createSessionTokens(
+      user,
+      userAgent ?? null,
+      ipAddress ?? null,
+    );
+    const { password, ...result } = user;
+    return {
+      user: result,
+      tokens,
+    };
+  }
+
   async loginWithGoogle(
     dto: GoogleLoginDto,
     userAgent?: string | null,

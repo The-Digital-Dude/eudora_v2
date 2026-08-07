@@ -43,6 +43,9 @@ export function GridMatchingWidget({
   const pairs = value?.pairs ?? [];
 
   const [selectedLeftId, setSelectedLeftId] = useState<string | null>(null);
+  // Focus (not selection) — left/right ids can collide, so tracked per side.
+  const [focusedLeftId, setFocusedLeftId] = useState<string | null>(null);
+  const [focusedRightId, setFocusedRightId] = useState<string | null>(null);
 
   const rightToLeft = useMemo(() => {
     const map: Record<string, string> = {};
@@ -115,13 +118,18 @@ export function GridMatchingWidget({
               All items matched.
             </Text>
           ) : (
-            availableLeft.map((item) => {
+            availableLeft.map((item, index) => {
               const selected = selectedLeftId === item.id;
+              const focused = focusedLeftId === item.id;
               return (
                 <Pressable
                   key={item.id}
                   disabled={locked}
                   onPress={() => handleLeftPress(item.id)}
+                  focusable={!locked}
+                  hasTVPreferredFocus={index === 0}
+                  onFocus={() => setFocusedLeftId(item.id)}
+                  onBlur={() => setFocusedLeftId((current) => (current === item.id ? null : current))}
                   accessibilityRole="button"
                   accessibilityState={{ selected, disabled: locked }}
                   style={{
@@ -129,7 +137,7 @@ export function GridMatchingWidget({
                     paddingHorizontal: t.spacing.md,
                     borderRadius: t.radius.md,
                     borderWidth: 2,
-                    borderColor: selected ? t.colors.primary : t.colors.border,
+                    borderColor: selected ? t.colors.primary : focused ? t.colors.primary : t.colors.border,
                     backgroundColor: selected ? t.colors.primary : t.colors.card,
                     opacity: locked ? 0.5 : 1,
                   }}
@@ -160,6 +168,8 @@ export function GridMatchingWidget({
             if (locked && matchedLeftId) {
               const isPairCorrect = correctRightForLeft[matchedLeftId] === rItem.id;
               borderColor = isPairCorrect ? t.colors.success : t.colors.destructive;
+            } else if (focusedRightId === rItem.id) {
+              borderColor = t.colors.primary;
             }
 
             return (
@@ -167,6 +177,9 @@ export function GridMatchingWidget({
                 <Pressable
                   disabled={locked}
                   onPress={() => handleRightPress(rItem.id)}
+                  focusable={!locked}
+                  onFocus={() => setFocusedRightId(rItem.id)}
+                  onBlur={() => setFocusedRightId((current) => (current === rItem.id ? null : current))}
                   accessibilityRole="button"
                   style={{
                     flexDirection: 'row',

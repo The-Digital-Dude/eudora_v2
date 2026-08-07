@@ -158,6 +158,7 @@ async function main() {
 
   const gradeLevel = await prisma.level.upsert({ where: { code: 'G10' }, update: {}, create: { code: 'G10', name: 'Grade 10', sortOrder: 10 } });
   const grade11Level = await prisma.level.upsert({ where: { code: 'G11' }, update: {}, create: { code: 'G11', name: 'Grade 11', sortOrder: 11 } });
+  const kLevel = await prisma.level.upsert({ where: { code: 'K' }, update: {}, create: { code: 'K', name: 'Kindergarten', sortOrder: 0 } });
 
   // ─── Course Classes ───────────────────────────────────────────────────────────
   const dsaClass = await prisma.courseClass.upsert({ where: { code: 'CS-DSA-2026' }, update: {}, create: { termId: term.id, name: 'Algorithms & Data Structures', code: 'CS-DSA-2026', status: 'ACTIVE' } });
@@ -1309,7 +1310,7 @@ async function main() {
 
   const algebraCourse = await prisma.course.upsert({
     where: { slug: 'algebra-foundations' },
-    update: {},
+    update: { gradeBand: 'G5_6' },
     create: {
       learningSubjectId: mathLearningSubject.id,
       title: 'Algebra Foundations',
@@ -1318,6 +1319,7 @@ async function main() {
       estimatedHours: 8,
       status: 'PUBLISHED',
       sortOrder: 1,
+      gradeBand: 'G5_6',
     },
   });
 
@@ -1711,7 +1713,7 @@ async function main() {
   // lesson content but were never attached to any Course.
   const fractionsCourse = await prisma.course.upsert({
     where: { slug: 'fractions-and-algebra-basics' },
-    update: {},
+    update: { gradeBand: 'G5_6' },
     create: {
       learningSubjectId: mathLearningSubject.id,
       title: 'Fractions & Algebra Basics',
@@ -1720,6 +1722,7 @@ async function main() {
       estimatedHours: 6,
       status: 'PUBLISHED',
       sortOrder: 2,
+      gradeBand: 'G5_6',
     },
   });
 
@@ -1800,7 +1803,7 @@ async function main() {
   // coverage anywhere).
   const algorithmsCourse = await prisma.course.upsert({
     where: { slug: 'intro-to-algorithms' },
-    update: {},
+    update: { gradeBand: 'G5_6' },
     create: {
       learningSubjectId: csLearningSubject.id,
       title: 'Intro to Algorithms',
@@ -1809,6 +1812,7 @@ async function main() {
       estimatedHours: 6,
       status: 'PUBLISHED',
       sortOrder: 1,
+      gradeBand: 'G5_6',
     },
   });
 
@@ -1890,6 +1894,136 @@ async function main() {
   }
 
   console.log('✅ Seeded Phase 3.5 courses');
+
+  // ─── K-6 pilot: Pre-K/K Language Arts ─────────────────────────────────────────
+  // Narrowest possible slice of the K-6 curriculum-expansion plan — alphabet
+  // recognition + letter sounds only, built entirely from widget types that
+  // already render on mobile today (STANDARD_MCQ, GRID_MATCHING). Letter
+  // tracing is explicitly out of scope for this pilot (see the plan doc);
+  // this course exists to validate grade-band tagging, mastery gating, and
+  // full-prompt narration on genuinely early-literacy content before any of
+  // that is extended to other grade bands or subjects.
+  console.log('🌱 Seeding K-6 pilot course (Pre-K/K Language Arts)...');
+
+  const laLearningSubject = await prisma.learningSubject.upsert({
+    where: { code: 'LA' },
+    update: {},
+    create: { code: 'LA', name: 'Language Arts', description: 'Reading, phonics, and writing.', sortOrder: 3 },
+  });
+
+  const alphabetCourse = await prisma.course.upsert({
+    where: { slug: 'alphabet-and-phonics-basics' },
+    update: { gradeBand: 'PRE_K_K', sortOrder: -1 },
+    create: {
+      learningSubjectId: laLearningSubject.id,
+      title: 'Alphabet & Phonics Basics',
+      slug: 'alphabet-and-phonics-basics',
+      description: 'Learn to recognize letters and the sounds they make.',
+      estimatedHours: 2,
+      status: 'PUBLISHED',
+      // Negative on purpose: two leftover authoring-UI test courses ("TEst",
+      // "test-1") sit at the default sortOrder 0 and were winning
+      // `courses?.[0]` — the mobile home screen's naive "Keep learning" pick
+      // — ahead of every real course, including the existing Algebra one.
+      // This wins that slot for actual testable content instead of junk.
+      sortOrder: -1,
+      gradeBand: 'PRE_K_K',
+    },
+  });
+
+  const letterRecognitionChapter = await prisma.concept.upsert({
+    where: { name: 'Letter Recognition' },
+    update: { courseId: alphabetCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+    create: { name: 'Letter Recognition', description: 'Spotting uppercase and lowercase letters.', courseId: alphabetCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+  });
+
+  let uppercaseLesson = await prisma.lesson.findFirst({ where: { title: 'Uppercase Letters', conceptId: letterRecognitionChapter.id } });
+  if (!uppercaseLesson) {
+    uppercaseLesson = await prisma.lesson.create({ data: { conceptId: letterRecognitionChapter.id, title: 'Uppercase Letters', description: "Let's learn to spot uppercase letters!", sortOrder: 1, xpReward: 20 } });
+    await prisma.card.create({ data: { lessonId: uppercaseLesson.id, title: 'Big Letters', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Let's learn to spot uppercase letters!" } });
+    const upperQ1 = await makeQ(engSubject.id, kLevel.id, 'Which letter is B?', [{ label: 'A', text: 'B', correct: true }, { label: 'B', text: 'D', correct: false }, { label: 'C', text: 'P', correct: false }, { label: 'D', text: 'R', correct: false }], "B has one straight line and two bumps on the right.");
+    await prisma.card.create({ data: { lessonId: uppercaseLesson.id, title: 'Find the Letter', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap the letter shown below.', questionId: upperQ1.id } });
+    const upperQ2 = await makeQ(engSubject.id, kLevel.id, 'Which letter is M?', [{ label: 'A', text: 'M', correct: true }, { label: 'B', text: 'N', correct: false }, { label: 'C', text: 'W', correct: false }, { label: 'D', text: 'H', correct: false }], 'M has two peaks that point up.');
+    await prisma.card.create({ data: { lessonId: uppercaseLesson.id, title: 'Find the Letter', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Tap the letter shown below.', questionId: upperQ2.id } });
+  }
+
+  let lowercaseLesson = await prisma.lesson.findFirst({ where: { title: 'Lowercase Letters', conceptId: letterRecognitionChapter.id } });
+  if (!lowercaseLesson) {
+    lowercaseLesson = await prisma.lesson.create({ data: { conceptId: letterRecognitionChapter.id, title: 'Lowercase Letters', description: 'Now practice lowercase letters.', sortOrder: 2, xpReward: 20 } });
+    await prisma.card.create({ data: { lessonId: lowercaseLesson.id, title: 'Small Letters', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Now practice lowercase letters.' } });
+    const lowerQ1 = await makeQ(engSubject.id, kLevel.id, 'Which letter is b?', [{ label: 'A', text: 'b', correct: true }, { label: 'B', text: 'd', correct: false }, { label: 'C', text: 'p', correct: false }, { label: 'D', text: 'q', correct: false }], "b's circle is on the bottom-right of a tall line.");
+    await prisma.card.create({ data: { lessonId: lowercaseLesson.id, title: 'Find the Letter', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap the letter shown below.', questionId: lowerQ1.id } });
+    const lowerQ2 = await makeQ(engSubject.id, kLevel.id, 'Which letter is m?', [{ label: 'A', text: 'm', correct: true }, { label: 'B', text: 'n', correct: false }, { label: 'C', text: 'w', correct: false }, { label: 'D', text: 'u', correct: false }], 'm has two little bumps in a row.');
+    await prisma.card.create({ data: { lessonId: lowercaseLesson.id, title: 'Find the Letter', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Tap the letter shown below.', questionId: lowerQ2.id } });
+  }
+
+  const letterSoundsChapter = await prisma.concept.upsert({
+    where: { name: 'Letter Sounds' },
+    update: { courseId: alphabetCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Letter Sounds', description: 'Matching letters to the sounds they make.', courseId: alphabetCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let beginningSoundsLesson = await prisma.lesson.findFirst({ where: { title: 'Beginning Sounds', conceptId: letterSoundsChapter.id } });
+  if (!beginningSoundsLesson) {
+    beginningSoundsLesson = await prisma.lesson.create({ data: { conceptId: letterSoundsChapter.id, title: 'Beginning Sounds', description: 'Every letter makes a sound.', sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: beginningSoundsLesson.id, title: 'Letters Make Sounds', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Every letter makes a sound. Listen and pick the right one!' } });
+    const soundQ1 = await makeQ(engSubject.id, kLevel.id, "Which letter makes the 'buh' sound?", [{ label: 'A', text: 'B', correct: true }, { label: 'B', text: 'D', correct: false }, { label: 'C', text: 'P', correct: false }, { label: 'D', text: 'T', correct: false }], "B makes the 'buh' sound, like in 'ball'.");
+    await prisma.card.create({ data: { lessonId: beginningSoundsLesson.id, title: 'Pick the Sound', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Listen carefully, then tap the letter.', questionId: soundQ1.id } });
+    const soundQ2 = await makeQ(engSubject.id, kLevel.id, "Which letter makes the 'sss' sound?", [{ label: 'A', text: 'S', correct: true }, { label: 'B', text: 'C', correct: false }, { label: 'C', text: 'Z', correct: false }, { label: 'D', text: 'F', correct: false }], "S makes the 'sss' sound, like in 'sun'.");
+    await prisma.card.create({ data: { lessonId: beginningSoundsLesson.id, title: 'Pick the Sound', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Listen carefully, then tap the letter.', questionId: soundQ2.id } });
+  }
+
+  let matchSoundsLesson = await prisma.lesson.findFirst({ where: { title: 'Match Letters to Sounds', conceptId: letterSoundsChapter.id } });
+  if (!matchSoundsLesson) {
+    matchSoundsLesson = await prisma.lesson.create({ data: { conceptId: letterSoundsChapter.id, title: 'Match Letters to Sounds', description: 'Match each letter to its sound.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: matchSoundsLesson.id, title: 'Match Them Up', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Let's match letters to their sounds." } });
+    const matchQ = await prisma.question.create({
+      data: {
+        subjectId: engSubject.id,
+        levelId: kLevel.id,
+        questionType: 'interactive',
+        prompt: 'Match each letter to the sound it makes.',
+        correctAnswer: null,
+        widgetType: 'GRID_MATCHING',
+        isGraded: true,
+        explanation: "B says 'buh', M says 'muh', S says 'sss', T says 'tuh'.",
+        hints: ['Say each letter out loud and listen to the sound it starts with.'],
+        widgetConfig: {
+          left: [
+            { id: 'b', text: 'B' },
+            { id: 'm', text: 'M' },
+            { id: 's', text: 'S' },
+            { id: 't', text: 'T' },
+          ],
+          right: [
+            { id: 'buh', text: "'buh'" },
+            { id: 'muh', text: "'muh'" },
+            { id: 'sss', text: "'sss'" },
+            { id: 'tuh', text: "'tuh'" },
+          ],
+          correctPairs: [['b', 'buh'], ['m', 'muh'], ['s', 'sss'], ['t', 'tuh']],
+        },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: matchSoundsLesson.id, title: 'Match Them Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap a letter, then tap its matching sound.', questionId: matchQ.id } });
+  }
+
+  const alphabetCheckpoint = await prisma.concept.upsert({
+    where: { name: 'Alphabet & Phonics Checkpoint' },
+    update: { courseId: alphabetCourse.id, sortOrder: 3, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: { name: 'Alphabet & Phonics Checkpoint', description: 'A short checkpoint on letters and sounds — pass at 70% or better on the first try.', courseId: alphabetCourse.id, sortOrder: 3, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+  });
+  let alphabetCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Alphabet & Phonics', conceptId: alphabetCheckpoint.id } });
+  if (!alphabetCheckpointLesson) {
+    alphabetCheckpointLesson = await prisma.lesson.create({ data: { conceptId: alphabetCheckpoint.id, title: 'Checkpoint: Alphabet & Phonics', description: "Let's see what you've learned!", sortOrder: 1, xpReward: 50 } });
+    await prisma.card.create({ data: { lessonId: alphabetCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Do your best! Listen carefully to each question.' } });
+    const checkpointQ1 = await makeQ(engSubject.id, kLevel.id, "Which letter makes the 'muh' sound?", [{ label: 'A', text: 'M', correct: true }, { label: 'B', text: 'N', correct: false }, { label: 'C', text: 'W', correct: false }, { label: 'D', text: 'B', correct: false }], "M makes the 'muh' sound, like in 'moon'.");
+    await prisma.card.create({ data: { lessonId: alphabetCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Listen carefully, then tap the letter.', questionId: checkpointQ1.id } });
+    const checkpointQ2 = await makeQ(engSubject.id, kLevel.id, 'Which one is lowercase d?', [{ label: 'A', text: 'd', correct: true }, { label: 'B', text: 'b', correct: false }, { label: 'C', text: 'p', correct: false }, { label: 'D', text: 'q', correct: false }], "d's circle is on the bottom-left of a tall line.");
+    await prisma.card.create({ data: { lessonId: alphabetCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 3, cardType: 'CHECKPOINT', content: 'Tap the letter shown below.', questionId: checkpointQ2.id } });
+  }
+
+  console.log('✅ Seeded K-6 pilot course');
 
   // ─── Phase 3.5: Fully-unlocked test account (Charlotte) ──────────────────────
   // Seed-data only — no debug bypass code. Re-visiting a completed lesson

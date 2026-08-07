@@ -684,3 +684,8 @@ export interface GradebookSummary {
   classRank: number | null;
   classPercentile: number | null;
 }
+
+/** `POST /auth/device/approve` — approving a TV pairing code from the phone. */
+export interface ApproveDevicePairingResponse {
+  approved: true;
+}

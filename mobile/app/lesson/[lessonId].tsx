@@ -1,13 +1,13 @@
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { CheckCircle2, X, XCircle } from 'lucide-react-native';
+import { CheckCircle2, Volume2, X, XCircle } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { SubmitCardPayload, SubmitCardResult } from '@/core/contracts';
 import { playSoundEffect } from '@/core/sound/soundEffects';
-import { playVoiceLine } from '@/core/sound/voiceFeedback';
+import { playText, playVoiceLine } from '@/core/sound/voiceFeedback';
 import { LessonCompleteOverlay } from '@/features/lesson/LessonCompleteOverlay';
 import { WidgetSelector } from '@/features/lesson/WidgetSelector';
 import {
@@ -210,12 +210,47 @@ export default function LessonPlayerScreen() {
           paddingBottom: t.spacing.xxxl,
         }}
       >
-        <Text variant="caption" color="mutedForeground">
-          Card {cardIndex + 1} of {cards.length} · {card.cardType.toLowerCase()}
-        </Text>
-        <Text variant="heading" style={{ marginTop: t.spacing.xs }}>
-          {card.title}
-        </Text>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: t.spacing.md,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text variant="caption" color="mutedForeground">
+              Card {cardIndex + 1} of {cards.length} · {card.cardType.toLowerCase()}
+            </Text>
+            <Text variant="heading" style={{ marginTop: t.spacing.xs }}>
+              {card.title}
+            </Text>
+          </View>
+          {/* For pre-readers who can't yet read the card themselves — narrates
+              the raw prompt/content text on demand rather than auto-playing,
+              since card text isn't guaranteed short (unlike the fixed
+              feedback phrases voiceFeedback.ts otherwise plays). */}
+          <Pressable
+            onPress={() =>
+              playText(
+                card.question ? `${card.content} ${card.question.prompt}` : card.content,
+              )
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Listen to this card"
+            hitSlop={8}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: t.radius.pill,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: t.colors.accent,
+            }}
+          >
+            <Volume2 size={18} color={t.colors.primary} />
+          </Pressable>
+        </View>
 
         <View style={{ height: t.spacing.lg }} />
         <MathText variant="body">{card.content}</MathText>

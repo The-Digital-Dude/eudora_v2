@@ -35,7 +35,8 @@
       "expo-secure-store",
       "expo-video",
       "expo-audio",
-      "expo-notifications"
+      "expo-notifications",
+      "@react-native-tvos/config-tv"
     ],
     "experiments": {
       "typedRoutes": true

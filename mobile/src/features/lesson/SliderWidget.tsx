@@ -1,6 +1,6 @@
 import Slider from '@react-native-community/slider';
-import React from 'react';
-import { View } from 'react-native';
+import React, { useState } from 'react';
+import { Platform, Pressable, View } from 'react-native';
 
 import { MathText } from '@/ui/primitives/MathText';
 import { Text } from '@/ui/primitives/Text';
@@ -79,18 +79,22 @@ export function SliderWidget({
 
       <View style={{ height: t.spacing.sm }} />
 
-      <Slider
-        style={{ width: '100%', height: 40 }}
-        minimumValue={min}
-        maximumValue={max}
-        step={step}
-        value={current}
-        onValueChange={onChange}
-        disabled={locked}
-        minimumTrackTintColor={t.colors.primary}
-        maximumTrackTintColor={t.colors.muted}
-        thumbTintColor={t.colors.primary}
-      />
+      {Platform.isTV ? (
+        <TvStepper min={min} max={max} step={step} value={current} onChange={onChange} locked={locked} />
+      ) : (
+        <Slider
+          style={{ width: '100%', height: 40 }}
+          minimumValue={min}
+          maximumValue={max}
+          step={step}
+          value={current}
+          onValueChange={onChange}
+          disabled={locked}
+          minimumTrackTintColor={t.colors.primary}
+          maximumTrackTintColor={t.colors.muted}
+          thumbTintColor={t.colors.primary}
+        />
+      )}
 
       <View
         style={{
@@ -118,5 +122,117 @@ export function SliderWidget({
         </View>
       ) : null}
     </View>
+  );
+}
+
+/**
+ * `@react-native-community/slider` is a native control with no D-pad
+ * affordance at all — you can't focus-and-drag a physical thumb with a
+ * remote. This replaces it on the TV target only (`Platform.isTV`) with two
+ * focusable step buttons, which D-pad left/right can move between and OK can
+ * press, using nothing beyond standard Pressable focus handling.
+ */
+function TvStepper({
+  min,
+  max,
+  step,
+  value,
+  onChange,
+  locked,
+}: {
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  onChange: (value: number) => void;
+  locked: boolean;
+}) {
+  const t = useTheme();
+  const [focused, setFocused] = useState<'decrement' | 'increment' | null>(null);
+  const pct = max > min ? (value - min) / (max - min) : 0;
+
+  const clamp = (n: number) => Math.min(max, Math.max(min, n));
+
+  return (
+    <View style={{ width: '100%', gap: t.spacing.md }}>
+      <View
+        style={{
+          height: 8,
+          borderRadius: t.radius.pill,
+          backgroundColor: t.colors.muted,
+          overflow: 'hidden',
+        }}
+      >
+        <View
+          style={{
+            width: `${pct * 100}%`,
+            height: '100%',
+            backgroundColor: t.colors.primary,
+          }}
+        />
+      </View>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: t.spacing.xl }}>
+        <StepperButton
+          label="−"
+          disabled={locked || value <= min}
+          focused={focused === 'decrement'}
+          onFocus={() => setFocused('decrement')}
+          onBlur={() => setFocused((c) => (c === 'decrement' ? null : c))}
+          onPress={() => onChange(clamp(value - step))}
+        />
+        <StepperButton
+          label="+"
+          disabled={locked || value >= max}
+          focused={focused === 'increment'}
+          onFocus={() => setFocused('increment')}
+          onBlur={() => setFocused((c) => (c === 'increment' ? null : c))}
+          onPress={() => onChange(clamp(value + step))}
+        />
+      </View>
+    </View>
+  );
+}
+
+function StepperButton({
+  label,
+  disabled,
+  focused,
+  onFocus,
+  onBlur,
+  onPress,
+}: {
+  label: string;
+  disabled: boolean;
+  focused: boolean;
+  onFocus: () => void;
+  onBlur: () => void;
+  onPress: () => void;
+}) {
+  const t = useTheme();
+  return (
+    <Pressable
+      disabled={disabled}
+      focusable={!disabled}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onPress={onPress}
+      accessibilityRole="adjustable"
+      style={{
+        width: 56,
+        height: 56,
+        borderRadius: t.radius.pill,
+        borderWidth: 2,
+        borderColor: focused ? t.colors.primary : t.colors.border,
+        backgroundColor: t.colors.card,
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: disabled ? 0.4 : 1,
+      }}
+    >
+      <Text variant="title" color={focused ? 'primary' : 'foreground'}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }

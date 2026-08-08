@@ -384,6 +384,7 @@ export function QuestionEditorDialog({
                   <SelectItem value="COORDINATE_PLOTTER">Coordinate Plotter</SelectItem>
                   <SelectItem value="GRID_MATCHING">Grid Matching</SelectItem>
                   <SelectItem value="CODE_PLAYGROUND">Code Playground</SelectItem>
+                  <SelectItem value="SHAPE_SHADING">Shape Shading</SelectItem>
                 </SelectContent>
               </Select>
             </div>

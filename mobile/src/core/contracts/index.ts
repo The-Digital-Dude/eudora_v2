@@ -174,6 +174,7 @@ export interface CourseSummary {
   estimatedHours: number | null;
   status: CatalogStatus;
   sortOrder: number;
+  gradeBand: 'PRE_K_K' | 'G1_2' | 'G3_4' | 'G5_6' | null;
   learningSubject: { id: string; name: string; code: string };
   _count: { concepts: number };
 }
@@ -216,7 +217,8 @@ export type WidgetType =
   | 'DRAG_AND_DROP_LABELS'
   | 'COORDINATE_PLOTTER'
   | 'GRID_MATCHING'
-  | 'CODE_PLAYGROUND';
+  | 'CODE_PLAYGROUND'
+  | 'SHAPE_SHADING';
 
 export interface QuestionOption {
   id: string;

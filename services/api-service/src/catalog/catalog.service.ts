@@ -100,10 +100,16 @@ export class CatalogService {
     });
   }
 
-  async listCourses(learningSubjectId?: string) {
+  // `listCourses`/`getCourseDetail` are shared by every role (`CatalogController`
+  // is `@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')`) — staff
+  // need to see DRAFT courses to author them, students/guardians never should.
+  // Missing this filter previously let any DRAFT course (including empty
+  // authoring-UI scratch courses) leak into the student-facing course list.
+  async listCourses(learningSubjectId?: string, includeUnpublished = false) {
     return this.prisma.course.findMany({
       where: {
         deletedAt: null,
+        ...(includeUnpublished ? {} : { status: 'PUBLISHED' }),
         ...(learningSubjectId ? { learningSubjectId } : {}),
       },
       orderBy: { sortOrder: 'asc' },
@@ -114,7 +120,11 @@ export class CatalogService {
     });
   }
 
-  async getCourseDetail(id: string, userId?: string) {
+  async getCourseDetail(
+    id: string,
+    userId?: string,
+    includeUnpublished = false,
+  ) {
     const course = await this.prisma.course.findUnique({
       where: { id },
       include: {
@@ -139,7 +149,14 @@ export class CatalogService {
         },
       },
     });
-    if (!course || course.deletedAt) {
+    // Same "not found" (not "forbidden") for deleted vs. unpublished-and-not-
+    // staff — doesn't confirm to a probing student whether a draft course
+    // with that id exists at all.
+    if (
+      !course ||
+      course.deletedAt ||
+      (!includeUnpublished && course.status !== 'PUBLISHED')
+    ) {
       throw new NotFoundException('Course not found');
     }
 

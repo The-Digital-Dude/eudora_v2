@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { GuardianAccessService } from '../family/guardian-access.service';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import {
   ListResponsesQueryDto,
   MarkStudentResponseDto,
@@ -22,7 +24,30 @@ import { deriveSeed } from '../common/widgets/seed.util';
 
 @Injectable()
 export class StudentResponsesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly guardianAccessService: GuardianAccessService,
+  ) {}
+
+  /**
+   * Ownership check for a given attempt — a student may only touch responses
+   * belonging to their own attempt; staff/guardian access rules are handled
+   * by `assertCanAccessStudentRecord` (same pattern as AttemptsService).
+   */
+  async assertCanAccessAttempt(
+    assessmentAttemptId: string,
+    user: CurrentUserDto,
+  ): Promise<void> {
+    const attempt = await this.prisma.assessmentAttempt.findUnique({
+      where: { id: assessmentAttemptId },
+      select: { studentProfileId: true },
+    });
+    const resolved = requireRecord(attempt, 'Attempt not found');
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      resolved.studentProfileId,
+    );
+  }
 
   async listResponses(query: ListResponsesQueryDto = {}) {
     const pagination = normalizePagination(query);
@@ -44,15 +69,19 @@ export class StudentResponsesService {
     return toPage(items, total, pagination);
   }
 
-  async getResponse(id: string) {
+  async getResponse(id: string, user: CurrentUserDto) {
     const response = await this.prisma.studentResponse.findUnique({
       where: { id },
       select: responseSelect,
     });
-    return requireRecord(response, 'Response not found');
+    const resolved = requireRecord(response, 'Response not found');
+    await this.assertCanAccessAttempt(resolved.assessmentAttemptId, user);
+    return resolved;
   }
 
-  async saveResponse(input: SaveStudentResponseDto, actorUserId: string) {
+  async saveResponse(input: SaveStudentResponseDto, user: CurrentUserDto) {
+    const actorUserId = user.id;
+    await this.assertCanAccessAttempt(input.assessmentAttemptId, user);
     const context = await this.resolveResponseContext(
       input.assessmentAttemptId,
       input.questionId,
@@ -116,13 +145,15 @@ export class StudentResponsesService {
   async updateResponse(
     id: string,
     input: UpdateStudentResponseDto,
-    actorUserId: string,
+    user: CurrentUserDto,
   ) {
+    const actorUserId = user.id;
     const existing = await this.prisma.studentResponse.findUnique({
       where: { id },
       select: { assessmentAttemptId: true, questionId: true },
     });
     const resolved = requireRecord(existing, 'Response not found');
+    await this.assertCanAccessAttempt(resolved.assessmentAttemptId, user);
     if (input.selectedOptionId !== undefined) {
       await this.resolveResponseContext(
         resolved.assessmentAttemptId,

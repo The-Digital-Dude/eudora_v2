@@ -41,8 +41,11 @@ export class AttemptsController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('attempts/:id')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
-  async getAttempt(@Param('id') id: string) {
-    return this.attemptsService.getAttempt(id);
+  async getAttempt(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
+    return this.attemptsService.getAttempt(id, user);
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
@@ -73,7 +76,7 @@ export class AttemptsController {
     @Body() body: UpdateAttemptDto,
     @CurrentUser() user: CurrentUserDto,
   ) {
-    return this.attemptsService.updateAttempt(id, body, user.id);
+    return this.attemptsService.updateAttempt(id, body, user);
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
@@ -83,7 +86,7 @@ export class AttemptsController {
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserDto,
   ) {
-    return this.attemptsService.submitAttempt(id, user.id);
+    return this.attemptsService.submitAttempt(id, user);
   }
 
   @Post('attempts/:id/mark')

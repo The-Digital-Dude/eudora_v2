@@ -72,6 +72,29 @@ export type SliderParameterizedConfig = z.infer<
   typeof SliderParameterizedConfigSchema
 >;
 
+// ─── SHAPE_SHADING (fixed only — no parameterized mode yet) ──────────────────
+//
+// Two shape kinds, not arbitrary custom SVG — kept bounded, same discipline
+// as COORDINATE_PLOTTER's fixed grid rather than an open-ended shape editor.
+// Denominator is always the shape's `regions` count — never a separately
+// authored field, so numerator/denominator can't drift out of sync with what
+// the shape can actually represent.
+
+export const ShapeShadingFixedConfigSchema = z.object({
+  configVersion: z.literal(2),
+  mode: z.literal('fixed'),
+  shape: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('polygon'), regions: z.number().int().min(3).max(12) }),
+    z.object({ kind: z.literal('bar'), regions: z.number().int().min(2).max(12) }),
+  ]),
+  targetNumerator: z.number().int().min(0),
+  requireContiguous: z.boolean().default(false),
+});
+
+export type ShapeShadingFixedConfig = z.infer<
+  typeof ShapeShadingFixedConfigSchema
+>;
+
 // ─── Discriminated parse result ──────────────────────────────────────────────
 //
 // No `configVersion` field, or `configVersion !== 2`, means today's exact
@@ -100,6 +123,12 @@ export type ParsedWidgetConfig =
       widgetType: 'SLIDER_MANIPULATIVE';
       mode: 'parameterized';
       config: SliderParameterizedConfig;
+    }
+  | {
+      version: 2;
+      widgetType: 'SHAPE_SHADING';
+      mode: 'fixed';
+      config: ShapeShadingFixedConfig;
     }
   | { version: 2; widgetType: string; mode: string; raw: unknown };
 
@@ -154,6 +183,15 @@ export function parseWidgetConfig(
       widgetType: 'SLIDER_MANIPULATIVE',
       mode: 'parameterized',
       config: SliderParameterizedConfigSchema.parse(obj),
+    };
+  }
+
+  if (widgetType === 'SHAPE_SHADING' && mode === 'fixed') {
+    return {
+      version: 2,
+      widgetType: 'SHAPE_SHADING',
+      mode: 'fixed',
+      config: ShapeShadingFixedConfigSchema.parse(obj),
     };
   }
 

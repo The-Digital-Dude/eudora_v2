@@ -17,6 +17,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { GuardianAccessService } from '../family/guardian-access.service';
 
 @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller('homework')
@@ -25,6 +26,7 @@ export class HomeworkController {
   constructor(
     private readonly homeworkService: HomeworkService,
     private readonly prisma: PrismaService,
+    private readonly guardianAccessService: GuardianAccessService,
   ) {}
 
   /**
@@ -104,7 +106,14 @@ export class HomeworkController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('student/:studentProfileId')
   @RequirePermissions({ action: 'read', subject: 'Homework' })
-  getStudentSubmissions(@Param('studentProfileId') studentProfileId: string) {
+  async getStudentSubmissions(
+    @Param('studentProfileId') studentProfileId: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      studentProfileId,
+    );
     return this.homeworkService.getStudentSubmissions(studentProfileId);
   }
 
@@ -114,9 +123,14 @@ export class HomeworkController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('student/:studentProfileId/pending')
   @RequirePermissions({ action: 'read', subject: 'Homework' })
-  getStudentPendingHomework(
+  async getStudentPendingHomework(
     @Param('studentProfileId') studentProfileId: string,
+    @CurrentUser() user: CurrentUserDto,
   ) {
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      studentProfileId,
+    );
     return this.homeworkService.getStudentPendingHomework(studentProfileId);
   }
 

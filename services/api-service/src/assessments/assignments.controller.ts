@@ -41,8 +41,11 @@ export class AssignmentsController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('assignments/:id')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
-  async getAssignment(@Param('id') id: string) {
-    return this.assignmentsService.getAssignment(id);
+  async getAssignment(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
+    return this.assignmentsService.getAssignment(id, user);
   }
 
   @Post('assignments')

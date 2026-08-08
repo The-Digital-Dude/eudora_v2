@@ -1,6 +1,7 @@
 import { Parser } from 'expr-eval';
 import {
   McqParameterizedConfig,
+  ShapeShadingFixedConfig,
   SliderParameterizedConfig,
   parseWidgetConfig,
 } from './widget-config.schema';
@@ -17,6 +18,13 @@ export type ResolvedAnswer =
       tolerance: number;
     }
   | { widgetType: 'GRID_MATCHING'; correctPairs: [string, string][] }
+  | {
+      widgetType: 'SHAPE_SHADING';
+      targetNumerator: number;
+      totalRegions: number;
+      shapeKind: 'polygon' | 'bar';
+      requireContiguous: boolean;
+    }
   | { widgetType: 'NUMERIC_OR_TEXT'; correctAnswer: string | null; isNumeric: boolean }
   | { widgetType: 'UNSUPPORTED' };
 
@@ -73,11 +81,38 @@ export function generateWidgetInstance(
         };
       }
     }
+
+    if (parsed.widgetType === 'SHAPE_SHADING' && parsed.mode === 'fixed') {
+      return generateShapeShadingInstance(parsed.config);
+    }
   }
 
   // Legacy passthrough — v1, or v2 for widget types without a generator yet:
   // resolve today's fixed shape unchanged, no randomization.
   return resolveLegacyInstance(question);
+}
+
+// No RNG needed — SHAPE_SHADING has no legacy data to migrate (no
+// `resolveLegacyInstance` case) and no parameterized mode yet, so the config
+// the author wrote is passed straight through, same as SLIDER_MANIPULATIVE's
+// `fixed` branch above. The target fraction is inherently visible to the
+// student (it's the instruction text itself, e.g. "Color 1/2") — unlike
+// Slider's `correctValue`, there's nothing to keep secret pre-submission.
+function generateShapeShadingInstance(config: ShapeShadingFixedConfig): GeneratedInstance {
+  return {
+    displayConfig: {
+      shape: config.shape,
+      targetNumerator: config.targetNumerator,
+      requireContiguous: config.requireContiguous,
+    },
+    resolvedAnswer: {
+      widgetType: 'SHAPE_SHADING',
+      targetNumerator: config.targetNumerator,
+      totalRegions: config.shape.regions,
+      shapeKind: config.shape.kind,
+      requireContiguous: config.requireContiguous,
+    },
+  };
 }
 
 function generateMcqInstance(

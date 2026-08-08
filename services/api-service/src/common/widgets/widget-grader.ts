@@ -7,6 +7,7 @@ export interface WidgetSubmission {
     finalValue?: number;
     points?: { x: number; y: number }[];
     pairs?: [string, string][];
+    shadedRegionIds?: string[];
     [key: string]: unknown;
   } | null;
 }
@@ -70,6 +71,54 @@ export function gradeWidgetSubmission(
         ),
       );
       return { isCorrect: allMatched };
+    }
+
+    case 'SHAPE_SHADING': {
+      const shadedIds = submission.interactionState?.shadedRegionIds ?? [];
+      const { targetNumerator, totalRegions, shapeKind, requireContiguous } = resolvedAnswer;
+
+      if (shadedIds.length !== targetNumerator) {
+        return { isCorrect: false };
+      }
+
+      if (requireContiguous && shadedIds.length > 1) {
+        // region-N ids (see ShapeShadingWidget). For `polygon` (wedges form a
+        // ring), a sorted set of indices is a contiguous arc iff exactly one
+        // gap between consecutive elements is >1 — that gap is the "outside"
+        // of the arc, closing the ring; a wrap-around selection like
+        // [4,5,0] on a 6-wedge polygon needs the wrap gap (from the last
+        // index back to the first, +totalRegions) counted too, or it's
+        // wrongly rejected. For `bar` (segments don't wrap), there's no
+        // ring to close, so *zero* gaps may exceed 1 — otherwise a 2-element
+        // selection would trivially "pass" regardless of how far apart the
+        // two segments actually are (only one gap exists between any pair,
+        // so "at most one large gap" is meaningless without a wrap to
+        // compare against).
+        const indices = shadedIds
+          .map((id) => parseInt(id.replace('region-', ''), 10))
+          .filter((n) => !Number.isNaN(n))
+          .sort((a, b) => a - b);
+
+        if (indices.length !== shadedIds.length) {
+          return { isCorrect: false };
+        }
+
+        const gaps: number[] = [];
+        for (let i = 1; i < indices.length; i++) {
+          gaps.push(indices[i] - indices[i - 1]);
+        }
+        if (shapeKind === 'polygon') {
+          gaps.push(indices[0] + totalRegions - indices[indices.length - 1]);
+        }
+
+        const allowedLargeGaps = shapeKind === 'polygon' ? 1 : 0;
+        const largeGaps = gaps.filter((g) => g !== 1).length;
+        if (largeGaps > allowedLargeGaps) {
+          return { isCorrect: false };
+        }
+      }
+
+      return { isCorrect: true };
     }
 
     case 'NUMERIC_OR_TEXT': {

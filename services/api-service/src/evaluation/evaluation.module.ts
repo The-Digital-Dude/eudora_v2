@@ -7,9 +7,10 @@ import { GapsController } from './gaps.controller';
 import { NextActionService } from './next-action.service';
 import { NextActionsController } from './next-actions.controller';
 import { PrismaModule } from '../prisma/prisma.module';
+import { FamilyModule } from '../family/family.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, FamilyModule],
   controllers: [EvaluationController, GapsController, NextActionsController],
   providers: [EvaluationService, MasteryService, GapService, NextActionService],
   exports: [EvaluationService, MasteryService, GapService, NextActionService],

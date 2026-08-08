@@ -9,7 +9,6 @@ import { useGetCoursesQuery } from '@/features/catalog/catalogApi';
 import { useGetGamificationMeQuery } from '@/features/gamification/gamificationApi';
 import { useGetMyPendingHomeworkQuery } from '@/features/homework/homeworkApi';
 import { TodaysGoals } from '@/features/gamification/TodaysGoals';
-import { Button } from '@/ui/primitives/Button';
 import { Card } from '@/ui/primitives/Card';
 import { ProgressBar } from '@/ui/primitives/ProgressBar';
 import { Text } from '@/ui/primitives/Text';
@@ -39,8 +38,6 @@ export function StudentHomeScreen({ onSwitchToGuardian }: StudentHomeScreenProps
   const streak = gamification?.streak;
   const levelProgress =
     xp && xp.nextLevelXp > 0 ? (xp.totalXp % xp.nextLevelXp) / xp.nextLevelXp : 0;
-
-  const continueCourse = courses?.[0];
 
   if (loadingXp) {
     return (
@@ -226,39 +223,70 @@ export function StudentHomeScreen({ onSwitchToGuardian }: StudentHomeScreenProps
 
       <View style={{ height: t.spacing.xl }} />
 
-      <Text variant="heading">Keep learning</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text variant="heading">Your courses</Text>
+        <Pressable onPress={() => router.push('/course')} accessibilityRole="button" hitSlop={8}>
+          <Text variant="caption" color="primary">
+            Browse all
+          </Text>
+        </Pressable>
+      </View>
       <View style={{ height: t.spacing.md }} />
 
-      {continueCourse ? (
-        <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.md }}>
-            <View
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: t.radius.md,
-                backgroundColor: t.colors.accent,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+      {courses && courses.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: t.spacing.md, paddingRight: t.spacing.xl }}
+        >
+          {courses.map((course) => (
+            <Pressable
+              key={course.id}
+              onPress={() => router.push(`/course/${course.id}`)}
+              accessibilityRole="button"
             >
-              <BookOpen size={22} color={t.colors.accentForeground} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text variant="label">{continueCourse.title}</Text>
-              <Text variant="caption" color="mutedForeground">
-                {continueCourse.learningSubject.name} ·{' '}
-                {continueCourse._count.concepts} chapters
-              </Text>
-            </View>
-          </View>
-          <View style={{ height: t.spacing.lg }} />
-          <Button
-            title="Continue"
-            fullWidth
-            onPress={() => router.push(`/course/${continueCourse.id}`)}
-          />
-        </Card>
+              <Card style={{ width: 200 }}>
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: t.radius.md,
+                    backgroundColor: t.colors.accent,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <BookOpen size={22} color={t.colors.accentForeground} />
+                </View>
+                <View style={{ height: t.spacing.sm }} />
+                <Text variant="label" numberOfLines={2}>
+                  {course.title}
+                </Text>
+                <Text variant="caption" color="mutedForeground" numberOfLines={1}>
+                  {course.learningSubject.name} · {course._count.concepts} chapters
+                </Text>
+                {course.gradeBand ? (
+                  <>
+                    <View style={{ height: t.spacing.sm }} />
+                    <View
+                      style={{
+                        alignSelf: 'flex-start',
+                        paddingHorizontal: t.spacing.sm,
+                        paddingVertical: 2,
+                        borderRadius: t.radius.pill,
+                        backgroundColor: t.colors.muted,
+                      }}
+                    >
+                      <Text variant="caption" color="mutedForeground">
+                        {GRADE_BAND_LABELS[course.gradeBand]}
+                      </Text>
+                    </View>
+                  </>
+                ) : null}
+              </Card>
+            </Pressable>
+          ))}
+        </ScrollView>
       ) : (
         <Card>
           <Text variant="body" color="mutedForeground">
@@ -269,6 +297,13 @@ export function StudentHomeScreen({ onSwitchToGuardian }: StudentHomeScreenProps
     </ScrollView>
   );
 }
+
+const GRADE_BAND_LABELS: Record<string, string> = {
+  PRE_K_K: 'Pre-K/K',
+  G1_2: 'Grades 1-2',
+  G3_4: 'Grades 3-4',
+  G5_6: 'Grades 5-6',
+};
 
 function StatTile({
   icon,

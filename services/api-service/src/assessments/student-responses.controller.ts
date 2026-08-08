@@ -39,8 +39,11 @@ export class StudentResponsesController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
   @Get('responses/:id')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
-  async getResponse(@Param('id') id: string) {
-    return this.studentResponsesService.getResponse(id);
+  async getResponse(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
+    return this.studentResponsesService.getResponse(id, user);
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
@@ -50,7 +53,7 @@ export class StudentResponsesController {
     @Body() body: SaveStudentResponseDto,
     @CurrentUser() user: CurrentUserDto,
   ) {
-    return this.studentResponsesService.saveResponse(body, user.id);
+    return this.studentResponsesService.saveResponse(body, user);
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER')
@@ -61,7 +64,7 @@ export class StudentResponsesController {
     @Body() body: UpdateStudentResponseDto,
     @CurrentUser() user: CurrentUserDto,
   ) {
-    return this.studentResponsesService.updateResponse(id, body, user.id);
+    return this.studentResponsesService.updateResponse(id, body, user);
   }
 
   @Post('responses/:id/mark')
@@ -80,7 +83,9 @@ export class StudentResponsesController {
   async listAttemptResponses(
     @Param('id') id: string,
     @Query() query: ListResponsesQueryDto,
+    @CurrentUser() user: CurrentUserDto,
   ) {
+    await this.studentResponsesService.assertCanAccessAttempt(id, user);
     return this.studentResponsesService.listResponses({
       ...query,
       assessmentAttemptId: id,

@@ -113,16 +113,25 @@ export class EvaluationController {
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('assessments/:id')
-  getAssessmentById(@Param('id') id: string) {
-    return this.evaluationService.getAssessmentById(id);
+  getAssessmentById(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
+    return this.evaluationService.getAssessmentById(id, user);
   }
 
   // ─── Mastery Sheet Endpoints ─────────────────────────────────────────────────
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   @Get('mastery/student/:studentProfileId')
-  getStudentMasterySheet(@Param('studentProfileId') studentProfileId: string) {
-    return this.evaluationService.getStudentMasterySheet(studentProfileId);
+  getStudentMasterySheet(
+    @Param('studentProfileId') studentProfileId: string,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
+    return this.evaluationService.getStudentMasterySheet(
+      studentProfileId,
+      user,
+    );
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
@@ -130,10 +139,12 @@ export class EvaluationController {
   getStudentCompetencyHistory(
     @Param('studentProfileId') studentProfileId: string,
     @Param('competencyId') competencyId: string,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.evaluationService.getStudentCompetencyHistory(
       studentProfileId,
       competencyId,
+      user,
     );
   }
 }

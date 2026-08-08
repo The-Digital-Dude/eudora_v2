@@ -4,8 +4,10 @@ import { View } from 'react-native';
 import type { CardQuestion } from '@/core/contracts';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
+import { CoordinatePlotterWidget, type CoordinatePlotterValue } from './CoordinatePlotterWidget';
 import { GridMatchingWidget, type GridMatchingValue } from './GridMatchingWidget';
 import { McqWidget } from './McqWidget';
+import { ShapeShadingWidget, type ShapeShadingValue } from './ShapeShadingWidget';
 import { SliderWidget } from './SliderWidget';
 
 interface WidgetSelectorProps {
@@ -29,9 +31,7 @@ interface WidgetSelectorProps {
  * (`widget-generator.ts`'s `resolveLegacyInstance`), so any answer a widget
  * collected for them would always grade as incorrect regardless of what the
  * student did. Building interactive UI with no way to ever succeed would be
- * worse than the placeholder below. `COORDINATE_PLOTTER` is real
- * server-side but is Phase 3 per the mobile architecture plan (needs
- * `react-native-svg` + gesture handling) and unimplemented here yet.
+ * worse than the placeholder below.
  */
 export function WidgetSelector({
   question,
@@ -70,6 +70,28 @@ export function WidgetSelector({
         <GridMatchingWidget
           config={question.widgetConfig as any}
           value={(currentState as GridMatchingValue) ?? null}
+          onChange={onStateChange}
+          locked={locked}
+          isCorrect={isCorrect}
+        />
+      );
+
+    case 'COORDINATE_PLOTTER':
+      return (
+        <CoordinatePlotterWidget
+          config={question.widgetConfig as any}
+          value={(currentState as CoordinatePlotterValue) ?? null}
+          onChange={onStateChange}
+          locked={locked}
+          isCorrect={isCorrect}
+        />
+      );
+
+    case 'SHAPE_SHADING':
+      return (
+        <ShapeShadingWidget
+          config={question.widgetConfig as any}
+          value={(currentState as ShapeShadingValue) ?? null}
           onChange={onStateChange}
           locked={locked}
           isCorrect={isCorrect}

@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GradebookService } from '../gradebook/gradebook.service';
+import { GuardianAccessService } from '../family/guardian-access.service';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import {
   CreateAttemptDto,
   ListAttemptsQueryDto,
@@ -39,6 +41,7 @@ export class AttemptsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gradebookService: GradebookService,
+    private readonly guardianAccessService: GuardianAccessService,
   ) {}
 
   /**
@@ -108,12 +111,17 @@ export class AttemptsService {
     return toPage(items, total, pagination);
   }
 
-  async getAttempt(id: string) {
+  async getAttempt(id: string, user: CurrentUserDto) {
     const attempt = await this.prisma.assessmentAttempt.findUnique({
       where: { id },
       select: attemptSelect,
     });
-    return requireRecord(attempt, 'Attempt not found');
+    const resolved = requireRecord(attempt, 'Attempt not found');
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      resolved.studentProfileId,
+    );
+    return resolved;
   }
 
   async startAttempt(input: CreateAttemptDto, actorUserId: string) {
@@ -208,8 +216,18 @@ export class AttemptsService {
   async updateAttempt(
     id: string,
     input: UpdateAttemptDto,
-    actorUserId: string,
+    user: CurrentUserDto,
   ) {
+    const actorUserId = user.id;
+    const existing = await this.prisma.assessmentAttempt.findUnique({
+      where: { id },
+      select: { studentProfileId: true },
+    });
+    const resolvedExisting = requireRecord(existing, 'Attempt not found');
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      resolvedExisting.studentProfileId,
+    );
     const maxScore =
       input.maxScore === undefined
         ? undefined
@@ -270,7 +288,17 @@ export class AttemptsService {
     return attempt;
   }
 
-  async submitAttempt(id: string, actorUserId: string) {
+  async submitAttempt(id: string, user: CurrentUserDto) {
+    const actorUserId = user.id;
+    const existing = await this.prisma.assessmentAttempt.findUnique({
+      where: { id },
+      select: { studentProfileId: true },
+    });
+    const resolvedExisting = requireRecord(existing, 'Attempt not found');
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      resolvedExisting.studentProfileId,
+    );
     const attempt = await this.recalculateAttempt(id, {
       resultStatus: 'submitted',
       submittedAt: new Date(),

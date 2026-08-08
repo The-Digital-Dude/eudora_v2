@@ -25,6 +25,12 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
 
+const STAFF_ROLES = ['SUPER_ADMIN', 'ADMIN', 'TEACHER'];
+
+function isStaff(user?: CurrentUserDto): boolean {
+  return !!user && user.roles.some((r) => STAFF_ROLES.includes(r));
+}
+
 @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
 @Controller('catalog')
 @UseGuards(RolesGuard)
@@ -56,8 +62,11 @@ export class CatalogController {
   // ─── Courses ─────────────────────────────────────────────────────────────
 
   @Get('courses')
-  listCourses(@Query('subjectId') subjectId?: string) {
-    return this.catalogService.listCourses(subjectId);
+  listCourses(
+    @Query('subjectId') subjectId?: string,
+    @CurrentUser() user?: CurrentUserDto,
+  ) {
+    return this.catalogService.listCourses(subjectId, isStaff(user));
   }
 
   @Get('courses/:id')
@@ -65,7 +74,7 @@ export class CatalogController {
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserDto,
   ) {
-    return this.catalogService.getCourseDetail(id, user.id);
+    return this.catalogService.getCourseDetail(id, user.id, isStaff(user));
   }
 
   @Post('courses')

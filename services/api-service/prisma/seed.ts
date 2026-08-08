@@ -159,6 +159,9 @@ async function main() {
   const gradeLevel = await prisma.level.upsert({ where: { code: 'G10' }, update: {}, create: { code: 'G10', name: 'Grade 10', sortOrder: 10 } });
   const grade11Level = await prisma.level.upsert({ where: { code: 'G11' }, update: {}, create: { code: 'G11', name: 'Grade 11', sortOrder: 11 } });
   const kLevel = await prisma.level.upsert({ where: { code: 'K' }, update: {}, create: { code: 'K', name: 'Kindergarten', sortOrder: 0 } });
+  const g1Level = await prisma.level.upsert({ where: { code: 'G1' }, update: {}, create: { code: 'G1', name: 'Grade 1', sortOrder: 1 } });
+  const g3Level = await prisma.level.upsert({ where: { code: 'G3' }, update: {}, create: { code: 'G3', name: 'Grade 3', sortOrder: 3 } });
+  const g5Level = await prisma.level.upsert({ where: { code: 'G5' }, update: {}, create: { code: 'G5', name: 'Grade 5', sortOrder: 5 } });
 
   // ─── Course Classes ───────────────────────────────────────────────────────────
   const dsaClass = await prisma.courseClass.upsert({ where: { code: 'CS-DSA-2026' }, update: {}, create: { termId: term.id, name: 'Algorithms & Data Structures', code: 'CS-DSA-2026', status: 'ACTIVE' } });
@@ -1880,6 +1883,36 @@ async function main() {
     algoReadingItem = await prisma.moduleItem.create({ data: { conceptId: algorithmsPracticeChapter.id, kind: 'READING', title: 'Reading: Choosing the Right Algorithm', sortOrder: 3, status: 'PUBLISHED', readingContent: 'A simple algorithm like Bubble Sort is easy to understand but slow on large inputs. Real systems typically use faster algorithms like Merge Sort or Quick Sort, which scale much better as the amount of data grows.' } });
   }
 
+  // Closes a gap flagged during seed-data coverage review: this course had
+  // VIDEO/READING items but no DISCUSSION/ASSESSMENT, unlike fractionsCourse's
+  // practice chapter which has the full module-item-kind set.
+  let algoDiscussionItem = await prisma.moduleItem.findFirst({ where: { conceptId: algorithmsPracticeChapter.id, kind: 'DISCUSSION' } });
+  if (!algoDiscussionItem) {
+    algoDiscussionItem = await prisma.moduleItem.create({ data: { conceptId: algorithmsPracticeChapter.id, kind: 'DISCUSSION', title: 'Discuss: The Algorithm You Use Most', sortOrder: 4, status: 'PUBLISHED' } });
+    const algoThread = await prisma.discussionThread.create({ data: { moduleItemId: algoDiscussionItem.id, prompt: 'Which everyday app or feature do you think relies on sorting or searching the most? Why?' } });
+    if (charlotteProfile) {
+      await prisma.discussionPost.create({ data: { discussionThreadId: algoThread.id, studentProfileId: charlotteProfile.id, body: 'Probably my music app — it has to search through thousands of songs instantly whenever I type in the search box.' } });
+    }
+  }
+
+  const algoQuizQ = await makeQ(csSubject.id, gradeLevel.id, 'What is the time complexity of Binary Search in the worst case?', [{ label: 'A', text: 'O(log n)', correct: true }, { label: 'B', text: 'O(n)', correct: false }, { label: 'C', text: 'O(n²)', correct: false }], 'Binary Search halves the search space every step, so the number of steps grows logarithmically with n.');
+  let algoQuiz = await prisma.assessment.findFirst({ where: { title: 'Practice Quiz — Intro to Algorithms' } });
+  if (!algoQuiz) {
+    algoQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: csSubject.id, levelId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Intro to Algorithms', description: 'Low-stakes practice on sorting and complexity.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 2, publishedAt: new Date() } });
+    const algoSection = await prisma.assessmentSection.create({ data: { assessmentId: algoQuiz.id, title: 'Section 1', sortOrder: 1 } });
+    await prisma.assessmentQuestion.create({ data: { assessmentId: algoQuiz.id, sectionId: algoSection.id, questionId: algoQuizQ.id, questionNumber: 1, marksAvailable: 10 } });
+  }
+  let algoAssessmentItem = await prisma.moduleItem.findFirst({ where: { conceptId: algorithmsPracticeChapter.id, assessmentId: algoQuiz.id } });
+  if (!algoAssessmentItem) {
+    algoAssessmentItem = await prisma.moduleItem.create({ data: { conceptId: algorithmsPracticeChapter.id, kind: 'ASSESSMENT', title: 'Practice Quiz: Intro to Algorithms', sortOrder: 5, status: 'PUBLISHED', assessmentId: algoQuiz.id } });
+  }
+  if (charlotteProfile) {
+    const existingAlgoAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: algoQuiz.id, studentProfileId: charlotteProfile.id } });
+    if (!existingAlgoAssignment) {
+      await prisma.assessmentAssignment.create({ data: { assessmentId: algoQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+    }
+  }
+
   const algorithmsCheckpoint = await prisma.concept.upsert({
     where: { name: 'Intro to Algorithms Checkpoint' },
     update: { courseId: algorithmsCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
@@ -1894,6 +1927,323 @@ async function main() {
   }
 
   console.log('✅ Seeded Phase 3.5 courses');
+
+  // ─── Content expansion: Percentages & Ratios (Math) ───────────────────────────
+  // A new, standalone course — widens the existing Math subject rather than
+  // touching algebra-foundations/fractions-and-algebra-basics' already-tested
+  // chapter sequences. Widget mix: STANDARD_MCQ, SLIDER_MANIPULATIVE,
+  // GRID_MATCHING. Module items: VIDEO, READING, DISCUSSION, ASSESSMENT.
+  console.log('🌱 Seeding Percentages & Ratios course...');
+
+  const percentCourse = await prisma.course.upsert({
+    where: { slug: 'percentages-and-ratios' },
+    update: {},
+    create: {
+      learningSubjectId: mathLearningSubject.id,
+      title: 'Percentages & Ratios',
+      slug: 'percentages-and-ratios',
+      description: 'Understand percentages, simplify ratios, and see how they connect to fractions.',
+      estimatedHours: 5,
+      status: 'PUBLISHED',
+      sortOrder: 4,
+      gradeBand: 'G5_6',
+    },
+  });
+
+  const percentChapter = await prisma.concept.upsert({
+    where: { name: 'Understanding Percentages' },
+    update: { courseId: percentCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+    create: { name: 'Understanding Percentages', description: 'What a percent means and how to calculate one.', courseId: percentCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+  });
+
+  let percentIntroLesson = await prisma.lesson.findFirst({ where: { title: 'What is a Percent?', conceptId: percentChapter.id } });
+  if (!percentIntroLesson) {
+    percentIntroLesson = await prisma.lesson.create({ data: { conceptId: percentChapter.id, title: 'What is a Percent?', description: 'A percent is a fraction out of 100.', sortOrder: 1, xpReward: 40 } });
+    await prisma.card.create({ data: { lessonId: percentIntroLesson.id, title: 'Out of 100', sortOrder: 1, cardType: 'CONCEPTUAL', content: '"Percent" means "out of 100." 50% is the same as 50/100, or 1/2.' } });
+    const pctQ1 = await makeQ(mathSubject.id, gradeLevel.id, 'What is 25% of 80?', [{ label: 'A', text: '20', correct: true }, { label: 'B', text: '25', correct: false }, { label: 'C', text: '15', correct: false }, { label: 'D', text: '40', correct: false }], '25% = 1/4. 80 ÷ 4 = 20.');
+    await prisma.card.create({ data: { lessonId: percentIntroLesson.id, title: 'Find the Percent', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Work it out, then pick your answer.', questionId: pctQ1.id } });
+    const pctQ2 = await makeQ(mathSubject.id, gradeLevel.id, 'What is 10% of 250?', [{ label: 'A', text: '25', correct: true }, { label: 'B', text: '10', correct: false }, { label: 'C', text: '50', correct: false }], '10% means dividing by 10. 250 ÷ 10 = 25.');
+    await prisma.card.create({ data: { lessonId: percentIntroLesson.id, title: 'Find the Percent', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Work it out, then pick your answer.', questionId: pctQ2.id } });
+  }
+
+  let percentSliderLesson = await prisma.lesson.findFirst({ where: { title: 'Percent on a Scale', conceptId: percentChapter.id } });
+  if (!percentSliderLesson) {
+    percentSliderLesson = await prisma.lesson.create({ data: { conceptId: percentChapter.id, title: 'Percent on a Scale', description: 'Slide to find the right percentage.', sortOrder: 2, xpReward: 35 } });
+    await prisma.card.create({ data: { lessonId: percentSliderLesson.id, title: 'Percent as a Scale', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A percent scale runs from 0 to 100 — think of it like a dial you can slide.' } });
+    const sliderQ = await prisma.question.create({
+      data: {
+        subjectId: mathSubject.id,
+        levelId: gradeLevel.id,
+        questionType: 'interactive',
+        prompt: 'A shirt is on sale for 30% off. Slide to show 30%.',
+        correctAnswer: '30',
+        widgetType: 'SLIDER_MANIPULATIVE',
+        isGraded: true,
+        explanation: '30% off means the discount is 30 out of 100.',
+        hints: ['Slide until the number reads 30.'],
+        widgetConfig: { min: 0, max: 100, step: 5, unit: '%' },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: percentSliderLesson.id, title: 'Set the Discount', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Move the slider to 30%.', questionId: sliderQ.id } });
+  }
+
+  const ratioChapter = await prisma.concept.upsert({
+    where: { name: 'Ratios and Proportions' },
+    update: { courseId: percentCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Ratios and Proportions', description: 'Comparing quantities and simplifying ratios.', courseId: percentCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let ratioIntroLesson = await prisma.lesson.findFirst({ where: { title: 'Simplifying Ratios', conceptId: ratioChapter.id } });
+  if (!ratioIntroLesson) {
+    ratioIntroLesson = await prisma.lesson.create({ data: { conceptId: ratioChapter.id, title: 'Simplifying Ratios', description: 'Write a ratio in its simplest form.', sortOrder: 1, xpReward: 40 } });
+    await prisma.card.create({ data: { lessonId: ratioIntroLesson.id, title: 'Comparing Amounts', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A ratio compares two amounts, like 4 apples to 2 oranges — written 4:2, which simplifies to 2:1.' } });
+    const ratioQ = await makeQ(mathSubject.id, gradeLevel.id, 'Simplify the ratio 8:12.', [{ label: 'A', text: '2:3', correct: true }, { label: 'B', text: '4:6', correct: false }, { label: 'C', text: '1:2', correct: false }], 'Divide both sides by their greatest common factor, 4: 8÷4 : 12÷4 = 2:3.');
+    await prisma.card.create({ data: { lessonId: ratioIntroLesson.id, title: 'Simplify It', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Reduce the ratio to its simplest form.', questionId: ratioQ.id } });
+  }
+
+  let ratioMatchLesson = await prisma.lesson.findFirst({ where: { title: 'Match Ratios to Simplest Form', conceptId: ratioChapter.id } });
+  if (!ratioMatchLesson) {
+    ratioMatchLesson = await prisma.lesson.create({ data: { conceptId: ratioChapter.id, title: 'Match Ratios to Simplest Form', description: 'Match each ratio to its simplified version.', sortOrder: 2, xpReward: 40 } });
+    await prisma.card.create({ data: { lessonId: ratioMatchLesson.id, title: 'Match Them Up', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Let's practice matching ratios to their simplest form." } });
+    const ratioMatchQ = await prisma.question.create({
+      data: {
+        subjectId: mathSubject.id,
+        levelId: gradeLevel.id,
+        questionType: 'interactive',
+        prompt: 'Match each ratio to its simplest form.',
+        correctAnswer: null,
+        widgetType: 'GRID_MATCHING',
+        isGraded: true,
+        explanation: '6:9 = 2:3, 10:5 = 2:1, 9:12 = 3:4.',
+        hints: ['Divide both sides of each ratio by their greatest common factor.'],
+        widgetConfig: {
+          left: [
+            { id: 'r1', text: '6:9' },
+            { id: 'r2', text: '10:5' },
+            { id: 'r3', text: '9:12' },
+          ],
+          right: [
+            { id: 's1', text: '2:3' },
+            { id: 's2', text: '2:1' },
+            { id: 's3', text: '3:4' },
+          ],
+          correctPairs: [['r1', 's1'], ['r2', 's2'], ['r3', 's3']],
+        },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: ratioMatchLesson.id, title: 'Match Them Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap a ratio, then tap its simplest form.', questionId: ratioMatchQ.id } });
+  }
+
+  const percentPracticeChapter = await prisma.concept.upsert({
+    where: { name: 'Percentages & Ratios in Practice' },
+    update: { courseId: percentCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+    create: { name: 'Percentages & Ratios in Practice', description: 'Apply what you learned through video, reading, discussion, and a practice quiz.', courseId: percentCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+  });
+
+  let percentRecapLesson = await prisma.lesson.findFirst({ where: { title: 'Percentages Everywhere', conceptId: percentPracticeChapter.id } });
+  if (!percentRecapLesson) {
+    percentRecapLesson = await prisma.lesson.create({ data: { conceptId: percentPracticeChapter.id, title: 'Percentages Everywhere', description: 'Where percentages and ratios show up in real life.', sortOrder: 1, xpReward: 30 } });
+    await prisma.card.create({ data: { lessonId: percentRecapLesson.id, title: 'Real-World Percentages', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Sales tax, discounts, sports statistics, and recipe scaling all use percentages and ratios.' } });
+  }
+
+  let percentVideoItem = await prisma.moduleItem.findFirst({ where: { conceptId: percentPracticeChapter.id, kind: 'VIDEO' } });
+  if (!percentVideoItem) {
+    percentVideoItem = await prisma.moduleItem.create({ data: { conceptId: percentPracticeChapter.id, kind: 'VIDEO', title: 'Watch: Percentages in Real Life', sortOrder: 2, status: 'PUBLISHED', videoUrl: 'https://www.youtube.com/watch?v=JeVSmq1Nrpw', videoDurationSeconds: 264 } });
+  }
+
+  let percentReadingItem = await prisma.moduleItem.findFirst({ where: { conceptId: percentPracticeChapter.id, kind: 'READING' } });
+  if (!percentReadingItem) {
+    percentReadingItem = await prisma.moduleItem.create({ data: { conceptId: percentPracticeChapter.id, kind: 'READING', title: 'Reading: Percentages vs. Ratios', sortOrder: 3, status: 'PUBLISHED', readingContent: 'A percentage always compares a quantity to 100, while a ratio can compare any two quantities directly. Every percentage can be written as a ratio to 100 (like 30% = 30:100), but not every ratio is a percentage.' } });
+  }
+
+  let percentDiscussionItem = await prisma.moduleItem.findFirst({ where: { conceptId: percentPracticeChapter.id, kind: 'DISCUSSION' } });
+  if (!percentDiscussionItem) {
+    percentDiscussionItem = await prisma.moduleItem.create({ data: { conceptId: percentPracticeChapter.id, kind: 'DISCUSSION', title: 'Discuss: Percentages You See Daily', sortOrder: 4, status: 'PUBLISHED' } });
+    const percentThread = await prisma.discussionThread.create({ data: { moduleItemId: percentDiscussionItem.id, prompt: 'Where do you see percentages in everyday life — sales, weather, grades? Share an example.' } });
+    if (charlotteProfile) {
+      await prisma.discussionPost.create({ data: { discussionThreadId: percentThread.id, studentProfileId: charlotteProfile.id, body: 'My weather app shows a percent chance of rain every morning — that\'s a percentage I check every day!' } });
+    }
+  }
+
+  const percentQuizQ = await makeQ(mathSubject.id, gradeLevel.id, 'What is 50% of 40?', [{ label: 'A', text: '20', correct: true }, { label: 'B', text: '25', correct: false }, { label: 'C', text: '10', correct: false }], '50% is half. 40 ÷ 2 = 20.');
+  let percentQuiz = await prisma.assessment.findFirst({ where: { title: 'Practice Quiz — Percentages & Ratios' } });
+  if (!percentQuiz) {
+    percentQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: mathSubject.id, levelId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Percentages & Ratios', description: 'Low-stakes practice on percentages and ratios.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 3, publishedAt: new Date() } });
+    const percentSection = await prisma.assessmentSection.create({ data: { assessmentId: percentQuiz.id, title: 'Section 1', sortOrder: 1 } });
+    await prisma.assessmentQuestion.create({ data: { assessmentId: percentQuiz.id, sectionId: percentSection.id, questionId: percentQuizQ.id, questionNumber: 1, marksAvailable: 10 } });
+  }
+  let percentAssessmentItem = await prisma.moduleItem.findFirst({ where: { conceptId: percentPracticeChapter.id, assessmentId: percentQuiz.id } });
+  if (!percentAssessmentItem) {
+    percentAssessmentItem = await prisma.moduleItem.create({ data: { conceptId: percentPracticeChapter.id, kind: 'ASSESSMENT', title: 'Practice Quiz: Percentages & Ratios', sortOrder: 5, status: 'PUBLISHED', assessmentId: percentQuiz.id } });
+  }
+  if (charlotteProfile) {
+    const existingPercentAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: percentQuiz.id, studentProfileId: charlotteProfile.id } });
+    if (!existingPercentAssignment) {
+      await prisma.assessmentAssignment.create({ data: { assessmentId: percentQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+    }
+  }
+
+  const percentCheckpoint = await prisma.concept.upsert({
+    where: { name: 'Percentages & Ratios Checkpoint' },
+    update: { courseId: percentCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: { name: 'Percentages & Ratios Checkpoint', description: 'A short checkpoint on percentages and ratios — pass at 70% or better on the first try.', courseId: percentCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+  });
+  let percentCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Percentages & Ratios', conceptId: percentCheckpoint.id } });
+  if (!percentCheckpointLesson) {
+    percentCheckpointLesson = await prisma.lesson.create({ data: { conceptId: percentCheckpoint.id, title: 'Checkpoint: Percentages & Ratios', description: 'Confirm your understanding of percentages and ratios.', sortOrder: 1, xpReward: 80 } });
+    await prisma.card.create({ data: { lessonId: percentCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: "This checkpoint checks first-try accuracy — retries won't count toward passing." } });
+    const percentCheckpointQ = await makeQ(mathSubject.id, gradeLevel.id, 'Simplify the ratio 12:18.', [{ label: 'A', text: '2:3', correct: true }, { label: 'B', text: '3:2', correct: false }, { label: 'C', text: '6:9', correct: false }], 'Divide both sides by 6: 12÷6 : 18÷6 = 2:3.');
+    await prisma.card.create({ data: { lessonId: percentCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Solve this on your own, no hints.', questionId: percentCheckpointQ.id } });
+  }
+
+  console.log('✅ Seeded Percentages & Ratios course');
+
+  // ─── Content expansion: Data Structures Basics (CS) ────────────────────────────
+  // Widget mix: STANDARD_MCQ, GRID_MATCHING. Module items: VIDEO, READING,
+  // DISCUSSION, ASSESSMENT.
+  console.log('🌱 Seeding Data Structures Basics course...');
+
+  const dsCourse = await prisma.course.upsert({
+    where: { slug: 'data-structures-basics' },
+    update: {},
+    create: {
+      learningSubjectId: csLearningSubject.id,
+      title: 'Data Structures Basics',
+      slug: 'data-structures-basics',
+      description: 'How computers organize and store data — arrays, lists, stacks, and queues.',
+      estimatedHours: 5,
+      status: 'PUBLISHED',
+      sortOrder: 2,
+      gradeBand: 'G5_6',
+    },
+  });
+
+  const arraysChapter = await prisma.concept.upsert({
+    where: { name: 'Arrays and Lists' },
+    update: { courseId: dsCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+    create: { name: 'Arrays and Lists', description: 'Storing ordered collections of data.', courseId: dsCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+  });
+
+  let arraysLesson = await prisma.lesson.findFirst({ where: { title: 'What is an Array?', conceptId: arraysChapter.id } });
+  if (!arraysLesson) {
+    arraysLesson = await prisma.lesson.create({ data: { conceptId: arraysChapter.id, title: 'What is an Array?', description: 'A list of items stored in order.', sortOrder: 1, xpReward: 40 } });
+    await prisma.card.create({ data: { lessonId: arraysLesson.id, title: 'Ordered Storage', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'An array stores items in order, each with an index starting at 0 — like numbered mailboxes in a row.' } });
+    const arrQ1 = await makeQ(csSubject.id, gradeLevel.id, 'In an array [10, 20, 30, 40], what is the value at index 2?', [{ label: 'A', text: '30', correct: true }, { label: 'B', text: '20', correct: false }, { label: 'C', text: '40', correct: false }], 'Array indices start at 0, so index 2 is the third item: 30.');
+    await prisma.card.create({ data: { lessonId: arraysLesson.id, title: 'Find the Index', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Count carefully — indices start at 0.', questionId: arrQ1.id } });
+    const arrQ2 = await makeQ(csSubject.id, gradeLevel.id, 'What is the main advantage of an array over a plain list of separate variables?', [{ label: 'A', text: 'You can loop through items by index', correct: true }, { label: 'B', text: 'Arrays use less memory than any other structure', correct: false }, { label: 'C', text: 'Arrays can never change size', correct: false }], 'Arrays let you access and process every item with a loop, instead of naming each variable separately.');
+    await prisma.card.create({ data: { lessonId: arraysLesson.id, title: 'Why Arrays?', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Think about what makes arrays useful.', questionId: arrQ2.id } });
+  }
+
+  const stacksChapter = await prisma.concept.upsert({
+    where: { name: 'Stacks and Queues' },
+    update: { courseId: dsCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Stacks and Queues', description: 'Two ways to add and remove items in a specific order.', courseId: dsCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let stacksLesson = await prisma.lesson.findFirst({ where: { title: 'Stack or Queue?', conceptId: stacksChapter.id } });
+  if (!stacksLesson) {
+    stacksLesson = await prisma.lesson.create({ data: { conceptId: stacksChapter.id, title: 'Stack or Queue?', description: 'LIFO vs. FIFO ordering.', sortOrder: 1, xpReward: 40 } });
+    await prisma.card.create({ data: { lessonId: stacksLesson.id, title: 'Two Ways to Line Up', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A Stack is Last In, First Out — like a stack of plates. A Queue is First In, First Out — like a checkout line.' } });
+    const stackQ = await makeQ(csSubject.id, gradeLevel.id, 'Which structure works like a line at a grocery store checkout?', [{ label: 'A', text: 'Queue', correct: true }, { label: 'B', text: 'Stack', correct: false }, { label: 'C', text: 'Array', correct: false }], 'A checkout line is First In, First Out — the first person in line is served first, which is how a Queue works.');
+    await prisma.card.create({ data: { lessonId: stacksLesson.id, title: 'Pick the Structure', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Think about the order things happen in.', questionId: stackQ.id } });
+  }
+
+  let stacksMatchLesson = await prisma.lesson.findFirst({ where: { title: 'Match Structures to Examples', conceptId: stacksChapter.id } });
+  if (!stacksMatchLesson) {
+    stacksMatchLesson = await prisma.lesson.create({ data: { conceptId: stacksChapter.id, title: 'Match Structures to Examples', description: 'Match each data structure to a real-world example.', sortOrder: 2, xpReward: 40 } });
+    await prisma.card.create({ data: { lessonId: stacksMatchLesson.id, title: 'Match Them Up', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Let's connect each structure to something you'd recognize." } });
+    const dsMatchQ = await prisma.question.create({
+      data: {
+        subjectId: csSubject.id,
+        levelId: gradeLevel.id,
+        questionType: 'interactive',
+        prompt: 'Match each data structure to its real-world example.',
+        correctAnswer: null,
+        widgetType: 'GRID_MATCHING',
+        isGraded: true,
+        explanation: 'A stack of plates is LIFO (Stack). A checkout line is FIFO (Queue). A numbered row of lockers is an Array.',
+        hints: ['Think about the order items are added and removed.'],
+        widgetConfig: {
+          left: [
+            { id: 'stack', text: 'Stack' },
+            { id: 'queue', text: 'Queue' },
+            { id: 'array', text: 'Array' },
+          ],
+          right: [
+            { id: 'plates', text: 'A stack of plates' },
+            { id: 'line', text: 'A checkout line' },
+            { id: 'lockers', text: 'Numbered lockers in a row' },
+          ],
+          correctPairs: [['stack', 'plates'], ['queue', 'line'], ['array', 'lockers']],
+        },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: stacksMatchLesson.id, title: 'Match Them Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap a structure, then tap its matching example.', questionId: dsMatchQ.id } });
+  }
+
+  const dsPracticeChapter = await prisma.concept.upsert({
+    where: { name: 'Data Structures in Practice' },
+    update: { courseId: dsCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+    create: { name: 'Data Structures in Practice', description: 'Apply what you learned through video, reading, discussion, and a practice quiz.', courseId: dsCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+  });
+
+  let dsRecapLesson = await prisma.lesson.findFirst({ where: { title: 'Data Structures Everywhere', conceptId: dsPracticeChapter.id } });
+  if (!dsRecapLesson) {
+    dsRecapLesson = await prisma.lesson.create({ data: { conceptId: dsPracticeChapter.id, title: 'Data Structures Everywhere', description: 'Where these structures show up in real software.', sortOrder: 1, xpReward: 30 } });
+    await prisma.card.create({ data: { lessonId: dsRecapLesson.id, title: 'Under the Hood', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Your browser\'s "back" button uses a Stack. A printer queue uses a Queue. Your contacts list is stored as an Array.' } });
+  }
+
+  let dsVideoItem = await prisma.moduleItem.findFirst({ where: { conceptId: dsPracticeChapter.id, kind: 'VIDEO' } });
+  if (!dsVideoItem) {
+    dsVideoItem = await prisma.moduleItem.create({ data: { conceptId: dsPracticeChapter.id, kind: 'VIDEO', title: 'Watch: Stacks and Queues Explained', sortOrder: 2, status: 'PUBLISHED', videoUrl: 'https://www.youtube.com/watch?v=wjI1WNcIntg', videoDurationSeconds: 313 } });
+  }
+
+  let dsReadingItem = await prisma.moduleItem.findFirst({ where: { conceptId: dsPracticeChapter.id, kind: 'READING' } });
+  if (!dsReadingItem) {
+    dsReadingItem = await prisma.moduleItem.create({ data: { conceptId: dsPracticeChapter.id, kind: 'READING', title: 'Reading: Choosing a Data Structure', sortOrder: 3, status: 'PUBLISHED', readingContent: 'The right data structure depends on how you need to access data. Need order and fast lookups by position? Use an Array. Need to undo actions in reverse order? Use a Stack. Need to process items in the order they arrived? Use a Queue.' } });
+  }
+
+  let dsDiscussionItem = await prisma.moduleItem.findFirst({ where: { conceptId: dsPracticeChapter.id, kind: 'DISCUSSION' } });
+  if (!dsDiscussionItem) {
+    dsDiscussionItem = await prisma.moduleItem.create({ data: { conceptId: dsPracticeChapter.id, kind: 'DISCUSSION', title: 'Discuss: Stacks and Queues in Apps You Use', sortOrder: 4, status: 'PUBLISHED' } });
+    const dsThread = await prisma.discussionThread.create({ data: { moduleItemId: dsDiscussionItem.id, prompt: 'Can you think of an app or website feature that behaves like a Stack or a Queue? Describe it.' } });
+    if (charlotteProfile) {
+      await prisma.discussionPost.create({ data: { discussionThreadId: dsThread.id, studentProfileId: charlotteProfile.id, body: 'The undo button in a drawing app is a Stack — it undoes your most recent action first, then the one before that.' } });
+    }
+  }
+
+  const dsQuizQ = await makeQ(csSubject.id, gradeLevel.id, 'Which operation adds an item to the top of a Stack?', [{ label: 'A', text: 'Push', correct: true }, { label: 'B', text: 'Pull', correct: false }, { label: 'C', text: 'Enqueue', correct: false }], '"Push" adds an item to the top of a Stack; "Pop" removes the top item.');
+  let dsQuiz = await prisma.assessment.findFirst({ where: { title: 'Practice Quiz — Data Structures Basics' } });
+  if (!dsQuiz) {
+    dsQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: csSubject.id, levelId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Data Structures Basics', description: 'Low-stakes practice on arrays, stacks, and queues.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 3, publishedAt: new Date() } });
+    const dsSection = await prisma.assessmentSection.create({ data: { assessmentId: dsQuiz.id, title: 'Section 1', sortOrder: 1 } });
+    await prisma.assessmentQuestion.create({ data: { assessmentId: dsQuiz.id, sectionId: dsSection.id, questionId: dsQuizQ.id, questionNumber: 1, marksAvailable: 10 } });
+  }
+  let dsAssessmentItem = await prisma.moduleItem.findFirst({ where: { conceptId: dsPracticeChapter.id, assessmentId: dsQuiz.id } });
+  if (!dsAssessmentItem) {
+    dsAssessmentItem = await prisma.moduleItem.create({ data: { conceptId: dsPracticeChapter.id, kind: 'ASSESSMENT', title: 'Practice Quiz: Data Structures Basics', sortOrder: 5, status: 'PUBLISHED', assessmentId: dsQuiz.id } });
+  }
+  if (charlotteProfile) {
+    const existingDsAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: dsQuiz.id, studentProfileId: charlotteProfile.id } });
+    if (!existingDsAssignment) {
+      await prisma.assessmentAssignment.create({ data: { assessmentId: dsQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+    }
+  }
+
+  const dsCheckpoint = await prisma.concept.upsert({
+    where: { name: 'Data Structures Checkpoint' },
+    update: { courseId: dsCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: { name: 'Data Structures Checkpoint', description: 'A short checkpoint on arrays, stacks, and queues — pass at 70% or better on the first try.', courseId: dsCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+  });
+  let dsCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Data Structures', conceptId: dsCheckpoint.id } });
+  if (!dsCheckpointLesson) {
+    dsCheckpointLesson = await prisma.lesson.create({ data: { conceptId: dsCheckpoint.id, title: 'Checkpoint: Data Structures', description: 'Confirm your understanding of arrays, stacks, and queues.', sortOrder: 1, xpReward: 80 } });
+    await prisma.card.create({ data: { lessonId: dsCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: "This checkpoint checks first-try accuracy — retries won't count toward passing." } });
+    const dsCheckpointQ = await makeQ(csSubject.id, gradeLevel.id, 'Which structure removes items in the same order they were added?', [{ label: 'A', text: 'Queue', correct: true }, { label: 'B', text: 'Stack', correct: false }, { label: 'C', text: 'Neither', correct: false }], 'A Queue is First In, First Out — items leave in the same order they arrived.');
+    await prisma.card.create({ data: { lessonId: dsCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Solve this on your own, no hints.', questionId: dsCheckpointQ.id } });
+  }
+
+  console.log('✅ Seeded Data Structures Basics course');
 
   // ─── K-6 pilot: Pre-K/K Language Arts ─────────────────────────────────────────
   // Narrowest possible slice of the K-6 curriculum-expansion plan — alphabet
@@ -2024,6 +2374,819 @@ async function main() {
   }
 
   console.log('✅ Seeded K-6 pilot course');
+
+  // ─── K-6 expansion: Pre-K/K Math ──────────────────────────────────────────
+  // Second grade-band pilot slice, same widget-type constraint as the
+  // Language Arts pilot above (STANDARD_MCQ + GRID_MATCHING only — no images,
+  // no letter/shape tracing). Counting and shape names are expressed as plain
+  // text/emoji prompts rather than image options, sidestepping the
+  // image-option question the K-6 plan flagged as unresolved.
+  console.log('🌱 Seeding Pre-K/K Math course...');
+
+  const preKMathCourse = await prisma.course.upsert({
+    where: { slug: 'counting-and-shapes' },
+    update: { gradeBand: 'PRE_K_K', sortOrder: -1 },
+    create: {
+      learningSubjectId: mathLearningSubject.id,
+      title: 'Counting & Shapes',
+      slug: 'counting-and-shapes',
+      description: 'Learn to count, compare amounts, and name basic shapes.',
+      estimatedHours: 2,
+      status: 'PUBLISHED',
+      sortOrder: -1,
+      gradeBand: 'PRE_K_K',
+    },
+  });
+
+  const countingChapter = await prisma.concept.upsert({
+    where: { name: 'Counting' },
+    update: { courseId: preKMathCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+    create: { name: 'Counting', description: 'Counting small groups of objects.', courseId: preKMathCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+  });
+
+  let countingLesson = await prisma.lesson.findFirst({ where: { title: 'Counting to 10', conceptId: countingChapter.id } });
+  if (!countingLesson) {
+    countingLesson = await prisma.lesson.create({ data: { conceptId: countingChapter.id, title: 'Counting to 10', description: "Let's count things together!", sortOrder: 1, xpReward: 20 } });
+    await prisma.card.create({ data: { lessonId: countingLesson.id, title: 'Counting Things', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Let's count things together! Count each one out loud." } });
+    const countQ1 = await makeQ(mathSubject.id, kLevel.id, 'How many apples? 🍎🍎🍎', [{ label: 'A', text: '3', correct: true }, { label: 'B', text: '2', correct: false }, { label: 'C', text: '4', correct: false }, { label: 'D', text: '5', correct: false }], 'Count each apple one at a time: 1, 2, 3.');
+    await prisma.card.create({ data: { lessonId: countingLesson.id, title: 'Count Them Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Count carefully, then tap the right number.', questionId: countQ1.id } });
+    const countQ2 = await makeQ(mathSubject.id, kLevel.id, 'How many stars? ⭐⭐⭐⭐⭐⭐', [{ label: 'A', text: '6', correct: true }, { label: 'B', text: '5', correct: false }, { label: 'C', text: '7', correct: false }, { label: 'D', text: '8', correct: false }], 'Count each star one at a time: 1, 2, 3, 4, 5, 6.');
+    await prisma.card.create({ data: { lessonId: countingLesson.id, title: 'Count Them Up', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Count carefully, then tap the right number.', questionId: countQ2.id } });
+  }
+
+  let moreOrFewerLesson = await prisma.lesson.findFirst({ where: { title: 'More or Fewer', conceptId: countingChapter.id } });
+  if (!moreOrFewerLesson) {
+    moreOrFewerLesson = await prisma.lesson.create({ data: { conceptId: countingChapter.id, title: 'More or Fewer', description: 'Compare two groups of objects.', sortOrder: 2, xpReward: 20 } });
+    await prisma.card.create({ data: { lessonId: moreOrFewerLesson.id, title: 'Comparing Amounts', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Which group has more? Count both and compare.' } });
+    const compareQ1 = await makeQ(mathSubject.id, kLevel.id, 'Group A: 🐱🐱🐱🐱  Group B: 🐱🐱. Which group has more?', [{ label: 'A', text: 'Group A', correct: true }, { label: 'B', text: 'Group B', correct: false }, { label: 'C', text: 'They are the same', correct: false }], 'Group A has 4 cats, Group B has 2 cats — 4 is more than 2.');
+    await prisma.card.create({ data: { lessonId: moreOrFewerLesson.id, title: 'Which Has More?', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Count each group, then tap your answer.', questionId: compareQ1.id } });
+    const compareQ2 = await makeQ(mathSubject.id, kLevel.id, 'Group A: 🐟  Group B: 🐟🐟🐟. Which group has fewer?', [{ label: 'A', text: 'Group A', correct: true }, { label: 'B', text: 'Group B', correct: false }, { label: 'C', text: 'They are the same', correct: false }], 'Group A has 1 fish, Group B has 3 fish — 1 is fewer than 3.');
+    await prisma.card.create({ data: { lessonId: moreOrFewerLesson.id, title: 'Which Has Fewer?', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Count each group, then tap your answer.', questionId: compareQ2.id } });
+  }
+
+  const shapesChapter = await prisma.concept.upsert({
+    where: { name: 'Shapes' },
+    update: { courseId: preKMathCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Shapes', description: 'Naming basic shapes.', courseId: preKMathCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let basicShapesLesson = await prisma.lesson.findFirst({ where: { title: 'Basic Shapes', conceptId: shapesChapter.id } });
+  if (!basicShapesLesson) {
+    basicShapesLesson = await prisma.lesson.create({ data: { conceptId: shapesChapter.id, title: 'Basic Shapes', description: 'Circles, squares, and triangles.', sortOrder: 1, xpReward: 20 } });
+    await prisma.card.create({ data: { lessonId: basicShapesLesson.id, title: 'Shapes All Around', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Shapes are everywhere! Let\'s learn their names.' } });
+    const shapeQ1 = await makeQ(mathSubject.id, kLevel.id, 'Which shape is round, with no corners? 🔵', [{ label: 'A', text: 'Circle', correct: true }, { label: 'B', text: 'Square', correct: false }, { label: 'C', text: 'Triangle', correct: false }], 'A circle is perfectly round and has no corners.');
+    await prisma.card.create({ data: { lessonId: basicShapesLesson.id, title: 'Name the Shape', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Look carefully, then tap the shape\'s name.', questionId: shapeQ1.id } });
+    const shapeQ2 = await makeQ(mathSubject.id, kLevel.id, 'Which shape has 3 sides and 3 corners? 🔺', [{ label: 'A', text: 'Triangle', correct: true }, { label: 'B', text: 'Square', correct: false }, { label: 'C', text: 'Circle', correct: false }], 'A triangle always has exactly 3 sides and 3 corners.');
+    await prisma.card.create({ data: { lessonId: basicShapesLesson.id, title: 'Name the Shape', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Look carefully, then tap the shape\'s name.', questionId: shapeQ2.id } });
+  }
+
+  let matchShapesLesson = await prisma.lesson.findFirst({ where: { title: 'Match Shapes to Names', conceptId: shapesChapter.id } });
+  if (!matchShapesLesson) {
+    matchShapesLesson = await prisma.lesson.create({ data: { conceptId: shapesChapter.id, title: 'Match Shapes to Names', description: 'Match each shape to its name.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: matchShapesLesson.id, title: 'Match Them Up', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Let's match shapes to their names." } });
+    const matchShapesQ = await prisma.question.create({
+      data: {
+        subjectId: mathSubject.id,
+        levelId: kLevel.id,
+        questionType: 'interactive',
+        prompt: 'Match each shape to its name.',
+        correctAnswer: null,
+        widgetType: 'GRID_MATCHING',
+        isGraded: true,
+        explanation: 'A circle is round, a square has 4 equal sides, a triangle has 3 sides, and a rectangle has 4 sides with two pairs equal.',
+        hints: ['Count the sides and corners of each shape.'],
+        widgetConfig: {
+          left: [
+            { id: 'circle-shape', text: '🔵' },
+            { id: 'square-shape', text: '🟧' },
+            { id: 'triangle-shape', text: '🔺' },
+            { id: 'rectangle-shape', text: '▬' },
+          ],
+          right: [
+            { id: 'circle-name', text: 'Circle' },
+            { id: 'square-name', text: 'Square' },
+            { id: 'triangle-name', text: 'Triangle' },
+            { id: 'rectangle-name', text: 'Rectangle' },
+          ],
+          correctPairs: [
+            ['circle-shape', 'circle-name'],
+            ['square-shape', 'square-name'],
+            ['triangle-shape', 'triangle-name'],
+            ['rectangle-shape', 'rectangle-name'],
+          ],
+        },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: matchShapesLesson.id, title: 'Match Them Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap a shape, then tap its matching name.', questionId: matchShapesQ.id } });
+  }
+
+  const preKMathCheckpoint = await prisma.concept.upsert({
+    where: { name: 'Counting & Shapes Checkpoint' },
+    update: { courseId: preKMathCourse.id, sortOrder: 3, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: { name: 'Counting & Shapes Checkpoint', description: 'A short checkpoint on counting and shapes — pass at 70% or better on the first try.', courseId: preKMathCourse.id, sortOrder: 3, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+  });
+  let preKMathCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Counting & Shapes', conceptId: preKMathCheckpoint.id } });
+  if (!preKMathCheckpointLesson) {
+    preKMathCheckpointLesson = await prisma.lesson.create({ data: { conceptId: preKMathCheckpoint.id, title: 'Checkpoint: Counting & Shapes', description: "Let's see what you've learned!", sortOrder: 1, xpReward: 50 } });
+    await prisma.card.create({ data: { lessonId: preKMathCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Do your best! Count carefully and look closely at each shape.' } });
+    const preKCheckpointQ1 = await makeQ(mathSubject.id, kLevel.id, 'How many balloons? 🎈🎈🎈🎈', [{ label: 'A', text: '4', correct: true }, { label: 'B', text: '3', correct: false }, { label: 'C', text: '5', correct: false }, { label: 'D', text: '6', correct: false }], 'Count each balloon one at a time: 1, 2, 3, 4.');
+    await prisma.card.create({ data: { lessonId: preKMathCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Count carefully, then tap the right number.', questionId: preKCheckpointQ1.id } });
+    const preKCheckpointQ2 = await makeQ(mathSubject.id, kLevel.id, 'Which shape has 4 equal sides? 🟧', [{ label: 'A', text: 'Square', correct: true }, { label: 'B', text: 'Triangle', correct: false }, { label: 'C', text: 'Circle', correct: false }], 'A square has 4 sides that are all the same length.');
+    await prisma.card.create({ data: { lessonId: preKMathCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 3, cardType: 'CHECKPOINT', content: 'Look carefully, then tap your answer.', questionId: preKCheckpointQ2.id } });
+  }
+
+  console.log('✅ Seeded Pre-K/K Math course');
+
+  // ─── K-6 expansion: Grades 1-2 Math ───────────────────────────────────────
+  console.log('🌱 Seeding Grades 1-2 Math course...');
+
+  const g12MathCourse = await prisma.course.upsert({
+    where: { slug: 'adding-and-subtracting' },
+    update: { gradeBand: 'G1_2', sortOrder: 0 },
+    create: {
+      learningSubjectId: mathLearningSubject.id,
+      title: 'Adding & Subtracting',
+      slug: 'adding-and-subtracting',
+      description: 'Add and subtract numbers within 20, and solve simple word problems.',
+      estimatedHours: 3,
+      status: 'PUBLISHED',
+      sortOrder: 0,
+      gradeBand: 'G1_2',
+    },
+  });
+
+  const additionChapter = await prisma.concept.upsert({
+    where: { name: 'Addition within 20' },
+    update: { courseId: g12MathCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+    create: { name: 'Addition within 20', description: 'Adding numbers up to 20.', courseId: g12MathCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+  });
+
+  let addingLesson = await prisma.lesson.findFirst({ where: { title: 'Adding Small Numbers', conceptId: additionChapter.id } });
+  if (!addingLesson) {
+    addingLesson = await prisma.lesson.create({ data: { conceptId: additionChapter.id, title: 'Adding Small Numbers', description: "Let's practice addition!", sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: addingLesson.id, title: 'Putting Numbers Together', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Addition means putting groups of things together to find the total.' } });
+    const addQ1 = await makeQ(mathSubject.id, g1Level.id, 'What is 4 + 3?', [{ label: 'A', text: '7', correct: true }, { label: 'B', text: '6', correct: false }, { label: 'C', text: '8', correct: false }, { label: 'D', text: '5', correct: false }], 'Start at 4 and count up 3 more: 5, 6, 7.');
+    await prisma.card.create({ data: { lessonId: addingLesson.id, title: 'Add It Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Work it out, then tap the answer.', questionId: addQ1.id } });
+    const addQ2 = await makeQ(mathSubject.id, g1Level.id, 'What is 9 + 6?', [{ label: 'A', text: '15', correct: true }, { label: 'B', text: '14', correct: false }, { label: 'C', text: '16', correct: false }, { label: 'D', text: '13', correct: false }], 'Start at 9 and count up 6 more: 10, 11, 12, 13, 14, 15.');
+    await prisma.card.create({ data: { lessonId: addingLesson.id, title: 'Add It Up', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Work it out, then tap the answer.', questionId: addQ2.id } });
+  }
+
+  let addWordProblemsLesson = await prisma.lesson.findFirst({ where: { title: 'Addition Word Problems', conceptId: additionChapter.id } });
+  if (!addWordProblemsLesson) {
+    addWordProblemsLesson = await prisma.lesson.create({ data: { conceptId: additionChapter.id, title: 'Addition Word Problems', description: 'Use addition to solve real problems.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: addWordProblemsLesson.id, title: 'Story Problems', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Read carefully, then decide what to add.' } });
+    const addWordQ1 = await makeQ(mathSubject.id, g1Level.id, 'Maya has 5 stickers. She gets 8 more. How many stickers does she have now?', [{ label: 'A', text: '13', correct: true }, { label: 'B', text: '12', correct: false }, { label: 'C', text: '14', correct: false }, { label: 'D', text: '3', correct: false }], '5 + 8 = 13. Maya started with 5 and got 8 more.');
+    await prisma.card.create({ data: { lessonId: addWordProblemsLesson.id, title: 'Solve the Problem', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Read the problem, then tap the answer.', questionId: addWordQ1.id } });
+    const addWordQ2 = await makeQ(mathSubject.id, g1Level.id, 'There are 7 red balloons and 7 blue balloons. How many balloons in all?', [{ label: 'A', text: '14', correct: true }, { label: 'B', text: '13', correct: false }, { label: 'C', text: '15', correct: false }, { label: 'D', text: '0', correct: false }], '7 + 7 = 14.');
+    await prisma.card.create({ data: { lessonId: addWordProblemsLesson.id, title: 'Solve the Problem', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Read the problem, then tap the answer.', questionId: addWordQ2.id } });
+  }
+
+  const subtractionChapter = await prisma.concept.upsert({
+    where: { name: 'Subtraction within 20' },
+    update: { courseId: g12MathCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Subtraction within 20', description: 'Subtracting numbers up to 20.', courseId: g12MathCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let subtractingLesson = await prisma.lesson.findFirst({ where: { title: 'Subtracting Small Numbers', conceptId: subtractionChapter.id } });
+  if (!subtractingLesson) {
+    subtractingLesson = await prisma.lesson.create({ data: { conceptId: subtractionChapter.id, title: 'Subtracting Small Numbers', description: "Let's practice subtraction!", sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: subtractingLesson.id, title: 'Taking Away', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Subtraction means taking some away from a group to find what is left.' } });
+    const subQ1 = await makeQ(mathSubject.id, g1Level.id, 'What is 9 - 4?', [{ label: 'A', text: '5', correct: true }, { label: 'B', text: '4', correct: false }, { label: 'C', text: '6', correct: false }, { label: 'D', text: '13', correct: false }], 'Start at 9 and count back 4: 8, 7, 6, 5.');
+    await prisma.card.create({ data: { lessonId: subtractingLesson.id, title: 'Take It Away', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Work it out, then tap the answer.', questionId: subQ1.id } });
+    const subQ2 = await makeQ(mathSubject.id, g1Level.id, 'What is 15 - 7?', [{ label: 'A', text: '8', correct: true }, { label: 'B', text: '7', correct: false }, { label: 'C', text: '9', correct: false }, { label: 'D', text: '22', correct: false }], 'Start at 15 and count back 7: 14, 13, 12, 11, 10, 9, 8.');
+    await prisma.card.create({ data: { lessonId: subtractingLesson.id, title: 'Take It Away', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Work it out, then tap the answer.', questionId: subQ2.id } });
+  }
+
+  let subWordProblemsLesson = await prisma.lesson.findFirst({ where: { title: 'Subtraction Word Problems', conceptId: subtractionChapter.id } });
+  if (!subWordProblemsLesson) {
+    subWordProblemsLesson = await prisma.lesson.create({ data: { conceptId: subtractionChapter.id, title: 'Subtraction Word Problems', description: 'Use subtraction to solve real problems.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: subWordProblemsLesson.id, title: 'Story Problems', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Read carefully, then decide what to subtract.' } });
+    const subWordQ1 = await makeQ(mathSubject.id, g1Level.id, 'Jake had 12 crayons. He gave 5 away. How many does he have left?', [{ label: 'A', text: '7', correct: true }, { label: 'B', text: '6', correct: false }, { label: 'C', text: '8', correct: false }, { label: 'D', text: '17', correct: false }], '12 - 5 = 7.');
+    await prisma.card.create({ data: { lessonId: subWordProblemsLesson.id, title: 'Solve the Problem', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Read the problem, then tap the answer.', questionId: subWordQ1.id } });
+    const subWordQ2 = await makeQ(mathSubject.id, g1Level.id, 'There were 18 birds on a wire. 9 flew away. How many are left?', [{ label: 'A', text: '9', correct: true }, { label: 'B', text: '10', correct: false }, { label: 'C', text: '8', correct: false }, { label: 'D', text: '27', correct: false }], '18 - 9 = 9.');
+    await prisma.card.create({ data: { lessonId: subWordProblemsLesson.id, title: 'Solve the Problem', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Read the problem, then tap the answer.', questionId: subWordQ2.id } });
+  }
+
+  const g12MathCheckpoint = await prisma.concept.upsert({
+    where: { name: 'Adding & Subtracting Checkpoint' },
+    update: { courseId: g12MathCourse.id, sortOrder: 3, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: { name: 'Adding & Subtracting Checkpoint', description: 'A short checkpoint on addition and subtraction — pass at 70% or better on the first try.', courseId: g12MathCourse.id, sortOrder: 3, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+  });
+  let g12MathCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Adding & Subtracting', conceptId: g12MathCheckpoint.id } });
+  if (!g12MathCheckpointLesson) {
+    g12MathCheckpointLesson = await prisma.lesson.create({ data: { conceptId: g12MathCheckpoint.id, title: 'Checkpoint: Adding & Subtracting', description: "Let's see what you've learned!", sortOrder: 1, xpReward: 55 } });
+    await prisma.card.create({ data: { lessonId: g12MathCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Do your best! Take your time with each problem.' } });
+    const g12CheckpointQ1 = await makeQ(mathSubject.id, g1Level.id, 'What is 6 + 9?', [{ label: 'A', text: '15', correct: true }, { label: 'B', text: '14', correct: false }, { label: 'C', text: '16', correct: false }, { label: 'D', text: '13', correct: false }], '6 + 9 = 15.');
+    await prisma.card.create({ data: { lessonId: g12MathCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Work it out, then tap the answer.', questionId: g12CheckpointQ1.id } });
+    const g12CheckpointQ2 = await makeQ(mathSubject.id, g1Level.id, 'What is 16 - 8?', [{ label: 'A', text: '8', correct: true }, { label: 'B', text: '9', correct: false }, { label: 'C', text: '7', correct: false }, { label: 'D', text: '24', correct: false }], '16 - 8 = 8.');
+    await prisma.card.create({ data: { lessonId: g12MathCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 3, cardType: 'CHECKPOINT', content: 'Work it out, then tap the answer.', questionId: g12CheckpointQ2.id } });
+  }
+
+  console.log('✅ Seeded Grades 1-2 Math course');
+
+  // ─── K-6 expansion: Grades 1-2 Language Arts ──────────────────────────────
+  console.log('🌱 Seeding Grades 1-2 Language Arts course...');
+
+  const g12LaCourse = await prisma.course.upsert({
+    where: { slug: 'reading-and-sentences' },
+    update: { gradeBand: 'G1_2', sortOrder: 1 },
+    create: {
+      learningSubjectId: laLearningSubject.id,
+      title: 'Reading & Sentences',
+      slug: 'reading-and-sentences',
+      description: 'Build sight-word vocabulary and learn to read and punctuate simple sentences.',
+      estimatedHours: 3,
+      status: 'PUBLISHED',
+      sortOrder: 1,
+      gradeBand: 'G1_2',
+    },
+  });
+
+  const sightWordsChapter = await prisma.concept.upsert({
+    where: { name: 'Sight Words' },
+    update: { courseId: g12LaCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+    create: { name: 'Sight Words', description: 'Common words to recognize instantly.', courseId: g12LaCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+  });
+
+  let sightWordsLesson = await prisma.lesson.findFirst({ where: { title: 'Common Sight Words', conceptId: sightWordsChapter.id } });
+  if (!sightWordsLesson) {
+    sightWordsLesson = await prisma.lesson.create({ data: { conceptId: sightWordsChapter.id, title: 'Common Sight Words', description: 'Words you should know by sight.', sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: sightWordsLesson.id, title: 'Words to Know', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Some words show up so often that you should recognize them right away.' } });
+    const sightQ1 = await makeQ(engSubject.id, g1Level.id, "Which word means the opposite of 'stop'?", [{ label: 'A', text: 'go', correct: true }, { label: 'B', text: 'sit', correct: false }, { label: 'C', text: 'red', correct: false }, { label: 'D', text: 'walk', correct: false }], "'Go' is the opposite of 'stop'.");
+    await prisma.card.create({ data: { lessonId: sightWordsLesson.id, title: 'Pick the Word', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Read carefully, then tap your answer.', questionId: sightQ1.id } });
+    const sightQ2 = await makeQ(engSubject.id, g1Level.id, "Which word fits: 'I ___ to the park.'", [{ label: 'A', text: 'went', correct: true }, { label: 'B', text: 'jump', correct: false }, { label: 'C', text: 'blue', correct: false }, { label: 'D', text: 'happy', correct: false }], "'Went' fits because it tells what already happened.");
+    await prisma.card.create({ data: { lessonId: sightWordsLesson.id, title: 'Pick the Word', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Read carefully, then tap your answer.', questionId: sightQ2.id } });
+  }
+
+  let readSentencesLesson = await prisma.lesson.findFirst({ where: { title: 'Reading Simple Sentences', conceptId: sightWordsChapter.id } });
+  if (!readSentencesLesson) {
+    readSentencesLesson = await prisma.lesson.create({ data: { conceptId: sightWordsChapter.id, title: 'Reading Simple Sentences', description: 'Practice reading short sentences.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: readSentencesLesson.id, title: 'Reading Together', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Let's read a sentence and answer a question about it." } });
+    const readQ1 = await makeQ(engSubject.id, g1Level.id, "'The dog ran fast.' What did the dog do?", [{ label: 'A', text: 'ran', correct: true }, { label: 'B', text: 'slept', correct: false }, { label: 'C', text: 'ate', correct: false }, { label: 'D', text: 'jumped', correct: false }], "The sentence says the dog ran fast.");
+    await prisma.card.create({ data: { lessonId: readSentencesLesson.id, title: 'Read and Answer', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Read the sentence, then tap your answer.', questionId: readQ1.id } });
+    const readQ2 = await makeQ(engSubject.id, g1Level.id, "'The sun is hot.' What is hot?", [{ label: 'A', text: 'the sun', correct: true }, { label: 'B', text: 'the dog', correct: false }, { label: 'C', text: 'the park', correct: false }, { label: 'D', text: 'the book', correct: false }], "The sentence says the sun is hot.");
+    await prisma.card.create({ data: { lessonId: readSentencesLesson.id, title: 'Read and Answer', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Read the sentence, then tap your answer.', questionId: readQ2.id } });
+  }
+
+  const punctuationChapter = await prisma.concept.upsert({
+    where: { name: 'Punctuation Basics' },
+    update: { courseId: g12LaCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Punctuation Basics', description: 'Ending a sentence the right way.', courseId: g12LaCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let endingPunctuationLesson = await prisma.lesson.findFirst({ where: { title: 'Ending Punctuation', conceptId: punctuationChapter.id } });
+  if (!endingPunctuationLesson) {
+    endingPunctuationLesson = await prisma.lesson.create({ data: { conceptId: punctuationChapter.id, title: 'Ending Punctuation', description: 'Periods, question marks, and exclamation points.', sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: endingPunctuationLesson.id, title: 'How Sentences End', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A period ends a statement, a question mark ends a question, and an exclamation point shows excitement.' } });
+    const punctQ1 = await makeQ(engSubject.id, g1Level.id, "Which mark ends this sentence? 'What is your name___'", [{ label: 'A', text: '?', correct: true }, { label: 'B', text: '.', correct: false }, { label: 'C', text: '!', correct: false }], "It's a question, so it ends with a question mark.");
+    await prisma.card.create({ data: { lessonId: endingPunctuationLesson.id, title: 'Pick the Mark', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Read the sentence, then tap the right mark.', questionId: punctQ1.id } });
+    const punctQ2 = await makeQ(engSubject.id, g1Level.id, "Which mark ends this sentence? 'We won the game___'", [{ label: 'A', text: '!', correct: true }, { label: 'B', text: '.', correct: false }, { label: 'C', text: '?', correct: false }], "It shows excitement, so it ends with an exclamation point.");
+    await prisma.card.create({ data: { lessonId: endingPunctuationLesson.id, title: 'Pick the Mark', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Read the sentence, then tap the right mark.', questionId: punctQ2.id } });
+  }
+
+  let matchPunctuationLesson = await prisma.lesson.findFirst({ where: { title: 'Match Punctuation to Sentences', conceptId: punctuationChapter.id } });
+  if (!matchPunctuationLesson) {
+    matchPunctuationLesson = await prisma.lesson.create({ data: { conceptId: punctuationChapter.id, title: 'Match Punctuation to Sentences', description: 'Match each sentence to the mark it needs.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: matchPunctuationLesson.id, title: 'Match Them Up', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Let's match sentences to their ending marks." } });
+    const matchPunctQ = await prisma.question.create({
+      data: {
+        subjectId: engSubject.id,
+        levelId: g1Level.id,
+        questionType: 'interactive',
+        prompt: 'Match each sentence to the punctuation mark it needs.',
+        correctAnswer: null,
+        widgetType: 'GRID_MATCHING',
+        isGraded: true,
+        explanation: 'Statements end with a period, questions end with a question mark, and exciting sentences end with an exclamation point.',
+        hints: ['Ask yourself: is this a statement, a question, or something exciting?'],
+        widgetConfig: {
+          left: [
+            { id: 'statement', text: 'I like pizza' },
+            { id: 'question', text: 'Where is my hat' },
+            { id: 'excitement', text: 'Watch out' },
+          ],
+          right: [
+            { id: 'period', text: '.' },
+            { id: 'question-mark', text: '?' },
+            { id: 'exclamation', text: '!' },
+          ],
+          correctPairs: [
+            ['statement', 'period'],
+            ['question', 'question-mark'],
+            ['excitement', 'exclamation'],
+          ],
+        },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: matchPunctuationLesson.id, title: 'Match Them Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap a sentence, then tap its matching mark.', questionId: matchPunctQ.id } });
+  }
+
+  const g12LaCheckpoint = await prisma.concept.upsert({
+    where: { name: 'Reading & Sentences Checkpoint' },
+    update: { courseId: g12LaCourse.id, sortOrder: 3, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: { name: 'Reading & Sentences Checkpoint', description: 'A short checkpoint on sight words and punctuation — pass at 70% or better on the first try.', courseId: g12LaCourse.id, sortOrder: 3, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+  });
+  let g12LaCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Reading & Sentences', conceptId: g12LaCheckpoint.id } });
+  if (!g12LaCheckpointLesson) {
+    g12LaCheckpointLesson = await prisma.lesson.create({ data: { conceptId: g12LaCheckpoint.id, title: 'Checkpoint: Reading & Sentences', description: "Let's see what you've learned!", sortOrder: 1, xpReward: 55 } });
+    await prisma.card.create({ data: { lessonId: g12LaCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Do your best! Read each sentence carefully.' } });
+    const g12LaCheckpointQ1 = await makeQ(engSubject.id, g1Level.id, "'The cat is sleeping.' What is the cat doing?", [{ label: 'A', text: 'sleeping', correct: true }, { label: 'B', text: 'running', correct: false }, { label: 'C', text: 'eating', correct: false }, { label: 'D', text: 'playing', correct: false }], "The sentence says the cat is sleeping.");
+    await prisma.card.create({ data: { lessonId: g12LaCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Read the sentence, then tap your answer.', questionId: g12LaCheckpointQ1.id } });
+    const g12LaCheckpointQ2 = await makeQ(engSubject.id, g1Level.id, "Which mark ends this sentence? 'Is it raining outside___'", [{ label: 'A', text: '?', correct: true }, { label: 'B', text: '.', correct: false }, { label: 'C', text: '!', correct: false }], "It's a question, so it ends with a question mark.");
+    await prisma.card.create({ data: { lessonId: g12LaCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 3, cardType: 'CHECKPOINT', content: 'Read the sentence, then tap the right mark.', questionId: g12LaCheckpointQ2.id } });
+  }
+
+  console.log('✅ Seeded Grades 1-2 Language Arts course');
+
+  // ─── K-6 expansion: Grades 3-4 Math ───────────────────────────────────────
+  console.log('🌱 Seeding Grades 3-4 Math course...');
+
+  const g34MathCourse = await prisma.course.upsert({
+    where: { slug: 'multiplication-division-and-fractions' },
+    update: { gradeBand: 'G3_4', sortOrder: 2 },
+    create: {
+      learningSubjectId: mathLearningSubject.id,
+      title: 'Multiplication, Division & Fractions',
+      slug: 'multiplication-division-and-fractions',
+      description: 'Multiply and divide whole numbers, and get started with fractions.',
+      estimatedHours: 4,
+      status: 'PUBLISHED',
+      sortOrder: 2,
+      gradeBand: 'G3_4',
+    },
+  });
+
+  const multiplicationChapter = await prisma.concept.upsert({
+    where: { name: 'Multiplication Basics' },
+    update: { courseId: g34MathCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+    create: { name: 'Multiplication Basics', description: 'Multiplying single-digit numbers.', courseId: g34MathCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+  });
+
+  let multiplyingLesson = await prisma.lesson.findFirst({ where: { title: 'Multiplying by Single Digits', conceptId: multiplicationChapter.id } });
+  if (!multiplyingLesson) {
+    multiplyingLesson = await prisma.lesson.create({ data: { conceptId: multiplicationChapter.id, title: 'Multiplying by Single Digits', description: "Let's practice multiplication!", sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: multiplyingLesson.id, title: 'Groups of Things', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Multiplication is adding equal groups together, over and over.' } });
+    const mulQ1 = await makeQ(mathSubject.id, g3Level.id, 'What is 6 × 7?', [{ label: 'A', text: '42', correct: true }, { label: 'B', text: '36', correct: false }, { label: 'C', text: '48', correct: false }, { label: 'D', text: '49', correct: false }], '6 groups of 7 is 42.');
+    await prisma.card.create({ data: { lessonId: multiplyingLesson.id, title: 'Multiply It', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Work it out, then tap the answer.', questionId: mulQ1.id } });
+    const mulQ2 = await makeQ(mathSubject.id, g3Level.id, 'What is 8 × 9?', [{ label: 'A', text: '72', correct: true }, { label: 'B', text: '64', correct: false }, { label: 'C', text: '81', correct: false }, { label: 'D', text: '63', correct: false }], '8 groups of 9 is 72.');
+    await prisma.card.create({ data: { lessonId: multiplyingLesson.id, title: 'Multiply It', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Work it out, then tap the answer.', questionId: mulQ2.id } });
+  }
+
+  let mulWordProblemsLesson = await prisma.lesson.findFirst({ where: { title: 'Multiplication Word Problems', conceptId: multiplicationChapter.id } });
+  if (!mulWordProblemsLesson) {
+    mulWordProblemsLesson = await prisma.lesson.create({ data: { conceptId: multiplicationChapter.id, title: 'Multiplication Word Problems', description: 'Use multiplication to solve real problems.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: mulWordProblemsLesson.id, title: 'Story Problems', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Look for equal groups — that means multiply.' } });
+    const mulWordQ1 = await makeQ(mathSubject.id, g3Level.id, 'There are 5 boxes with 6 apples in each box. How many apples in all?', [{ label: 'A', text: '30', correct: true }, { label: 'B', text: '25', correct: false }, { label: 'C', text: '11', correct: false }, { label: 'D', text: '36', correct: false }], '5 boxes × 6 apples = 30 apples.');
+    await prisma.card.create({ data: { lessonId: mulWordProblemsLesson.id, title: 'Solve the Problem', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Read the problem, then tap the answer.', questionId: mulWordQ1.id } });
+    const mulWordQ2 = await makeQ(mathSubject.id, g3Level.id, 'A van has 4 rows of seats with 3 seats in each row. How many seats total?', [{ label: 'A', text: '12', correct: true }, { label: 'B', text: '7', correct: false }, { label: 'C', text: '9', correct: false }, { label: 'D', text: '16', correct: false }], '4 rows × 3 seats = 12 seats.');
+    await prisma.card.create({ data: { lessonId: mulWordProblemsLesson.id, title: 'Solve the Problem', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Read the problem, then tap the answer.', questionId: mulWordQ2.id } });
+  }
+
+  const divisionChapter = await prisma.concept.upsert({
+    where: { name: 'Division Basics' },
+    update: { courseId: g34MathCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Division Basics', description: 'Dividing whole numbers evenly.', courseId: g34MathCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let dividingLesson = await prisma.lesson.findFirst({ where: { title: 'Dividing Evenly', conceptId: divisionChapter.id } });
+  if (!dividingLesson) {
+    dividingLesson = await prisma.lesson.create({ data: { conceptId: divisionChapter.id, title: 'Dividing Evenly', description: "Let's practice division!", sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: dividingLesson.id, title: 'Sharing Equally', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Division means splitting a group into equal smaller groups.' } });
+    const divQ1 = await makeQ(mathSubject.id, g3Level.id, 'What is 36 ÷ 6?', [{ label: 'A', text: '6', correct: true }, { label: 'B', text: '5', correct: false }, { label: 'C', text: '7', correct: false }, { label: 'D', text: '8', correct: false }], '36 split into 6 equal groups gives 6 in each group.');
+    await prisma.card.create({ data: { lessonId: dividingLesson.id, title: 'Divide It', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Work it out, then tap the answer.', questionId: divQ1.id } });
+    const divQ2 = await makeQ(mathSubject.id, g3Level.id, 'What is 63 ÷ 9?', [{ label: 'A', text: '7', correct: true }, { label: 'B', text: '8', correct: false }, { label: 'C', text: '6', correct: false }, { label: 'D', text: '9', correct: false }], '63 split into 9 equal groups gives 7 in each group.');
+    await prisma.card.create({ data: { lessonId: dividingLesson.id, title: 'Divide It', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Work it out, then tap the answer.', questionId: divQ2.id } });
+  }
+
+  let divWordProblemsLesson = await prisma.lesson.findFirst({ where: { title: 'Division Word Problems', conceptId: divisionChapter.id } });
+  if (!divWordProblemsLesson) {
+    divWordProblemsLesson = await prisma.lesson.create({ data: { conceptId: divisionChapter.id, title: 'Division Word Problems', description: 'Use division to solve real problems.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: divWordProblemsLesson.id, title: 'Story Problems', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Look for equal sharing — that means divide.' } });
+    const divWordQ1 = await makeQ(mathSubject.id, g3Level.id, '24 cookies are shared equally among 4 friends. How many cookies does each friend get?', [{ label: 'A', text: '6', correct: true }, { label: 'B', text: '5', correct: false }, { label: 'C', text: '8', correct: false }, { label: 'D', text: '20', correct: false }], '24 ÷ 4 = 6 cookies each.');
+    await prisma.card.create({ data: { lessonId: divWordProblemsLesson.id, title: 'Solve the Problem', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Read the problem, then tap the answer.', questionId: divWordQ1.id } });
+    const divWordQ2 = await makeQ(mathSubject.id, g3Level.id, '45 students are split evenly into 5 teams. How many students per team?', [{ label: 'A', text: '9', correct: true }, { label: 'B', text: '8', correct: false }, { label: 'C', text: '10', correct: false }, { label: 'D', text: '40', correct: false }], '45 ÷ 5 = 9 students per team.');
+    await prisma.card.create({ data: { lessonId: divWordProblemsLesson.id, title: 'Solve the Problem', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Read the problem, then tap the answer.', questionId: divWordQ2.id } });
+  }
+
+  const fractionsIntroChapter = await prisma.concept.upsert({
+    where: { name: 'Fractions Intro' },
+    update: { courseId: g34MathCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+    create: { name: 'Fractions Intro', description: 'Naming and comparing simple fractions.', courseId: g34MathCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+  });
+
+  let namingFractionsLesson = await prisma.lesson.findFirst({ where: { title: 'Naming Fractions', conceptId: fractionsIntroChapter.id } });
+  if (!namingFractionsLesson) {
+    namingFractionsLesson = await prisma.lesson.create({ data: { conceptId: fractionsIntroChapter.id, title: 'Naming Fractions', description: 'A fraction names part of a whole.', sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: namingFractionsLesson.id, title: 'Parts of a Whole', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A fraction tells you how many equal parts you have out of the total parts.' } });
+    const fracQ1 = await makeQ(mathSubject.id, g3Level.id, 'A pizza is cut into 4 equal slices. You eat 1 slice. What fraction did you eat?', [{ label: 'A', text: '1/4', correct: true }, { label: 'B', text: '1/3', correct: false }, { label: 'C', text: '4/1', correct: false }, { label: 'D', text: '1/2', correct: false }], 'You ate 1 out of 4 equal slices, so 1/4.');
+    await prisma.card.create({ data: { lessonId: namingFractionsLesson.id, title: 'Name the Fraction', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Read carefully, then tap the fraction.', questionId: fracQ1.id } });
+    const fracQ2 = await makeQ(mathSubject.id, g3Level.id, 'A chocolate bar has 8 equal pieces. You eat 3 pieces. What fraction did you eat?', [{ label: 'A', text: '3/8', correct: true }, { label: 'B', text: '3/5', correct: false }, { label: 'C', text: '8/3', correct: false }, { label: 'D', text: '5/8', correct: false }], 'You ate 3 out of 8 equal pieces, so 3/8.');
+    await prisma.card.create({ data: { lessonId: namingFractionsLesson.id, title: 'Name the Fraction', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Read carefully, then tap the fraction.', questionId: fracQ2.id } });
+  }
+
+  let comparingFractionsLesson = await prisma.lesson.findFirst({ where: { title: 'Comparing Fractions', conceptId: fractionsIntroChapter.id } });
+  if (!comparingFractionsLesson) {
+    comparingFractionsLesson = await prisma.lesson.create({ data: { conceptId: fractionsIntroChapter.id, title: 'Comparing Fractions', description: 'Which fraction is bigger?', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: comparingFractionsLesson.id, title: 'Bigger or Smaller', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'When the whole is split into fewer parts, each part is bigger.' } });
+    const compFracQ1 = await makeQ(mathSubject.id, g3Level.id, 'Which is bigger: 1/2 or 1/4?', [{ label: 'A', text: '1/2', correct: true }, { label: 'B', text: '1/4', correct: false }, { label: 'C', text: 'They are equal', correct: false }], 'Splitting into 2 parts makes bigger pieces than splitting into 4 parts, so 1/2 is bigger.');
+    await prisma.card.create({ data: { lessonId: comparingFractionsLesson.id, title: 'Compare Them', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Think about the size of each piece, then tap your answer.', questionId: compFracQ1.id } });
+    const compFracQ2 = await makeQ(mathSubject.id, g3Level.id, 'Which is smaller: 1/3 or 1/8?', [{ label: 'A', text: '1/8', correct: true }, { label: 'B', text: '1/3', correct: false }, { label: 'C', text: 'They are equal', correct: false }], 'Splitting into 8 parts makes smaller pieces than splitting into 3 parts, so 1/8 is smaller.');
+    await prisma.card.create({ data: { lessonId: comparingFractionsLesson.id, title: 'Compare Them', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Think about the size of each piece, then tap your answer.', questionId: compFracQ2.id } });
+  }
+
+  const g34MathCheckpoint = await prisma.concept.upsert({
+    where: { name: 'Multiplication, Division & Fractions Checkpoint' },
+    update: { courseId: g34MathCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: { name: 'Multiplication, Division & Fractions Checkpoint', description: 'A short checkpoint on multiplication, division, and fractions — pass at 70% or better on the first try.', courseId: g34MathCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+  });
+  let g34MathCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Multiplication, Division & Fractions', conceptId: g34MathCheckpoint.id } });
+  if (!g34MathCheckpointLesson) {
+    g34MathCheckpointLesson = await prisma.lesson.create({ data: { conceptId: g34MathCheckpoint.id, title: 'Checkpoint: Multiplication, Division & Fractions', description: "Let's see what you've learned!", sortOrder: 1, xpReward: 60 } });
+    await prisma.card.create({ data: { lessonId: g34MathCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Do your best! Take your time with each problem.' } });
+    const g34CheckpointQ1 = await makeQ(mathSubject.id, g3Level.id, 'What is 7 × 8?', [{ label: 'A', text: '56', correct: true }, { label: 'B', text: '54', correct: false }, { label: 'C', text: '64', correct: false }, { label: 'D', text: '48', correct: false }], '7 × 8 = 56.');
+    await prisma.card.create({ data: { lessonId: g34MathCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Work it out, then tap the answer.', questionId: g34CheckpointQ1.id } });
+    const g34CheckpointQ2 = await makeQ(mathSubject.id, g3Level.id, 'A garden has 6 equal rows of 5 flowers each. How many flowers in all?', [{ label: 'A', text: '30', correct: true }, { label: 'B', text: '11', correct: false }, { label: 'C', text: '25', correct: false }, { label: 'D', text: '35', correct: false }], '6 rows × 5 flowers = 30 flowers.');
+    await prisma.card.create({ data: { lessonId: g34MathCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 3, cardType: 'CHECKPOINT', content: 'Read the problem, then tap the answer.', questionId: g34CheckpointQ2.id } });
+  }
+
+  console.log('✅ Seeded Grades 3-4 Math course');
+
+  // ─── K-6 expansion: Grades 3-4 Language Arts ──────────────────────────────
+  console.log('🌱 Seeding Grades 3-4 Language Arts course...');
+
+  const g34LaCourse = await prisma.course.upsert({
+    where: { slug: 'reading-and-grammar' },
+    update: { gradeBand: 'G3_4', sortOrder: 3 },
+    create: {
+      learningSubjectId: laLearningSubject.id,
+      title: 'Reading & Grammar',
+      slug: 'reading-and-grammar',
+      description: 'Find the main idea, make inferences, and learn the building blocks of grammar.',
+      estimatedHours: 4,
+      status: 'PUBLISHED',
+      sortOrder: 3,
+      gradeBand: 'G3_4',
+    },
+  });
+
+  const comprehensionChapter = await prisma.concept.upsert({
+    where: { name: 'Reading Comprehension' },
+    update: { courseId: g34LaCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+    create: { name: 'Reading Comprehension', description: 'Understanding what you read.', courseId: g34LaCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+  });
+
+  let mainIdeaLesson = await prisma.lesson.findFirst({ where: { title: 'Finding the Main Idea', conceptId: comprehensionChapter.id } });
+  if (!mainIdeaLesson) {
+    mainIdeaLesson = await prisma.lesson.create({ data: { conceptId: comprehensionChapter.id, title: 'Finding the Main Idea', description: 'What is the passage really about?', sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: mainIdeaLesson.id, title: 'The Big Picture', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'The main idea is what a passage is mostly about, not just one small detail.' } });
+    const mainIdeaQ1 = await makeQ(engSubject.id, g3Level.id, "'Ants live in colonies. They build tunnels, gather food, and care for their queen together.' What is this passage mostly about?", [{ label: 'A', text: 'How ants live and work together', correct: true }, { label: 'B', text: 'What a queen looks like', correct: false }, { label: 'C', text: 'Why ants are small', correct: false }, { label: 'D', text: 'Where tunnels are found', correct: false }], "The passage describes several ways ants live and work together as a colony.");
+    await prisma.card.create({ data: { lessonId: mainIdeaLesson.id, title: 'Pick the Main Idea', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Read the passage, then tap the main idea.', questionId: mainIdeaQ1.id } });
+    const mainIdeaQ2 = await makeQ(engSubject.id, g3Level.id, "'Rain forests are home to millions of plants and animals. They also help clean the air we breathe.' What is this passage mostly about?", [{ label: 'A', text: 'Why rain forests matter', correct: true }, { label: 'B', text: 'How much it rains', correct: false }, { label: 'C', text: 'One type of animal', correct: false }, { label: 'D', text: 'The color of leaves', correct: false }], "The passage explains why rain forests are important — for wildlife and clean air.");
+    await prisma.card.create({ data: { lessonId: mainIdeaLesson.id, title: 'Pick the Main Idea', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Read the passage, then tap the main idea.', questionId: mainIdeaQ2.id } });
+  }
+
+  let inferencesLesson = await prisma.lesson.findFirst({ where: { title: 'Making Inferences', conceptId: comprehensionChapter.id } });
+  if (!inferencesLesson) {
+    inferencesLesson = await prisma.lesson.create({ data: { conceptId: comprehensionChapter.id, title: 'Making Inferences', description: 'Figure out what the text is hinting at.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: inferencesLesson.id, title: 'Reading Between the Lines', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'An inference is a smart guess based on clues, even when the answer is not stated directly.' } });
+    const inferQ1 = await makeQ(engSubject.id, g3Level.id, "'Maria grabbed her umbrella and put on her raincoat before leaving the house.' What can you infer?", [{ label: 'A', text: 'It was raining or about to rain', correct: true }, { label: 'B', text: 'Maria was going swimming', correct: false }, { label: 'C', text: 'It was very sunny outside', correct: false }, { label: 'D', text: 'Maria was going to bed', correct: false }], "An umbrella and raincoat are clues that it was raining or about to rain.");
+    await prisma.card.create({ data: { lessonId: inferencesLesson.id, title: 'Make the Inference', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Read the clues, then tap your answer.', questionId: inferQ1.id } });
+    const inferQ2 = await makeQ(engSubject.id, g3Level.id, "'Sam's stomach growled loudly as he stared at the clock, waiting for the lunch bell.' What can you infer?", [{ label: 'A', text: 'Sam was hungry', correct: true }, { label: 'B', text: 'Sam was tired', correct: false }, { label: 'C', text: 'Sam was scared', correct: false }, { label: 'D', text: 'Sam was cold', correct: false }], "A growling stomach and waiting for lunch are clues that Sam was hungry.");
+    await prisma.card.create({ data: { lessonId: inferencesLesson.id, title: 'Make the Inference', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Read the clues, then tap your answer.', questionId: inferQ2.id } });
+  }
+
+  const grammarChapter = await prisma.concept.upsert({
+    where: { name: 'Grammar Basics' },
+    update: { courseId: g34LaCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Grammar Basics', description: 'Nouns, verbs, and parts of speech.', courseId: g34LaCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let nounsVerbsLesson = await prisma.lesson.findFirst({ where: { title: 'Nouns and Verbs', conceptId: grammarChapter.id } });
+  if (!nounsVerbsLesson) {
+    nounsVerbsLesson = await prisma.lesson.create({ data: { conceptId: grammarChapter.id, title: 'Nouns and Verbs', description: 'Naming words and action words.', sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: nounsVerbsLesson.id, title: 'Naming and Doing', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A noun names a person, place, or thing. A verb shows an action.' } });
+    const nounVerbQ1 = await makeQ(engSubject.id, g3Level.id, "In 'The dog barked loudly,' which word is the verb?", [{ label: 'A', text: 'barked', correct: true }, { label: 'B', text: 'dog', correct: false }, { label: 'C', text: 'loudly', correct: false }, { label: 'D', text: 'the', correct: false }], "'Barked' is the action the dog did, so it's the verb.");
+    await prisma.card.create({ data: { lessonId: nounsVerbsLesson.id, title: 'Find the Word', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Read the sentence, then tap your answer.', questionId: nounVerbQ1.id } });
+    const nounVerbQ2 = await makeQ(engSubject.id, g3Level.id, "In 'The teacher wrote on the board,' which word is the noun?", [{ label: 'A', text: 'teacher', correct: true }, { label: 'B', text: 'wrote', correct: false }, { label: 'C', text: 'on', correct: false }, { label: 'D', text: 'the', correct: false }], "'Teacher' names a person, so it's the noun.");
+    await prisma.card.create({ data: { lessonId: nounsVerbsLesson.id, title: 'Find the Word', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Read the sentence, then tap your answer.', questionId: nounVerbQ2.id } });
+  }
+
+  let matchPartsOfSpeechLesson = await prisma.lesson.findFirst({ where: { title: 'Match Parts of Speech', conceptId: grammarChapter.id } });
+  if (!matchPartsOfSpeechLesson) {
+    matchPartsOfSpeechLesson = await prisma.lesson.create({ data: { conceptId: grammarChapter.id, title: 'Match Parts of Speech', description: 'Match each word to its part of speech.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: matchPartsOfSpeechLesson.id, title: 'Match Them Up', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Let's match words to their part of speech." } });
+    const matchSpeechQ = await prisma.question.create({
+      data: {
+        subjectId: engSubject.id,
+        levelId: g3Level.id,
+        questionType: 'interactive',
+        prompt: 'Match each word to its part of speech.',
+        correctAnswer: null,
+        widgetType: 'GRID_MATCHING',
+        isGraded: true,
+        explanation: "'Dog' and 'city' are nouns (naming words). 'Run' and 'jump' are verbs (action words).",
+        hints: ['Ask yourself: does the word name something, or does it show an action?'],
+        widgetConfig: {
+          left: [
+            { id: 'dog', text: 'dog' },
+            { id: 'run', text: 'run' },
+            { id: 'city', text: 'city' },
+            { id: 'jump', text: 'jump' },
+          ],
+          right: [
+            { id: 'noun-1', text: 'Noun' },
+            { id: 'verb-1', text: 'Verb' },
+            { id: 'noun-2', text: 'Noun' },
+            { id: 'verb-2', text: 'Verb' },
+          ],
+          correctPairs: [['dog', 'noun-1'], ['run', 'verb-1'], ['city', 'noun-2'], ['jump', 'verb-2']],
+        },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: matchPartsOfSpeechLesson.id, title: 'Match Them Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap a word, then tap its matching part of speech.', questionId: matchSpeechQ.id } });
+  }
+
+  const paragraphsChapter = await prisma.concept.upsert({
+    where: { name: 'Writing Paragraphs' },
+    update: { courseId: g34LaCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+    create: { name: 'Writing Paragraphs', description: 'Building a clear paragraph.', courseId: g34LaCourse.id, sortOrder: 3, kind: 'CHAPTER' },
+  });
+
+  let topicSentencesLesson = await prisma.lesson.findFirst({ where: { title: 'Topic Sentences', conceptId: paragraphsChapter.id } });
+  if (!topicSentencesLesson) {
+    topicSentencesLesson = await prisma.lesson.create({ data: { conceptId: paragraphsChapter.id, title: 'Topic Sentences', description: 'The sentence that tells what a paragraph is about.', sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: topicSentencesLesson.id, title: 'Starting Strong', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A topic sentence tells the reader what the whole paragraph will be about.' } });
+    const topicQ1 = await makeQ(engSubject.id, g3Level.id, 'Which sentence would work best as a topic sentence for a paragraph about dogs?', [{ label: 'A', text: 'Dogs make wonderful pets for many reasons.', correct: true }, { label: 'B', text: 'My dog is brown.', correct: false }, { label: 'C', text: 'I fed my dog this morning.', correct: false }, { label: 'D', text: 'The park has a big tree.', correct: false }], "This sentence introduces the general topic — dogs as pets — that the rest of the paragraph can explain.");
+    await prisma.card.create({ data: { lessonId: topicSentencesLesson.id, title: 'Pick the Topic Sentence', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Think about which sentence introduces the whole paragraph, then tap it.', questionId: topicQ1.id } });
+    const topicQ2 = await makeQ(engSubject.id, g3Level.id, 'Which sentence would work best as a topic sentence for a paragraph about the ocean?', [{ label: 'A', text: 'The ocean is home to many amazing creatures.', correct: true }, { label: 'B', text: 'I saw a crab yesterday.', correct: false }, { label: 'C', text: 'The water was cold.', correct: false }, { label: 'D', text: 'We packed sandwiches.', correct: false }], "This sentence introduces the general topic — ocean creatures — that the paragraph would go on to describe.");
+    await prisma.card.create({ data: { lessonId: topicSentencesLesson.id, title: 'Pick the Topic Sentence', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Think about which sentence introduces the whole paragraph, then tap it.', questionId: topicQ2.id } });
+  }
+
+  let sentenceOrderLesson = await prisma.lesson.findFirst({ where: { title: 'Putting Sentences in Order', conceptId: paragraphsChapter.id } });
+  if (!sentenceOrderLesson) {
+    sentenceOrderLesson = await prisma.lesson.create({ data: { conceptId: paragraphsChapter.id, title: 'Putting Sentences in Order', description: 'Good paragraphs follow a logical order.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: sentenceOrderLesson.id, title: 'What Comes First?', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A paragraph usually starts with the topic sentence, then gives details in order.' } });
+    const orderQ1 = await makeQ(engSubject.id, g3Level.id, 'Which sentence should come FIRST in a paragraph about making a sandwich?', [{ label: 'A', text: 'First, gather two slices of bread.', correct: true }, { label: 'B', text: 'Finally, cut the sandwich in half.', correct: false }, { label: 'C', text: 'Then spread the peanut butter.', correct: false }, { label: 'D', text: 'Next, add the jelly.', correct: false }], "'First' signals this is the very first step.");
+    await prisma.card.create({ data: { lessonId: sentenceOrderLesson.id, title: 'Pick the First Sentence', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Look for order-signal words, then tap the sentence that comes first.', questionId: orderQ1.id } });
+    const orderQ2 = await makeQ(engSubject.id, g3Level.id, 'Which sentence should come LAST in a paragraph about planting a seed?', [{ label: 'A', text: 'Finally, water the soil every day until it sprouts.', correct: true }, { label: 'B', text: 'First, dig a small hole in the dirt.', correct: false }, { label: 'C', text: 'Next, place the seed in the hole.', correct: false }, { label: 'D', text: 'Then, cover the seed with soil.', correct: false }], "'Finally' signals this is the last step.");
+    await prisma.card.create({ data: { lessonId: sentenceOrderLesson.id, title: 'Pick the Last Sentence', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Look for order-signal words, then tap the sentence that comes last.', questionId: orderQ2.id } });
+  }
+
+  const g34LaCheckpoint = await prisma.concept.upsert({
+    where: { name: 'Reading & Grammar Checkpoint' },
+    update: { courseId: g34LaCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: { name: 'Reading & Grammar Checkpoint', description: 'A short checkpoint on comprehension and grammar — pass at 70% or better on the first try.', courseId: g34LaCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+  });
+  let g34LaCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Reading & Grammar', conceptId: g34LaCheckpoint.id } });
+  if (!g34LaCheckpointLesson) {
+    g34LaCheckpointLesson = await prisma.lesson.create({ data: { conceptId: g34LaCheckpoint.id, title: 'Checkpoint: Reading & Grammar', description: "Let's see what you've learned!", sortOrder: 1, xpReward: 60 } });
+    await prisma.card.create({ data: { lessonId: g34LaCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Do your best! Read each question carefully.' } });
+    const g34LaCheckpointQ1 = await makeQ(engSubject.id, g3Level.id, "'Penguins cannot fly, but they are excellent swimmers who catch fish underwater.' What is this passage mostly about?", [{ label: 'A', text: 'How penguins swim to catch fish', correct: true }, { label: 'B', text: 'Why penguins are cold', correct: false }, { label: 'C', text: 'Where penguins sleep', correct: false }, { label: 'D', text: 'How tall penguins are', correct: false }], "The passage focuses on penguins swimming and catching fish.");
+    await prisma.card.create({ data: { lessonId: g34LaCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Read the passage, then tap the main idea.', questionId: g34LaCheckpointQ1.id } });
+    const g34LaCheckpointQ2 = await makeQ(engSubject.id, g3Level.id, "In 'The children played happily in the park,' which word is the verb?", [{ label: 'A', text: 'played', correct: true }, { label: 'B', text: 'children', correct: false }, { label: 'C', text: 'happily', correct: false }, { label: 'D', text: 'park', correct: false }], "'Played' is the action the children did, so it's the verb.");
+    await prisma.card.create({ data: { lessonId: g34LaCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 3, cardType: 'CHECKPOINT', content: 'Read the sentence, then tap your answer.', questionId: g34LaCheckpointQ2.id } });
+  }
+
+  console.log('✅ Seeded Grades 3-4 Language Arts course');
+
+  // ─── K-6 expansion: Grades 5-6 Language Arts ──────────────────────────────
+  // The last increment of the K-6 v1 scope — Math at this band already
+  // exists (algebra-foundations, fractions-and-algebra-basics,
+  // percentages-and-ratios are all tagged G5_6), so only Language Arts is
+  // net-new content here, per the K-6 plan's sequencing note.
+  console.log('🌱 Seeding Grades 5-6 Language Arts course...');
+
+  const g56LaCourse = await prisma.course.upsert({
+    where: { slug: 'analytical-reading-and-writing' },
+    update: { gradeBand: 'G5_6', sortOrder: 5 },
+    create: {
+      learningSubjectId: laLearningSubject.id,
+      title: 'Analytical Reading & Writing',
+      slug: 'analytical-reading-and-writing',
+      description: "Dig into an author's purpose and theme, and structure multi-paragraph writing.",
+      estimatedHours: 4,
+      status: 'PUBLISHED',
+      sortOrder: 5,
+      gradeBand: 'G5_6',
+    },
+  });
+
+  const analyticalReadingChapter = await prisma.concept.upsert({
+    where: { name: 'Analytical Reading' },
+    update: { courseId: g56LaCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+    create: { name: 'Analytical Reading', description: "Reading for an author's purpose and theme.", courseId: g56LaCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+  });
+
+  let authorsPurposeLesson = await prisma.lesson.findFirst({ where: { title: "Author's Purpose", conceptId: analyticalReadingChapter.id } });
+  if (!authorsPurposeLesson) {
+    authorsPurposeLesson = await prisma.lesson.create({ data: { conceptId: analyticalReadingChapter.id, title: "Author's Purpose", description: 'Why did the author write this?', sortOrder: 1, xpReward: 30 } });
+    await prisma.card.create({ data: { lessonId: authorsPurposeLesson.id, title: 'Why Authors Write', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Authors usually write to persuade, inform, or entertain. Look at word choice and structure for clues.' } });
+    const purposeQ1 = await makeQ(engSubject.id, g5Level.id, "A magazine article lists statistics and expert quotes about climate change. What is the author's main purpose?", [{ label: 'A', text: 'To inform', correct: true }, { label: 'B', text: 'To entertain', correct: false }, { label: 'C', text: 'To persuade readers to buy something', correct: false }, { label: 'D', text: 'To tell a fictional story', correct: false }], "Statistics and expert quotes are tools used to inform readers with facts.");
+    await prisma.card.create({ data: { lessonId: authorsPurposeLesson.id, title: 'Identify the Purpose', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Think about the clues, then tap your answer.', questionId: purposeQ1.id } });
+    const purposeQ2 = await makeQ(engSubject.id, g5Level.id, 'An ad says "Buy our shoes — they will change your life!" What is the purpose of this text?', [{ label: 'A', text: 'To persuade', correct: true }, { label: 'B', text: 'To inform', correct: false }, { label: 'C', text: 'To entertain with a story', correct: false }, { label: 'D', text: 'To give instructions', correct: false }], "The exaggerated claim is meant to persuade you to buy the shoes.");
+    await prisma.card.create({ data: { lessonId: authorsPurposeLesson.id, title: 'Identify the Purpose', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Think about the clues, then tap your answer.', questionId: purposeQ2.id } });
+  }
+
+  let identifyingThemeLesson = await prisma.lesson.findFirst({ where: { title: 'Identifying Theme', conceptId: analyticalReadingChapter.id } });
+  if (!identifyingThemeLesson) {
+    identifyingThemeLesson = await prisma.lesson.create({ data: { conceptId: analyticalReadingChapter.id, title: 'Identifying Theme', description: 'What lesson or message does the story teach?', sortOrder: 2, xpReward: 30 } });
+    await prisma.card.create({ data: { lessonId: identifyingThemeLesson.id, title: 'The Bigger Lesson', sortOrder: 1, cardType: 'CONCEPTUAL', content: "A theme is the underlying message or lesson of a story — bigger than just what happens in the plot." } });
+    const themeQ1 = await makeQ(engSubject.id, g5Level.id, 'In a story, a boy refuses to give up practicing the piano even after many failed recitals, and finally succeeds. What is the theme?', [{ label: 'A', text: 'Perseverance leads to success', correct: true }, { label: 'B', text: 'Piano lessons are expensive', correct: false }, { label: 'C', text: 'Recitals happen in the spring', correct: false }, { label: 'D', text: 'Music teachers are strict', correct: false }], "The story's message is about not giving up — perseverance.");
+    await prisma.card.create({ data: { lessonId: identifyingThemeLesson.id, title: 'Find the Theme', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Think about the underlying message, then tap your answer.', questionId: themeQ1.id } });
+    const themeQ2 = await makeQ(engSubject.id, g5Level.id, 'In a fable, a slow tortoise beats a fast but overconfident hare in a race. What is the theme?', [{ label: 'A', text: 'Slow and steady wins the race', correct: true }, { label: 'B', text: 'Hares are faster than tortoises', correct: false }, { label: 'C', text: 'Races should be held outdoors', correct: false }, { label: 'D', text: 'Tortoises live a long time', correct: false }], "The classic message of this fable is that steady effort beats overconfidence.");
+    await prisma.card.create({ data: { lessonId: identifyingThemeLesson.id, title: 'Find the Theme', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Think about the underlying message, then tap your answer.', questionId: themeQ2.id } });
+  }
+
+  const writingStructureChapter = await prisma.concept.upsert({
+    where: { name: 'Multi-Paragraph Writing' },
+    update: { courseId: g56LaCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Multi-Paragraph Writing', description: 'Structuring an essay with a clear thesis and organized paragraphs.', courseId: g56LaCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let thesisStatementsLesson = await prisma.lesson.findFirst({ where: { title: 'Thesis Statements', conceptId: writingStructureChapter.id } });
+  if (!thesisStatementsLesson) {
+    thesisStatementsLesson = await prisma.lesson.create({ data: { conceptId: writingStructureChapter.id, title: 'Thesis Statements', description: 'The sentence that states your main argument.', sortOrder: 1, xpReward: 30 } });
+    await prisma.card.create({ data: { lessonId: thesisStatementsLesson.id, title: 'Making Your Point', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A thesis statement clearly states the main argument or point of an entire essay, usually in the introduction.' } });
+    const thesisQ1 = await makeQ(engSubject.id, g5Level.id, 'Which sentence works best as a thesis statement for an essay arguing that school days should start later?', [{ label: 'A', text: 'School days should start later because students learn better when well-rested.', correct: true }, { label: 'B', text: 'I woke up at 7am today.', correct: false }, { label: 'C', text: 'Some schools start at 8am.', correct: false }, { label: 'D', text: 'Sleep is important for health.', correct: false }], 'This sentence states a clear, arguable position that the rest of the essay would support.');
+    await prisma.card.create({ data: { lessonId: thesisStatementsLesson.id, title: 'Pick the Thesis', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Look for the sentence that states a clear argument, then tap it.', questionId: thesisQ1.id } });
+    const thesisQ2 = await makeQ(engSubject.id, g5Level.id, 'Which sentence works best as a thesis statement for an essay about the benefits of recycling?', [{ label: 'A', text: 'Recycling benefits communities by reducing waste and saving natural resources.', correct: true }, { label: 'B', text: 'My town has blue recycling bins.', correct: false }, { label: 'C', text: 'I recycled a can yesterday.', correct: false }, { label: 'D', text: 'Plastic takes years to break down.', correct: false }], 'This sentence states a clear, arguable claim that the essay could support with evidence.');
+    await prisma.card.create({ data: { lessonId: thesisStatementsLesson.id, title: 'Pick the Thesis', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Look for the sentence that states a clear argument, then tap it.', questionId: thesisQ2.id } });
+  }
+
+  let organizingParagraphsLesson = await prisma.lesson.findFirst({ where: { title: 'Organizing Paragraphs', conceptId: writingStructureChapter.id } });
+  if (!organizingParagraphsLesson) {
+    organizingParagraphsLesson = await prisma.lesson.create({ data: { conceptId: writingStructureChapter.id, title: 'Organizing Paragraphs', description: 'Match each paragraph type to its job in an essay.', sortOrder: 2, xpReward: 30 } });
+    await prisma.card.create({ data: { lessonId: organizingParagraphsLesson.id, title: 'Every Paragraph Has a Job', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A well-organized essay has an introduction, body paragraphs with evidence, and a conclusion — each with a different job.' } });
+    const matchParagraphQ = await prisma.question.create({
+      data: {
+        subjectId: engSubject.id,
+        levelId: g5Level.id,
+        questionType: 'interactive',
+        prompt: 'Match each paragraph type to its job in an essay.',
+        correctAnswer: null,
+        widgetType: 'GRID_MATCHING',
+        isGraded: true,
+        explanation: 'The introduction hooks the reader and states the thesis, body paragraphs each give one piece of evidence, and the conclusion sums up the argument.',
+        hints: ['Think about where each paragraph type appears in an essay — start, middle, or end.'],
+        widgetConfig: {
+          left: [
+            { id: 'intro', text: 'Introduction' },
+            { id: 'body', text: 'Body Paragraph' },
+            { id: 'conclusion', text: 'Conclusion' },
+          ],
+          right: [
+            { id: 'intro-job', text: 'States the thesis and hooks the reader' },
+            { id: 'body-job', text: 'Gives one piece of evidence in detail' },
+            { id: 'conclusion-job', text: 'Sums up the argument' },
+          ],
+          correctPairs: [['intro', 'intro-job'], ['body', 'body-job'], ['conclusion', 'conclusion-job']],
+        },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: organizingParagraphsLesson.id, title: 'Match Them Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap a paragraph type, then tap its matching job.', questionId: matchParagraphQ.id } });
+  }
+
+  const g56LaCheckpoint = await prisma.concept.upsert({
+    where: { name: 'Analytical Reading & Writing Checkpoint' },
+    update: { courseId: g56LaCourse.id, sortOrder: 3, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+    create: { name: 'Analytical Reading & Writing Checkpoint', description: 'A short checkpoint on analytical reading and essay structure — pass at 70% or better on the first try.', courseId: g56LaCourse.id, sortOrder: 3, kind: 'CHECKPOINT', passThresholdPercent: 70 },
+  });
+  let g56LaCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Analytical Reading & Writing', conceptId: g56LaCheckpoint.id } });
+  if (!g56LaCheckpointLesson) {
+    g56LaCheckpointLesson = await prisma.lesson.create({ data: { conceptId: g56LaCheckpoint.id, title: 'Checkpoint: Analytical Reading & Writing', description: "Let's see what you've learned!", sortOrder: 1, xpReward: 65 } });
+    await prisma.card.create({ data: { lessonId: g56LaCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Do your best! Think carefully about each question.' } });
+    const g56LaCheckpointQ1 = await makeQ(engSubject.id, g5Level.id, 'A cookbook explains step by step how to bake bread. What is the main purpose of this text?', [{ label: 'A', text: 'To inform / instruct', correct: true }, { label: 'B', text: 'To persuade', correct: false }, { label: 'C', text: 'To entertain with a story', correct: false }, { label: 'D', text: 'To express an opinion', correct: false }], 'Step-by-step instructions are meant to inform and instruct the reader.');
+    await prisma.card.create({ data: { lessonId: g56LaCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Think about the clues, then tap your answer.', questionId: g56LaCheckpointQ1.id } });
+    const g56LaCheckpointQ2 = await makeQ(engSubject.id, g5Level.id, 'Which sentence works best as a thesis statement for an essay about the importance of libraries?', [{ label: 'A', text: 'Libraries strengthen communities by providing free access to knowledge and resources.', correct: true }, { label: 'B', text: 'I visited the library on Tuesday.', correct: false }, { label: 'C', text: 'The library has many books.', correct: false }, { label: 'D', text: 'Some libraries are open late.', correct: false }], 'This sentence states a clear, arguable claim about why libraries matter.');
+    await prisma.card.create({ data: { lessonId: g56LaCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 3, cardType: 'CHECKPOINT', content: 'Look for a clear argument, then tap your answer.', questionId: g56LaCheckpointQ2.id } });
+  }
+
+  console.log('✅ Seeded Grades 5-6 Language Arts course');
+
+  // ─── New widget types demo: COORDINATE_PLOTTER + SHAPE_SHADING ───────────────
+  // A standalone course, deliberately not gated behind or inserted into
+  // algebra-foundations' existing chapter sequence — that sequence's
+  // CHECKPOINT gating has been exercised repeatedly this session and
+  // shouldn't be disturbed by unrelated new-widget-type verification content.
+  console.log('🌱 Seeding new-widget-types demo course...');
+
+  const widgetDemoCourse = await prisma.course.upsert({
+    where: { slug: 'coordinate-and-shape-practice' },
+    update: { gradeBand: 'G3_4', sortOrder: -2 },
+    create: {
+      learningSubjectId: mathLearningSubject.id,
+      title: 'Coordinate & Shape Practice',
+      slug: 'coordinate-and-shape-practice',
+      description: 'Plot points on a grid and shade shapes to represent fractions.',
+      estimatedHours: 1,
+      status: 'PUBLISHED',
+      // Negative, same reasoning as alphabet-and-phonics-basics above: this
+      // is the course under active testing right now, so it wins
+      // `courses?.[0]` (the mobile home screen's only "Keep learning" pick)
+      // ahead of everything else, including the K-6 pilot course.
+      sortOrder: -2,
+      gradeBand: 'G3_4',
+    },
+  });
+
+  const coordinateChapter = await prisma.concept.upsert({
+    where: { name: 'Plotting Points' },
+    update: { courseId: widgetDemoCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+    create: { name: 'Plotting Points', description: 'Tap grid intersections to plot coordinates.', courseId: widgetDemoCourse.id, sortOrder: 1, kind: 'CHAPTER' },
+  });
+
+  let triangleLesson = await prisma.lesson.findFirst({ where: { title: 'Plot a Triangle', conceptId: coordinateChapter.id } });
+  if (!triangleLesson) {
+    triangleLesson = await prisma.lesson.create({ data: { conceptId: coordinateChapter.id, title: 'Plot a Triangle', description: 'Plot the three vertices of a triangle.', sortOrder: 1, xpReward: 30 } });
+    await prisma.card.create({ data: { lessonId: triangleLesson.id, title: 'Plotting Vertices', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A triangle has 3 corners, called vertices. Tap the grid to plot each one.' } });
+    const plotterQ = await prisma.question.create({
+      data: {
+        subjectId: mathSubject.id,
+        levelId: gradeLevel.id,
+        questionType: 'interactive',
+        prompt: 'Plot the points (2, 2), (-2, 2), and (0, -2) to form a triangle.',
+        correctAnswer: null,
+        widgetType: 'COORDINATE_PLOTTER',
+        isGraded: true,
+        explanation: 'Each point is plotted by counting right/left for x, then up/down for y, from the origin.',
+        hints: ['Start at the center (0, 0), then count over and up or down.'],
+        widgetConfig: {
+          xRange: [-5, 5],
+          yRange: [-5, 5],
+          gridStep: 1,
+          correctPoints: [
+            { x: 2, y: 2 },
+            { x: -2, y: 2 },
+            { x: 0, y: -2 },
+          ],
+          tolerance: 0.3,
+        },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: triangleLesson.id, title: 'Plot the Triangle', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap the three points listed above.', questionId: plotterQ.id } });
+  }
+
+  const shadingChapter = await prisma.concept.upsert({
+    where: { name: 'Shading Shapes' },
+    update: { courseId: widgetDemoCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Shading Shapes', description: 'Tap regions to shade a fraction of a shape.', courseId: widgetDemoCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+  });
+
+  let barLesson = await prisma.lesson.findFirst({ where: { title: 'Color a Bar', conceptId: shadingChapter.id } });
+  if (!barLesson) {
+    barLesson = await prisma.lesson.create({ data: { conceptId: shadingChapter.id, title: 'Color a Bar', description: 'Shade part of a bar to match a fraction.', sortOrder: 1, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: barLesson.id, title: 'Fraction Bars', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A bar split into equal parts is another way to show a fraction.' } });
+    const barQ = await prisma.question.create({
+      data: {
+        subjectId: mathSubject.id,
+        levelId: gradeLevel.id,
+        questionType: 'interactive',
+        prompt: 'Color 2/4 of the bar.',
+        correctAnswer: null,
+        widgetType: 'SHAPE_SHADING',
+        isGraded: true,
+        explanation: 'Any 2 connected segments out of the 4 shade exactly half the bar.',
+        hints: ['Tap two segments next to each other.'],
+        widgetConfig: {
+          configVersion: 2,
+          mode: 'fixed',
+          shape: { kind: 'bar', regions: 4 },
+          targetNumerator: 2,
+          requireContiguous: true,
+        },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: barLesson.id, title: 'Shade the Bar', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap segments to color them in.', questionId: barQ.id } });
+  }
+
+  let hexLesson = await prisma.lesson.findFirst({ where: { title: 'Color a Hexagon', conceptId: shadingChapter.id } });
+  if (!hexLesson) {
+    hexLesson = await prisma.lesson.create({ data: { conceptId: shadingChapter.id, title: 'Color a Hexagon', description: 'Shade part of a hexagon to match a fraction.', sortOrder: 2, xpReward: 25 } });
+    await prisma.card.create({ data: { lessonId: hexLesson.id, title: 'Shapes Show Fractions Too', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A shape split into equal wedges can show a fraction, just like a bar or a pizza.' } });
+    const hexQ = await prisma.question.create({
+      data: {
+        subjectId: mathSubject.id,
+        levelId: gradeLevel.id,
+        questionType: 'interactive',
+        prompt: 'Color 1/2 of the hexagon.',
+        correctAnswer: null,
+        widgetType: 'SHAPE_SHADING',
+        isGraded: true,
+        explanation: 'A hexagon has 6 equal wedges — shading any 3 connected wedges covers exactly half.',
+        hints: ['Tap three wedges next to each other.'],
+        widgetConfig: {
+          configVersion: 2,
+          mode: 'fixed',
+          shape: { kind: 'polygon', regions: 6 },
+          targetNumerator: 3,
+          requireContiguous: true,
+        },
+      },
+    });
+    await prisma.card.create({ data: { lessonId: hexLesson.id, title: 'Shade the Hexagon', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap wedges to color them in.', questionId: hexQ.id } });
+  }
+
+  console.log('✅ Seeded new-widget-types demo course');
 
   // ─── Phase 3.5: Fully-unlocked test account (Charlotte) ──────────────────────
   // Seed-data only — no debug bypass code. Re-visiting a completed lesson

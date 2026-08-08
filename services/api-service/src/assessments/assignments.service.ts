@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { GuardianAccessService } from '../family/guardian-access.service';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import {
   CreateAssignmentDto,
   ListAssignmentsQueryDto,
@@ -21,7 +23,10 @@ import {
 
 @Injectable()
 export class AssignmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly guardianAccessService: GuardianAccessService,
+  ) {}
 
   async listAssignments(query: ListAssignmentsQueryDto = {}) {
     const pagination = normalizePagination(query);
@@ -52,12 +57,22 @@ export class AssignmentsService {
     return toPage(items, total, pagination);
   }
 
-  async getAssignment(id: string) {
+  async getAssignment(id: string, user: CurrentUserDto) {
     const assignment = await this.prisma.assessmentAssignment.findUnique({
       where: { id },
       select: assignmentSelect,
     });
-    return requireRecord(assignment, 'Assignment not found');
+    const resolved = requireRecord(assignment, 'Assignment not found');
+    // Class-wide assignments (no studentProfileId) aren't tied to an
+    // individual student, so there's no per-student ownership to check —
+    // matches the class-section schedule exemption in TimetableController.
+    if (resolved.studentProfileId) {
+      await this.guardianAccessService.assertCanAccessStudentRecord(
+        user,
+        resolved.studentProfileId,
+      );
+    }
+    return resolved;
   }
 
   async createAssignment(input: CreateAssignmentDto, actorUserId: string) {

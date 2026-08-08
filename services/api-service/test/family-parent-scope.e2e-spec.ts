@@ -24,7 +24,6 @@ describe('Family & parent portal scoping (e2e)', () => {
   let linkedGuardian: TestUser;
   let linkedGuardianProfileId: string;
   let unlinkedGuardian: TestUser;
-  let unlinkedGuardianProfileId: string;
   let familyId: string;
   const tag = `FP${Date.now()}`;
 
@@ -70,12 +69,11 @@ describe('Family & parent portal scoping (e2e)', () => {
       .expect(201);
     linkedGuardianProfileId = unwrap<{ id: string }>(linkedRes).id;
 
-    const unlinkedRes = await http()
+    await http()
       .post('/api/guardian-profiles')
       .set(asAdmin())
       .send({ userId: unlinkedGuardian.id, fullName: `E2E Guardian B ${tag}` })
       .expect(201);
-    unlinkedGuardianProfileId = unwrap<{ id: string }>(unlinkedRes).id;
   });
 
   it('links guardian A to the student with a relationship', async () => {

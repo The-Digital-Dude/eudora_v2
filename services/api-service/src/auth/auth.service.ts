@@ -250,7 +250,7 @@ export class AuthService {
       userAgent ?? null,
     );
 
-    const { password, ...result } = updatedUser;
+    const { password: _, ...result } = updatedUser;
     return {
       user: result,
       tokens,
@@ -304,7 +304,7 @@ export class AuthService {
       userAgent ?? null,
       ipAddress ?? null,
     );
-    const { password, ...result } = user;
+    const { password: _, ...result } = user;
     return {
       user: result,
       tokens,
@@ -561,7 +561,7 @@ export class AuthService {
     let payload: any;
     try {
       payload = this.jwtService.verify(refreshToken);
-    } catch (err) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -700,7 +700,7 @@ export class AuthService {
       userAgent,
     );
 
-    const { password, ...userWithoutPassword } = session.user;
+    const { password: _, ...userWithoutPassword } = session.user;
 
     return {
       user: userWithoutPassword,
@@ -722,7 +722,7 @@ export class AuthService {
     let payload: any;
     try {
       payload = this.jwtService.verify(refreshToken);
-    } catch (err) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -808,7 +808,7 @@ export class AuthService {
 
     await this.audit(userId, 'auth.password.changed', 'user', userId);
 
-    const { password, ...result } = updatedUser;
+    const { password: _, ...result } = updatedUser;
     return result;
   }
 

@@ -131,21 +131,18 @@ export default function BillingPage() {
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] font-bold text-muted-foreground">
-                      {plan.code}
-                    </span>
-                    <h3 className="font-display mt-1 text-base font-bold text-foreground">
+                    <h3 className="font-display text-base font-bold text-foreground">
                       {plan.name}
                     </h3>
                   </div>
                   <span
                     className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold ${
-                      plan.active
+                      plan.isActive
                         ? "border-success/20 bg-success/10 text-success"
                         : "border-border bg-muted text-muted-foreground"
                     }`}
                   >
-                    {plan.active ? "ACTIVE" : "INACTIVE"}
+                    {plan.isActive ? "ACTIVE" : "INACTIVE"}
                   </span>
                 </div>
 

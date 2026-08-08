@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GradebookService } from './gradebook.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { GradeBookEntryStatus, GradeSourceType } from '@prisma/client';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('GradebookService', () => {
   let service: GradebookService;
-  let prisma: PrismaService;
 
   const mockPrismaService: any = {
     studentProfile: {
@@ -46,7 +44,6 @@ describe('GradebookService', () => {
     }).compile();
 
     service = module.get<GradebookService>(GradebookService);
-    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 

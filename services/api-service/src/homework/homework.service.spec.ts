@@ -7,7 +7,6 @@ import { SubmissionStatus } from '@prisma/client';
 
 describe('HomeworkService', () => {
   let service: HomeworkService;
-  let prisma: PrismaService;
 
   const mockPrismaService = {
     courseClass: {
@@ -53,7 +52,6 @@ describe('HomeworkService', () => {
     }).compile();
 
     service = module.get<HomeworkService>(HomeworkService);
-    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 

@@ -2,9 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CatalogService } from './catalog.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProgressionService } from '../progression/progression.service';
 
 describe('CatalogService', () => {
   let service: CatalogService;
+
+  const mockProgressionService: any = {
+    resolveStudentProfileId: jest.fn(),
+    assertConceptUnlocked: jest.fn(),
+    computeConceptUnlockState: jest.fn(),
+    computeConceptDoneMap: jest.fn(),
+  };
 
   const mockPrismaService = {
     learningSubject: {
@@ -48,6 +56,7 @@ describe('CatalogService', () => {
       providers: [
         CatalogService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: ProgressionService, useValue: mockProgressionService },
       ],
     }).compile();
 

@@ -110,6 +110,7 @@ describe('CatalogService', () => {
     const course = {
       id: 'course-1',
       deletedAt: null,
+      status: 'PUBLISHED',
       learningSubject: { id: 'sub-1', name: 'Math' },
       concepts: [
         {
@@ -200,6 +201,7 @@ describe('CatalogService', () => {
     const courseWithCheckpoint = {
       id: 'course-2',
       deletedAt: null,
+      status: 'PUBLISHED',
       learningSubject: { id: 'sub-1', name: 'Math' },
       concepts: [
         {

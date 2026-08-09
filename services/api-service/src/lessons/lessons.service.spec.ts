@@ -103,6 +103,7 @@ describe('LessonsService', () => {
       id: 'card-1',
       lessonId: 'lesson-1',
       cardType: 'INTERACTIVE',
+      lesson: { conceptId: 'concept-1' },
       question: {
         id: 'q-1',
         questionType: 'mcq',

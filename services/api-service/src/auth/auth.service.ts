@@ -17,6 +17,13 @@ import { GoogleLoginDto } from './dto/google.dto';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
+/**
+ * How long a just-rotated refresh token stays acceptable. Long enough to cover
+ * a retried request or an app resuming mid-refresh, short enough that a stolen
+ * token is not meaningfully more useful for having this window.
+ */
+const REFRESH_ROTATION_GRACE_MS = 60 * 1000;
+
 @Injectable()
 export class AuthService {
   /** Relations every session-issuing path needs loaded on the user. */
@@ -243,7 +250,61 @@ export class AuthService {
       userAgent ?? null,
     );
 
-    const { password, ...result } = updatedUser;
+    const { password: _, ...result } = updatedUser;
+    return {
+      user: result,
+      tokens,
+    };
+  }
+
+  /**
+   * Mints a session for a user who has already been verified through some
+   * other means (currently: device-code pairing, approved from an
+   * already-authenticated phone session). Deliberately reuses
+   * createSessionTokens rather than duplicating token-minting logic — the
+   * "how did we verify identity" step is the only thing that differs from
+   * password login.
+   */
+  async mintSessionForVerifiedUser(
+    userId: string,
+    userAgent?: string | null,
+    ipAddress?: string | null,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        guardianProfile: {
+          include: {
+            students: true,
+          },
+        },
+        studentProfile: true,
+      },
+    });
+
+    if (!user || user.deletedAt || !user.isActive) {
+      throw new UnauthorizedException('Account is not available');
+    }
+
+    const tokens = await this.createSessionTokens(
+      user,
+      userAgent ?? null,
+      ipAddress ?? null,
+    );
+    const { password: _, ...result } = user;
     return {
       user: result,
       tokens,
@@ -500,7 +561,7 @@ export class AuthService {
     let payload: any;
     try {
       payload = this.jwtService.verify(refreshToken);
-    } catch (err) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -513,34 +574,44 @@ export class AuthService {
       .update(refreshToken)
       .digest('hex');
 
-    const session = await this.prisma.authSession.findUnique({
+    const sessionUserInclude = {
+      user: { include: AuthService.USER_SESSION_INCLUDE },
+    };
+
+    let session = await this.prisma.authSession.findUnique({
       where: { refreshTokenHash },
-      include: {
-        user: {
-          include: {
-            roles: {
-              include: {
-                role: {
-                  include: {
-                    permissions: {
-                      include: {
-                        permission: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            guardianProfile: {
-              include: {
-                students: true,
-              },
-            },
-            studentProfile: true,
+      include: sessionUserInclude,
+    });
+
+    if (!session) {
+      // The hash matches no *current* session, but it may be the one we rotated
+      // away moments ago. A client whose refresh request was retried — dropped
+      // response, app resumed mid-flight, two tabs racing — legitimately holds
+      // that token. Honour it briefly rather than treating it as theft, because
+      // the containment below logs the user out of every device they own.
+      session = await this.prisma.authSession.findFirst({
+        where: {
+          previousRefreshTokenHash: refreshTokenHash,
+          userId: payload.sub,
+          revokedAt: null,
+          rotatedAt: {
+            gte: new Date(Date.now() - REFRESH_ROTATION_GRACE_MS),
           },
         },
-      },
-    });
+        include: sessionUserInclude,
+      });
+
+      if (session) {
+        await this.audit(
+          payload.sub,
+          'auth.refresh.grace_reuse',
+          'user',
+          payload.sub,
+          ipAddress,
+          userAgent,
+        );
+      }
+    }
 
     if (!session) {
       // The token is validly signed (verified above) but its hash matches no
@@ -586,6 +657,10 @@ export class AuthService {
     const refreshPayload = {
       sub: session.user.id,
       typ: 'refresh',
+      // Same reason as the initial mint in createSessionTokens: iat only has
+      // second granularity, so without jti two rotations within the same second
+      // produce identical tokens and collide on the unique refreshTokenHash.
+      jti: crypto.randomUUID(),
     };
 
     const accessTokenExpiresInSeconds = 15 * 60;
@@ -608,6 +683,8 @@ export class AuthService {
       where: { id: session.id },
       data: {
         refreshTokenHash: newRefreshTokenHash,
+        previousRefreshTokenHash: session.refreshTokenHash,
+        rotatedAt: new Date(),
         userAgent: userAgent ?? session.userAgent,
         ipAddress: ipAddress ?? session.ipAddress,
         expiresAt: new Date(Date.now() + refreshTokenExpiresInSeconds * 1000),
@@ -623,7 +700,7 @@ export class AuthService {
       userAgent,
     );
 
-    const { password, ...userWithoutPassword } = session.user;
+    const { password: _, ...userWithoutPassword } = session.user;
 
     return {
       user: userWithoutPassword,
@@ -645,7 +722,7 @@ export class AuthService {
     let payload: any;
     try {
       payload = this.jwtService.verify(refreshToken);
-    } catch (err) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -731,7 +808,7 @@ export class AuthService {
 
     await this.audit(userId, 'auth.password.changed', 'user', userId);
 
-    const { password, ...result } = updatedUser;
+    const { password: _, ...result } = updatedUser;
     return result;
   }
 

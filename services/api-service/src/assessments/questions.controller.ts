@@ -18,6 +18,7 @@ import {
   AddAssessmentQuestionDto,
   CreateQuestionDto,
   ListQuestionsQueryDto,
+  PreviewWidgetInstanceDto,
   UpdateAssessmentQuestionDto,
   UpdateQuestionDto,
 } from './dto/assessments.dto';
@@ -40,6 +41,12 @@ export class QuestionsController {
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
   async getQuestion(@Param('id') id: string) {
     return this.questionsService.getQuestion(id);
+  }
+
+  @Post('questions/preview-widget-instance')
+  @RequirePermissions({ action: 'manage', subject: 'Assessment' })
+  previewWidgetInstance(@Body() body: PreviewWidgetInstanceDto) {
+    return this.questionsService.previewWidgetInstance(body);
   }
 
   @Post('questions')

@@ -1,10 +1,13 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GradebookService } from '../gradebook/gradebook.service';
+import { GuardianAccessService } from '../family/guardian-access.service';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import {
   CreateAttemptDto,
   ListAttemptsQueryDto,
@@ -12,6 +15,7 @@ import {
   UpdateAttemptDto,
 } from './dto/assessments.dto';
 import {
+  attemptQuestionsSelect,
   attemptSelect,
   autoMarkResponse,
   emptyToNull,
@@ -25,15 +29,61 @@ import {
   requireRecord,
   requireText,
   toPage,
+  toStudentSafeAttemptQuestions,
   audit,
 } from './assessments.common';
+import { deriveSeed } from '../common/widgets/seed.util';
+
+const STAFF_ROLES = new Set(['SUPER_ADMIN', 'ADMIN', 'TEACHER']);
 
 @Injectable()
 export class AttemptsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gradebookService: GradebookService,
+    private readonly guardianAccessService: GuardianAccessService,
   ) {}
+
+  /**
+   * Student-safe question list for an in-progress attempt — ownership-
+   * checked (staff may preview any attempt; a student may only read their
+   * own), with each question's widget instance regenerated from the same
+   * seed `submitResponse`/`autoMarkResponse` will grade against.
+   */
+  async getAttemptQuestions(
+    id: string,
+    userId: string,
+    roles: string[],
+  ) {
+    const attempt = await this.prisma.assessmentAttempt.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        studentProfileId: true,
+        assignment: { select: { assessmentId: true } },
+      },
+    });
+    requireRecord(attempt, 'Attempt not found');
+
+    const isStaff = roles.some((r) => STAFF_ROLES.has(r));
+    if (!isStaff) {
+      const student = await this.prisma.studentProfile.findUnique({
+        where: { userId },
+        select: { id: true },
+      });
+      if (!student || student.id !== attempt!.studentProfileId) {
+        throw new ForbiddenException("You don't have access to this attempt");
+      }
+    }
+
+    const questions = await this.prisma.assessmentQuestion.findMany({
+      where: { assessmentId: attempt!.assignment.assessmentId },
+      orderBy: [{ section: { sortOrder: 'asc' } }, { questionNumber: 'asc' }],
+      select: attemptQuestionsSelect,
+    });
+
+    return toStudentSafeAttemptQuestions(questions, id);
+  }
 
   async listAttempts(query: ListAttemptsQueryDto = {}) {
     const pagination = normalizePagination(query);
@@ -61,12 +111,17 @@ export class AttemptsService {
     return toPage(items, total, pagination);
   }
 
-  async getAttempt(id: string) {
+  async getAttempt(id: string, user: CurrentUserDto) {
     const attempt = await this.prisma.assessmentAttempt.findUnique({
       where: { id },
       select: attemptSelect,
     });
-    return requireRecord(attempt, 'Attempt not found');
+    const resolved = requireRecord(attempt, 'Attempt not found');
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      resolved.studentProfileId,
+    );
+    return resolved;
   }
 
   async startAttempt(input: CreateAttemptDto, actorUserId: string) {
@@ -79,6 +134,7 @@ export class AttemptsService {
         studentProfileId: true,
         classSectionId: true,
         status: true,
+        assessment: { select: { maxAttempts: true } },
       },
     });
     const resolvedAssignment = requireRecord(
@@ -117,6 +173,12 @@ export class AttemptsService {
       const existingCount = await tx.assessmentAttempt.count({
         where: { assessmentAssignmentId: resolvedAssignment.id },
       });
+      const maxAttempts = resolvedAssignment.assessment?.maxAttempts;
+      if (maxAttempts != null && existingCount >= maxAttempts) {
+        throw new ConflictException(
+          `Maximum of ${maxAttempts} attempt(s) already used for this assessment`,
+        );
+      }
       await tx.assessmentAttempt.updateMany({
         where: {
           assessmentAssignmentId: resolvedAssignment.id,
@@ -154,8 +216,18 @@ export class AttemptsService {
   async updateAttempt(
     id: string,
     input: UpdateAttemptDto,
-    actorUserId: string,
+    user: CurrentUserDto,
   ) {
+    const actorUserId = user.id;
+    const existing = await this.prisma.assessmentAttempt.findUnique({
+      where: { id },
+      select: { studentProfileId: true },
+    });
+    const resolvedExisting = requireRecord(existing, 'Attempt not found');
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      resolvedExisting.studentProfileId,
+    );
     const maxScore =
       input.maxScore === undefined
         ? undefined
@@ -216,7 +288,17 @@ export class AttemptsService {
     return attempt;
   }
 
-  async submitAttempt(id: string, actorUserId: string) {
+  async submitAttempt(id: string, user: CurrentUserDto) {
+    const actorUserId = user.id;
+    const existing = await this.prisma.assessmentAttempt.findUnique({
+      where: { id },
+      select: { studentProfileId: true },
+    });
+    const resolvedExisting = requireRecord(existing, 'Attempt not found');
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      resolvedExisting.studentProfileId,
+    );
     const attempt = await this.recalculateAttempt(id, {
       resultStatus: 'submitted',
       submittedAt: new Date(),
@@ -292,6 +374,7 @@ export class AttemptsService {
       where: { assessmentAttemptId },
       select: {
         id: true,
+        questionId: true,
         selectedOptionId: true,
         responseText: true,
         interactionState: true,
@@ -315,6 +398,7 @@ export class AttemptsService {
           response.responseText,
           response.interactionState as any,
           response.marksAvailable,
+          deriveSeed(assessmentAttemptId, response.questionId),
         );
         if (marked.isCorrect === undefined) {
           return Promise.resolve();

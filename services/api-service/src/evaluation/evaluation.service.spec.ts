@@ -1,12 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EvaluationService } from './evaluation.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { GuardianAccessService } from '../family/guardian-access.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { EvidenceSourceType } from '@prisma/client';
 
 describe('EvaluationService', () => {
   let service: EvaluationService;
-  let prisma: PrismaService;
+
+  const mockGuardianAccessService: any = {
+    getLinkedStudentIds: jest.fn(),
+    assertCanAccessStudent: jest.fn(),
+    assertCanAccessStudentRecord: jest.fn(),
+    getGuardianFamilyId: jest.fn(),
+  };
 
   const mockPrismaService: any = {
     concept: {
@@ -65,11 +71,14 @@ describe('EvaluationService', () => {
           provide: PrismaService,
           useValue: mockPrismaService,
         },
+        {
+          provide: GuardianAccessService,
+          useValue: mockGuardianAccessService,
+        },
       ],
     }).compile();
 
     service = module.get<EvaluationService>(EvaluationService);
-    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 

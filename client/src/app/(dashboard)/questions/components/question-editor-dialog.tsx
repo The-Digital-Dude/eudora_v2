@@ -102,7 +102,20 @@ export function QuestionEditorDialog({
     setWidgetType(type);
 
     // Seed initial sensible widget configurations
-    if (type === "SLIDER_MANIPULATIVE") {
+    if (type === "STANDARD_MCQ") {
+      setWidgetConfig({
+        configVersion: 2,
+        mode: "parameterized",
+        params: {
+          given: { a: { min: 2, max: 9 }, b: { min: 1, max: 20 } },
+          secret: { x: { min: 1, max: 10 } },
+          derived: { c: "a * x + b" },
+        },
+        display: { template: "Solve: {a}x + {b} = {c}. What is x?" },
+        answerKey: { correct: "x" },
+        distractors: [{ expr: "x + 1" }, { expr: "x - 1" }],
+      });
+    } else if (type === "SLIDER_MANIPULATIVE") {
       setWidgetConfig({ min: 0, max: 100, step: 1, unit: "", correctValue: 50 });
     } else if (type === "DRAG_AND_DROP_LABELS") {
       setWidgetConfig({ labels: ["A", "B", "C"], targets: [] });
@@ -138,10 +151,16 @@ export function QuestionEditorDialog({
     if (!levelId) return toast.error("Please select a level.");
     if (!prompt.trim()) return toast.error("Prompt cannot be empty.");
 
-    // MCQ Validation
+    // MCQ Validation — a parameterized MCQ widget generates its own options
+    // per attempt, so the fixed Answer Options list doesn't apply to it.
+    const isParameterizedMcq = questionType === "mcq" && widgetType === "STANDARD_MCQ";
     if (questionType === "mcq" && !widgetType) {
       if (options.length < 2) return toast.error("MCQ questions require at least 2 options.");
       if (!options.some((o) => o.isCorrect)) return toast.error("Please mark at least one option as correct.");
+    }
+    if (isParameterizedMcq) {
+      if (!widgetConfig?.answerKey?.correct) return toast.error("Select which variable holds the correct answer.");
+      if (!widgetConfig?.distractors?.length) return toast.error("Add at least one distractor formula.");
     }
 
     const payload: Partial<Question> = {
@@ -335,14 +354,18 @@ export function QuestionEditorDialog({
               />
             </div>
 
-            {/* Conditional Type Fields */}
-            <QuestionTypeFields
-              questionType={questionType}
-              options={options}
-              onOptionsChange={setOptions}
-              correctAnswer={correctAnswer}
-              onCorrectAnswerChange={setCorrectAnswer}
-            />
+            {/* Conditional Type Fields — a parameterized MCQ widget owns its
+                own generated options, so the fixed options editor doesn't
+                apply and is hidden below (see the widget config form instead). */}
+            {!(questionType === "mcq" && widgetType === "STANDARD_MCQ") && (
+              <QuestionTypeFields
+                questionType={questionType}
+                options={options}
+                onOptionsChange={setOptions}
+                correctAnswer={correctAnswer}
+                onCorrectAnswerChange={setCorrectAnswer}
+              />
+            )}
 
             {/* Interactive Widget Selector */}
             <div className="space-y-1.5">
@@ -361,6 +384,7 @@ export function QuestionEditorDialog({
                   <SelectItem value="COORDINATE_PLOTTER">Coordinate Plotter</SelectItem>
                   <SelectItem value="GRID_MATCHING">Grid Matching</SelectItem>
                   <SelectItem value="CODE_PLAYGROUND">Code Playground</SelectItem>
+                  <SelectItem value="SHAPE_SHADING">Shape Shading</SelectItem>
                 </SelectContent>
               </Select>
             </div>

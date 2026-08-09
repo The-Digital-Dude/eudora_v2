@@ -17,6 +17,8 @@ export interface WidgetSelectorProps {
   onStateChange: (newState: any) => void;
   locked: boolean;
   isCorrect?: boolean | null;
+  // Correct-answer reveal data, only present after an incorrect submission.
+  correctReveal?: { correctValue?: number };
 }
 
 export function WidgetSelector({
@@ -25,6 +27,7 @@ export function WidgetSelector({
   onStateChange,
   locked,
   isCorrect,
+  correctReveal,
 }: WidgetSelectorProps) {
   const widgetType = question.widgetType ?? "STANDARD_MCQ";
 
@@ -47,6 +50,8 @@ export function WidgetSelector({
           value={currentState?.finalValue ?? question.widgetConfig?.min ?? 0}
           onChange={(val) => onStateChange({ finalValue: val })}
           locked={locked}
+          isCorrect={isCorrect}
+          correctValue={correctReveal?.correctValue}
         />
       );
 

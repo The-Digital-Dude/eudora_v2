@@ -1,10 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LessonsService } from './lessons.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProgressionService } from '../progression/progression.service';
 
 describe('LessonsService', () => {
   let service: LessonsService;
-  let prisma: PrismaService;
+
+  const mockProgressionService: any = {
+    resolveStudentProfileId: jest.fn(),
+    assertConceptUnlocked: jest.fn(),
+    computeConceptUnlockState: jest.fn(),
+    computeConceptDoneMap: jest.fn(),
+  };
 
   const mockPrismaService = {
     lesson: {
@@ -56,11 +63,14 @@ describe('LessonsService', () => {
           provide: PrismaService,
           useValue: mockPrismaService,
         },
+        {
+          provide: ProgressionService,
+          useValue: mockProgressionService,
+        },
       ],
     }).compile();
 
     service = module.get<LessonsService>(LessonsService);
-    prisma = module.get<PrismaService>(PrismaService);
 
     jest.clearAllMocks();
   });
@@ -93,6 +103,7 @@ describe('LessonsService', () => {
       id: 'card-1',
       lessonId: 'lesson-1',
       cardType: 'INTERACTIVE',
+      lesson: { conceptId: 'concept-1' },
       question: {
         id: 'q-1',
         questionType: 'mcq',

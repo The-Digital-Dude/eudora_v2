@@ -9,11 +9,22 @@ import {
   Source_Serif_4,
 } from "next/font/google";
 
+import { StructuredData } from "@/components/structured-data";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SITE_NAME, SITE_URL } from "@/config/site";
 import { SidebarConfigProvider } from "@/contexts/sidebar-context";
 import { ThemeSettingsProvider } from "@/contexts/theme-settings-context";
 
 import Providers from "./providers";
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITE_NAME,
+  url: SITE_URL,
+  description:
+    "AI-powered education operating system: personalized learning paths, automated grading, and school administration in one place.",
+};
 
 // Curated font set — each exposes its own CSS variable so the customizer can
 // swap --font-sans / --font-display between them at runtime.
@@ -32,18 +43,37 @@ const fontVariables = [
 ].join(" ");
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Eudora — Education OS",
     template: "%s | Eudora",
   },
   description:
     "AI-powered education operating system: personalized learning paths, automated grading, and school administration in one place.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: "Eudora — Education OS",
+    description:
+      "AI-powered education operating system: personalized learning paths, automated grading, and school administration in one place.",
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Eudora — Education OS",
+    description:
+      "AI-powered education operating system: personalized learning paths, automated grading, and school administration in one place.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={fontVariables}>
       <body className="bg-background text-foreground min-h-screen font-sans antialiased">
+        <StructuredData data={organizationJsonLd} />
         <ThemeProvider defaultTheme="system" storageKey="eudora-admin-theme">
           <ThemeSettingsProvider>
             <SidebarConfigProvider>

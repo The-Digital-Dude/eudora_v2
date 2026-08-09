@@ -9,9 +9,16 @@ import {
 import { GuardianStatus } from '@prisma/client';
 
 export class CreateGuardianProfileDto {
+  // Optional at the DTO-validation layer, not just in practice: the
+  // controller forces this to the caller's own id for a GUARDIAN-only
+  // caller (family.controller.ts:createGuardianProfile), but that override
+  // runs *after* class-validator, so a self-service client that correctly
+  // omits userId (it has no business supplying one) was rejected before the
+  // override ever ran. Admin/super-admin callers still must supply a real
+  // one — nothing defaults it for them.
   @IsUUID()
-  @IsNotEmpty()
-  userId: string;
+  @IsOptional()
+  userId?: string;
 
   @IsString()
   @IsNotEmpty()

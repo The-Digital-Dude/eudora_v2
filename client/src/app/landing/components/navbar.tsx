@@ -54,12 +54,12 @@ export default function Navbar() {
           >
             Analytics
           </a>
-          <a
-            href="/docs"
+          <Link
+            href="/pricing"
             className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
-            Documentation
-          </a>
+            Pricing
+          </Link>
         </nav>
 
         {/* Right CTA Links */}

@@ -37,6 +37,8 @@ model User {
   assignedAssignments     AssessmentAssignment[] @relation("AssignedAssignments")
   markedAttempts          AssessmentAttempt[]    @relation("MarkedAttempts")
   notifications           Notification[]
+  deviceTokens            DeviceToken[]
+  devicePairingCodes      DevicePairingCode[]
   fileUploads             FileUpload[]
   guardianThreads         MessageThread[]        @relation("GuardianThreads")
   teacherThreads          MessageThread[]        @relation("TeacherThreads")
@@ -347,6 +349,12 @@ model StudentProfile {
   birthDate   DateTime
   gender      Gender
   status      StudentStatus @default(ACTIVE)
+  // Self-service profile-completion fields (mobile/web Settings) — nullable
+  // because every existing StudentProfile was created without them.
+  phone                  String?
+  address                String?
+  emergencyContactName   String?
+  emergencyContactPhone  String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   deletedAt   DateTime?
@@ -374,6 +382,8 @@ model StudentProfile {
   learningGaps             LearningGap[]
   nextActions              NextAction[]
   placementRecommendations PlacementRecommendation[]
+  moduleItemProgress       ModuleItemProgress[]
+  discussionPosts          DiscussionPost[]
 
   @@map("student_profiles")
 }
@@ -755,17 +765,207 @@ enum EvidenceSourceType {
   CLASSROOM_ACTIVITY
 }
 
-model Concept {
+// ─── Learning Catalog ───────────────────────────────────────────────────────
+
+enum CatalogStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PathUnlockMode {
+  FREE_ROAM
+  SEQUENTIAL
+}
+
+enum ConceptKind {
+  CHAPTER
+  CHECKPOINT
+}
+
+model LearningSubject {
   id          String   @id @default(uuid())
-  name        String   @unique
+  code        String   @unique
+  name        String
   description String?
+  icon        String?
+  sortOrder   Int      @default(0)
+  status      String   @default("active")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  courses Course[]
+  paths   LearningPath[]
+
+  @@map("learning_subjects")
+}
+
+/// K-6 grade-band tag on a Course — added for the K-6 curriculum expansion.
+/// One Course already represents "one subject's worth of content at one
+/// level" (e.g. `algebra-foundations` implicitly targets Grade 5-6), so
+/// Course is the natural granularity for this rather than tagging Concept
+/// or LearningSubject.
+enum GradeBand {
+  PRE_K_K
+  G1_2
+  G3_4
+  G5_6
+}
+
+model Course {
+  id                String        @id @default(uuid())
+  learningSubjectId String
+  title             String
+  slug              String        @unique
+  description       String?
+  estimatedHours    Int?
+  status            CatalogStatus @default(DRAFT)
+  sortOrder         Int           @default(0)
+  gradeBand         GradeBand?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+  deletedById       String?
+
+  learningSubject LearningSubject      @relation(fields: [learningSubjectId], references: [id], onDelete: Cascade)
+  concepts        Concept[]
+  pathCourses     LearningPathCourse[]
+
+  @@map("courses")
+}
+
+model LearningPath {
+  id                String         @id @default(uuid())
+  learningSubjectId String
+  title             String
+  slug              String         @unique
+  description       String?
+  unlockMode        PathUnlockMode @default(SEQUENTIAL)
+  status            CatalogStatus  @default(DRAFT)
+  sortOrder         Int            @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  learningSubject LearningSubject      @relation(fields: [learningSubjectId], references: [id], onDelete: Cascade)
+  pathCourses     LearningPathCourse[]
+
+  @@map("learning_paths")
+}
+
+model LearningPathCourse {
+  id         String   @id @default(uuid())
+  pathId     String
+  courseId   String
+  sortOrder  Int      @default(0)
+  isRequired Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  path   LearningPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([pathId, courseId])
+  @@map("learning_path_courses")
+}
+
+model Concept {
+  id                   String      @id @default(uuid())
+  name                 String      @unique
+  description          String?
+  courseId             String?
+  sortOrder            Int         @default(1)
+  kind                 ConceptKind @default(CHAPTER)
+  passThresholdPercent Int?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
   competencies Competency[]
   lessons      Lesson[]
+  items        ModuleItem[]
 
   @@map("concepts")
+}
+
+// ─── Coursera-style Module Items ─────────────────────────────────────────────
+// A second, coexisting content shape alongside Concept -> Lesson -> Card: a
+// module (Concept) can also hold a flat, ordered sequence of ModuleItems —
+// Video/Reading/Discussion/Assessment today. Deliberately no LESSON kind yet
+// (folding existing Lesson/Card content in as a 5th kind is future work);
+// enums are additive-safe so it can be appended later without a migration.
+
+enum ModuleItemKind {
+  VIDEO
+  READING
+  DISCUSSION
+  ASSESSMENT
+}
+
+model ModuleItem {
+  id                   String         @id @default(uuid())
+  conceptId            String
+  kind                 ModuleItemKind
+  title                String
+  sortOrder            Int            @default(1)
+  status               CatalogStatus  @default(DRAFT)
+  videoUrl             String?
+  videoDurationSeconds Int?
+  readingContent       String?
+  assessmentId         String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  deletedAt            DateTime?
+
+  concept    Concept              @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  assessment Assessment?          @relation(fields: [assessmentId], references: [id], onDelete: SetNull)
+  progress   ModuleItemProgress[]
+  discussion DiscussionThread?
+
+  @@map("module_items")
+}
+
+model ModuleItemProgress {
+  id                  String    @id @default(uuid())
+  moduleItemId        String
+  studentProfileId    String
+  completedAt         DateTime?
+  lastPositionSeconds Int?
+  notes               String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  moduleItem     ModuleItem     @relation(fields: [moduleItemId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleItemId, studentProfileId])
+  @@map("module_item_progress")
+}
+
+model DiscussionThread {
+  id           String   @id @default(uuid())
+  moduleItemId String   @unique
+  prompt       String
+  createdAt    DateTime @default(now())
+
+  moduleItem ModuleItem       @relation(fields: [moduleItemId], references: [id], onDelete: Cascade)
+  posts      DiscussionPost[]
+
+  @@map("discussion_threads")
+}
+
+model DiscussionPost {
+  id                 String   @id @default(uuid())
+  discussionThreadId String
+  studentProfileId   String
+  parentPostId       String?
+  body               String
+  createdAt          DateTime @default(now())
+
+  thread         DiscussionThread @relation(fields: [discussionThreadId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  parentPost     DiscussionPost?  @relation("Replies", fields: [parentPostId], references: [id], onDelete: SetNull)
+  replies        DiscussionPost[] @relation("Replies")
+
+  @@map("discussion_posts")
 }
 
 model Competency {
@@ -1007,6 +1207,12 @@ model AuthSession {
   id               String    @id @default(uuid())
   userId           String
   refreshTokenHash String    @unique
+  // The hash rotated away on the most recent refresh, kept only long enough to
+  // recognise a benign retry (network flake, app resumed mid-refresh) and tell
+  // it apart from genuine token theft. Not unique: a replayed hash may briefly
+  // coexist across rows, and colliding here would 500 rather than authenticate.
+  previousRefreshTokenHash String?
+  rotatedAt                DateTime?
   userAgent        String?
   ipAddress        String?
   createdAt        DateTime  @default(now())
@@ -1017,6 +1223,7 @@ model AuthSession {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([previousRefreshTokenHash])
   @@map("auth_sessions")
 }
 
@@ -1085,9 +1292,12 @@ model Assessment {
   termId                   String?
   weekNumber               Int?
   title                    String
+  description              String?
   totalMarks               Int       @default(0)
   estimatedDurationMinutes Int       @default(0)
   status                   String    @default("draft") // draft, published, archived
+  countsTowardGrade        Boolean   @default(true)
+  maxAttempts              Int? // null = unlimited (matches today's real unconditional behavior)
   publishedAt              DateTime?
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
@@ -1102,6 +1312,7 @@ model Assessment {
   sections    AssessmentSection[]
   questions   AssessmentQuestion[]
   assignments AssessmentAssignment[]
+  moduleItems ModuleItem[]
 
   @@map("assessments")
 }
@@ -1378,6 +1589,7 @@ enum WidgetType {
   CODE_PLAYGROUND
   GRID_MATCHING
   STANDARD_MCQ
+  SHAPE_SHADING
 }
 
 model Lesson {
@@ -1498,6 +1710,55 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+/**
+ * One row per (user, installation) — a user signed into the app on two
+ * phones holds two rows. `token` is unique on its own (not composite with
+ * userId) because Expo push tokens are reissued per-install, not per-user;
+ * registering the same token again just re-points it, e.g. after a
+ * different account logs into the same device.
+ */
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  platform  String // 'ios' | 'android' | 'web'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("device_tokens")
+}
+
+enum DevicePairingStatus {
+  PENDING
+  APPROVED
+  EXPIRED
+}
+
+/// A TV/device pairing code, used to authenticate a D-pad-only device (no
+/// Play Services, no usable on-screen keyboard) by having the user approve
+/// it from an already-authenticated phone session instead of typing a
+/// password. See auth/device-pairing.service.ts.
+model DevicePairingCode {
+  id             String              @id @default(uuid())
+  /// Short, human-typeable code shown on the TV and entered on the phone.
+  code           String              @unique
+  /// SHA-256 hash of the long polling secret the TV holds — kept hashed at
+  /// rest for the same reason AuthSession.refreshTokenHash is: this secret,
+  /// once approved, is equivalent to a login credential for the pairing user.
+  deviceCodeHash String              @unique
+  status         DevicePairingStatus @default(PENDING)
+  userId         String?
+  expiresAt      DateTime
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("device_pairing_codes")
 }
 
 model FileUpload {

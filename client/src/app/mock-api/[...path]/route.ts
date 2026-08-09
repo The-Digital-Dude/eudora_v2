@@ -283,6 +283,13 @@ async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] 
     }
   }
 
+  // Mirrors @Public() on PlanController in the real API — the marketing
+  // pricing page fetches this anonymously, so it can't sit behind the
+  // blanket auth gate below.
+  if (p0 === "billing" && p1 === "plans" && p2 === "public" && method === "GET") {
+    return ok(d.billingPlans.filter((p: any) => p.isActive && p.isPublic));
+  }
+
   if (!me) return fail(401, "UNAUTHORIZED", "Not signed in");
 
   // ── Dashboard snapshot (role-aware superset) ──
@@ -352,7 +359,7 @@ async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] 
   }
   if (p0 === "billing" && p1 === "plans") {
     if (method === "POST") {
-      const plan = { id: uid("bp"), active: true, currency: "USD", createdAt: nowIso(), updatedAt: nowIso(), ...body };
+      const plan = { id: uid("bp"), isActive: true, isPublic: true, features: [], currency: "USD", createdAt: nowIso(), updatedAt: nowIso(), ...body };
       d.billingPlans.push(plan);
       return ok(plan, { status: 201 });
     }

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { GamificationService } from './gamification.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -27,5 +27,10 @@ export class GamificationController {
   @Get('me/badges')
   async getBadges(@CurrentUser() user: CurrentUserDto) {
     return this.gamificationService.getBadges(user.id);
+  }
+
+  @Get('today')
+  async getToday(@CurrentUser() user: CurrentUserDto) {
+    return this.gamificationService.getToday(user.id);
   }
 }

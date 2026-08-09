@@ -4,13 +4,22 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateConceptDto, CreateCompetencyDto } from './dto/curriculum.dto';
+import { GuardianAccessService } from '../family/guardian-access.service';
+import { CurrentUserDto } from '../auth/dto/current-user.dto';
+import {
+  CreateConceptDto,
+  UpdateConceptDto,
+  CreateCompetencyDto,
+} from './dto/curriculum.dto';
 import { CreateRubricDto } from './dto/rubric.dto';
 import { RecordEvidenceDto, CreateAssessmentDto } from './dto/assessment.dto';
 
 @Injectable()
 export class EvaluationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly guardianAccessService: GuardianAccessService,
+  ) {}
 
   // ─── Concept Operations ──────────────────────────────────────────────────────
 
@@ -26,9 +35,13 @@ export class EvaluationService {
     });
   }
 
-  async getConcepts() {
+  async getConcepts(courseId?: string) {
     return this.prisma.concept.findMany({
-      orderBy: { name: 'asc' },
+      where: courseId ? { courseId } : {},
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      include: {
+        course: { select: { id: true, title: true } },
+      },
     });
   }
 
@@ -43,6 +56,28 @@ export class EvaluationService {
       throw new NotFoundException('Concept not found');
     }
     return concept;
+  }
+
+  async updateConcept(id: string, dto: UpdateConceptDto) {
+    const concept = await this.prisma.concept.findUnique({ where: { id } });
+    if (!concept) {
+      throw new NotFoundException('Concept not found');
+    }
+    return this.prisma.concept.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description }
+          : {}),
+        ...(dto.courseId !== undefined ? { courseId: dto.courseId } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+        ...(dto.kind !== undefined ? { kind: dto.kind } : {}),
+        ...(dto.passThresholdPercent !== undefined
+          ? { passThresholdPercent: dto.passThresholdPercent }
+          : {}),
+      },
+    });
   }
 
   // ─── Competency Operations ───────────────────────────────────────────────────
@@ -318,7 +353,7 @@ export class EvaluationService {
     });
   }
 
-  async getAssessmentById(id: string) {
+  async getAssessmentById(id: string, user: CurrentUserDto) {
     const assessment = await this.prisma.rubricAssessment.findUnique({
       where: { id },
       include: {
@@ -335,6 +370,10 @@ export class EvaluationService {
     if (!assessment) {
       throw new NotFoundException('Rubric assessment not found');
     }
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      assessment.evidence.studentProfileId,
+    );
     return assessment;
   }
 
@@ -397,13 +436,17 @@ export class EvaluationService {
     });
   }
 
-  async getStudentMasterySheet(studentProfileId: string) {
+  async getStudentMasterySheet(studentProfileId: string, user: CurrentUserDto) {
     const student = await this.prisma.studentProfile.findUnique({
       where: { id: studentProfileId },
     });
     if (!student) {
       throw new NotFoundException('Student profile not found');
     }
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      studentProfileId,
+    );
 
     return this.prisma.competencyMastery.findMany({
       where: { studentProfileId },
@@ -425,6 +468,7 @@ export class EvaluationService {
   async getStudentCompetencyHistory(
     studentProfileId: string,
     competencyId: string,
+    user: CurrentUserDto,
   ) {
     const student = await this.prisma.studentProfile.findUnique({
       where: { id: studentProfileId },
@@ -432,6 +476,10 @@ export class EvaluationService {
     if (!student) {
       throw new NotFoundException('Student profile not found');
     }
+    await this.guardianAccessService.assertCanAccessStudentRecord(
+      user,
+      studentProfileId,
+    );
 
     const competency = await this.prisma.competency.findUnique({
       where: { id: competencyId },

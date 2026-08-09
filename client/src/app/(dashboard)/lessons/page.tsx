@@ -249,6 +249,20 @@ export default function LessonAuthoringPage() {
     toast.success("Question unbound from card.");
   };
 
+  // Group concepts by their catalog course so authors can see chapter context
+  const conceptGroups = React.useMemo(() => {
+    const groups = new Map<string, { label: string; items: typeof concepts }>();
+    for (const concept of concepts ?? []) {
+      const key = concept.course?.id ?? "uncategorized";
+      const label = concept.course?.title ?? "Uncategorized";
+      if (!groups.has(key)) {
+        groups.set(key, { label, items: [] as any });
+      }
+      groups.get(key)!.items!.push(concept);
+    }
+    return Array.from(groups.values());
+  }, [concepts]);
+
   // Filter lessons
   const filteredLessons = (lessons ?? []).filter((l) => {
     const title = l.title.toLowerCase();
@@ -612,10 +626,14 @@ export default function LessonAuthoringPage() {
               className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
             >
               <option value="all">All Concepts</option>
-              {(concepts ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
+              {conceptGroups.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.items!.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
 
@@ -768,10 +786,14 @@ export default function LessonAuthoringPage() {
                   <option value="" disabled>
                     Select Curriculum Concept
                   </option>
-                  {(concepts ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
+                  {conceptGroups.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.items!.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               )}

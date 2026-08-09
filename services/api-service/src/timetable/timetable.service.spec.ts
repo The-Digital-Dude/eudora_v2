@@ -5,7 +5,6 @@ import { DayOfWeek } from '@prisma/client';
 
 describe('TimetableConflictService', () => {
   let service: TimetableConflictService;
-  let prisma: PrismaService;
 
   const mockPrismaService = {
     timetable: {
@@ -28,7 +27,6 @@ describe('TimetableConflictService', () => {
     }).compile();
 
     service = module.get<TimetableConflictService>(TimetableConflictService);
-    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 

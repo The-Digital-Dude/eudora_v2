@@ -6,33 +6,17 @@ export default function Footer() {
     {
       title: "Product",
       links: [
-        { label: "Features", href: "#features" },
-        { label: "Metrics", href: "#stats" },
+        { label: "Features", href: "/#features" },
+        { label: "Metrics", href: "/#stats" },
         { label: "Pricing", href: "/pricing" },
-      ],
-    },
-    {
-      title: "Resources",
-      links: [
-        { label: "Documentation", href: "/docs" },
-        { label: "Status Page", href: "/status" },
-        { label: "Changelog", href: "/changelog" },
       ],
     },
     {
       title: "Company",
       links: [
-        { label: "About", href: "/about" },
-        { label: "Blog", href: "/blog" },
-        { label: "Security", href: "/security" },
-      ],
-    },
-    {
-      title: "Legal",
-      links: [
-        { label: "Privacy", href: "/privacy" },
-        { label: "Terms", href: "/terms" },
-        { label: "SLA Policy", href: "/sla" },
+        { label: "About", href: "/#about" },
+        { label: "FAQ", href: "/#faq" },
+        { label: "Contact", href: "/#contact" },
       ],
     },
   ];
@@ -40,7 +24,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-border/40 bg-background py-16 text-xs text-muted-foreground select-none">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-5 md:gap-12">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-12">
           {/* Logo Column */}
           <div className="col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2">
@@ -76,13 +60,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom row */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 text-muted-foreground sm:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-center gap-4 border-t border-border/50 pt-8 text-muted-foreground sm:flex-row">
           <p>© {new Date().getFullYear()} Eudora Technologies. All rights reserved.</p>
-          <div className="flex gap-4">
-            <span className="cursor-pointer hover:text-foreground">Twitter</span>
-            <span className="cursor-pointer hover:text-foreground">GitHub</span>
-            <span className="cursor-pointer hover:text-foreground">Discord</span>
-          </div>
         </div>
       </div>
     </footer>

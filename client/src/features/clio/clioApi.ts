@@ -66,12 +66,25 @@ export interface SubmitCardResult {
   explanation: string;
   xpEarned: number;
   isLessonComplete: boolean;
+  // Only present once the student has answered incorrectly — never sent
+  // alongside a correct submission, and never before one exists.
+  correctReveal?: { correctValue?: number };
 }
 
 export interface ConceptSummary {
   id: string;
   name: string;
   description: string | null;
+  course: { id: string; title: string } | null;
+}
+
+export interface CreateConceptPayload {
+  name: string;
+  description?: string;
+  courseId?: string;
+  sortOrder?: number;
+  kind?: "CHAPTER" | "CHECKPOINT";
+  passThresholdPercent?: number;
 }
 
 export interface CreateLessonPayload {
@@ -126,6 +139,19 @@ export const clioApi = authApi.injectEndpoints({
     // Fetch curriculum concepts for dropdown selection
     getConcepts: builder.query<ConceptSummary[], void>({
       query: () => "/evaluation/concepts",
+    } as any),
+
+    // Create a new concept (chapter/checkpoint) — SUPER_ADMIN/ADMIN only on
+    // the backend (deliberate RBAC, not TEACHER). Invalidates the owning
+    // course's catalog detail so a newly-created chapter shows up there.
+    createConcept: builder.mutation<ConceptSummary, CreateConceptPayload>({
+      query: (body: any) => ({
+        url: "/evaluation/concepts",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result: any, _err: any, arg: any) =>
+        arg.courseId ? [{ type: "CourseDetail" as any, id: arg.courseId }] : [],
     } as any),
 
     // Create a new lesson unit
@@ -194,6 +220,7 @@ export const {
   useGetLessonFlowQuery,
   useSubmitCardMutation,
   useGetConceptsQuery,
+  useCreateConceptMutation,
   useCreateLessonMutation,
   useCreateCardMutation,
   useUpdateLessonMutation,

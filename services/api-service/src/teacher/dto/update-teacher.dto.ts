@@ -22,3 +22,18 @@ export class UpdateTeacherDto {
   @IsOptional()
   status?: TeacherStatus;
 }
+
+/**
+ * Deliberately narrower than `UpdateTeacherDto` — a teacher updating their
+ * own profile may only touch phone/specialization, never `fullName`,
+ * `employeeCode`, or `status`.
+ */
+export class UpdateMyTeacherProfileDto {
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  specialization?: string;
+}

@@ -2,11 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DashboardService } from './dashboard.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
-import { DayOfWeek } from '@prisma/client';
 
 describe('DashboardService', () => {
   let service: DashboardService;
-  let prisma: PrismaService;
 
   const mockPrismaService = {
     timetableSlot: {
@@ -58,7 +56,6 @@ describe('DashboardService', () => {
     }).compile();
 
     service = module.get<DashboardService>(DashboardService);
-    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 

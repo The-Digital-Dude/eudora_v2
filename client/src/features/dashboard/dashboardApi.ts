@@ -51,12 +51,14 @@ export interface User {
 export interface BillingPlan {
   id: string;
   name: string;
-  code: string;
   description?: string;
-  priceMonthly: number;
-  priceAnnual: number;
+  // Prisma Decimal fields serialize as strings over JSON — coerce with Number() before doing math.
+  priceMonthly: number | string;
+  priceAnnual: number | string;
   currency: string;
-  active: boolean;
+  isActive: boolean;
+  isPublic: boolean;
+  features: string[];
   stripeProductId?: string;
   stripePriceIdMonthly?: string;
   stripePriceIdAnnual?: string;
@@ -418,6 +420,14 @@ export const dashboardApi = authApi.injectEndpoints({
 
     getBillingPlans: builder.query<BillingPlan[], void>({
       query: () => "/billing/plans",
+      providesTags: ["BillingPlans"],
+    } as any),
+    /**
+     * Public, unauthenticated pricing feed — used by the marketing /pricing page.
+     * Only returns plans marked isActive + isPublic (see plan.controller.ts).
+     */
+    getPublicPlans: builder.query<BillingPlan[], void>({
+      query: () => "/billing/plans/public",
       providesTags: ["BillingPlans"],
     } as any),
     createBillingPlan: builder.mutation<BillingPlan, Partial<BillingPlan>>({
@@ -859,6 +869,7 @@ export const {
   useRemoveUserRoleMutation,
   useGetRolesQuery,
   useGetBillingPlansQuery,
+  useGetPublicPlansQuery,
   useCreateBillingPlanMutation,
   useSyncBillingPlanToStripeMutation,
   useCreateCheckoutSessionMutation,

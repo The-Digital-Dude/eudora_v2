@@ -280,6 +280,7 @@ export default function LessonFlowPage() {
                 onStateChange={handleWidgetStateChange}
                 locked={showExpPanel}
                 isCorrect={lastResult?.isCorrect}
+                correctReveal={lastResult?.correctReveal}
               />
             </div>
           )}

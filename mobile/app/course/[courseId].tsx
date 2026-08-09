@@ -1,0 +1,324 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import {
+  CheckCircle2,
+  ChevronLeft,
+  Circle,
+  ClipboardList,
+  FileText,
+  Lock,
+  MessageSquare,
+  PlayCircle,
+  Sparkles,
+} from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import type { CourseConcept, ModuleItem, ModuleItemKind } from '@/core/contracts';
+import { useGetCourseDetailQuery } from '@/features/catalog/catalogApi';
+import { Card } from '@/ui/primitives/Card';
+import { Text } from '@/ui/primitives/Text';
+import { useFormFactor } from '@/ui/useFormFactor';
+import { useTheme } from '@/ui/theme/ThemeProvider';
+
+const kindIcon: Record<ModuleItemKind, React.ElementType> = {
+  VIDEO: PlayCircle,
+  READING: FileText,
+  DISCUSSION: MessageSquare,
+  ASSESSMENT: ClipboardList,
+};
+
+export default function CourseOutlineScreen() {
+  const t = useTheme();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const formFactor = useFormFactor();
+  const { courseId } = useLocalSearchParams<{ courseId: string }>();
+
+  const { data: course, isLoading } = useGetCourseDetailQuery(courseId!, {
+    skip: !courseId,
+  });
+
+  // Tablet only: which chapter shows in the right-hand pane.
+  const [selectedConceptId, setSelectedConceptId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selectedConceptId && course && course.concepts.length > 0) {
+      setSelectedConceptId(course.concepts[0].id);
+    }
+  }, [course, selectedConceptId]);
+
+  if (isLoading || !course) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: t.colors.background,
+        }}
+      >
+        <ActivityIndicator color={t.colors.primary} />
+      </View>
+    );
+  }
+
+  const openLesson = (lessonId: string) => router.push(`/lesson/${lessonId}`);
+  const openItem = (itemId: string) =>
+    router.push({
+      pathname: '/item/[courseId]/[itemId]',
+      params: { courseId: courseId!, itemId },
+    });
+
+  const backButton = (
+    <Pressable
+      onPress={() => router.back()}
+      accessibilityRole="button"
+      accessibilityLabel="Go back"
+      style={{ flexDirection: 'row', alignItems: 'center', marginBottom: t.spacing.lg }}
+    >
+      <ChevronLeft size={20} color={t.colors.mutedForeground} />
+      <Text variant="label" color="mutedForeground">
+        Back
+      </Text>
+    </Pressable>
+  );
+
+  const titleBlock = (
+    <>
+      <Text variant="title">{course.title}</Text>
+      <Text variant="caption" color="mutedForeground" style={{ marginTop: t.spacing.xs }}>
+        {course.learningSubject.name} · {course.concepts.length} chapters
+      </Text>
+    </>
+  );
+
+  // Tablet: a persistent ~340px chapter-nav pane beside the selected
+  // chapter's content, matching the web's sidebar-width convention (§5 of
+  // the plan) rather than the phone's all-chapters-expanded single column.
+  if (formFactor === 'tablet') {
+    const selectedConcept =
+      course.concepts.find((c) => c.id === selectedConceptId) ?? course.concepts[0];
+
+    return (
+      <View style={{ flex: 1, flexDirection: 'row', backgroundColor: t.colors.background }}>
+        <ScrollView
+          style={{ width: 340, borderRightWidth: 1, borderRightColor: t.colors.border }}
+          contentContainerStyle={{
+            padding: t.spacing.xl,
+            paddingTop: insets.top + t.spacing.md,
+            paddingBottom: insets.bottom + t.spacing.xxl,
+          }}
+        >
+          {backButton}
+          {titleBlock}
+          <View style={{ height: t.spacing.xl }} />
+          <View style={{ gap: t.spacing.sm }}>
+            {course.concepts.map((concept, index) => (
+              <ChapterNavRow
+                key={concept.id}
+                concept={concept}
+                index={index}
+                selected={concept.id === selectedConcept?.id}
+                onPress={() => setSelectedConceptId(concept.id)}
+              />
+            ))}
+          </View>
+        </ScrollView>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            padding: t.spacing.xl,
+            paddingTop: insets.top + t.spacing.md,
+            paddingBottom: insets.bottom + t.spacing.xxl,
+          }}
+        >
+          {selectedConcept ? (
+            <>
+              <Text variant="heading">{selectedConcept.name}</Text>
+              <View style={{ height: t.spacing.lg }} />
+              <ChapterDetail
+                concept={selectedConcept}
+                onOpenLesson={openLesson}
+                onOpenItem={openItem}
+              />
+            </>
+          ) : null}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: t.colors.background }}
+      contentContainerStyle={{
+        padding: t.spacing.xl,
+        paddingTop: insets.top + t.spacing.md,
+        paddingBottom: insets.bottom + t.spacing.xxl,
+      }}
+    >
+      {backButton}
+      {titleBlock}
+      <View style={{ height: t.spacing.xl }} />
+
+      {course.concepts.map((concept, index) => (
+        <Card
+          key={concept.id}
+          style={{
+            marginBottom: t.spacing.md,
+            // Locked chapters stay visible but obviously inert — hiding
+            // them would lose the sense of a course having a shape.
+            opacity: concept.isLocked ? 0.55 : 1,
+          }}
+        >
+          <ChapterHeader concept={concept} index={index} />
+          <View style={{ marginTop: t.spacing.md }}>
+            <ChapterDetail concept={concept} onOpenLesson={openLesson} onOpenItem={openItem} />
+          </View>
+        </Card>
+      ))}
+    </ScrollView>
+  );
+}
+
+function ChapterHeader({ concept, index }: { concept: CourseConcept; index: number }) {
+  const t = useTheme();
+  const statusIcon = concept.isDone ? (
+    <CheckCircle2 size={22} color={t.colors.success} />
+  ) : concept.isLocked ? (
+    <Lock size={20} color={t.colors.mutedForeground} />
+  ) : (
+    <Circle size={22} color={t.colors.mutedForeground} />
+  );
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.md }}>
+      {statusIcon}
+      <View style={{ flex: 1 }}>
+        <Text variant="caption" color="mutedForeground">
+          Chapter {index + 1}
+          {concept.kind === 'CHECKPOINT' ? ' · Checkpoint' : ''}
+        </Text>
+        <Text variant="label">{concept.name}</Text>
+      </View>
+    </View>
+  );
+}
+
+function ChapterNavRow({
+  concept,
+  index,
+  selected,
+  onPress,
+}: {
+  concept: CourseConcept;
+  index: number;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const t = useTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button">
+      <Card style={selected ? { borderColor: t.colors.primary, borderWidth: 2 } : undefined}>
+        <ChapterHeader concept={concept} index={index} />
+      </Card>
+    </Pressable>
+  );
+}
+
+/** The items+lessons body for one chapter — shared by the phone's inline card and the tablet's right pane. */
+function ChapterDetail({
+  concept,
+  onOpenLesson,
+  onOpenItem,
+}: {
+  concept: CourseConcept;
+  onOpenLesson: (lessonId: string) => void;
+  onOpenItem: (itemId: string) => void;
+}) {
+  const t = useTheme();
+  const hasContent = concept.lessons.length > 0 || concept.items.length > 0;
+
+  if (concept.isLocked) {
+    return (
+      <Text variant="caption" color="mutedForeground">
+        Finish the previous chapter to unlock.
+      </Text>
+    );
+  }
+
+  if (!hasContent) {
+    return (
+      <Text variant="caption" color="mutedForeground">
+        No content here yet.
+      </Text>
+    );
+  }
+
+  return (
+    <View style={{ gap: t.spacing.sm }}>
+      {concept.items.map((item) => (
+        <ItemRow key={item.id} item={item} onPress={() => onOpenItem(item.id)} />
+      ))}
+      {concept.lessons.map((lesson) => (
+        <Pressable
+          key={lesson.id}
+          onPress={() => onOpenLesson(lesson.id)}
+          accessibilityRole="button"
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: t.spacing.sm,
+            paddingVertical: t.spacing.md,
+            paddingHorizontal: t.spacing.md,
+            borderRadius: t.radius.md,
+            backgroundColor: pressed ? t.colors.muted : t.colors.secondary,
+          })}
+        >
+          <Sparkles size={16} color={t.colors.primary} />
+          <Text variant="label" style={{ flex: 1 }}>
+            {lesson.title}
+          </Text>
+          <Text variant="caption" color="mutedForeground">
+            +{lesson.xpReward} XP
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function ItemRow({ item, onPress }: { item: ModuleItem; onPress: () => void }) {
+  const t = useTheme();
+  const Icon = kindIcon[item.kind];
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: t.spacing.sm,
+        paddingVertical: t.spacing.md,
+        paddingHorizontal: t.spacing.md,
+        borderRadius: t.radius.md,
+        backgroundColor: pressed ? t.colors.muted : t.colors.card,
+        borderWidth: 1,
+        borderColor: t.colors.border,
+      })}
+    >
+      {item.isDone ? (
+        <CheckCircle2 size={16} color={t.colors.success} />
+      ) : (
+        <Icon size={16} color={t.colors.mutedForeground} />
+      )}
+      <Text variant="label" style={{ flex: 1 }}>
+        {item.title}
+      </Text>
+      <Text variant="caption" color="mutedForeground">
+        {item.kind.charAt(0) + item.kind.slice(1).toLowerCase()}
+      </Text>
+    </Pressable>
+  );
+}

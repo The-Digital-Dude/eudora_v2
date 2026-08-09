@@ -4,9 +4,12 @@ import {
   AddAssessmentQuestionDto,
   CreateQuestionDto,
   ListQuestionsQueryDto,
+  PreviewWidgetInstanceDto,
   UpdateAssessmentQuestionDto,
   UpdateQuestionDto,
 } from './dto/assessments.dto';
+import { generateWidgetInstance } from '../common/widgets/widget-generator';
+import { isParameterizedWidgetConfig } from '../common/widgets/widget-config.schema';
 import {
   assertPositiveInteger,
   assertPositiveNumber,
@@ -27,6 +30,24 @@ import {
 @Injectable()
 export class QuestionsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  // Stateless: generates one sample instance from a draft (unsaved) config so
+  // authors can sanity-check a template before saving. Reuses the exact same
+  // generator that resolves real attempts, so the preview is never a "lie".
+  previewWidgetInstance(input: PreviewWidgetInstanceDto) {
+    const seed = input.seed ?? Math.floor(Math.random() * 0xffffffff);
+    const instance = generateWidgetInstance(
+      {
+        questionType: 'mcq',
+        correctAnswer: null,
+        widgetType: input.widgetType,
+        widgetConfig: input.widgetConfig,
+        options: [],
+      },
+      seed,
+    );
+    return { seed, ...instance };
+  }
 
   async listQuestions(query: ListQuestionsQueryDto = {}) {
     const pagination = normalizePagination(query);
@@ -81,7 +102,9 @@ export class QuestionsService {
       ['easy', 'medium', 'hard', 'extension'],
       'difficulty',
     );
-    const options = normalizeOptions(input.options ?? [], questionType);
+    const options = isParameterizedWidgetConfig(input.widgetConfig)
+      ? []
+      : normalizeOptions(input.options ?? [], questionType);
     const question = await this.prisma.question.create({
       data: {
         subjectId: emptyToNull(input.subjectId),

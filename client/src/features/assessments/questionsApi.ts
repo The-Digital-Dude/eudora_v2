@@ -55,6 +55,13 @@ export interface ListLookupResponse {
   total: number;
 }
 
+export interface PreviewWidgetInstanceResult {
+  seed: number;
+  displayConfig: any;
+  options?: { id: string; optionLabel?: string; optionText?: string; isCorrect: boolean }[];
+  resolvedAnswer: any;
+}
+
 export const questionsApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
@@ -102,6 +109,16 @@ export const questionsApi = authApi.injectEndpoints({
       }),
       invalidatesTags: ["Questions" as any],
     }),
+    previewWidgetInstance: builder.mutation<
+      PreviewWidgetInstanceResult,
+      { widgetType: string; widgetConfig: any; seed?: number }
+    >({
+      query: (body) => ({
+        url: "/questions/preview-widget-instance",
+        method: "POST",
+        body,
+      }),
+    }),
     getLevels: builder.query<ListLookupResponse, void>({
       query: () => "/assessments/levels?pageSize=100",
     }),
@@ -117,6 +134,7 @@ export const {
   useCreateQuestionMutation,
   useUpdateQuestionMutation,
   useArchiveQuestionMutation,
+  usePreviewWidgetInstanceMutation,
   useGetLevelsQuery,
   useGetSubjectsQuery,
 } = questionsApi;

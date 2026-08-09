@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -33,6 +34,22 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Generated from existing DTOs/controllers via the `@nestjs/swagger`
+  // compiler plugin (nest-cli.json) — property/type inference from
+  // class-validator decorators and TS types, not hand-added `@ApiProperty()`
+  // calls. `/api/docs-json` is what `openapi-typescript` (client/mobile
+  // codegen) points at; `/api/docs` is the browsable UI for humans.
+  const swaggerDocument = SwaggerModule.createDocument(
+    app,
+    new DocumentBuilder()
+      .setTitle('Eudora API')
+      .setDescription('api-service — student, guardian, and admin surfaces')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build(),
+  );
+  SwaggerModule.setup('api/docs', app, swaggerDocument);
 
   // Graceful shutdown
   app.enableShutdownHooks();

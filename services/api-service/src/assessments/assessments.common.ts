@@ -2,6 +2,9 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WidgetConfig, InteractionState } from './types/widget-config';
+import { generateWidgetInstance } from '../common/widgets/widget-generator';
+import { gradeWidgetSubmission } from '../common/widgets/widget-grader';
+import { deriveSeed } from '../common/widgets/seed.util';
 
 export const lookupSelect = {
   id: true,
@@ -25,9 +28,12 @@ export const assessmentSelect = {
   termId: true,
   weekNumber: true,
   title: true,
+  description: true,
   totalMarks: true,
   estimatedDurationMinutes: true,
   status: true,
+  countsTowardGrade: true,
+  maxAttempts: true,
   publishedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -115,11 +121,107 @@ export const assignmentSelect = {
   createdAt: true,
   updatedAt: true,
   assessment: {
-    select: { id: true, title: true, status: true, totalMarks: true },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      status: true,
+      totalMarks: true,
+      estimatedDurationMinutes: true,
+      countsTowardGrade: true,
+      maxAttempts: true,
+    },
   },
   studentProfile: { select: { id: true, fullName: true } },
   classSection: { select: { id: true, code: true, name: true } },
 };
+
+/**
+ * Raw question data for an attempt — includes `correctAnswer` and
+ * `option.isCorrect` because `generateWidgetInstance` needs them to resolve
+ * the per-attempt instance. Never send this select's result to a student
+ * directly; pass it through `toStudentSafeAttemptQuestions` first.
+ */
+export const attemptQuestionsSelect = {
+  id: true,
+  sectionId: true,
+  questionNumber: true,
+  marksAvailable: true,
+  section: { select: { id: true, title: true, sortOrder: true } },
+  question: {
+    select: {
+      id: true,
+      questionType: true,
+      prompt: true,
+      correctAnswer: true,
+      widgetType: true,
+      widgetConfig: true,
+      hints: true,
+      options: {
+        orderBy: { optionLabel: 'asc' as const },
+        select: {
+          id: true,
+          optionLabel: true,
+          optionText: true,
+          isCorrect: true,
+        },
+      },
+    },
+  },
+};
+
+type RawAttemptQuestion = {
+  id: string;
+  sectionId: string;
+  questionNumber: number;
+  marksAvailable: number;
+  section: { id: string; title: string; sortOrder: number };
+  question: Parameters<typeof generateWidgetInstance>[0] & {
+    id: string;
+    prompt: string;
+    hints: string[];
+  };
+};
+
+/**
+ * Maps raw attempt questions (server-side shape, includes the answer key) to
+ * what a student taking the assessment receives — regenerates each
+ * question's widget instance from the same per-(attempt, question) seed used
+ * for grading (mirrors `LessonsService.enrichCardsForAttempt`), so a
+ * parameterized widget's answer can never be read off the raw config, and
+ * explicitly omits `correctAnswer`/`option.isCorrect` rather than relying on
+ * the generated instance alone to withhold them.
+ */
+export function toStudentSafeAttemptQuestions(
+  assessmentQuestions: RawAttemptQuestion[],
+  attemptId: string,
+) {
+  return assessmentQuestions.map((aq) => {
+    const seed = deriveSeed(attemptId, aq.question.id);
+    const instance = generateWidgetInstance(aq.question, seed);
+    const options = instance.options ?? aq.question.options;
+    return {
+      id: aq.id,
+      sectionId: aq.sectionId,
+      questionNumber: aq.questionNumber,
+      marksAvailable: aq.marksAvailable,
+      section: aq.section,
+      question: {
+        id: aq.question.id,
+        questionType: aq.question.questionType,
+        prompt: aq.question.prompt,
+        widgetType: aq.question.widgetType,
+        widgetConfig: instance.displayConfig,
+        hints: aq.question.hints,
+        options: options.map((o) => ({
+          id: o.id,
+          optionLabel: o.optionLabel,
+          optionText: o.optionText,
+        })),
+      },
+    };
+  });
+}
 
 export const attemptSelect = {
   id: true,
@@ -436,131 +538,31 @@ export function autoMarkResponse(
   },
   selectedOptionId: string | null | undefined,
   responseText: string | null | undefined,
-  interactionState?: InteractionState,
+  interactionState: InteractionState | undefined,
   marksAvailable: number = 0,
+  seed: number,
 ): { isCorrect?: boolean; marksAwarded?: number } {
-  if (
-    question.widgetType === 'STANDARD_MCQ' ||
-    question.questionType === 'mcq'
-  ) {
-    const option = question.options.find(
-      (candidate) => candidate.id === selectedOptionId,
-    );
-    if (!option) {
-      return { isCorrect: false, marksAwarded: 0 };
-    }
-    return {
-      isCorrect: option.isCorrect,
-      marksAwarded: option.isCorrect ? marksAvailable : 0,
-    };
+  // Delegates to the same generator+grader LessonsService uses, so a widget
+  // behaves identically whether it's answered in a lesson or a formal
+  // assessment. `seed` resolves any parameterized question deterministically
+  // for this specific (assessmentAttempt, question) pair; fixed/legacy
+  // questions resolve to their stored answer unchanged either way.
+  const instance = generateWidgetInstance(
+    { ...question, widgetConfig: question.widgetConfig as unknown },
+    seed,
+  );
+  const graded = gradeWidgetSubmission(instance.resolvedAnswer, {
+    selectedOptionId,
+    responseText,
+    interactionState,
+  });
+  if (graded.isCorrect === undefined) {
+    return {};
   }
-
-  if (question.widgetType === 'SLIDER_MANIPULATIVE') {
-    const target = question.correctAnswer
-      ? parseFloat(question.correctAnswer)
-      : null;
-    const inputVal =
-      interactionState?.finalValue !== undefined
-        ? interactionState.finalValue
-        : null;
-
-    if (target !== null && inputVal !== null) {
-      const isCorrect = Math.abs(inputVal - target) <= 0.1;
-      return { isCorrect, marksAwarded: isCorrect ? marksAvailable : 0 };
-    }
-  }
-
-  if (question.widgetType === 'COORDINATE_PLOTTER' && question.widgetConfig) {
-    const config =
-      typeof question.widgetConfig === 'string'
-        ? (JSON.parse(question.widgetConfig) as WidgetConfig)
-        : (question.widgetConfig as WidgetConfig);
-    const coordConfig = config as typeof config & {
-      correctPoints?: Array<{ x: number; y: number }>;
-      tolerance?: number;
-    };
-    const correctPoints = coordConfig?.correctPoints ?? [];
-    const tolerance = coordConfig?.tolerance ?? 0.1;
-    const studentPoints = interactionState?.points ?? [];
-
-    if (correctPoints.length !== studentPoints.length) {
-      return { isCorrect: false, marksAwarded: 0 };
-    }
-
-    const allMatched = correctPoints.every((cp) => {
-      return studentPoints.some((sp) => {
-        const dx = cp.x - sp.x;
-        const dy = cp.y - sp.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        return dist <= tolerance;
-      });
-    });
-
-    return {
-      isCorrect: allMatched,
-      marksAwarded: allMatched ? marksAvailable : 0,
-    };
-  }
-
-  if (question.widgetType === 'GRID_MATCHING' && question.widgetConfig) {
-    const config =
-      typeof question.widgetConfig === 'string'
-        ? (JSON.parse(question.widgetConfig) as WidgetConfig)
-        : (question.widgetConfig as WidgetConfig);
-    const gridConfig = config as typeof config & {
-      correctPairs?: Array<[string, string]>;
-    };
-    const correctPairs = gridConfig?.correctPairs ?? [];
-    const studentPairs = interactionState?.pairs ?? [];
-
-    if (correctPairs.length !== studentPairs.length) {
-      return { isCorrect: false, marksAwarded: 0 };
-    }
-
-    const allMatched = correctPairs.every((cp) => {
-      const cpLeft = cp[0];
-      const cpRight = cp[1];
-      return studentPairs.some((sp) => {
-        return (
-          (sp[0] === cpLeft && sp[1] === cpRight) ||
-          (sp[0] === cpRight && sp[1] === cpLeft)
-        );
-      });
-    });
-
-    return {
-      isCorrect: allMatched,
-      marksAwarded: allMatched ? marksAvailable : 0,
-    };
-  }
-
-  if (
-    (question.questionType === 'short_answer' ||
-      question.questionType === 'numeric') &&
-    question.correctAnswer
-  ) {
-    const cleanResponse = (responseText ?? '')
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, ' ');
-    const cleanCorrect = (question.correctAnswer ?? '')
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, ' ');
-
-    if (question.questionType === 'numeric') {
-      const numResponse = parseFloat(cleanResponse);
-      const numCorrect = parseFloat(cleanCorrect);
-      if (!isNaN(numResponse) && !isNaN(numCorrect)) {
-        const isCorrect = numResponse === numCorrect;
-        return { isCorrect, marksAwarded: isCorrect ? marksAvailable : 0 };
-      }
-    }
-
-    const isCorrect = cleanResponse === cleanCorrect;
-    return { isCorrect, marksAwarded: isCorrect ? marksAvailable : 0 };
-  }
-  return {};
+  return {
+    isCorrect: graded.isCorrect,
+    marksAwarded: graded.isCorrect ? marksAvailable : 0,
+  };
 }
 
 export function requireRecord<T>(

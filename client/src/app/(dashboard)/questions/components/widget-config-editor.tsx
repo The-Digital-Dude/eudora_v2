@@ -1,13 +1,78 @@
 ﻿"use client";
 
-import { Code,Plus, Trash2 } from "lucide-react";
+import { Code, Dices, Plus, Trash2 } from "lucide-react";
 import React, { useEffect,useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CoordinatePlotterWidget } from "@/features/clio/widgets/CoordinatePlotterWidget";
+import { usePreviewWidgetInstanceMutation } from "@/features/assessments/questionsApi";
+
+// Shared "Generate Preview" control for parameterized widgets — hits the
+// stateless preview endpoint so authors can sanity-check a sample instance
+// before saving, using the exact same generator that resolves real attempts.
+function GeneratePreviewButton({ widgetType, config }: { widgetType: string; config: any }) {
+  const [previewWidgetInstance, { isLoading }] = usePreviewWidgetInstanceMutation();
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handlePreview = async () => {
+    setError(null);
+    try {
+      const res = await previewWidgetInstance({ widgetType, widgetConfig: config }).unwrap();
+      setResult(res);
+    } catch (err: any) {
+      setResult(null);
+      setError(err?.data?.message || "Could not generate a preview from this config.");
+    }
+  };
+
+  return (
+    <div className="space-y-2 rounded-2xl border border-dashed border-border p-4">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-semibold text-muted-foreground">Sample Generated Instance</Label>
+        <Button
+          type="button"
+          onClick={handlePreview}
+          disabled={isLoading}
+          className="h-8 rounded-lg bg-primary px-3 text-[11px] font-bold text-primary-foreground hover:bg-primary/90"
+        >
+          <Dices className="mr-1 h-3.5 w-3.5" /> {isLoading ? "Generating..." : "Generate Preview"}
+        </Button>
+      </div>
+      {error && <p className="text-[10px] font-semibold text-destructive">{error}</p>}
+      {result && (
+        <div className="rounded-xl bg-muted/50 p-3 text-xs">
+          {result.displayConfig?.prompt && (
+            <p className="mb-2 font-semibold text-foreground">{result.displayConfig.prompt}</p>
+          )}
+          {result.options && (
+            <ul className="space-y-1">
+              {result.options.map((o: any) => (
+                <li key={o.id} className={o.isCorrect ? "font-bold text-success" : "text-muted-foreground"}>
+                  {o.optionLabel}. {o.optionText} {o.isCorrect ? "(correct)" : ""}
+                </li>
+              ))}
+            </ul>
+          )}
+          {!result.options && result.resolvedAnswer?.correctValue !== undefined && (
+            <p className="text-muted-foreground">
+              Range {result.displayConfig?.min}–{result.displayConfig?.max}
+              {result.displayConfig?.unit}, target ={" "}
+              <span className="font-bold text-success">
+                {result.resolvedAnswer.correctValue}
+                {result.displayConfig?.unit}
+              </span>
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface WidgetConfigEditorProps {
   widgetType: string;
@@ -50,6 +115,108 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
   const renderFormEditor = () => {
     switch (widgetType) {
       case "SLIDER_MANIPULATIVE": {
+        const isParameterized = value?.configVersion === 2 && value?.mode === "parameterized";
+
+        const setMode = (mode: "fixed" | "parameterized") => {
+          if (mode === "fixed") {
+            onChange({ min: 0, max: 100, step: 1, unit: "", correctValue: 50 });
+          } else {
+            onChange({
+              configVersion: 2,
+              mode: "parameterized",
+              params: {
+                given: { min: 0, max: 100, step: 1, unit: "" },
+                hidden: { correctValue: { min: 10, max: 90 } },
+              },
+              tolerance: 5,
+            });
+          }
+        };
+
+        const modeToggle = (
+          <div className="flex gap-2 border-b border-border pb-3">
+            <button
+              type="button"
+              onClick={() => setMode("fixed")}
+              className={`h-8 flex-1 rounded-lg text-xs font-bold transition-colors ${
+                !isParameterized ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              Fixed Value
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("parameterized")}
+              className={`h-8 flex-1 rounded-lg text-xs font-bold transition-colors ${
+                isParameterized ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              Parameterized
+            </button>
+          </div>
+        );
+
+        if (isParameterized) {
+          const given = value?.params?.given ?? { min: 0, max: 100, step: 1, unit: "" };
+          const hiddenRange = value?.params?.hidden?.correctValue ?? { min: 10, max: 90 };
+          const tolerance = value?.tolerance ?? 5;
+
+          const updateParam = (path: "given" | "hidden", key: string, val: any) => {
+            const params = { ...(value?.params ?? {}) };
+            if (path === "given") {
+              params.given = { ...given, [key]: val };
+            } else {
+              params.hidden = { correctValue: { ...hiddenRange, [key]: val } };
+            }
+            onChange({ ...value, params });
+          };
+
+          return (
+            <div className="space-y-4">
+              {modeToggle}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Slider Min</Label>
+                  <Input type="number" value={given.min} onChange={(e) => updateParam("given", "min", Number(e.target.value))} className="h-10 rounded-xl text-xs" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Slider Max</Label>
+                  <Input type="number" value={given.max} onChange={(e) => updateParam("given", "max", Number(e.target.value))} className="h-10 rounded-xl text-xs" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Step Interval</Label>
+                  <Input type="number" value={given.step} onChange={(e) => updateParam("given", "step", Number(e.target.value))} className="h-10 rounded-xl text-xs" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Unit</Label>
+                  <Input type="text" value={given.unit} onChange={(e) => updateParam("given", "unit", e.target.value)} className="h-10 rounded-xl text-xs" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Target Range Min</Label>
+                  <Input type="number" value={hiddenRange.min} onChange={(e) => updateParam("hidden", "min", Number(e.target.value))} className="h-10 rounded-xl text-xs" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Target Range Max</Label>
+                  <Input type="number" value={hiddenRange.max} onChange={(e) => updateParam("hidden", "max", Number(e.target.value))} className="h-10 rounded-xl text-xs" />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Tolerance (± around target)</Label>
+                  <Input
+                    type="number"
+                    value={tolerance}
+                    onChange={(e) => onChange({ ...value, tolerance: Number(e.target.value) })}
+                    className="h-10 rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Each attempt randomizes a new target within the range above — different students (and retries) see a different number to find.
+              </p>
+              <GeneratePreviewButton widgetType="SLIDER_MANIPULATIVE" config={value} />
+            </div>
+          );
+        }
+
         const min = value?.min ?? 0;
         const max = value?.max ?? 100;
         const step = value?.step ?? 1;
@@ -57,53 +224,244 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
         const correctValue = value?.correctValue ?? min;
 
         return (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground">Min Value</Label>
-              <Input
-                type="number"
-                value={min}
-                onChange={(e) => updateField("min", Number(e.target.value))}
-                className="h-10 rounded-xl text-xs"
-              />
+          <div className="space-y-4">
+            {modeToggle}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Min Value</Label>
+                <Input
+                  type="number"
+                  value={min}
+                  onChange={(e) => updateField("min", Number(e.target.value))}
+                  className="h-10 rounded-xl text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Max Value</Label>
+                <Input
+                  type="number"
+                  value={max}
+                  onChange={(e) => updateField("max", Number(e.target.value))}
+                  className="h-10 rounded-xl text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Step Interval</Label>
+                <Input
+                  type="number"
+                  value={step}
+                  onChange={(e) => updateField("step", Number(e.target.value))}
+                  className="h-10 rounded-xl text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Unit (e.g. %, cm)</Label>
+                <Input
+                  type="text"
+                  placeholder="unit label..."
+                  value={unit}
+                  onChange={(e) => updateField("unit", e.target.value)}
+                  className="h-10 rounded-xl text-xs"
+                />
+              </div>
+              <div className="col-span-2 space-y-1.5 border-t border-border pt-3">
+                <Label className="text-xs font-semibold text-muted-foreground">Target Value (correctAnswer)</Label>
+                <Input
+                  type="number"
+                  value={correctValue}
+                  onChange={(e) => updateField("correctValue", Number(e.target.value))}
+                  className="h-10 rounded-xl text-xs"
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground">Max Value</Label>
-              <Input
-                type="number"
-                value={max}
-                onChange={(e) => updateField("max", Number(e.target.value))}
-                className="h-10 rounded-xl text-xs"
-              />
+          </div>
+        );
+      }
+
+      case "STANDARD_MCQ": {
+        const params = value?.params ?? { given: {}, secret: {}, derived: {} };
+        const givenList: { name: string; min: number; max: number }[] = Object.entries(params.given ?? {}).map(
+          ([name, r]: [string, any]) => ({ name, min: r.min, max: r.max }),
+        );
+        const secretList: { name: string; min: number; max: number }[] = Object.entries(params.secret ?? {}).map(
+          ([name, r]: [string, any]) => ({ name, min: r.min, max: r.max }),
+        );
+        const derivedList: { name: string; expr: string }[] = Object.entries(params.derived ?? {}).map(
+          ([name, expr]: [string, any]) => ({ name, expr }),
+        );
+        const template: string = value?.display?.template ?? "";
+        const answerCorrect: string = value?.answerKey?.correct ?? "";
+        const distractors: { expr: string }[] = value?.distractors ?? [];
+
+        const rebuild = (overrides: Partial<{ given: any[]; secret: any[]; derived: any[] }>) => {
+          const nextGiven = overrides.given ?? givenList;
+          const nextSecret = overrides.secret ?? secretList;
+          const nextDerived = overrides.derived ?? derivedList;
+          const given = Object.fromEntries(nextGiven.filter((g) => g.name).map((g) => [g.name, { min: g.min, max: g.max }]));
+          const secret = Object.fromEntries(nextSecret.filter((s) => s.name).map((s) => [s.name, { min: s.min, max: s.max }]));
+          const derived = Object.fromEntries(nextDerived.filter((d) => d.name).map((d) => [d.name, d.expr]));
+          onChange({
+            configVersion: 2,
+            mode: "parameterized",
+            params: { given, secret, derived },
+            display: { template },
+            answerKey: { correct: answerCorrect },
+            distractors,
+          });
+        };
+
+        const updateVar = (
+          list: "given" | "secret",
+          idx: number,
+          field: "name" | "min" | "max",
+          val: string | number,
+        ) => {
+          const source = list === "given" ? [...givenList] : [...secretList];
+          source[idx] = { ...source[idx], [field]: val };
+          rebuild(list === "given" ? { given: source } : { secret: source });
+        };
+
+        const addVar = (list: "given" | "secret") => {
+          const source = list === "given" ? [...givenList, { name: "", min: 1, max: 10 }] : [...secretList, { name: "", min: 1, max: 10 }];
+          rebuild(list === "given" ? { given: source } : { secret: source });
+        };
+
+        const removeVar = (list: "given" | "secret", idx: number) => {
+          const source = (list === "given" ? givenList : secretList).filter((_, i) => i !== idx);
+          rebuild(list === "given" ? { given: source } : { secret: source });
+        };
+
+        const updateDerived = (idx: number, field: "name" | "expr", val: string) => {
+          const next = [...derivedList];
+          next[idx] = { ...next[idx], [field]: val };
+          rebuild({ derived: next });
+        };
+
+        const addDerived = () => rebuild({ derived: [...derivedList, { name: "", expr: "" }] });
+        const removeDerived = (idx: number) => rebuild({ derived: derivedList.filter((_, i) => i !== idx) });
+
+        const updateTopLevel = (patch: Record<string, any>) => onChange({ ...value, ...patch });
+
+        const updateDistractor = (idx: number, expr: string) => {
+          const next = [...distractors];
+          next[idx] = { expr };
+          updateTopLevel({ distractors: next });
+        };
+        const addDistractor = () => updateTopLevel({ distractors: [...distractors, { expr: "" }] });
+        const removeDistractor = (idx: number) => updateTopLevel({ distractors: distractors.filter((_, i) => i !== idx) });
+
+        const varNames = [...givenList.map((g) => g.name), ...secretList.map((s) => s.name), ...derivedList.map((d) => d.name)].filter(Boolean);
+
+        return (
+          <div className="space-y-4">
+            <p className="text-[10px] text-muted-foreground">
+              A parameterized MCQ generates fresh numbers and answer options every attempt — no fixed Answer Options needed below.
+            </p>
+
+            {/* Given variables */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold text-muted-foreground">Given Variables (shown to student)</Label>
+                <button type="button" onClick={() => addVar("given")} className="flex items-center gap-1 text-[11px] font-bold text-primary">
+                  <Plus className="h-3 w-3" /> Add
+                </button>
+              </div>
+              {givenList.map((g, idx) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  <Input placeholder="name (e.g. a)" value={g.name} onChange={(e) => updateVar("given", idx, "name", e.target.value)} className="h-9 w-28 rounded-xl text-xs" />
+                  <Input type="number" placeholder="min" value={g.min} onChange={(e) => updateVar("given", idx, "min", Number(e.target.value))} className="h-9 rounded-xl text-xs" />
+                  <Input type="number" placeholder="max" value={g.max} onChange={(e) => updateVar("given", idx, "max", Number(e.target.value))} className="h-9 rounded-xl text-xs" />
+                  <button type="button" onClick={() => removeVar("given", idx)} className="rounded-xl border border-border bg-card p-2 text-muted-foreground hover:bg-muted hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground">Step Interval</Label>
-              <Input
-                type="number"
-                value={step}
-                onChange={(e) => updateField("step", Number(e.target.value))}
-                className="h-10 rounded-xl text-xs"
-              />
+
+            {/* Secret variables */}
+            <div className="space-y-2 border-t border-border pt-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold text-muted-foreground">Secret Variables (the answer — never shown)</Label>
+                <button type="button" onClick={() => addVar("secret")} className="flex items-center gap-1 text-[11px] font-bold text-primary">
+                  <Plus className="h-3 w-3" /> Add
+                </button>
+              </div>
+              {secretList.map((s, idx) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  <Input placeholder="name (e.g. x)" value={s.name} onChange={(e) => updateVar("secret", idx, "name", e.target.value)} className="h-9 w-28 rounded-xl text-xs" />
+                  <Input type="number" placeholder="min" value={s.min} onChange={(e) => updateVar("secret", idx, "min", Number(e.target.value))} className="h-9 rounded-xl text-xs" />
+                  <Input type="number" placeholder="max" value={s.max} onChange={(e) => updateVar("secret", idx, "max", Number(e.target.value))} className="h-9 rounded-xl text-xs" />
+                  <button type="button" onClick={() => removeVar("secret", idx)} className="rounded-xl border border-border bg-card p-2 text-muted-foreground hover:bg-muted hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground">Unit (e.g. %, cm)</Label>
-              <Input
-                type="text"
-                placeholder="unit label..."
-                value={unit}
-                onChange={(e) => updateField("unit", e.target.value)}
-                className="h-10 rounded-xl text-xs"
-              />
+
+            {/* Derived variables */}
+            <div className="space-y-2 border-t border-border pt-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold text-muted-foreground">Derived Values (formula, shown to student)</Label>
+                <button type="button" onClick={addDerived} className="flex items-center gap-1 text-[11px] font-bold text-primary">
+                  <Plus className="h-3 w-3" /> Add
+                </button>
+              </div>
+              {derivedList.map((d, idx) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  <Input placeholder="name (e.g. c)" value={d.name} onChange={(e) => updateDerived(idx, "name", e.target.value)} className="h-9 w-28 rounded-xl text-xs" />
+                  <Input placeholder="formula (e.g. a * x + b)" value={d.expr} onChange={(e) => updateDerived(idx, "expr", e.target.value)} className="h-9 flex-1 rounded-xl text-xs" />
+                  <button type="button" onClick={() => removeDerived(idx)} className="rounded-xl border border-border bg-card p-2 text-muted-foreground hover:bg-muted hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
             </div>
-            <div className="col-span-2 space-y-1.5 border-t border-border pt-3">
-              <Label className="text-xs font-semibold text-muted-foreground">Target Value (correctAnswer)</Label>
+
+            {/* Template + answer key */}
+            <div className="space-y-2 border-t border-border pt-3">
+              <Label className="text-xs font-semibold text-muted-foreground">
+                Prompt Template (use {"{name}"} for given/derived values — never a secret variable)
+              </Label>
               <Input
-                type="number"
-                value={correctValue}
-                onChange={(e) => updateField("correctValue", Number(e.target.value))}
-                className="h-10 rounded-xl text-xs"
+                placeholder="e.g. Solve: {a}x + {b} = {c}. What is x?"
+                value={template}
+                onChange={(e) => updateTopLevel({ display: { template: e.target.value } })}
+                className="h-9 rounded-xl text-xs"
               />
+              <Label className="text-xs font-semibold text-muted-foreground">Correct Answer Variable</Label>
+              <Select value={answerCorrect} onValueChange={(val) => updateTopLevel({ answerKey: { correct: val } })}>
+                <SelectTrigger className="h-9 rounded-xl text-xs bg-muted/50">
+                  <SelectValue placeholder="Select variable..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {varNames.map((n) => (
+                    <SelectItem key={n} value={n}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Distractors */}
+            <div className="space-y-2 border-t border-border pt-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold text-muted-foreground">Distractor Formulas (wrong options)</Label>
+                <button type="button" onClick={addDistractor} className="flex items-center gap-1 text-[11px] font-bold text-primary">
+                  <Plus className="h-3 w-3" /> Add
+                </button>
+              </div>
+              {distractors.map((d, idx) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  <Input placeholder="e.g. x + 1" value={d.expr} onChange={(e) => updateDistractor(idx, e.target.value)} className="h-9 flex-1 rounded-xl text-xs" />
+                  <button type="button" onClick={() => removeDistractor(idx)} className="rounded-xl border border-border bg-card p-2 text-muted-foreground hover:bg-muted hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <GeneratePreviewButton widgetType="STANDARD_MCQ" config={value} />
           </div>
         );
       }

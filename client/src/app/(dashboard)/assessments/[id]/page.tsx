@@ -22,7 +22,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription,CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AssessmentQuestion,
   useAddQuestionToAssessmentMutation,
@@ -56,6 +59,12 @@ export default function AssessmentBuilderPage() {
   const [editingSectionsMode, setEditingSectionsMode] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
+  // Local state for paper settings (description, grading, attempts)
+  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [countsTowardGradeDraft, setCountsTowardGradeDraft] = useState(true);
+  const [maxAttemptsDraft, setMaxAttemptsDraft] = useState("");
+  const [settingsDirty, setSettingsDirty] = useState(false);
+
   // Question bank drawer / search filters
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
@@ -78,6 +87,15 @@ export default function AssessmentBuilderPage() {
       setLocalSections(sorted);
     }
   }, [assessment]);
+
+  // Sync paper settings to local state (only while the user hasn't started editing)
+  useEffect(() => {
+    if (assessment && !settingsDirty) {
+      setDescriptionDraft(assessment.description || "");
+      setCountsTowardGradeDraft(assessment.countsTowardGrade ?? true);
+      setMaxAttemptsDraft(assessment.maxAttempts != null ? String(assessment.maxAttempts) : "");
+    }
+  }, [assessment, settingsDirty]);
 
   if (isLoadingAssessment) {
     return (
@@ -208,6 +226,25 @@ export default function AssessmentBuilderPage() {
     } catch (err: any) {
       console.error(err);
       toast.error(err?.data?.message || "Failed to save sections.");
+    }
+  };
+
+  // Save paper settings (description, grading, attempts) to the database
+  const handleSaveSettings = async () => {
+    try {
+      await updateAssessment({
+        id: assessmentId,
+        body: {
+          description: descriptionDraft.trim() || null,
+          countsTowardGrade: countsTowardGradeDraft,
+          maxAttempts: maxAttemptsDraft ? parseInt(maxAttemptsDraft) : null,
+        },
+      }).unwrap();
+      toast.success("Paper settings updated!");
+      setSettingsDirty(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.data?.message || "Failed to update paper settings.");
     }
   };
 
@@ -390,6 +427,62 @@ export default function AssessmentBuilderPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar: Sections Management */}
         <div className="w-80 border-r border-border/50 bg-card p-5 flex flex-col overflow-y-auto shrink-0">
+          {/* Paper Settings */}
+          <div className="mb-5 rounded-2xl border border-border/50 bg-muted/30 p-4 space-y-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Paper Settings
+            </h2>
+
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-semibold text-muted-foreground">Description</Label>
+              <Textarea
+                placeholder="Shown to students before they start..."
+                value={descriptionDraft}
+                onChange={(e) => {
+                  setDescriptionDraft(e.target.value);
+                  setSettingsDirty(true);
+                }}
+                className="min-h-[60px] rounded-xl text-xs bg-card"
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3 h-9">
+              <Label className="text-xs font-semibold text-foreground">Counts toward grade</Label>
+              <Switch
+                checked={countsTowardGradeDraft}
+                onCheckedChange={(checked) => {
+                  setCountsTowardGradeDraft(checked);
+                  setSettingsDirty(true);
+                }}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-semibold text-muted-foreground">Max Attempts</Label>
+              <Input
+                type="number"
+                min="1"
+                placeholder="Unlimited"
+                value={maxAttemptsDraft}
+                onChange={(e) => {
+                  setMaxAttemptsDraft(e.target.value);
+                  setSettingsDirty(true);
+                }}
+                className="h-9 rounded-xl text-xs bg-card"
+              />
+            </div>
+
+            {settingsDirty && (
+              <Button
+                onClick={handleSaveSettings}
+                disabled={isUpdating}
+                className="w-full h-8 rounded-xl bg-success text-[11px] font-bold text-success-foreground hover:bg-success"
+              >
+                <Save className="mr-1.5 h-3 w-3" /> {isUpdating ? "Saving..." : "Save Settings"}
+              </Button>
+            )}
+          </div>
+
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <Layers className="h-4 w-4 text-primary" />

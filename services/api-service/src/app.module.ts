@@ -24,11 +24,14 @@ import { DiagnosticsModule } from './diagnostics/diagnostics.module';
 import { LiveClassesModule } from './live-classes/live-classes.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { LessonsModule } from './lessons/lessons.module';
+import { CatalogModule } from './catalog/catalog.module';
 import { LeadsModule } from './leads/leads.module';
 import { CommunicationModule } from './communication/communication.module';
 import { MakeupModule } from './makeup/makeup.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { DeviceTokensModule } from './device-tokens/device-tokens.module';
+import { DevicePairingModule } from './auth/device-pairing/device-pairing.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { TimetableModule } from './timetable/timetable.module';
 import { GradebookModule } from './gradebook/gradebook.module';
@@ -65,11 +68,14 @@ import { AuditModule } from './common/audit/audit.module';
     LiveClassesModule,
     AssessmentsModule,
     LessonsModule,
+    CatalogModule,
     LeadsModule,
     CommunicationModule,
     MakeupModule,
     TeacherModule,
     NotificationsModule,
+    DeviceTokensModule,
+    DevicePairingModule,
     UploadsModule,
     TimetableModule,
     GradebookModule,

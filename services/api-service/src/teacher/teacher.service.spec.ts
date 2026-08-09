@@ -6,7 +6,6 @@ import { TeacherStatus } from '@prisma/client';
 
 describe('TeacherService', () => {
   let service: TeacherService;
-  let prisma: PrismaService;
 
   const mockPrismaService: any = {
     user: {
@@ -51,7 +50,6 @@ describe('TeacherService', () => {
     }).compile();
 
     service = module.get<TeacherService>(TeacherService);
-    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 

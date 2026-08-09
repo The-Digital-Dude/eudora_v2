@@ -40,6 +40,17 @@ export interface VirtualBadge {
   maxProgress: number;
 }
 
+export interface TodaysGoal {
+  key: "items" | "videos" | "readings";
+  label: string;
+  target: number;
+  progress: number;
+}
+
+export interface TodaysGoals {
+  goals: TodaysGoal[];
+}
+
 export const studentApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
@@ -55,6 +66,10 @@ export const studentApi = authApi.injectEndpoints({
       query: () => "/gamification/me/badges",
       providesTags: ["Gamification"],
     }),
+    getTodaysGoals: builder.query<TodaysGoals, void>({
+      query: () => "/gamification/today",
+      providesTags: ["GamificationToday" as any],
+    } as any),
   }),
 });
 
@@ -62,4 +77,5 @@ export const {
   useGetGamificationMeQuery,
   useGetLeaderboardQuery,
   useGetBadgesQuery,
+  useGetTodaysGoalsQuery,
 } = studentApi;

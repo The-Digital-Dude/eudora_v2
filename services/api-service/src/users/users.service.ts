@@ -88,7 +88,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const { password, ...result } = user;
+    const { password: _, ...result } = user;
     const formattedRoles = user.roles.map((ur) => ({
       id: ur.role.id,
       name: ur.role.name,

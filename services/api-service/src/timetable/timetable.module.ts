@@ -3,9 +3,10 @@ import { TimetableController } from './timetable.controller';
 import { TimetableService } from './timetable.service';
 import { TimetableConflictService } from './timetable-conflict.service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { FamilyModule } from '../family/family.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, FamilyModule],
   controllers: [TimetableController],
   providers: [TimetableService, TimetableConflictService],
   exports: [TimetableService, TimetableConflictService],

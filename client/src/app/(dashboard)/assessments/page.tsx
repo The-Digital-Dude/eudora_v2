@@ -21,6 +21,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Assessment,
   useArchiveAssessmentMutation,
@@ -81,6 +83,9 @@ export default function AssessmentsPage() {
   const [newWeek, setNewWeek] = useState("");
   const [newDuration, setNewDuration] = useState("60");
   const [newTotalMarks, setNewTotalMarks] = useState("100");
+  const [newDescription, setNewDescription] = useState("");
+  const [newCountsTowardGrade, setNewCountsTowardGrade] = useState(true);
+  const [newMaxAttempts, setNewMaxAttempts] = useState("");
 
   // Assignment dialog state
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -96,6 +101,7 @@ export default function AssessmentsPage() {
     try {
       await createAssessment({
         title: newTitle,
+        description: newDescription.trim() || undefined,
         assessmentTypeId: newTypeId,
         subjectId: newSubjectId,
         levelId: newLevelId,
@@ -103,12 +109,14 @@ export default function AssessmentsPage() {
         weekNumber: newWeek ? parseInt(newWeek) : null,
         estimatedDurationMinutes: parseInt(newDuration) || 60,
         totalMarks: parseInt(newTotalMarks) || 100,
+        countsTowardGrade: newCountsTowardGrade,
+        maxAttempts: newMaxAttempts ? parseInt(newMaxAttempts) : null,
         status: "draft",
       }).unwrap();
 
       toast.success("Assessment created successfully!");
       setCreateDialogOpen(false);
-      
+
       // Reset form
       setNewTitle("");
       setNewTypeId("");
@@ -118,6 +126,9 @@ export default function AssessmentsPage() {
       setNewWeek("");
       setNewDuration("60");
       setNewTotalMarks("100");
+      setNewDescription("");
+      setNewCountsTowardGrade(true);
+      setNewMaxAttempts("");
     } catch (err: any) {
       console.error(err);
       toast.error(err?.data?.message || "Failed to create assessment.");
@@ -411,6 +422,19 @@ export default function AssessmentsPage() {
               />
             </div>
 
+            {/* Description */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Description (optional)
+              </Label>
+              <Textarea
+                placeholder="Shown to students before they start the assessment..."
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                className="min-h-[70px] rounded-xl text-xs bg-muted/30"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               {/* Type */}
               <div className="space-y-1.5">
@@ -531,6 +555,31 @@ export default function AssessmentsPage() {
                   onChange={(e) => setNewTotalMarks(e.target.value)}
                   className="h-10 rounded-xl text-xs bg-muted/30"
                   required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Counts toward grade */}
+              <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-3 h-10">
+                <Label className="text-xs font-semibold text-foreground">
+                  Counts toward grade
+                </Label>
+                <Switch checked={newCountsTowardGrade} onCheckedChange={setNewCountsTowardGrade} />
+              </div>
+
+              {/* Max Attempts */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Max Attempts
+                </Label>
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="Unlimited"
+                  value={newMaxAttempts}
+                  onChange={(e) => setNewMaxAttempts(e.target.value)}
+                  className="h-10 rounded-xl text-xs bg-muted/30"
                 />
               </div>
             </div>

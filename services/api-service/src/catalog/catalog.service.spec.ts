@@ -7,13 +7,6 @@ import { ProgressionService } from '../progression/progression.service';
 describe('CatalogService', () => {
   let service: CatalogService;
 
-  const mockProgressionService: any = {
-    resolveStudentProfileId: jest.fn(),
-    assertConceptUnlocked: jest.fn(),
-    computeConceptUnlockState: jest.fn(),
-    computeConceptDoneMap: jest.fn(),
-  };
-
   const mockPrismaService = {
     learningSubject: {
       findUnique: jest.fn(),
@@ -56,7 +49,10 @@ describe('CatalogService', () => {
       providers: [
         CatalogService,
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: ProgressionService, useValue: mockProgressionService },
+        // Real ProgressionService, backed by the same mocked PrismaService —
+        // its unlock-computation logic is what these tests exercise, and it
+        // has its own dedicated coverage in progression.service.spec.ts.
+        ProgressionService,
       ],
     }).compile();
 

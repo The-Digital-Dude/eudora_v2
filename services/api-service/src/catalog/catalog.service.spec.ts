@@ -115,6 +115,7 @@ describe('CatalogService', () => {
           kind: 'CHAPTER',
           passThresholdPercent: null,
           lessons: [{ id: 'lesson-1' }],
+          items: [],
         },
         {
           id: 'concept-2',
@@ -122,6 +123,7 @@ describe('CatalogService', () => {
           kind: 'CHAPTER',
           passThresholdPercent: null,
           lessons: [{ id: 'lesson-2' }],
+          items: [],
         },
         {
           id: 'concept-3',
@@ -129,6 +131,7 @@ describe('CatalogService', () => {
           kind: 'CHAPTER',
           passThresholdPercent: null,
           lessons: [{ id: 'lesson-3' }],
+          items: [],
         },
       ],
     };
@@ -206,6 +209,7 @@ describe('CatalogService', () => {
           kind: 'CHAPTER',
           passThresholdPercent: null,
           lessons: [{ id: 'lesson-1' }],
+          items: [],
         },
         {
           id: 'checkpoint-1',
@@ -213,6 +217,7 @@ describe('CatalogService', () => {
           kind: 'CHECKPOINT',
           passThresholdPercent: 80,
           lessons: [{ id: 'lesson-checkpoint' }],
+          items: [],
         },
         {
           id: 'chapter-2',
@@ -220,6 +225,7 @@ describe('CatalogService', () => {
           kind: 'CHAPTER',
           passThresholdPercent: null,
           lessons: [{ id: 'lesson-2' }],
+          items: [],
         },
       ],
     };

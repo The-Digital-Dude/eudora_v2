@@ -6,7 +6,6 @@ import {
   ClipboardCheck,
   ClipboardList,
   CreditCard,
-  FileText,
   GraduationCap,
   HeartHandshake,
   Layers,
@@ -39,6 +38,12 @@ export interface NavLeaf {
   requirement: NavRequirement;
   /** Feature has no backing page/API yet — shown greyed out with a "Soon" badge, not linked. */
   disabled?: boolean;
+  /**
+   * Descoped pending redesign: kept in this config (so the route guard still matches the URL and
+   * denies it) but never rendered in the sidebar. Removing the entry outright would have the
+   * opposite effect — the guard treats unmatched routes as "any authenticated role".
+   */
+  hidden?: boolean;
   /** Draws a calm pulsing outline (theme-colored) to call attention to this item while inactive. */
   highlight?: boolean;
 }
@@ -146,13 +151,10 @@ export const navGroups: NavGroup[] = [
             icon: ClipboardList,
             requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
           },
-          {
-            title: "Report Card",
-            url: "/report-card",
-            icon: FileText,
-            requirement: { type: "permission", action: "read", subject: "ReportCard" },
-            disabled: true,
-          },
+          // "Report Card" used to sit here as a permanently-disabled entry pointing at /report-card,
+          // which has no page. The report-card view (GPA, term average, class rank, percentile) is
+          // the student/guardian branch of /gradebook, so that entry only ever hid the real gap:
+          // GUARDIAN held read:ReportCard but not read:Gradebook, and so could reach neither.
         ],
       },
       {
@@ -176,6 +178,10 @@ export const navGroups: NavGroup[] = [
             url: "/diagnostics",
             icon: Stethoscope,
             requirement: { type: "permission", action: "read", subject: "Diagnostic" },
+            // Descoped: DiagnosticsService.scheduleDiagnostic() throws NotImplementedException, so
+            // the page can only ever list pre-existing seed attempts. Grouped with Placement,
+            // LearningGap and MasteryStatusChange for a later design pass.
+            hidden: true,
           },
           {
             title: "Courses",
@@ -212,6 +218,10 @@ export const navGroups: NavGroup[] = [
             url: "/placement",
             icon: Layers,
             requirement: { type: "permission", action: "read", subject: "Placement" },
+            // Descoped alongside Diagnostics: Placement's recommendation-generation path also throws
+            // NotImplementedException, and it depends on Diagnostics to ever feed it new records,
+            // so on its own it could only ever show stale seed data.
+            hidden: true,
           },
         ],
       },

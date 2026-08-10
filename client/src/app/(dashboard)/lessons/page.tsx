@@ -40,10 +40,16 @@ import {
   useReorderCardsMutation,
   useUpdateCardMutation} from "@/features/clio/clioApi";
 import { WidgetSelector } from "@/features/clio/widgets/WidgetSelector";
+import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
 export default function LessonAuthoringPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [conceptFilter, setConceptFilter] = useState("all");
+  // Filters live in the URL. Search stays client-side: useGetLessonsQuery returns every lesson
+  // unpaginated, so there's no hidden tail for a server-side search to reach.
+  const { values, setValue } = useListQueryState({ search: "", concept: "all" });
+  const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
+    setValue("search", next),
+  );
+  const conceptFilter = values.concept;
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
 
   // Active Card in composition studio
@@ -267,7 +273,7 @@ export default function LessonAuthoringPage() {
   const filteredLessons = (lessons ?? []).filter((l) => {
     const title = l.title.toLowerCase();
     const desc = (l.description ?? "").toLowerCase();
-    const query = searchQuery.toLowerCase();
+    const query = values.search.toLowerCase();
     const matchesQuery = title.includes(query) || desc.includes(query);
     const matchesConcept = conceptFilter === "all" || l.conceptId === conceptFilter;
     return matchesQuery && matchesConcept;
@@ -622,7 +628,7 @@ export default function LessonAuthoringPage() {
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <select
               value={conceptFilter}
-              onChange={(e) => setConceptFilter(e.target.value)}
+              onChange={(e) => setValue("concept", e.target.value)}
               className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
             >
               <option value="all">All Concepts</option>
@@ -642,8 +648,8 @@ export default function LessonAuthoringPage() {
                 <Search className="h-3.5 w-3.5" />
               </span>
               <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchDraft}
+                onChange={(e) => setSearchDraft(e.target.value)}
                 className="h-9 pl-9 text-xs"
                 placeholder="Search lessons by title..."
               />

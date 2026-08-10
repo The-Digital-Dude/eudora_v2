@@ -318,18 +318,38 @@ export class AcademicService {
     limit = 10,
     academicYearId?: string,
     programId?: string,
+    learningSubjectId?: string,
+    search?: string,
   ) {
     const skip = (page - 1) * limit;
     const where: Prisma.ClassSectionWhereInput = {};
     if (academicYearId) where.academicYearId = academicYearId;
     if (programId) where.programId = programId;
+    // 'none' selects sections not yet tagged, so admins can find what still needs a subject after
+    // the column was introduced — every pre-existing section starts untagged.
+    if (learningSubjectId === 'none') {
+      where.learningSubjectId = null;
+    } else if (learningSubjectId) {
+      where.learningSubjectId = learningSubjectId;
+    }
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+        { classroom: { contains: search, mode: 'insensitive' } },
+      ];
+    }
 
     const [sections, total] = await Promise.all([
       this.prisma.classSection.findMany({
         where,
         skip,
         take: limit,
-        include: { academicYear: true, program: true },
+        include: {
+          academicYear: true,
+          program: true,
+          learningSubject: { select: { id: true, name: true, code: true } },
+        },
         orderBy: { name: 'asc' },
       }),
       this.prisma.classSection.count({ where }),

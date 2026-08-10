@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 
+import { ListPagination } from "@/components/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -29,12 +30,22 @@ import {
   useRemoveUserRoleMutation,
   useUpdateUserMutation,
 } from "@/features/dashboard/dashboardApi";
+import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
+
+const PAGE_SIZE = 20;
 
 export default function UsersPage() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const { values, setValue } = useListQueryState({ search: "", page: 1 }, { pageKey: "page" });
+  const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
+    setValue("search", next),
+  );
 
   // Queries & Mutations
-  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery();
+  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
+    page: values.page,
+    limit: PAGE_SIZE,
+    search: values.search || undefined,
+  });
   const { data: rolesData } = useGetRolesQuery();
   const [updateUser, { isLoading: updatingUser }] = useUpdateUserMutation();
   const [assignUserRole] = useAssignUserRoleMutation();
@@ -102,13 +113,9 @@ export default function UsersPage() {
     }
   };
 
-  const filteredUsers =
-    usersData?.items?.filter((u) => {
-      const fullName = getUserName(u).toLowerCase();
-      const email = (u.email || "").toLowerCase();
-      const query = searchQuery.toLowerCase();
-      return fullName.includes(query) || email.includes(query);
-    }) || [];
+  // Already filtered by the server.
+  const filteredUsers = usersData?.items || [];
+  const totalMatching = usersData?.total ?? 0;
 
   return (
     <div className="animate-fade-in space-y-6 text-foreground">
@@ -134,8 +141,8 @@ export default function UsersPage() {
             <Input
               type="text"
               placeholder="Search users by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchDraft}
+              onChange={(e) => setSearchDraft(e.target.value)}
               className="h-10 rounded-xl border-border bg-card pl-9 text-xs text-foreground"
             />
           </div>
@@ -260,6 +267,14 @@ export default function UsersPage() {
             </tbody>
           </table>
         </div>
+
+        <ListPagination
+          page={values.page}
+          pageSize={PAGE_SIZE}
+          total={totalMatching}
+          onPageChange={(next) => setValue("page", next)}
+          label="user"
+        />
       </Card>
 
       {/* Edit User Form Dialog */}

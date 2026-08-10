@@ -37,14 +37,26 @@ import {
   useUpdateCampusMutation,
   useUpdateProgramMutation,
 } from "@/features/dashboard/dashboardApi";
+import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
 export default function CampusesPage() {
-  const [activeTab, setActiveTab] = useState("campuses");
-  const [searchQuery, setSearchQuery] = useState("");
+  // Tab and search both live in the URL, so a filtered Programs view can be linked directly
+  // instead of always reopening on the Campuses tab with an empty search.
+  const { values, setValue } = useListQueryState({ tab: "campuses", search: "" });
+  const activeTab = values.tab;
+  const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
+    setValue("search", next),
+  );
 
   // Queries & Mutations
-  const { data: campusesData, isLoading: campusesLoading } = useGetCampusesQuery();
-  const { data: programsData, isLoading: programsLoading } = useGetProgramsQuery();
+  // Both lists search server-side. The campus search in particular used to run client-side against
+  // `c.code`, a field the API never returns — so typing here threw on the first keystroke.
+  const { data: campusesData, isLoading: campusesLoading } = useGetCampusesQuery({
+    search: values.search || undefined,
+  });
+  const { data: programsData, isLoading: programsLoading } = useGetProgramsQuery({
+    search: values.search || undefined,
+  });
 
   const [createCampus, { isLoading: creatingCampus }] = useCreateCampusMutation();
   const [updateCampus, { isLoading: updatingCampus }] = useUpdateCampusMutation();
@@ -215,20 +227,9 @@ export default function CampusesPage() {
     }
   };
 
-  // Filters
-  const filteredCampuses =
-    campusesData?.items?.filter(
-      (c) =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.code.toLowerCase().includes(searchQuery.toLowerCase()),
-    ) || [];
-
-  const filteredPrograms =
-    programsData?.items?.filter(
-      (p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.code.toLowerCase().includes(searchQuery.toLowerCase()),
-    ) || [];
+  // Already filtered by the server.
+  const filteredCampuses = campusesData?.items || [];
+  const filteredPrograms = programsData?.items || [];
 
   return (
     <div className="animate-fade-in space-y-6 text-foreground">
@@ -256,7 +257,7 @@ export default function CampusesPage() {
       </div>
 
       {/* Tabs list with Search Input */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={(next) => setValue("tab", next)} className="w-full">
         <div className="flex flex-col gap-4 border-b border-border pb-4 md:flex-row md:items-center md:justify-between">
           <TabsList className="h-11 w-fit rounded-xl bg-muted p-1">
             <TabsTrigger
@@ -282,8 +283,8 @@ export default function CampusesPage() {
             <Input
               type="text"
               placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchDraft}
+              onChange={(e) => setSearchDraft(e.target.value)}
               className="h-10 rounded-xl border-border bg-card pl-9 text-xs text-foreground"
             />
           </div>

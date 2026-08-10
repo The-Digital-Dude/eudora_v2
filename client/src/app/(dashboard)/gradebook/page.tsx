@@ -36,6 +36,7 @@ import {
 } from "@/features/academic/gradebookApi";
 import { useGetTermsQuery } from "@/features/academic/timetableApi";
 import { useGetCourseClassesQuery } from "@/features/dashboard/dashboardApi";
+import { useGetChildrenQuery } from "@/features/parent/parentApi";
 import { useAppSelector } from "@/store/hooks";
 
 export default function GradebookPage() {
@@ -83,10 +84,17 @@ export default function GradebookPage() {
   >({});
 
   // 2. STUDENT / GUARDIAN VIEW STATES
-  const linkedStudents = user?.guardianProfile?.students || [];
-  const [selectedStudentId, setSelectedStudentId] = React.useState<string>(
-    linkedStudents[0]?.studentProfileId || "",
-  );
+  // Guardians resolve their children via /parent/children, the same source the parent portal uses.
+  // The auth payload's guardianProfile.students holds relationship rows only — no nested
+  // studentProfile — so it can supply ids but not the child names this selector renders.
+  const { data: linkedStudents = [] } = useGetChildrenQuery(undefined, { skip: !isGuardian });
+  const [selectedStudentId, setSelectedStudentId] = React.useState<string>("");
+
+  React.useEffect(() => {
+    if (linkedStudents.length > 0 && !selectedStudentId) {
+      setSelectedStudentId(linkedStudents[0].studentProfileId);
+    }
+  }, [linkedStudents, selectedStudentId]);
 
   // Queries
   const { data: courseClassesData, isLoading: isLoadingClasses } = useGetCourseClassesQuery();
@@ -332,9 +340,9 @@ export default function GradebookPage() {
                 onChange={(e) => setSelectedStudentId(e.target.value)}
                 className="h-10 rounded-xl border border-border bg-card px-3 text-xs focus:outline-none"
               >
-                {linkedStudents.map((rel: any) => (
-                  <option key={rel.studentProfileId} value={rel.studentProfileId}>
-                    {rel.studentProfile?.fullName || "Child Profile"}
+                {linkedStudents.map((child) => (
+                  <option key={child.studentProfileId} value={child.studentProfileId}>
+                    {child.fullName}
                   </option>
                 ))}
               </select>

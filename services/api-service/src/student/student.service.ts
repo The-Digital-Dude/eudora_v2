@@ -67,16 +67,23 @@ export class StudentService {
     limit = 10,
     status?: string,
     includeArchived = false,
+    search?: string,
   ) {
     const skip = (page - 1) * limit;
     const where: any = {};
     if (status) {
       where.status = status;
     }
+    if (search) {
+      where.OR = [
+        { fullName: { contains: search, mode: 'insensitive' } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
     // includeArchived is a scoping-extension arg, stripped before validation.
     const archivedArg = includeArchived ? { includeArchived: true } : {};
 
-    const [profiles, total] = await Promise.all([
+    const [profiles, total, placedStudents, enrollmentTotal] = await Promise.all([
       this.prisma.studentProfile.findMany({
         where,
         skip,
@@ -88,6 +95,11 @@ export class StudentService {
         ...archivedArg,
       } as any),
       this.prisma.studentProfile.count({ where, ...archivedArg } as any),
+      // Roster-wide stats for the summary cards. Deliberately unfiltered and unpaginated: the
+      // cards describe the whole roster, so deriving them from the current page (as the client
+      // used to) undercounted as soon as the roster outgrew a single page.
+      this.prisma.studentProfile.count({ where: { placements: { some: {} } } }),
+      this.prisma.studentCourseEnrollment.count(),
     ]);
 
     return {
@@ -97,6 +109,7 @@ export class StudentService {
         page,
         limit,
         totalPages: Math.ceil(total / limit),
+        stats: { placedStudents, enrollmentTotal },
       },
     };
   }

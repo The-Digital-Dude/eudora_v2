@@ -27,10 +27,15 @@ export class UsersController {
   @Get()
   @Roles('ADMIN', 'SUPER_ADMIN')
   @RequirePermissions({ action: 'read', subject: 'User' })
-  async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+  async findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('role') role?: string,
+  ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.usersService.findAll(pageNum, limitNum);
+    return this.usersService.findAll(pageNum, limitNum, search, role);
   }
 
   @Get(':id')

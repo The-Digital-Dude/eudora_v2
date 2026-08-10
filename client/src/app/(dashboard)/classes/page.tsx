@@ -8,10 +8,15 @@ import {
   Check,
   CheckCircle2,
   Clock,
+  Layers,
+  Plus,
+  Search,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import React, { useState } from "react";
 
+import { ListPagination } from "@/components/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -24,13 +29,36 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useGetLearningSubjectsQuery } from "@/features/catalog/catalogApi";
 import {
+  useGetClassSectionsQuery,
   useGetCourseClassesQuery,
   useGetMakeupRequestsQuery,
   useUpdateMakeupRequestMutation,
 } from "@/features/dashboard/dashboardApi";
+import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
+
+const PAGE_SIZE = 20;
 
 export default function ClassesPage() {
+  // Class-section list state, held in the URL so a subject-filtered roster view can be shared.
+  const { values, setValue } = useListQueryState(
+    { search: "", subject: "all", page: 1 },
+    { pageKey: "page" },
+  );
+  const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
+    setValue("search", next),
+  );
+
+  const { data: subjects } = useGetLearningSubjectsQuery();
+  const { data: sectionsData, isLoading: sectionsLoading } = useGetClassSectionsQuery({
+    page: values.page,
+    limit: PAGE_SIZE,
+    search: values.search || undefined,
+    learningSubjectId: values.subject === "all" ? undefined : values.subject,
+  });
+  const sectionList = sectionsData?.items || [];
+
   // RTK queries and mutations
   const { data: classesData, isLoading: classesLoading } = useGetCourseClassesQuery();
   const { data: makeupData, isLoading: makeupLoading } = useGetMakeupRequestsQuery();
@@ -95,13 +123,23 @@ export default function ClassesPage() {
   return (
     <div className="animate-fade-in space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
-          Classes, Attendance & Make-ups
-        </h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Schedule classrooms, record attendance logs, and manage make-up sessions.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
+            Classes, Attendance & Make-ups
+          </h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Schedule classrooms, record attendance logs, and manage make-up sessions.
+          </p>
+        </div>
+        <Button
+          asChild
+          className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90"
+        >
+          <Link href="/classes/create">
+            <Plus className="h-4 w-4" /> New Class Section
+          </Link>
+        </Button>
       </div>
 
       {/* Metrics Cards */}
@@ -145,6 +183,105 @@ export default function ClassesPage() {
           <p className="text-[10px] text-muted-foreground">Awaiting schedule matching</p>
         </Card>
       </div>
+
+      {/* Class Sections — the roster unit attendance, timetable and gradebook all hang off. */}
+      <Card className="space-y-4 rounded-3xl border border-border bg-card p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-display text-sm font-bold text-foreground">Class Sections</h2>
+
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <select
+              value={values.subject}
+              onChange={(e) => setValue("subject", e.target.value)}
+              className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
+            >
+              <option value="all">All Subjects</option>
+              <option value="none">No subject tagged</option>
+              {(subjects ?? []).map((subject) => (
+                <option key={subject.id} value={subject.id}>
+                  {subject.name}
+                </option>
+              ))}
+            </select>
+
+            <div className="relative w-full sm:w-64">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                <Search className="h-3.5 w-3.5" />
+              </span>
+              <Input
+                value={searchDraft}
+                onChange={(e) => setSearchDraft(e.target.value)}
+                className="h-9 pl-9 text-xs"
+                placeholder="Search sections by name, code or room..."
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {sectionsLoading ? (
+            [...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="h-16 animate-pulse rounded-2xl border border-border bg-muted/50"
+              />
+            ))
+          ) : sectionList.length > 0 ? (
+            sectionList.map((section) => (
+              <Link
+                key={section.id}
+                href={`/classes/${section.id}`}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/50 p-3.5 transition-all hover:border-foreground/20 hover:bg-muted"
+              >
+                <div className="min-w-0">
+                  <h3 className="truncate text-xs font-semibold text-foreground">{section.name}</h3>
+                  <p className="mt-0.5 font-mono text-[10px] text-muted-foreground uppercase">
+                    {section.code}
+                    {section.class ? ` · ${section.class}` : ""}
+                    {section.classroom ? ` · ${section.classroom}` : ""}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  {section.learningSubject ? (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[9px] font-bold text-primary">
+                      <Layers className="h-3 w-3" />
+                      {section.learningSubject.name}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-md border border-border bg-muted px-2 py-0.5 text-[9px] font-semibold text-muted-foreground">
+                      No subject
+                    </span>
+                  )}
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                      section.status === "ACTIVE"
+                        ? "border border-success/20 bg-success/10 text-success"
+                        : "border border-border bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {section.status}
+                  </span>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <p className="py-6 text-center text-xs font-medium text-muted-foreground">
+              {values.search || values.subject !== "all"
+                ? "No class sections match these filters."
+                : "No class sections yet. Create one to start building rosters."}
+            </p>
+          )}
+        </div>
+
+        <ListPagination
+          page={values.page}
+          pageSize={PAGE_SIZE}
+          total={sectionsData?.total ?? 0}
+          onPageChange={(next) => setValue("page", next)}
+          label="section"
+        />
+      </Card>
 
       {/* Lists Section */}
       <div className="grid gap-6 md:grid-cols-2">

@@ -271,21 +271,29 @@ model AcademicYear {
 }
 
 model ClassSection {
-  id             String      @id @default(uuid())
-  programId      String
-  academicYearId String
-  name           String
-  code           String      @unique
-  class          String?
-  classroom      String?
-  status         ClassStatus @default(ACTIVE)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  deletedAt      DateTime?
-  deletedById    String?
+  id                String      @id @default(uuid())
+  programId         String
+  academicYearId    String
+  name              String
+  code              String      @unique
+  /// Free-text grade level ("Grade 10"), distinct from `classroom` (the physical room). Overlaps
+  /// with the `Level` model, which is currently wired only to Assessment/Question/Placement —
+  /// consolidating the two is deliberately left as separate work.
+  class             String?
+  classroom         String?
+  /// Subject this section teaches. Nullable because `Program` can span multiple subjects, so the
+  /// tag has to sit per-section rather than being inherited from the program, and because every
+  /// section that existed before this column was added has no subject until an admin sets one.
+  learningSubjectId String?
+  status            ClassStatus @default(ACTIVE)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  deletedAt         DateTime?
+  deletedById       String?
 
   program                  Program                   @relation(fields: [programId], references: [id], onDelete: Cascade)
   academicYear             AcademicYear              @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  learningSubject          LearningSubject?          @relation(fields: [learningSubjectId], references: [id], onDelete: SetNull)
   placements               StudentClassPlacement[]
   dailyAttendance          DailyAttendance[]
   teachers                 ClassTeacher[]
@@ -296,6 +304,7 @@ model ClassSection {
   placementRecommendations PlacementRecommendation[]
   liveClassSessions        LiveClassSession[]
 
+  @@index([learningSubjectId])
   @@map("class_sections")
 }
 
@@ -343,22 +352,22 @@ model CourseClass {
 }
 
 model StudentProfile {
-  id          String        @id @default(uuid())
-  userId      String        @unique
-  fullName    String
-  birthDate   DateTime
-  gender      Gender
-  status      StudentStatus @default(ACTIVE)
+  id                    String        @id @default(uuid())
+  userId                String        @unique
+  fullName              String
+  birthDate             DateTime
+  gender                Gender
+  status                StudentStatus @default(ACTIVE)
   // Self-service profile-completion fields (mobile/web Settings) — nullable
   // because every existing StudentProfile was created without them.
-  phone                  String?
-  address                String?
-  emergencyContactName   String?
-  emergencyContactPhone  String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  deletedAt   DateTime?
-  deletedById String?
+  phone                 String?
+  address               String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  deletedAt             DateTime?
+  deletedById           String?
 
   user                     User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
   placements               StudentClassPlacement[]
@@ -783,6 +792,10 @@ enum ConceptKind {
   CHECKPOINT
 }
 
+/// Catalogue taxonomy: groups Course, LearningPath and ClassSection.
+///
+/// NOT the same concept as the `Subject` model, which tags Assessment/Question rows only. The two
+/// are unrelated — no foreign key, no shared rows.
 model LearningSubject {
   id          String   @id @default(uuid())
   code        String   @unique
@@ -794,8 +807,9 @@ model LearningSubject {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  courses Course[]
-  paths   LearningPath[]
+  courses       Course[]
+  paths         LearningPath[]
+  classSections ClassSection[]
 
   @@map("learning_subjects")
 }
@@ -1204,22 +1218,22 @@ model NextAction {
 }
 
 model AuthSession {
-  id               String    @id @default(uuid())
-  userId           String
-  refreshTokenHash String    @unique
+  id                       String    @id @default(uuid())
+  userId                   String
+  refreshTokenHash         String    @unique
   // The hash rotated away on the most recent refresh, kept only long enough to
   // recognise a benign retry (network flake, app resumed mid-refresh) and tell
   // it apart from genuine token theft. Not unique: a replayed hash may briefly
   // coexist across rows, and colliding here would 500 rather than authenticate.
   previousRefreshTokenHash String?
   rotatedAt                DateTime?
-  userAgent        String?
-  ipAddress        String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  expiresAt        DateTime
-  revokedAt        DateTime?
-  revokedReason    String?
+  userAgent                String?
+  ipAddress                String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  expiresAt                DateTime
+  revokedAt                DateTime?
+  revokedReason            String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1241,6 +1255,13 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+/// Assessment-bank taxonomy: tags Assessment and Question rows only.
+///
+/// NOT the same concept as `LearningSubject`, despite the name — there is no relation between the
+/// two and no code path converts one to the other. `LearningSubject` is the catalogue taxonomy
+/// (Course, LearningPath, ClassSection); this one exists purely to categorise the question bank.
+/// Renaming this to `AssessmentSubject` is the eventual fix; until then, check which of the two you
+/// mean before adding a relation to either.
 model Subject {
   id        String   @id @default(uuid())
   code      String   @unique

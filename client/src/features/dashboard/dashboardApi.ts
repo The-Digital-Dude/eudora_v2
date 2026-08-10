@@ -122,6 +122,12 @@ export interface ClassSection {
   academicYearId: string;
   name: string;
   code: string;
+  /** Free-text grade level ("Grade 10"), not the physical room — that's `classroom`. */
+  class?: string | null;
+  classroom?: string | null;
+  /** Null until an admin tags the section; every section predating the column starts untagged. */
+  learningSubjectId?: string | null;
+  learningSubject?: { id: string; name: string; code: string } | null;
   status: "ACTIVE" | "INACTIVE";
   createdAt: string;
   updatedAt: string;
@@ -295,12 +301,16 @@ export const dashboardApi = authApi.injectEndpoints({
   endpoints: (builder) => ({
     getCampuses: builder.query<
       { items: Campus[]; total: number },
-      { page?: number; limit?: number } | void
+      { page?: number; limit?: number; search?: string; status?: string } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
+        // Default stays high: the dashboard layout's campus switcher calls this with no arguments
+        // and expects the full list, not a page of it.
         const limit = params?.limit ?? 100;
-        return `/campuses?page=${page}&limit=${limit}`;
+        const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
+        const statusQuery = params?.status ? `&status=${params.status}` : "";
+        return `/campuses?page=${page}&limit=${limit}${searchQuery}${statusQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -334,13 +344,14 @@ export const dashboardApi = authApi.injectEndpoints({
 
     getPrograms: builder.query<
       { items: Program[]; total: number },
-      { page?: number; limit?: number; campusId?: string } | void
+      { page?: number; limit?: number; campusId?: string; search?: string } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
         const campusQuery = params?.campusId ? `&campusId=${params.campusId}` : "";
-        return `/programs?page=${page}&limit=${limit}${campusQuery}`;
+        const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
+        return `/programs?page=${page}&limit=${limit}${campusQuery}${searchQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -374,12 +385,14 @@ export const dashboardApi = authApi.injectEndpoints({
 
     getUsers: builder.query<
       { items: User[]; total: number },
-      { page?: number; limit?: number } | void
+      { page?: number; limit?: number; search?: string; role?: string } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
-        return `/users?page=${page}&limit=${limit}`;
+        const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
+        const roleQuery = params?.role ? `&role=${encodeURIComponent(params.role)}` : "";
+        return `/users?page=${page}&limit=${limit}${searchQuery}${roleQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -484,12 +497,14 @@ export const dashboardApi = authApi.injectEndpoints({
 
     getLeads: builder.query<
       { items: Lead[]; total: number },
-      { page?: number; limit?: number } | void
+      { page?: number; limit?: number; search?: string; status?: string } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
-        return `/leads?page=${page}&limit=${limit}`;
+        const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
+        const statusQuery = params?.status ? `&status=${encodeURIComponent(params.status)}` : "";
+        return `/leads?page=${page}&limit=${limit}${searchQuery}${statusQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -539,18 +554,60 @@ export const dashboardApi = authApi.injectEndpoints({
 
     getClassSections: builder.query<
       { items: ClassSection[]; total: number },
-      { page?: number; limit?: number } | void
+      | {
+          page?: number;
+          limit?: number;
+          /** Pass "none" to list only sections that have no subject tagged yet. */
+          learningSubjectId?: string;
+          search?: string;
+        }
+      | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
-        return `/class-sections?page=${page}&limit=${limit}`;
+        const subjectQuery = params?.learningSubjectId
+          ? `&learningSubjectId=${encodeURIComponent(params.learningSubjectId)}`
+          : "";
+        const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
+        return `/class-sections?page=${page}&limit=${limit}${subjectQuery}${searchQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
         total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["ClassSections"],
+    } as any),
+
+    getClassSection: builder.query<ClassSection, string>({
+      query: (id: any) => `/class-sections/${id}`,
+      providesTags: ["ClassSections"],
+    } as any),
+    createClassSection: builder.mutation<ClassSection, Partial<ClassSection>>({
+      query: (body: any) => ({
+        url: "/class-sections",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["ClassSections"],
+    } as any),
+    updateClassSection: builder.mutation<
+      ClassSection,
+      { id: string; body: Partial<ClassSection> }
+    >({
+      query: ({ id, body }: any) => ({
+        url: `/class-sections/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["ClassSections"],
+    } as any),
+    deleteClassSection: builder.mutation<void, string>({
+      query: (id: any) => ({
+        url: `/class-sections/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["ClassSections"],
     } as any),
 
     getAcademicYears: builder.query<
@@ -636,8 +693,19 @@ export const dashboardApi = authApi.injectEndpoints({
     } as any),
 
     getStudentProfiles: builder.query<
-      { items: StudentProfile[]; total: number },
-      | { page?: number; limit?: number; status?: string; includeArchived?: boolean }
+      {
+        items: StudentProfile[];
+        total: number;
+        /** Roster-wide counts from the server, independent of the current page and filters. */
+        stats: { placedStudents: number; enrollmentTotal: number };
+      },
+      | {
+          page?: number;
+          limit?: number;
+          status?: string;
+          includeArchived?: boolean;
+          search?: string;
+        }
       | void
     >({
       query: (params: any) => {
@@ -647,11 +715,16 @@ export const dashboardApi = authApi.injectEndpoints({
         const archivedQuery = params?.includeArchived
           ? "&includeArchived=true"
           : "";
-        return `/student-profiles?page=${page}&limit=${limit}${statusQuery}${archivedQuery}`;
+        const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
+        return `/student-profiles?page=${page}&limit=${limit}${statusQuery}${archivedQuery}${searchQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
         total: response.meta?.total ?? response.data?.length ?? 0,
+        stats: {
+          placedStudents: response.meta?.stats?.placedStudents ?? 0,
+          enrollmentTotal: response.meta?.stats?.enrollmentTotal ?? 0,
+        },
       }),
       providesTags: ["Students"],
     } as any),
@@ -881,6 +954,10 @@ export const {
   useDeleteLeadMutation,
   useGetCourseClassesQuery,
   useGetClassSectionsQuery,
+  useGetClassSectionQuery,
+  useCreateClassSectionMutation,
+  useUpdateClassSectionMutation,
+  useDeleteClassSectionMutation,
   useGetAcademicYearsQuery,
   useGetMakeupRequestsQuery,
   useUpdateMakeupRequestMutation,

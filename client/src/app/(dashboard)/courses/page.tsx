@@ -21,6 +21,7 @@ import {
   useGetCoursesQuery,
   useGetLearningSubjectsQuery,
 } from "@/features/catalog/catalogApi";
+import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
 import { CourseTable } from "./components/course-table";
 
@@ -33,8 +34,14 @@ function slugify(value: string) {
 }
 
 export default function CoursesPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [subjectId, setSubjectId] = useState("all");
+  // Subject and search live in the URL so a filtered catalogue view can be shared. Search stays a
+  // client-side pass on purpose: listCourses returns every matching course unpaginated, so there's
+  // nothing for a server-side search to protect against here.
+  const { values, setValue } = useListQueryState({ search: "", subjectId: "all" });
+  const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
+    setValue("search", next),
+  );
+  const subjectId = values.subjectId;
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [isSubjectDialogOpen, setIsSubjectDialogOpen] = useState(false);
@@ -60,7 +67,7 @@ export default function CoursesPage() {
   const [createCourse, { isLoading: creatingCourse }] = useCreateCourseMutation();
 
   const filteredCourses = (courses ?? []).filter((course) => {
-    const query = searchQuery.toLowerCase();
+    const query = values.search.toLowerCase();
     return (
       course.title.toLowerCase().includes(query) ||
       course.learningSubject.name.toLowerCase().includes(query)
@@ -168,14 +175,14 @@ export default function CoursesPage() {
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search courses by title or subject..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
             className="h-10 rounded-xl border-border bg-muted/50 pl-10 text-xs"
           />
         </div>
         <select
           value={subjectId}
-          onChange={(e) => setSubjectId(e.target.value)}
+          onChange={(e) => setValue("subjectId", e.target.value)}
           className="h-10 rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
         >
           <option value="all">All Subjects</option>

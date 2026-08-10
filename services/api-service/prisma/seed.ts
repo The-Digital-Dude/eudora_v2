@@ -70,7 +70,11 @@ async function main() {
     const pid = permissionIds[k];
     if (pid) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: teacherRole.id, permissionId: pid } }, update: {}, create: { roleId: teacherRole.id, permissionId: pid } });
   }
-  for (const k of ['read:User','read:Student','read:Timetable','read:Attendance','read:Homework','read:ReportCard']) {
+  // read:Gradebook is what actually unlocks the report card for guardians: the "Report Card &
+  // Academic Ledger" view (GPA, term average, class rank, percentile) is the guardian branch of
+  // /gradebook, and both gradebook student endpoints require read:Gradebook. Without it a guardian
+  // held read:ReportCard while the only page serving it returned Access Denied.
+  for (const k of ['read:User','read:Student','read:Timetable','read:Attendance','read:Homework','read:ReportCard','read:Gradebook']) {
     const pid = permissionIds[k];
     if (pid) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: guardianRole.id, permissionId: pid } }, update: {}, create: { roleId: guardianRole.id, permissionId: pid } });
   }

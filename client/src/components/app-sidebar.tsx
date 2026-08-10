@@ -56,10 +56,12 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         const items = group.items
           .map((item) => {
             if (isNavParent(item)) {
-              const children = item.children.filter((child) => hasAccess(user, child.requirement));
+              const children = item.children.filter(
+                (child) => !child.hidden && hasAccess(user, child.requirement),
+              );
               return children.length > 0 ? { ...item, children } : null;
             }
-            return hasAccess(user, item.requirement) ? item : null;
+            return !item.hidden && hasAccess(user, item.requirement) ? item : null;
           })
           .filter((item): item is NonNullable<typeof item> => item !== null);
         return { ...group, items };

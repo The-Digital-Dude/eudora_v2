@@ -30,10 +30,15 @@ export class LeadsController {
   @Get()
   @Roles('ADMIN', 'SUPER_ADMIN')
   @RequirePermissions({ action: 'read', subject: 'Lead' })
-  async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+  async findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+  ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.leadsService.findAll(pageNum, limitNum);
+    return this.leadsService.findAll(pageNum, limitNum, status, search);
   }
 
   @Get(':id')

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 
+import { ListPagination } from "@/components/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import {
@@ -30,12 +31,31 @@ import {
   useGetLeadsQuery,
   useUpdateLeadMutation,
 } from "@/features/dashboard/dashboardApi";
+import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
+
+const PAGE_SIZE = 20;
 
 export default function LeadsPage() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const { values, setValue } = useListQueryState({ search: "", page: 1 }, { pageKey: "page" });
+  const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
+    setValue("search", next),
+  );
 
   // RTK Queries & Mutations
-  const { data: leadsData, isLoading } = useGetLeadsQuery();
+  const { data: leadsData, isLoading } = useGetLeadsQuery({
+    page: values.page,
+    limit: PAGE_SIZE,
+    search: values.search || undefined,
+  });
+
+  // Pipeline metrics describe the whole funnel, so they're counted server-side rather than derived
+  // from whichever page is on screen. limit:1 makes each of these effectively just a count.
+  const { data: allLeadsMeta } = useGetLeadsQuery({ limit: 1 });
+  const { data: diagnosticLeadsMeta } = useGetLeadsQuery({
+    limit: 1,
+    status: "Diagnostic Scheduled",
+  });
+  const { data: enrolledLeadsMeta } = useGetLeadsQuery({ limit: 1, status: "Enrolled" });
   const [createLead, { isLoading: creating }] = useCreateLeadMutation();
   const [updateLead, { isLoading: updating }] = useUpdateLeadMutation();
   const [deleteLead] = useDeleteLeadMutation();
@@ -114,22 +134,14 @@ export default function LeadsPage() {
   };
 
   // Metrics calculation
-  const leadsList = leadsData?.items || [];
-  const totalLeads = leadsList.length;
-  const diagnosticsBooked = leadsList.filter(
-    (l: any) => l.status === "Diagnostic Scheduled",
-  ).length;
-  const enrolledCount = leadsList.filter((l: any) => l.status === "Enrolled").length;
+  const totalLeads = allLeadsMeta?.total ?? 0;
+  const diagnosticsBooked = diagnosticLeadsMeta?.total ?? 0;
+  const enrolledCount = enrolledLeadsMeta?.total ?? 0;
   const conversionRate = totalLeads > 0 ? Math.round((enrolledCount / totalLeads) * 100) : 0;
 
-  // Filtered Leads list
-  const filteredLeads = leadsList.filter((l: any) => {
-    const name = l.name?.toLowerCase() || "";
-    const email = l.email?.toLowerCase() || "";
-    const source = l.source?.toLowerCase() || "";
-    const query = searchQuery.toLowerCase();
-    return name.includes(query) || email.includes(query) || source.includes(query);
-  });
+  // Rows for the current page — the server has already applied the search.
+  const filteredLeads = leadsData?.items || [];
+  const totalMatching = leadsData?.total ?? 0;
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -197,8 +209,8 @@ export default function LeadsPage() {
               <Search className="h-3.5 w-3.5" />
             </span>
             <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchDraft}
+              onChange={(e) => setSearchDraft(e.target.value)}
               className="h-9 pl-9 text-xs"
               placeholder="Search leads..."
             />
@@ -302,6 +314,14 @@ export default function LeadsPage() {
             </tbody>
           </table>
         </div>
+
+        <ListPagination
+          page={values.page}
+          pageSize={PAGE_SIZE}
+          total={totalMatching}
+          onPageChange={(next) => setValue("page", next)}
+          label="lead"
+        />
       </Card>
 
       {/* Add / Edit Dialog */}

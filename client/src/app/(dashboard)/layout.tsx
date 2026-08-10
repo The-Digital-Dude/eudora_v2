@@ -2,7 +2,7 @@
 
 import { Loader2, ShieldAlert } from "lucide-react";
 import { usePathname,useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { Suspense,useState } from "react";
 
 // New dashboard layout elements
 import { AppSidebar } from "@/components/app-sidebar";
@@ -61,6 +61,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
     // Routes with no nav entry default to "any authenticated role", same as before.
     if (!matchedLeaf) return true;
+    // Hidden (descoped) and disabled (no backing page) leaves stay in the config purely so this
+    // guard keeps matching their URL. Neither should be reachable by typing it directly — dropping
+    // them from the config instead would fall through to the "any authenticated role" default above.
+    if (matchedLeaf.hidden || matchedLeaf.disabled) return false;
     return hasAccess(user, matchedLeaf.requirement);
   }, [pathname, user]);
 
@@ -158,7 +162,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         <div className="flex flex-1 flex-col gap-2">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-6 md:gap-6 lg:px-6">
-            {children}
+            {/* The list pages read their filter/sort/page state from the URL via
+                useListQueryState -> useSearchParams, which opts its subtree out of prerendering and
+                fails a production build unless a boundary sits above it. One boundary here covers
+                every dashboard page instead of repeating it in each of them. */}
+            <Suspense
+              fallback={
+                <div className="flex min-h-[50vh] items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              }
+            >
+              {children}
+            </Suspense>
           </div>
         </div>
       </main>

@@ -26,6 +26,10 @@ export class CreateClassSectionDto {
   @IsOptional()
   classroom?: string;
 
+  @IsString()
+  @IsOptional()
+  learningSubjectId?: string;
+
   @IsEnum(ClassStatus)
   @IsOptional()
   status?: ClassStatus;
@@ -51,6 +55,10 @@ export class UpdateClassSectionDto {
   @IsString()
   @IsOptional()
   class?: string;
+
+  @IsString()
+  @IsOptional()
+  learningSubjectId?: string;
 
   @IsString()
   @IsOptional()

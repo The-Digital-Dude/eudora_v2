@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 
+import { ListPagination } from "@/components/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataState } from "@/components/ui/data-state";
@@ -43,15 +44,28 @@ import {
   useRestoreStudentProfileMutation,
   useUpdateStudentProfileMutation,
 } from "@/features/dashboard/dashboardApi";
+import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
+
+const PAGE_SIZE = 20;
 
 export default function StudentsPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [showArchived, setShowArchived] = useState(false);
+  const { values, setValue } = useListQueryState(
+    { search: "", status: "all", archived: "no", page: 1 },
+    { pageKey: "page" },
+  );
+  const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
+    setValue("search", next),
+  );
+  const showArchived = values.archived === "yes";
 
   // Queries & Mutations
-  const { data: studentsData, isLoading: studentsLoading } =
-    useGetStudentProfilesQuery({ includeArchived: showArchived });
+  const { data: studentsData, isLoading: studentsLoading } = useGetStudentProfilesQuery({
+    page: values.page,
+    limit: PAGE_SIZE,
+    includeArchived: showArchived,
+    search: values.search || undefined,
+    status: values.status === "all" ? undefined : values.status,
+  });
   const { data: usersData } = useGetUsersQuery();
   const { data: yearsData } = useGetAcademicYearsQuery();
   const { data: sectionsData } = useGetClassSectionsQuery();
@@ -279,25 +293,15 @@ export default function StudentsPage() {
     }
   };
 
-  // Calculations & filtering
-  const studentList = studentsData?.items || [];
-  const filteredStudents = studentList.filter((s: any) => {
-    const name = s.fullName?.toLowerCase() || "";
-    const email = s.user?.email?.toLowerCase() || "";
-    const query = searchQuery.toLowerCase();
-    const matchesQuery = name.includes(query) || email.includes(query);
-    const matchesStatus = statusFilter === "all" || s.status === statusFilter;
-    return matchesQuery && matchesStatus;
-  });
+  // Rows for the current page — search and status are applied server-side.
+  const filteredStudents = studentsData?.items || [];
+  const totalMatching = studentsData?.total ?? 0;
+  const isFiltered = Boolean(values.search) || values.status !== "all";
 
-  const totalCount = studentList.length;
-  const activePlacements = studentList.filter(
-    (s: any) => s.placements && s.placements.length > 0,
-  ).length;
-  const activeEnrollments = studentList.reduce(
-    (acc: number, s: any) => acc + (s.enrollments?.length || 0),
-    0,
-  );
+  // Roster-wide totals, counted by the server rather than derived from the loaded page.
+  const totalCount = totalMatching;
+  const activePlacements = studentsData?.stats.placedStudents ?? 0;
+  const activeEnrollments = studentsData?.stats.enrollmentTotal ?? 0;
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -371,14 +375,14 @@ export default function StudentsPage() {
               <input
                 type="checkbox"
                 checked={showArchived}
-                onChange={(e) => setShowArchived(e.target.checked)}
+                onChange={(e) => setValue("archived", e.target.checked ? "yes" : "no")}
                 className="h-3.5 w-3.5 cursor-pointer accent-primary"
               />
               Show archived
             </label>
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={values.status}
+              onChange={(e) => setValue("status", e.target.value)}
               className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
             >
               <option value="all">All Statuses</option>
@@ -393,8 +397,8 @@ export default function StudentsPage() {
                 <Search className="h-3.5 w-3.5" />
               </span>
               <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchDraft}
+                onChange={(e) => setSearchDraft(e.target.value)}
                 className="h-9 pl-9 text-xs"
                 placeholder="Search by student name..."
               />
@@ -567,12 +571,18 @@ export default function StudentsPage() {
                     <DataState
                       isLoading={false}
                       isEmpty={filteredStudents.length === 0}
-                      emptyTitle="No students found"
-                      emptyDescription="Register a new student to begin schedule setups."
+                      emptyTitle={isFiltered ? "No matching students" : "No students found"}
+                      emptyDescription={
+                        isFiltered
+                          ? "No students match these filters. Try clearing the search or status filter."
+                          : "Register a new student to begin schedule setups."
+                      }
                       emptyAction={
-                        <Button size="sm" onClick={() => setIsProfileDialogOpen(true)}>
-                          Add Student
-                        </Button>
+                        isFiltered ? undefined : (
+                          <Button size="sm" onClick={() => setIsProfileDialogOpen(true)}>
+                            Add Student
+                          </Button>
+                        )
                       }
                     >
                       {null}
@@ -583,6 +593,14 @@ export default function StudentsPage() {
             </tbody>
           </table>
         </div>
+
+        <ListPagination
+          page={values.page}
+          pageSize={PAGE_SIZE}
+          total={totalMatching}
+          onPageChange={(next) => setValue("page", next)}
+          label="student"
+        />
       </Card>
 
       {/* Profile Create / Edit Dialog */}

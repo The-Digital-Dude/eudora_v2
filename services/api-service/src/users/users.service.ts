@@ -14,12 +14,24 @@ export class UsersService {
     private readonly audit: AuditService,
   ) {}
 
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = 10, search?: string, roleName?: string) {
     const skip = (page - 1) * limit;
+
+    const where: any = { deletedAt: null };
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (roleName) {
+      where.roles = { some: { role: { name: roleName } } };
+    }
 
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
-        where: { deletedAt: null },
+        where,
         skip,
         take: limit,
         select: {
@@ -43,9 +55,7 @@ export class UsersService {
           },
         },
       }),
-      this.prisma.user.count({
-        where: { deletedAt: null },
-      }),
+      this.prisma.user.count({ where }),
     ]);
 
     const formattedUsers = users.map((user) => ({

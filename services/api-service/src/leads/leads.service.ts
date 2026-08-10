@@ -12,15 +12,29 @@ export class LeadsService {
     });
   }
 
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = 10, status?: string, search?: string) {
     const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (status) {
+      where.status = status;
+    }
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
     const [leads, total] = await Promise.all([
       this.prisma.lead.findMany({
+        where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.lead.count(),
+      this.prisma.lead.count({ where }),
     ]);
 
     return {

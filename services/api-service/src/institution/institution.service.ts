@@ -26,15 +26,32 @@ export class InstitutionService {
     });
   }
 
-  async findAllCampuses(page = 1, limit = 10) {
+  async findAllCampuses(
+    page = 1,
+    limit = 10,
+    search?: string,
+    status?: string,
+  ) {
     const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (status) {
+      where.status = status;
+    }
+    // `name` only: Campus.representative is accepted by the DTO but no screen sets or shows it, so
+    // it's a pending removal candidate — not something to build a search on.
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+
     const [campuses, total] = await Promise.all([
       this.prisma.campus.findMany({
+        where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.campus.count(),
+      this.prisma.campus.count({ where }),
     ]);
 
     return {
@@ -134,9 +151,24 @@ export class InstitutionService {
     });
   }
 
-  async findAllPrograms(page = 1, limit = 10, campusId?: string) {
+  async findAllPrograms(
+    page = 1,
+    limit = 10,
+    campusId?: string,
+    search?: string,
+  ) {
     const skip = (page - 1) * limit;
-    const where = campusId ? { campusId } : {};
+    const where: any = {};
+
+    if (campusId) {
+      where.campusId = campusId;
+    }
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+      ];
+    }
 
     const [programs, total] = await Promise.all([
       this.prisma.program.findMany({

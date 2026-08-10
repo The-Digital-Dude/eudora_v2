@@ -15,6 +15,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { toast } from "sonner";
 
+import { ListPagination } from "@/components/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter,DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -36,25 +37,32 @@ import {
   useGetLevelsQuery,
   useGetSubjectsQuery,
 } from "@/features/assessments/questionsApi";
+import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
 import { AssignmentWizardDialog } from "./components/assignment-wizard-dialog";
 
+const PAGE_SIZE = 12;
+
 export default function AssessmentsPage() {
-  // Query filters state
-  const [search, setSearch] = useState("");
-  const [subjectId, setSubjectId] = useState("all");
-  const [levelId, setLevelId] = useState("all");
-  const [status, setStatus] = useState("all");
-  const [page] = useState(1);
+  // Query filters, held in the URL so a filtered view can be linked or refreshed. `page` used to be
+  // a useState whose setter was never destructured, pinning this list to page 1 despite the API
+  // paginating properly behind it.
+  const { values, setValue } = useListQueryState(
+    { search: "", subjectId: "all", levelId: "all", status: "all", page: 1 },
+    { pageKey: "page" },
+  );
+  const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
+    setValue("search", next),
+  );
 
   // Queries
   const { data: assessmentsData, isLoading } = useGetAssessmentsQuery({
-    search: search || undefined,
-    subjectId: subjectId === "all" ? undefined : subjectId,
-    levelId: levelId === "all" ? undefined : levelId,
-    status: status === "all" ? undefined : status,
-    page,
-    pageSize: 12,
+    search: values.search || undefined,
+    subjectId: values.subjectId === "all" ? undefined : values.subjectId,
+    levelId: values.levelId === "all" ? undefined : values.levelId,
+    status: values.status === "all" ? undefined : values.status,
+    page: values.page,
+    pageSize: PAGE_SIZE,
   });
 
   const { data: subjectsData } = useGetSubjectsQuery();
@@ -199,15 +207,15 @@ export default function AssessmentsPage() {
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search assessments..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
             className="pl-9 h-10 rounded-xl text-xs"
           />
         </div>
 
         {/* Subject Filter */}
         <div className="w-[160px]">
-          <Select value={subjectId} onValueChange={setSubjectId}>
+          <Select value={values.subjectId} onValueChange={(next) => setValue("subjectId", next)}>
             <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
               <SelectValue placeholder="All Subjects" />
             </SelectTrigger>
@@ -224,7 +232,7 @@ export default function AssessmentsPage() {
 
         {/* Level Filter */}
         <div className="w-[160px]">
-          <Select value={levelId} onValueChange={setLevelId}>
+          <Select value={values.levelId} onValueChange={(next) => setValue("levelId", next)}>
             <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
               <SelectValue placeholder="All Levels" />
             </SelectTrigger>
@@ -241,7 +249,7 @@ export default function AssessmentsPage() {
 
         {/* Status Filter */}
         <div className="w-[140px]">
-          <Select value={status} onValueChange={setStatus}>
+          <Select value={values.status} onValueChange={(next) => setValue("status", next)}>
             <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
@@ -396,6 +404,14 @@ export default function AssessmentsPage() {
           ))}
         </div>
       )}
+
+      <ListPagination
+        page={values.page}
+        pageSize={PAGE_SIZE}
+        total={assessmentsData?.total ?? 0}
+        onPageChange={(next) => setValue("page", next)}
+        label="assessment"
+      />
 
       {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

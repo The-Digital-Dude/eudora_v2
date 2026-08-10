@@ -119,6 +119,8 @@ export class AcademicController {
     @Query('limit') limit?: string,
     @Query('academicYearId') academicYearId?: string,
     @Query('programId') programId?: string,
+    @Query('learningSubjectId') learningSubjectId?: string,
+    @Query('search') search?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
@@ -127,6 +129,8 @@ export class AcademicController {
       limitNum,
       academicYearId,
       programId,
+      learningSubjectId,
+      search,
     );
   }
 

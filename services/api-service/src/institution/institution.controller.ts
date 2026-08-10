@@ -32,10 +32,17 @@ export class InstitutionController {
   async findAllCampuses(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.institutionService.findAllCampuses(pageNum, limitNum);
+    return this.institutionService.findAllCampuses(
+      pageNum,
+      limitNum,
+      search,
+      status,
+    );
   }
 
   @Get('campuses/:id')
@@ -68,10 +75,16 @@ export class InstitutionController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('campusId') campusId?: string,
+    @Query('search') search?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.institutionService.findAllPrograms(pageNum, limitNum, campusId);
+    return this.institutionService.findAllPrograms(
+      pageNum,
+      limitNum,
+      campusId,
+      search,
+    );
   }
 
   @Get('programs/:id')

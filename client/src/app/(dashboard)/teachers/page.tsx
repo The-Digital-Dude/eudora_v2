@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 
+import { ListPagination } from "@/components/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -34,14 +35,36 @@ import {
   useRemoveTeacherClassMutation,
   useUpdateTeacherProfileMutation,
 } from "@/features/dashboard/dashboardApi";
+import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
+
+const PAGE_SIZE = 20;
 
 export default function TeachersPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const { values, setValue } = useListQueryState(
+    { search: "", status: "all", page: 1 },
+    { pageKey: "page" },
+  );
+  const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
+    setValue("search", next),
+  );
 
   // Queries & Mutations
-  const { data: teachersData, isLoading: teachersLoading } = useGetTeacherProfilesQuery();
+  // Filtering and paging both happen server-side. This list used to call the endpoint with no
+  // arguments, taking its default first 10 rows and filtering within them — so an 11th teacher was
+  // invisible, with no pagination control to hint that anything had been left out.
+  const { data: teachersData, isLoading: teachersLoading } = useGetTeacherProfilesQuery({
+    page: values.page,
+    limit: PAGE_SIZE,
+    search: values.search || undefined,
+    status: values.status === "all" ? undefined : values.status,
+  });
   const { data: sectionsData } = useGetClassSectionsQuery();
+
+  // Registry-wide metrics, deliberately independent of the current page and filter — the cards
+  // describe the whole registry. limit:1 keeps each of these to essentially a count query.
+  const { data: allTeachersMeta } = useGetTeacherProfilesQuery({ limit: 1 });
+  const { data: activeTeachersMeta } = useGetTeacherProfilesQuery({ limit: 1, status: "ACTIVE" });
+  const { data: leaveTeachersMeta } = useGetTeacherProfilesQuery({ limit: 1, status: "ON_LEAVE" });
 
   const [createTeacherProfile, { isLoading: creatingProfile }] = useCreateTeacherProfileMutation();
   const [updateTeacherProfile, { isLoading: updatingProfile }] = useUpdateTeacherProfileMutation();
@@ -216,21 +239,14 @@ export default function TeachersPage() {
     }
   };
 
-  // Calculations & filtering
-  const teacherList = teachersData?.items || [];
-  const filteredTeachers = teacherList.filter((t: any) => {
-    const name = t.fullName?.toLowerCase() || "";
-    const email = t.user?.email?.toLowerCase() || "";
-    const spec = t.specialization?.toLowerCase() || "";
-    const query = searchQuery.toLowerCase();
-    const matchesQuery = name.includes(query) || email.includes(query) || spec.includes(query);
-    const matchesStatus = statusFilter === "all" || t.status === statusFilter;
-    return matchesQuery && matchesStatus;
-  });
+  // Rows for the current page — already filtered by the server, so no client-side pass here.
+  const filteredTeachers = teachersData?.items || [];
+  const totalMatching = teachersData?.total ?? 0;
+  const isFiltered = Boolean(values.search) || values.status !== "all";
 
-  const totalCount = teacherList.length;
-  const activeCount = teacherList.filter((t: any) => t.status === "ACTIVE").length;
-  const leaveCount = teacherList.filter((t: any) => t.status === "ON_LEAVE").length;
+  const totalCount = allTeachersMeta?.total ?? 0;
+  const activeCount = activeTeachersMeta?.total ?? 0;
+  const leaveCount = leaveTeachersMeta?.total ?? 0;
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -303,8 +319,8 @@ export default function TeachersPage() {
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={values.status}
+              onChange={(e) => setValue("status", e.target.value)}
               className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
             >
               <option value="all">All Statuses</option>
@@ -318,8 +334,8 @@ export default function TeachersPage() {
                 <Search className="h-3.5 w-3.5" />
               </span>
               <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchDraft}
+                onChange={(e) => setSearchDraft(e.target.value)}
                 className="h-9 pl-9 text-xs"
                 placeholder="Search by name or subject..."
               />
@@ -479,13 +495,23 @@ export default function TeachersPage() {
               ) : (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-xs font-medium text-muted-foreground">
-                    No teacher profiles listed. Add a new teacher profile to get started.
+                    {isFiltered
+                      ? "No teachers match these filters."
+                      : "No teacher profiles listed. Add a new teacher profile to get started."}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        <ListPagination
+          page={values.page}
+          pageSize={PAGE_SIZE}
+          total={totalMatching}
+          onPageChange={(next) => setValue("page", next)}
+          label="teacher"
+        />
       </Card>
 
       {/* Profile Create / Edit Dialog */}

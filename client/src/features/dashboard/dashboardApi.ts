@@ -318,6 +318,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       providesTags: ["Campuses"],
     } as any),
+    getCampus: builder.query<Campus, string>({
+      query: (id: string) => `/campuses/${id}`,
+      providesTags: ["Campuses"],
+    } as any),
     createCampus: builder.mutation<Campus, Partial<Campus>>({
       query: (body: any) => ({
         url: "/campuses",
@@ -357,6 +361,10 @@ export const dashboardApi = authApi.injectEndpoints({
         items: response.data || [],
         total: response.meta?.total ?? response.data?.length ?? 0,
       }),
+      providesTags: ["Programs"],
+    } as any),
+    getProgram: builder.query<Program, string>({
+      query: (id: string) => `/programs/${id}`,
       providesTags: ["Programs"],
     } as any),
     createProgram: builder.mutation<Program, Partial<Program>>({
@@ -443,11 +451,31 @@ export const dashboardApi = authApi.injectEndpoints({
       query: () => "/billing/plans/public",
       providesTags: ["BillingPlans"],
     } as any),
+    getBillingPlan: builder.query<BillingPlan, string>({
+      query: (id: string) => `/billing/plans/${id}`,
+      providesTags: ["BillingPlans"],
+    } as any),
     createBillingPlan: builder.mutation<BillingPlan, Partial<BillingPlan>>({
       query: (body: any) => ({
         url: "/billing/plans",
         method: "POST",
         body,
+      }),
+      invalidatesTags: ["BillingPlans"],
+    } as any),
+    updateBillingPlan: builder.mutation<BillingPlan, { id: string; body: Partial<BillingPlan> }>({
+      query: ({ id, body }: any) => ({
+        url: `/billing/plans/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["BillingPlans"],
+    } as any),
+    /** Soft-delete — archives the plan (isActive: false) rather than removing the row. */
+    deleteBillingPlan: builder.mutation<BillingPlan, string>({
+      query: (id: string) => ({
+        url: `/billing/plans/${id}`,
+        method: "DELETE",
       }),
       invalidatesTags: ["BillingPlans"],
     } as any),
@@ -510,6 +538,10 @@ export const dashboardApi = authApi.injectEndpoints({
         items: response.data || [],
         total: response.meta?.total ?? response.data?.length ?? 0,
       }),
+      providesTags: ["Leads"],
+    } as any),
+    getLead: builder.query<Lead, string>({
+      query: (id: string) => `/leads/${id}`,
       providesTags: ["Leads"],
     } as any),
     createLead: builder.mutation<Lead, Partial<Lead>>({
@@ -728,6 +760,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       providesTags: ["Students"],
     } as any),
+    getStudentProfile: builder.query<StudentProfile, string>({
+      query: (id: string) => `/student-profiles/${id}`,
+      providesTags: ["Students"],
+    } as any),
     createStudentProfile: builder.mutation<StudentProfile, Partial<StudentProfile>>({
       query: (body: any) => ({
         url: "/student-profiles",
@@ -837,6 +873,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       providesTags: ["Teachers"],
     } as any),
+    getTeacherProfile: builder.query<TeacherProfile, string>({
+      query: (id: string) => `/teacher-profiles/${id}`,
+      providesTags: ["Teachers"],
+    } as any),
     createTeacherProfile: builder.mutation<TeacherProfile, any>({
       query: (body: any) => ({
         url: "/teacher-profiles",
@@ -929,10 +969,12 @@ export const dashboardApi = authApi.injectEndpoints({
 
 export const {
   useGetCampusesQuery,
+  useGetCampusQuery,
   useCreateCampusMutation,
   useUpdateCampusMutation,
   useDeleteCampusMutation,
   useGetProgramsQuery,
+  useGetProgramQuery,
   useCreateProgramMutation,
   useUpdateProgramMutation,
   useDeleteProgramMutation,
@@ -943,12 +985,16 @@ export const {
   useGetRolesQuery,
   useGetBillingPlansQuery,
   useGetPublicPlansQuery,
+  useGetBillingPlanQuery,
   useCreateBillingPlanMutation,
+  useUpdateBillingPlanMutation,
+  useDeleteBillingPlanMutation,
   useSyncBillingPlanToStripeMutation,
   useCreateCheckoutSessionMutation,
   useCreateBillingPortalSessionMutation,
   useGetCampusSubscriptionQuery,
   useGetLeadsQuery,
+  useGetLeadQuery,
   useCreateLeadMutation,
   useUpdateLeadMutation,
   useDeleteLeadMutation,
@@ -965,6 +1011,7 @@ export const {
   useGetBroadcastsQuery,
   useCreateBroadcastMutation,
   useGetStudentProfilesQuery,
+  useGetStudentProfileQuery,
   useCreateStudentProfileMutation,
   useUpdateStudentProfileMutation,
   useDeleteStudentProfileMutation,
@@ -976,6 +1023,7 @@ export const {
   useCreateGuardianProfileMutation,
   useSelfLinkGuardianMutation,
   useGetTeacherProfilesQuery,
+  useGetTeacherProfileQuery,
   useCreateTeacherProfileMutation,
   useUpdateTeacherProfileMutation,
   useDeleteTeacherProfileMutation,

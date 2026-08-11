@@ -1,12 +1,12 @@
-﻿"use client";
+"use client";
 
-import { Loader2,Plus } from "lucide-react";
-import React, { useState } from "react";
+import { Loader2, Plus } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 import { toast } from "sonner";
 
-import { Question,useArchiveQuestionMutation, useGetQuestionsQuery } from "@/features/assessments/questionsApi";
+import { useArchiveQuestionMutation, useGetQuestionsQuery } from "@/features/assessments/questionsApi";
 
-import { QuestionEditorDialog } from "./components/question-editor-dialog";
 import { QuestionFilterBar } from "./components/question-filter-bar";
 import { QuestionTable } from "./components/question-table";
 
@@ -31,10 +31,6 @@ export default function QuestionsPage() {
 
   const [archiveQuestion] = useArchiveQuestionMutation();
 
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
-
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setPage(1); // Reset to page 1 on search filter change
@@ -50,18 +46,6 @@ export default function QuestionsPage() {
       status: "",
     });
     setPage(1);
-  };
-
-  const handleCreateClick = () => {
-    setSelectedQuestionId(null);
-    setSelectedQuestion(null);
-    setEditorOpen(true);
-  };
-
-  const handleEditClick = (q: Question) => {
-    setSelectedQuestionId(q.id);
-    setSelectedQuestion(q);
-    setEditorOpen(true);
   };
 
   const handleArchiveClick = async (id: string) => {
@@ -91,12 +75,12 @@ export default function QuestionsPage() {
             Build and manage reusable standard or interactive active learning questions.
           </p>
         </div>
-        <button
-          onClick={handleCreateClick}
+        <Link
+          href="/questions/create"
           className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary transition-all sm:w-auto"
         >
           <Plus className="h-4 w-4" /> Create Question
-        </button>
+        </Link>
       </div>
 
       {/* Filter Bar */}
@@ -118,7 +102,6 @@ export default function QuestionsPage() {
         <div className={isFetching ? "opacity-60" : ""}>
           <QuestionTable
             questions={data?.items || []}
-            onEdit={handleEditClick}
             onArchive={handleArchiveClick}
           />
 
@@ -153,14 +136,6 @@ export default function QuestionsPage() {
           )}
         </div>
       )}
-
-      {/* Editor Modal Dialog */}
-      <QuestionEditorDialog
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        questionId={selectedQuestionId}
-        initialQuestion={selectedQuestion}
-      />
     </div>
   );
 }

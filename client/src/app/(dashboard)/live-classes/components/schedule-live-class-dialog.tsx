@@ -3,36 +3,21 @@
 import * as React from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  LiveClassSession,
-  useRescheduleLiveClassMutation,
-  useScheduleLiveClassMutation,
-} from "@/features/academic/liveClassesApi";
-import { useGetClassSectionsQuery } from "@/features/dashboard/dashboardApi";
+import { LiveClassSession, useRescheduleLiveClassMutation } from "@/features/academic/liveClassesApi";
 
-interface ScheduleLiveClassDialogProps {
+import { EMPTY_LIVE_CLASS, LiveClassForm, type LiveClassFormValues } from "./live-class-form";
+
+interface RescheduleLiveClassDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultClassSectionId?: string;
-  session?: LiveClassSession | null; // null/undefined = schedule new, set = reschedule existing
+  session: LiveClassSession | null;
 }
 
 // datetime-local inputs need "YYYY-MM-DDTHH:mm" in local time, not an ISO string.
@@ -42,80 +27,50 @@ function toDatetimeLocalValue(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function ScheduleLiveClassDialog({
+export function RescheduleLiveClassDialog({
   open,
   onOpenChange,
-  defaultClassSectionId,
   session,
-}: ScheduleLiveClassDialogProps) {
-  const isEditing = !!session;
+}: RescheduleLiveClassDialogProps) {
+  const [rescheduleLiveClass, { isLoading }] = useRescheduleLiveClassMutation();
 
-  const [scheduleLiveClass, { isLoading: isScheduling }] = useScheduleLiveClassMutation();
-  const [rescheduleLiveClass, { isLoading: isRescheduling }] = useRescheduleLiveClassMutation();
-  const isLoading = isScheduling || isRescheduling;
-
-  const { data: classSectionsData } = useGetClassSectionsQuery();
-  const classSections = classSectionsData?.items || [];
-
-  const [classSectionId, setClassSectionId] = React.useState<string>(
-    defaultClassSectionId || "",
-  );
-  const [title, setTitle] = React.useState("");
-  const [startAt, setStartAt] = React.useState("");
-  const [endAt, setEndAt] = React.useState("");
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [values, setValues] = React.useState<LiveClassFormValues>(EMPTY_LIVE_CLASS);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!open) return;
-    if (session) {
-      setClassSectionId(session.classSectionId);
-      setTitle(session.title);
-      setStartAt(toDatetimeLocalValue(session.scheduledStartAt));
-      setEndAt(toDatetimeLocalValue(session.scheduledEndAt));
-    } else {
-      setClassSectionId(defaultClassSectionId || "");
-      setTitle("");
-      setStartAt("");
-      setEndAt("");
-    }
-    setErrorMessage(null);
-  }, [open, session, defaultClassSectionId]);
+    if (!open || !session) return;
+    setValues({
+      classSectionId: session.classSectionId,
+      title: session.title,
+      startAt: toDatetimeLocalValue(session.scheduledStartAt),
+      endAt: toDatetimeLocalValue(session.scheduledEndAt),
+    });
+    setError(null);
+  }, [open, session]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
+    setError(null);
 
-    if (!classSectionId || !title || !startAt || !endAt) {
-      setErrorMessage("All fields are required.");
+    if (!session) return;
+    if (!values.title || !values.startAt || !values.endAt) {
+      setError("All fields are required.");
       return;
     }
 
     try {
-      if (isEditing && session) {
-        await rescheduleLiveClass({
-          id: session.id,
-          body: {
-            title,
-            scheduledStartAt: new Date(startAt).toISOString(),
-            scheduledEndAt: new Date(endAt).toISOString(),
-          },
-        }).unwrap();
-        toast.success("Live class rescheduled.");
-      } else {
-        await scheduleLiveClass({
-          classSectionId,
-          title,
-          scheduledStartAt: new Date(startAt).toISOString(),
-          scheduledEndAt: new Date(endAt).toISOString(),
-        }).unwrap();
-        toast.success("Live class scheduled.");
-      }
+      await rescheduleLiveClass({
+        id: session.id,
+        body: {
+          title: values.title,
+          scheduledStartAt: new Date(values.startAt).toISOString(),
+          scheduledEndAt: new Date(values.endAt).toISOString(),
+        },
+      }).unwrap();
+      toast.success("Live class rescheduled.");
       onOpenChange(false);
     } catch (err: any) {
-      setErrorMessage(
-        err?.data?.message ||
-          (isEditing ? "Failed to reschedule live class." : "Failed to schedule live class."),
-      );
+      setError(err?.data?.message || "Failed to reschedule live class.");
     }
   };
 
@@ -123,75 +78,21 @@ export function ScheduleLiveClassDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Reschedule live class" : "Schedule live class"}</DialogTitle>
+          <DialogTitle>Reschedule live class</DialogTitle>
           <DialogDescription>
-            Set up a live session for a class section. Video hosting isn&apos;t wired up
-            yet — this schedules the session record.
+            Update the title or timing for this session.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          <div className="space-y-2">
-            <Label>Class section</Label>
-            <Select
-              value={classSectionId}
-              onValueChange={setClassSectionId}
-              disabled={isEditing}
-            >
-              <SelectTrigger className="h-10 w-full">
-                <SelectValue placeholder="Select class section" />
-              </SelectTrigger>
-              <SelectContent>
-                {classSections.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name} ({c.code})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="live-class-title">Title</Label>
-            <Input
-              id="live-class-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Fractions review session"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="live-class-start">Starts at</Label>
-              <Input
-                id="live-class-start"
-                type="datetime-local"
-                value={startAt}
-                onChange={(e) => setStartAt(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="live-class-end">Ends at</Label>
-              <Input
-                id="live-class-end"
-                type="datetime-local"
-                value={endAt}
-                onChange={(e) => setEndAt(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {errorMessage && <p className="text-xs font-medium text-destructive">{errorMessage}</p>}
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Saving..." : isEditing ? "Save changes" : "Schedule"}
-            </Button>
-          </DialogFooter>
-        </form>
+        <LiveClassForm
+          values={values}
+          onChange={setValues}
+          onSubmit={handleSubmit}
+          onCancel={() => onOpenChange(false)}
+          isSaving={isLoading}
+          submitLabel="Save changes"
+          error={error}
+          lockClassSection
+        />
       </DialogContent>
     </Dialog>
   );

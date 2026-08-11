@@ -6,33 +6,24 @@ import {
   Plus,
   Users,
 } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Timetable,
   TimetableSlot,
-  useCreateTimetableMutation,
   useGetStudentScheduleQuery,
   useGetTeacherMeQuery,
   useGetTeacherScheduleQuery,
   useGetTimetablesQuery,
   usePublishTimetableMutation,
 } from "@/features/academic/timetableApi";
-import { useGetClassSectionsQuery } from "@/features/dashboard/dashboardApi";
 import { useAppSelector } from "@/store/hooks";
 
 import { ScheduleFilterBar } from "./components/schedule-filter-bar";
@@ -63,10 +54,14 @@ export default function TimetablePage() {
   const isStudent = userRoles.includes("USER") && user?.studentProfile;
   const isGuardian = userRoles.includes("GUARDIAN") && user?.guardianProfile;
 
-  // Filter States
+  // Filter States — classId seeds from the URL so /timetable/create can redirect
+  // straight back to the timetable it just made.
+  const searchParams = useSearchParams();
   const [selectedYearId, setSelectedYearId] = React.useState<string>("all");
   const [selectedTermId, setSelectedTermId] = React.useState<string>("all");
-  const [selectedClassId, setSelectedClassId] = React.useState<string>("all");
+  const [selectedClassId, setSelectedClassId] = React.useState<string>(
+    searchParams.get("classId") || "all",
+  );
   const [selectedTeacherId, setSelectedTeacherId] = React.useState<string>("all");
 
   // Guardian linked student selection
@@ -81,14 +76,6 @@ export default function TimetablePage() {
   const [defaultDay, setDefaultDay] = React.useState<string>("MONDAY");
   const [defaultPeriod, setDefaultPeriod] = React.useState<number>(1);
 
-  // Dialog state for Timetable Creation
-  const [createTimetableOpen, setCreateTimetableOpen] = React.useState(false);
-  const [timetableName, setTimetableName] = React.useState("");
-  const [effectiveFrom, setEffectiveFrom] = React.useState("");
-  const [effectiveTo, setEffectiveTo] = React.useState("");
-  const [newTimetableClassId, setNewTimetableClassId] = React.useState("");
-
-  const [createTimetable, { isLoading: isCreatingTimetable }] = useCreateTimetableMutation();
   const [publishTimetable, { isLoading: isPublishing }] = usePublishTimetableMutation();
 
   // Load teacher profile if teacher
@@ -123,10 +110,6 @@ export default function TimetablePage() {
     skip: !isGuardian || !selectedStudentId,
   });
 
-  // Class sections for the timetable creation dropdown
-  const { data: classSectionsData } = useGetClassSectionsQuery();
-  const classSections = classSectionsData?.items || [];
-
   // Active timetable selected in Admin view
   const activeTimetable = React.useMemo<Timetable | null>(() => {
     if (!timetablesData || timetablesData.length === 0) return null;
@@ -136,41 +119,6 @@ export default function TimetablePage() {
     }
     return timetablesData[0];
   }, [timetablesData, selectedClassId]);
-
-  const handleCreateTimetable = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!timetableName || !effectiveFrom || !newTimetableClassId) {
-      toast.error("Please fill in all required fields.");
-      return;
-    }
-
-    try {
-      // Find matching academicYearId for selected class section
-      const selectedClass = classSections.find((c) => c.id === newTimetableClassId);
-      if (!selectedClass) {
-        toast.error("Invalid Class Section.");
-        return;
-      }
-
-      await createTimetable({
-        name: timetableName,
-        academicYearId: selectedClass.academicYearId,
-        classSectionId: newTimetableClassId,
-        effectiveFrom,
-        effectiveTo: effectiveTo || undefined,
-      }).unwrap();
-
-      toast.success("Timetable created successfully.");
-      setCreateTimetableOpen(false);
-      setTimetableName("");
-      setEffectiveFrom("");
-      setEffectiveTo("");
-      setSelectedClassId(newTimetableClassId);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.data?.message || "Failed to create timetable.");
-    }
-  };
 
   const handlePublish = async () => {
     if (!activeTimetable) return;
@@ -216,11 +164,13 @@ export default function TimetablePage() {
         {isAdmin && (
           <div className="flex gap-2">
             <Button
-              onClick={() => setCreateTimetableOpen(true)}
+              asChild
               className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
             >
-              <Plus className="h-4 w-4" />
-              Create Timetable
+              <Link href="/timetable/create">
+                <Plus className="h-4 w-4" />
+                Create Timetable
+              </Link>
             </Button>
           </div>
         )}
@@ -395,98 +345,6 @@ export default function TimetablePage() {
           defaultClassSectionId={activeTimetable.classSectionId || undefined}
         />
       )}
-
-      {/* Create Timetable Dialog */}
-      <Dialog open={createTimetableOpen} onOpenChange={setCreateTimetableOpen}>
-        <DialogContent className="max-w-sm overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-xl">
-          <DialogHeader>
-            <DialogTitle className="font-display text-lg font-bold text-foreground">
-              Create New Timetable
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Establish a timetable structure for a selected Grade or Class Section.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleCreateTimetable} className="space-y-4 pt-2">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                Timetable Name
-              </Label>
-              <Input
-                type="text"
-                placeholder="e.g. Grade 10 Section A Timetable"
-                value={timetableName}
-                onChange={(e) => setTimetableName(e.target.value)}
-                className="h-10 rounded-xl border-border bg-muted/30 text-xs"
-                required
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                Class Section
-              </Label>
-              <select
-                value={newTimetableClassId}
-                onChange={(e) => setNewTimetableClassId(e.target.value)}
-                className="h-10 w-full rounded-xl border border-border bg-muted/30 px-3 text-xs text-foreground focus:outline-none"
-                required
-              >
-                <option value="">Select Class Section</option>
-                {classSections.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.code})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                Effective From
-              </Label>
-              <Input
-                type="date"
-                value={effectiveFrom}
-                onChange={(e) => setEffectiveFrom(e.target.value)}
-                className="h-10 rounded-xl border-border bg-muted/30 text-xs"
-                required
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                Effective Until (Optional)
-              </Label>
-              <Input
-                type="date"
-                value={effectiveTo}
-                onChange={(e) => setEffectiveTo(e.target.value)}
-                className="h-10 rounded-xl border-border bg-muted/30 text-xs"
-              />
-            </div>
-
-            <DialogFooter className="flex gap-2 pt-4">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setCreateTimetableOpen(false)}
-                className="h-10 cursor-pointer rounded-xl text-xs font-semibold"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isCreatingTimetable}
-                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
-              >
-                Create
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

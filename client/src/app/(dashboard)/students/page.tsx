@@ -1,54 +1,25 @@
-﻿"use client";
+"use client";
 
-import {
-  AlertCircle,
-  BookOpen,
-  Edit2,
-  GraduationCap,
-  Mail,
-  Plus,
-  Search,
-  Trash,
-  Trash2,
-  Users,
-} from "lucide-react";
-import React, { useState } from "react";
+import { BookOpen, GraduationCap, Mail, Plus, Search, Trash2, Users } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { ListPagination } from "@/components/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataState } from "@/components/ui/data-state";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  useCreateStudentEnrollmentMutation,
-  useCreateStudentPlacementMutation,
-  useCreateStudentProfileMutation,
-  useDeleteStudentEnrollmentMutation,
-  useDeleteStudentPlacementMutation,
   useDeleteStudentProfileMutation,
-  useGetAcademicYearsQuery,
-  useGetClassSectionsQuery,
-  useGetCourseClassesQuery,
   useGetStudentProfilesQuery,
-  useGetUsersQuery,
   useRestoreStudentProfileMutation,
-  useUpdateStudentProfileMutation,
 } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
 const PAGE_SIZE = 20;
 
 export default function StudentsPage() {
+  const router = useRouter();
   const { values, setValue } = useListQueryState(
     { search: "", status: "all", archived: "no", page: 1 },
     { pageKey: "page" },
@@ -66,109 +37,8 @@ export default function StudentsPage() {
     search: values.search || undefined,
     status: values.status === "all" ? undefined : values.status,
   });
-  const { data: usersData } = useGetUsersQuery();
-  const { data: yearsData } = useGetAcademicYearsQuery();
-  const { data: sectionsData } = useGetClassSectionsQuery();
-  const { data: courseClassesData } = useGetCourseClassesQuery();
-
-  const [createStudentProfile, { isLoading: creatingProfile }] = useCreateStudentProfileMutation();
-  const [updateStudentProfile, { isLoading: updatingProfile }] = useUpdateStudentProfileMutation();
   const [deleteStudentProfile] = useDeleteStudentProfileMutation();
   const [restoreStudentProfile] = useRestoreStudentProfileMutation();
-
-  const [createPlacement, { isLoading: placing }] = useCreateStudentPlacementMutation();
-  const [deletePlacement] = useDeleteStudentPlacementMutation();
-  const [createEnrollment, { isLoading: enrolling }] = useCreateStudentEnrollmentMutation();
-  const [deleteEnrollment] = useDeleteStudentEnrollmentMutation();
-
-  // Dialog states - Profile CRUD
-  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<any>(null); // Null for create
-  const [formError, setFormError] = useState("");
-
-  // Dialog states - Academic Configuration (Placements & Enrollments)
-  const [isAcademicDialogOpen, setIsAcademicDialogOpen] = useState(false);
-  const [academicStudent, setAcademicStudent] = useState<any>(null);
-  const [academicError, setAcademicError] = useState("");
-
-  // Form states - Profile
-  const [profileName, setProfileName] = useState("");
-  const [profileUserId, setProfileUserId] = useState("");
-  const [profileBirthDate, setProfileBirthDate] = useState("");
-  const [profileGender, setProfileGender] = useState<"MALE" | "FEMALE" | "OTHER">("MALE");
-  const [profileStatus, setProfileStatus] = useState<
-    "ACTIVE" | "INACTIVE" | "SUSPENDED" | "GRADUATED"
-  >("ACTIVE");
-
-  // Form states - Placement/Enrollment
-  const [placementSectionId, setPlacementSectionId] = useState("");
-  const [placementYearId, setPlacementYearId] = useState("");
-  const [enrollmentClassId, setEnrollmentClassId] = useState("");
-
-  // Open Profile Modal
-  const handleOpenProfileDialog = (student: any = null) => {
-    setFormError("");
-    const activeUsers = usersData?.items || [];
-    if (student) {
-      setSelectedStudent(student);
-      setProfileName(student.fullName || "");
-      setProfileUserId(student.userId || "");
-      setProfileBirthDate(student.birthDate ? student.birthDate.split("T")[0] : "");
-      setProfileGender(student.gender || "MALE");
-      setProfileStatus(student.status || "ACTIVE");
-    } else {
-      setSelectedStudent(null);
-      setProfileName("");
-      setProfileUserId(activeUsers[0]?.id || "");
-      setProfileBirthDate("");
-      setProfileGender("MALE");
-      setProfileStatus("ACTIVE");
-    }
-    setIsProfileDialogOpen(true);
-  };
-
-  // Open Academic Modal
-  const handleOpenAcademicDialog = (student: any) => {
-    setAcademicError("");
-    setAcademicStudent(student);
-    const firstSection = sectionsData?.items?.[0]?.id || "";
-    const firstYear = yearsData?.items?.[0]?.id || "";
-    const firstClass = courseClassesData?.items?.[0]?.id || "";
-
-    setPlacementSectionId(firstSection);
-    setPlacementYearId(firstYear);
-    setEnrollmentClassId(firstClass);
-
-    setIsAcademicDialogOpen(true);
-  };
-
-  // Save Student Profile (Create / Edit)
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profileName || !profileUserId || !profileBirthDate) {
-      setFormError("Full Name, User Account, and Birth Date are required.");
-      return;
-    }
-
-    const payload = {
-      fullName: profileName,
-      userId: profileUserId,
-      birthDate: new Date(profileBirthDate).toISOString(),
-      gender: profileGender,
-      status: profileStatus,
-    };
-
-    try {
-      if (selectedStudent) {
-        await updateStudentProfile({ id: selectedStudent.id, body: payload }).unwrap();
-      } else {
-        await createStudentProfile(payload).unwrap();
-      }
-      setIsProfileDialogOpen(false);
-    } catch (err: any) {
-      setFormError(err?.data?.message || "Failed to save student profile details.");
-    }
-  };
 
   // Archive Student Profile (soft delete — restorable from "Show archived")
   const handleDeleteProfile = async (id: string) => {
@@ -190,106 +60,6 @@ export default function StudentsPage() {
       await restoreStudentProfile(id).unwrap();
     } catch (err: any) {
       alert(err?.data?.message || "Failed to restore student profile.");
-    }
-  };
-
-  // Add Class Placement
-  const handleAddPlacement = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!placementSectionId || !placementYearId) {
-      setAcademicError("Placement Section and Academic Year are required.");
-      return;
-    }
-    setAcademicError("");
-
-    try {
-      await createPlacement({
-        studentProfileId: academicStudent.id,
-        classSectionId: placementSectionId,
-        academicYearId: placementYearId,
-      }).unwrap();
-
-      // Update local context for the modal
-      setAcademicStudent((prev: any) => ({
-        ...prev,
-        placements: [
-          ...(prev.placements || []),
-          {
-            classSectionId: placementSectionId,
-            academicYearId: placementYearId,
-            classSection: sectionsData?.items?.find((s: any) => s.id === placementSectionId),
-          },
-        ],
-      }));
-    } catch (err: any) {
-      setAcademicError(err?.data?.message || "Failed to record class placement.");
-    }
-  };
-
-  // Remove Class Placement
-  const handleRemovePlacement = async (classSectionId: string) => {
-    if (confirm("Remove student from this class section placement?")) {
-      try {
-        await deletePlacement({
-          studentProfileId: academicStudent.id,
-          classSectionId,
-        }).unwrap();
-
-        setAcademicStudent((prev: any) => ({
-          ...prev,
-          placements:
-            prev.placements?.filter((p: any) => p.classSectionId !== classSectionId) || [],
-        }));
-      } catch (err: any) {
-        setAcademicError(err?.data?.message || "Failed to remove class placement.");
-      }
-    }
-  };
-
-  // Add Course Enrollment
-  const handleAddEnrollment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!enrollmentClassId) {
-      setAcademicError("Course Class is required.");
-      return;
-    }
-    setAcademicError("");
-
-    try {
-      const enrollment = await createEnrollment({
-        studentProfileId: academicStudent.id,
-        courseClassId: enrollmentClassId,
-      }).unwrap();
-
-      setAcademicStudent((prev: any) => ({
-        ...prev,
-        enrollments: [
-          ...(prev.enrollments || []),
-          {
-            id: enrollment.id,
-            courseClassId: enrollmentClassId,
-            courseClass: courseClassesData?.items?.find((c: any) => c.id === enrollmentClassId),
-          },
-        ],
-      }));
-    } catch (err: any) {
-      setAcademicError(err?.data?.message || "Failed to record course enrollment.");
-    }
-  };
-
-  // Remove Course Enrollment
-  const handleRemoveEnrollment = async (id: string) => {
-    if (confirm("Remove student from this course class enrollment?")) {
-      try {
-        await deleteEnrollment(id).unwrap();
-
-        setAcademicStudent((prev: any) => ({
-          ...prev,
-          enrollments: prev.enrollments?.filter((e: any) => e.id !== id) || [],
-        }));
-      } catch (err: any) {
-        setAcademicError(err?.data?.message || "Failed to revoke course enrollment.");
-      }
     }
   };
 
@@ -316,10 +86,12 @@ export default function StudentsPage() {
           </p>
         </div>
         <Button
-          onClick={() => handleOpenProfileDialog()}
+          asChild
           className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-foreground/90"
         >
-          <Plus className="h-4 w-4" /> Add Student
+          <Link href="/students/create">
+            <Plus className="h-4 w-4" /> Add Student
+          </Link>
         </Button>
       </div>
 
@@ -458,7 +230,8 @@ export default function StudentsPage() {
                   return (
                     <tr
                       key={student.id}
-                      className="border-b border-border/30 transition-colors last:border-0 hover:bg-muted/30"
+                      onClick={() => router.push(`/students/${student.id}`)}
+                      className="cursor-pointer border-b border-border/30 transition-colors last:border-0 hover:bg-muted/30"
                     >
                       <td className="py-4">
                         <div className="flex items-center gap-3">
@@ -528,7 +301,10 @@ export default function StudentsPage() {
                                 Archived
                               </span>
                               <Button
-                                onClick={() => handleRestoreProfile(student.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRestoreProfile(student.id);
+                                }}
                                 variant="outline"
                                 className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
                               >
@@ -536,29 +312,16 @@ export default function StudentsPage() {
                               </Button>
                             </>
                           ) : (
-                            <>
-                              <Button
-                                onClick={() => handleOpenAcademicDialog(student)}
-                                variant="outline"
-                                className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
-                              >
-                                Route Setup
-                              </Button>
-                              <Button
-                                onClick={() => handleOpenProfileDialog(student)}
-                                variant="outline"
-                                className="h-8 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-                              >
-                                <Edit2 className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                onClick={() => handleDeleteProfile(student.id)}
-                                variant="outline"
-                                className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteProfile(student.id);
+                              }}
+                              variant="outline"
+                              className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                           )}
                         </div>
                       </td>
@@ -579,8 +342,8 @@ export default function StudentsPage() {
                       }
                       emptyAction={
                         isFiltered ? undefined : (
-                          <Button size="sm" onClick={() => setIsProfileDialogOpen(true)}>
-                            Add Student
+                          <Button size="sm" asChild>
+                            <Link href="/students/create">Add Student</Link>
                           </Button>
                         )
                       }
@@ -602,349 +365,6 @@ export default function StudentsPage() {
           label="student"
         />
       </Card>
-
-      {/* Profile Create / Edit Dialog */}
-      <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6">
-          <DialogHeader>
-            <DialogTitle className="font-display text-base font-bold text-foreground">
-              {selectedStudent ? "Edit Student Profile" : "Register Student Profile"}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Link the student profile to an active system user and fill demographics.
-            </DialogDescription>
-          </DialogHeader>
-
-          {formError && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-              <AlertCircle className="h-4 w-4" />
-              {formError}
-            </div>
-          )}
-
-          <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                Full Name
-              </Label>
-              <Input
-                value={profileName}
-                onChange={(e) => setProfileName(e.target.value)}
-                placeholder="Charlotte Harris"
-                className="h-10 border-border text-xs"
-                required
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                Link System User Account
-              </Label>
-              <select
-                value={profileUserId}
-                onChange={(e) => setProfileUserId(e.target.value)}
-                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
-                required
-                disabled={!!selectedStudent}
-              >
-                <option value="" disabled>
-                  Select System User
-                </option>
-                {usersData?.items?.map((u: any) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name || `${u.firstName || ""} ${u.lastName || ""}`.trim()} ({u.email})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                  Birth Date
-                </Label>
-                <Input
-                  type="date"
-                  value={profileBirthDate}
-                  onChange={(e) => setProfileBirthDate(e.target.value)}
-                  className="h-10 border-border text-xs"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                  Gender
-                </Label>
-                <select
-                  value={profileGender}
-                  onChange={(e: any) => setProfileGender(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
-                >
-                  <option value="MALE">MALE</option>
-                  <option value="FEMALE">FEMALE</option>
-                  <option value="OTHER">OTHER</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                Status
-              </Label>
-              <select
-                value={profileStatus}
-                onChange={(e: any) => setProfileStatus(e.target.value)}
-                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
-              >
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="INACTIVE">INACTIVE</option>
-                <option value="SUSPENDED">SUSPENDED</option>
-                <option value="GRADUATED">GRADUATED</option>
-              </select>
-            </div>
-
-            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsProfileDialogOpen(false)}
-                className="h-10 rounded-xl text-xs font-semibold"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={creatingProfile || updatingProfile}
-                className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
-              >
-                {creatingProfile || updatingProfile ? "Saving..." : "Save Profile"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Academic Route Setup Dialog (Placements & Enrollments) */}
-      <Dialog open={isAcademicDialogOpen} onOpenChange={setIsAcademicDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-2xl border border-border bg-card p-6">
-          <DialogHeader>
-            <DialogTitle className="font-display text-base font-bold text-foreground">
-              Route Config: {academicStudent?.fullName}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Design placements into homerooms and enrollment registries.
-            </DialogDescription>
-          </DialogHeader>
-
-          {academicError && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-              <AlertCircle className="h-4 w-4" />
-              {academicError}
-            </div>
-          )}
-
-          <Tabs defaultValue="placements" className="w-full">
-            <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl bg-muted p-1">
-              <TabsTrigger
-                value="placements"
-                className="rounded-lg text-xs font-semibold data-[state=active]:bg-card"
-              >
-                Class Section Placements
-              </TabsTrigger>
-              <TabsTrigger
-                value="enrollments"
-                className="rounded-lg text-xs font-semibold data-[state=active]:bg-card"
-              >
-                Course Class Enrollments
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Placements Tab */}
-            <TabsContent value="placements" className="space-y-6 pt-4">
-              <form
-                onSubmit={handleAddPlacement}
-                className="grid grid-cols-3 items-end gap-3 rounded-2xl border border-border bg-muted/30 p-4"
-              >
-                <div className="col-span-1 space-y-1">
-                  <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                    Class Section
-                  </Label>
-                  <select
-                    value={placementSectionId}
-                    onChange={(e) => setPlacementSectionId(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
-                    required
-                  >
-                    <option value="" disabled>
-                      Select Section
-                    </option>
-                    {sectionsData?.items
-                      ?.filter((s: any) => s.status === "ACTIVE")
-                      .map((s: any) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} ({s.code})
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <div className="col-span-1 space-y-1">
-                  <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                    Academic Year
-                  </Label>
-                  <select
-                    value={placementYearId}
-                    onChange={(e) => setPlacementYearId(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
-                    required
-                  >
-                    <option value="" disabled>
-                      Select Year
-                    </option>
-                    {yearsData?.items
-                      ?.filter((y: any) => y.status === "ACTIVE")
-                      .map((y: any) => (
-                        <option key={y.id} value={y.id}>
-                          {y.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={placing}
-                  className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
-                >
-                  {placing ? "Adding..." : "Place Student"}
-                </Button>
-              </form>
-
-              <div className="space-y-2">
-                <h3 className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                  Active Placements
-                </h3>
-                <div className="max-h-[180px] space-y-2 overflow-y-auto pr-1">
-                  {academicStudent?.placements && academicStudent.placements.length > 0 ? (
-                    academicStudent.placements.map((p: any) => (
-                      <div
-                        key={p.classSectionId}
-                        className="flex items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm"
-                      >
-                        <div>
-                          <p className="text-xs font-semibold text-foreground">
-                            {p.classSection?.name || "Homeroom Class"}
-                          </p>
-                          <p className="font-mono text-[9px] text-muted-foreground">
-                            Section Code: {p.classSection?.code || "N/A"}
-                          </p>
-                        </div>
-                        <Button
-                          onClick={() => handleRemovePlacement(p.classSectionId)}
-                          variant="outline"
-                          className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <Trash className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="py-3 text-center text-xs font-medium text-muted-foreground">
-                      No active class section placements.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Enrollments Tab */}
-            <TabsContent value="enrollments" className="space-y-6 pt-4">
-              <form
-                onSubmit={handleAddEnrollment}
-                className="flex items-end gap-3 rounded-2xl border border-border bg-muted/30 p-4"
-              >
-                <div className="flex-1 space-y-1">
-                  <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                    Course Class
-                  </Label>
-                  <select
-                    value={enrollmentClassId}
-                    onChange={(e) => setEnrollmentClassId(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
-                    required
-                  >
-                    <option value="" disabled>
-                      Select Course Class
-                    </option>
-                    {courseClassesData?.items
-                      ?.filter((c: any) => c.status === "ACTIVE")
-                      .map((c: any) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} ({c.code})
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={enrolling}
-                  className="h-10 shrink-0 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
-                >
-                  {enrolling ? "Enrolling..." : "Enroll Student"}
-                </Button>
-              </form>
-
-              <div className="space-y-2">
-                <h3 className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                  Active Course Enrollments
-                </h3>
-                <div className="max-h-[180px] space-y-2 overflow-y-auto pr-1">
-                  {academicStudent?.enrollments && academicStudent.enrollments.length > 0 ? (
-                    academicStudent.enrollments.map((e: any) => (
-                      <div
-                        key={e.id}
-                        className="flex items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm"
-                      >
-                        <div>
-                          <p className="text-xs font-semibold text-foreground">
-                            {e.courseClass?.name || "Course Lecture"}
-                          </p>
-                          <p className="font-mono text-[9px] text-muted-foreground">
-                            Class Code: {e.courseClass?.code || "N/A"}
-                          </p>
-                        </div>
-                        <Button
-                          onClick={() => handleRemoveEnrollment(e.id)}
-                          variant="outline"
-                          className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <Trash className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="py-3 text-center text-xs font-medium text-muted-foreground">
-                      No active course class enrollments.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <DialogFooter className="border-t border-border pt-4">
-            <Button
-              type="button"
-              onClick={() => setIsAcademicDialogOpen(false)}
-              className="h-10 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-foreground/90"
-            >
-              Done Setup
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
-

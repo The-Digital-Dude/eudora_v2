@@ -1,17 +1,17 @@
 ﻿"use client";
 
 import { Archive, Edit2, HelpCircle } from "lucide-react";
+import Link from "next/link";
 import React from "react";
 
 import type { Question } from "@/features/assessments/questionsApi";
 
 interface QuestionTableProps {
   questions: Question[];
-  onEdit: (question: Question) => void;
   onArchive: (id: string) => void;
 }
 
-export function QuestionTable({ questions, onEdit, onArchive }: QuestionTableProps) {
+export function QuestionTable({ questions, onArchive }: QuestionTableProps) {
   const difficultyColors: Record<string, string> = {
     easy: "bg-success/10 text-success border-success/20",
     medium: "bg-warning/10 text-warning border-warning/20/30",
@@ -110,14 +110,14 @@ export function QuestionTable({ questions, onEdit, onArchive }: QuestionTablePro
                   {/* Actions */}
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => onEdit(q)}
+                      <Link
+                        href={`/questions/${q.id}`}
                         className="rounded-xl border border-border bg-card p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                         title="Edit question"
                       >
                         <Edit2 className="h-3.5 w-3.5" />
-                      </button>
-                      
+                      </Link>
+
                       {q.status !== "archived" && (
                         <button
                           onClick={() => onArchive(q.id)}

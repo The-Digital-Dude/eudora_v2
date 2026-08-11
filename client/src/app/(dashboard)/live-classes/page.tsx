@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Radio, Users } from "lucide-react";
+import Link from "next/link";
 import React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import { useGetClassSectionsQuery } from "@/features/dashboard/dashboardApi";
 import { useAppSelector } from "@/store/hooks";
 
 import { LiveClassRow } from "./components/live-class-row";
-import { ScheduleLiveClassDialog } from "./components/schedule-live-class-dialog";
+import { RescheduleLiveClassDialog } from "./components/schedule-live-class-dialog";
 
 const STATUS_OPTIONS = ["all", "SCHEDULED", "LIVE", "ENDED", "CANCELLED"] as const;
 
@@ -58,18 +59,18 @@ export default function LiveClassesPage() {
     teacherUserId: isTeacher && !isAdmin && !showAllTeachers ? user?.id : undefined,
   });
 
-  const [scheduleDialogOpen, setScheduleDialogOpen] = React.useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = React.useState(false);
   const [editingSession, setEditingSession] = React.useState<LiveClassSession | null>(null);
 
   const canSchedule = isAdmin || isTeacher;
 
   const handleReschedule = (session: LiveClassSession) => {
     setEditingSession(session);
-    setScheduleDialogOpen(true);
+    setRescheduleOpen(true);
   };
 
   const handleOpenChange = (open: boolean) => {
-    setScheduleDialogOpen(open);
+    setRescheduleOpen(open);
     if (!open) setEditingSession(null);
   };
 
@@ -87,9 +88,11 @@ export default function LiveClassesPage() {
           </p>
         </div>
         {canSchedule && (
-          <Button onClick={() => setScheduleDialogOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Schedule live class
+          <Button asChild>
+            <Link href="/live-classes/create">
+              <Plus className="h-4 w-4" />
+              Schedule live class
+            </Link>
           </Button>
         )}
       </div>
@@ -196,8 +199,8 @@ export default function LiveClassesPage() {
         </div>
       </Card>
 
-      <ScheduleLiveClassDialog
-        open={scheduleDialogOpen}
+      <RescheduleLiveClassDialog
+        open={rescheduleOpen}
         onOpenChange={handleOpenChange}
         session={editingSession}
       />

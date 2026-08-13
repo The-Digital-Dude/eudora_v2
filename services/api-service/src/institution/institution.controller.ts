@@ -12,8 +12,14 @@ import {
 import { InstitutionService } from './institution.service';
 import { CreateCampusDto, UpdateCampusDto } from './dto/campus.dto';
 import { CreateProgramDto, UpdateProgramDto } from './dto/program.dto';
+import {
+  CreateCampusCourseDto,
+  UpdateCampusCourseDto,
+} from './dto/campus-course.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PlanLimitGuard } from '../billing/guards/plan-limit.guard';
+import { CheckPlanLimit } from '../billing/decorators/check-plan-limit.decorator';
 
 @Controller()
 @UseGuards(RolesGuard)
@@ -29,6 +35,7 @@ export class InstitutionController {
   }
 
   @Get('campuses')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async findAllCampuses(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -46,6 +53,7 @@ export class InstitutionController {
   }
 
   @Get('campuses/:id')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async findCampusById(@Param('id') id: string) {
     return this.institutionService.findCampusById(id);
   }
@@ -66,11 +74,14 @@ export class InstitutionController {
 
   @Post('programs')
   @Roles('ADMIN', 'SUPER_ADMIN')
+  @UseGuards(PlanLimitGuard)
+  @CheckPlanLimit('programs')
   async createProgram(@Body() dto: CreateProgramDto) {
     return this.institutionService.createProgram(dto);
   }
 
   @Get('programs')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async findAllPrograms(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -88,6 +99,7 @@ export class InstitutionController {
   }
 
   @Get('programs/:id')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async findProgramById(@Param('id') id: string) {
     return this.institutionService.findProgramById(id);
   }
@@ -102,5 +114,44 @@ export class InstitutionController {
   @Roles('ADMIN', 'SUPER_ADMIN')
   async deleteProgram(@Param('id') id: string) {
     return this.institutionService.deleteProgram(id);
+  }
+
+  // --- Campus Course Visibility Endpoints ---
+  // Course assignment is a plan/billing-adjacent concern, not content
+  // authoring — restricted to ADMIN/SUPER_ADMIN, unlike the Program
+  // endpoints above which don't gate on it either but conceptually differ.
+
+  @Get('campuses/:id/courses')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async getCampusCourses(@Param('id') id: string) {
+    return this.institutionService.getCampusCourses(id);
+  }
+
+  @Post('campuses/:id/courses')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async assignCourseToCampus(
+    @Param('id') id: string,
+    @Body() dto: CreateCampusCourseDto,
+  ) {
+    return this.institutionService.assignCourseToCampus(id, dto);
+  }
+
+  @Patch('campuses/:id/courses/:courseId')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async updateCampusCourse(
+    @Param('id') id: string,
+    @Param('courseId') courseId: string,
+    @Body() dto: UpdateCampusCourseDto,
+  ) {
+    return this.institutionService.updateCampusCourse(id, courseId, dto);
+  }
+
+  @Delete('campuses/:id/courses/:courseId')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async removeCampusCourse(
+    @Param('id') id: string,
+    @Param('courseId') courseId: string,
+  ) {
+    return this.institutionService.removeCampusCourse(id, courseId);
   }
 }

@@ -24,6 +24,7 @@ import {
   useCreateGuardianProfileMutation,
   useSelfLinkGuardianMutation,
 } from "@/features/dashboard/dashboardApi";
+import { getRoleHome } from "@/lib/access-control";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 const step1Schema = z.object({
@@ -140,9 +141,11 @@ export default function CompleteProfilePage() {
         dispatch(login({ user: updatedUser, token: null }));
       }
 
-      // Navigate to dashboard after short delay
+      // Send them to their own role's home, not /dashboard — that route is
+      // ADMIN_ROLES-only, so a freshly-onboarded guardian landed on the
+      // "Access Denied" card instead of the portal they just set up.
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push(getRoleHome(updatedUser ?? user));
       }, 1500);
     } catch (err: any) {
       console.error(err);

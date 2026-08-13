@@ -15,6 +15,7 @@ import {
 } from "@/features/dashboard/dashboardApi";
 
 import { CampusForm, type CampusFormValues,EMPTY_CAMPUS } from "../components/campus-form";
+import { CampusCourseAssignments } from "../components/campus-course-assignments";
 
 export default function CampusDetailPage() {
   const router = useRouter();
@@ -142,6 +143,13 @@ export default function CampusDetailPage() {
           submitLabel="Save Changes"
           error={error}
         />
+      </Card>
+
+      <Card className="max-w-xl rounded-3xl border border-border bg-card p-6">
+        <h2 className="mb-4 font-display text-sm font-bold tracking-tight text-foreground">
+          Course Access
+        </h2>
+        <CampusCourseAssignments campusId={campusId} />
       </Card>
     </div>
   );

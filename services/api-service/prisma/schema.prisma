@@ -45,6 +45,7 @@ model User {
   sentMessages            Message[]              @relation("SentMessages")
   ownedNextActions        NextAction[]           @relation("OwnedNextActions")
   hostedLiveClassSessions LiveClassSession[]     @relation("HostedLiveClassSessions")
+  assignedCourses         StudentCourseAssignment[] @relation("AssignedCourses")
 
   @@map("users")
 }
@@ -221,6 +222,12 @@ enum InvoiceStatus {
 model Campus {
   id             String                       @id @default(uuid())
   name           String                       @unique
+  code           String?                      @unique
+  description    String?
+  email          String?
+  phoneNumber    String?
+  address        String?
+  website        String?
   status         EducationalInstitutionStatus @default(ACTIVE)
   representative String?
   createdAt      DateTime                     @default(now())
@@ -228,8 +235,10 @@ model Campus {
   deletedAt      DateTime?
   deletedById    String?
 
-  programs     Program[]
-  subscription Subscription?
+  programs          Program[]
+  subscription      Subscription?
+  campusAssignments CampusCourse[]
+  courseClasses     CourseClass[]
 
   @@map("campuses")
 }
@@ -335,12 +344,26 @@ model CourseClass {
   name        String
   code        String            @unique
   status      CourseClassStatus @default(ACTIVE)
+  description String?
+  /// Nullable — existing rows predate campus scoping and have no reliable
+  /// way to derive one (the only prior path was the optional, incidental
+  /// TimetableSlot.courseClassId). Required for guardian self-enrollment
+  /// discovery, which needs an explicit, not transitive, campus.
+  campusId    String?
+  /// Null = unlimited. Guardian self-enrollment (`isOpenForEnrollment`)
+  /// checks this; staff-mediated enrollment does not.
+  capacity    Int?
+  /// Default false is the safety valve for guardian self-enrollment: this
+  /// migration makes nothing newly self-enrollable. Staff opt each class in
+  /// deliberately.
+  isOpenForEnrollment Boolean   @default(false)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   deletedAt   DateTime?
   deletedById String?
 
   term             Term                      @relation(fields: [termId], references: [id], onDelete: Cascade)
+  campus           Campus?                   @relation(fields: [campusId], references: [id], onDelete: SetNull)
   enrollments      StudentCourseEnrollment[]
   sessions         CourseClassSession[]
   homeworks        Homework[]
@@ -393,6 +416,7 @@ model StudentProfile {
   placementRecommendations PlacementRecommendation[]
   moduleItemProgress       ModuleItemProgress[]
   discussionPosts          DiscussionPost[]
+  courseAssignments        StudentCourseAssignment[]
 
   @@map("student_profiles")
 }
@@ -841,11 +865,59 @@ model Course {
   deletedAt         DateTime?
   deletedById       String?
 
-  learningSubject LearningSubject      @relation(fields: [learningSubjectId], references: [id], onDelete: Cascade)
-  concepts        Concept[]
-  pathCourses     LearningPathCourse[]
+  learningSubject    LearningSubject           @relation(fields: [learningSubjectId], references: [id], onDelete: Cascade)
+  concepts           Concept[]
+  pathCourses        LearningPathCourse[]
+  campusAssignments  CampusCourse[]
+  studentAssignments StudentCourseAssignment[]
 
   @@map("courses")
+}
+
+/// A guardian (or staff member) picking a catalog course for a specific
+/// student — a curated "learning plan", NOT an access grant. Catalog content
+/// is open to any authenticated student already (gated only by
+/// `Course.status` + `CampusCourse` visibility); this only says "this is what
+/// you should work on". Deliberately distinct from `StudentCourseEnrollment`,
+/// which points at a term-bound `CourseClass` and carries real academic
+/// weight (gradebook, attendance, homework) — the two models are unrelated.
+model StudentCourseAssignment {
+  id               String   @id @default(uuid())
+  studentProfileId String
+  courseId         String
+  /// Who chose it — a guardian or a staff member. Kept so the student-facing
+  /// UI can say who assigned it, and so staff can audit guardian actions.
+  assignedByUserId String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  course         Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  assignedBy     User           @relation("AssignedCourses", fields: [assignedByUserId], references: [id])
+
+  @@unique([studentProfileId, courseId])
+  @@map("student_course_assignments")
+}
+
+/// A course with zero rows here is visible to every campus (the default,
+/// unrestricted state). A course only becomes campus-restricted once at
+/// least one row exists for it — from that point on it's visible only to
+/// campuses with an `enabled: true` row. `enabled` (rather than deleting the
+/// row to revoke access) makes re-granting access a toggle, not re-picking
+/// the course from a dropdown again.
+model CampusCourse {
+  id        String   @id @default(uuid())
+  campusId  String
+  courseId  String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campus Campus @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([campusId, courseId])
+  @@map("campus_courses")
 }
 
 model LearningPath {

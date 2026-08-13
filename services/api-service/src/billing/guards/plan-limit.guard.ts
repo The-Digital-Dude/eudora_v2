@@ -50,8 +50,20 @@ export class PlanLimitGuard implements CanActivate {
     if (!requiredFeatures?.length && !limitResource) return true;
 
     const request = context.switchToHttp().getRequest();
-    const campusId: string | undefined =
+    let campusId: string | undefined =
       request.params?.campusId ?? request.params?.id ?? request.body?.campusId;
+
+    // Student placement requests carry a classSectionId, not a campusId
+    // directly (StudentProfile/TeacherProfile have no campusId column —
+    // same reason InstitutionService.resolveCampusIdsForUser has to
+    // traverse this chain for catalog visibility). Resolve it the same way.
+    if (!campusId && request.body?.classSectionId) {
+      const classSection = await this.prisma.classSection.findUnique({
+        where: { id: request.body.classSectionId },
+        select: { program: { select: { campusId: true } } },
+      });
+      campusId = classSection?.program.campusId;
+    }
 
     if (!campusId) {
       this.logger.warn(

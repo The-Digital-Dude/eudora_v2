@@ -101,6 +101,7 @@ export const authApi = createApi({
   tagTypes: [
     "Campuses",
     "Programs",
+    "CampusCourses",
     "Users",
     "Roles",
     "BillingPlans",

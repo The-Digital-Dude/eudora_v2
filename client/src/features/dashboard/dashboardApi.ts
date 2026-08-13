@@ -33,6 +33,16 @@ export interface Role {
   description?: string;
 }
 
+export interface CampusCourseAssignment {
+  id: string;
+  campusId: string;
+  courseId: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  course: { id: string; title: string; slug: string; status: string };
+}
+
 export interface User {
   id: string;
   email: string;
@@ -104,6 +114,11 @@ export interface CourseClass {
   name: string;
   code: string;
   status: "ACTIVE" | "INACTIVE";
+  description: string | null;
+  campusId: string | null;
+  capacity: number | null;
+  /** Default false — a class only becomes guardian-self-enrollable once staff opts it in. */
+  isOpenForEnrollment: boolean;
   createdAt: string;
   updatedAt: string;
   term?: {
@@ -583,6 +598,17 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       providesTags: ["CourseClasses"],
     } as any),
+    updateCourseClass: builder.mutation<
+      CourseClass,
+      { id: string; body: Partial<Pick<CourseClass, "description" | "campusId" | "capacity" | "isOpenForEnrollment">> }
+    >({
+      query: ({ id, body }: any) => ({
+        url: `/course-classes/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["CourseClasses"],
+    } as any),
 
     getClassSections: builder.query<
       { items: ClassSection[]; total: number },
@@ -922,6 +948,40 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["Teachers"],
     } as any),
 
+    getCampusCourses: builder.query<CampusCourseAssignment[], string>({
+      query: (campusId: string) => `/campuses/${campusId}/courses`,
+      providesTags: ["CampusCourses"],
+    } as any),
+    assignCourseToCampus: builder.mutation<
+      CampusCourseAssignment,
+      { campusId: string; courseId: string; enabled?: boolean }
+    >({
+      query: ({ campusId, courseId, enabled }: any) => ({
+        url: `/campuses/${campusId}/courses`,
+        method: "POST",
+        body: { courseId, enabled },
+      }),
+      invalidatesTags: ["CampusCourses"],
+    } as any),
+    updateCampusCourse: builder.mutation<
+      CampusCourseAssignment,
+      { campusId: string; courseId: string; enabled: boolean }
+    >({
+      query: ({ campusId, courseId, enabled }: any) => ({
+        url: `/campuses/${campusId}/courses/${courseId}`,
+        method: "PATCH",
+        body: { enabled },
+      }),
+      invalidatesTags: ["CampusCourses"],
+    } as any),
+    removeCampusCourse: builder.mutation<void, { campusId: string; courseId: string }>({
+      query: ({ campusId, courseId }: any) => ({
+        url: `/campuses/${campusId}/courses/${courseId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["CampusCourses"],
+    } as any),
+
     getNotifications: builder.query<any[], void>({
       query: () => "/notifications",
       providesTags: ["Notifications"],
@@ -999,6 +1059,7 @@ export const {
   useUpdateLeadMutation,
   useDeleteLeadMutation,
   useGetCourseClassesQuery,
+  useUpdateCourseClassMutation,
   useGetClassSectionsQuery,
   useGetClassSectionQuery,
   useCreateClassSectionMutation,
@@ -1029,6 +1090,10 @@ export const {
   useDeleteTeacherProfileMutation,
   useAssignTeacherClassMutation,
   useRemoveTeacherClassMutation,
+  useGetCampusCoursesQuery,
+  useAssignCourseToCampusMutation,
+  useUpdateCampusCourseMutation,
+  useRemoveCampusCourseMutation,
   useGetNotificationsQuery,
   useGetUnreadNotificationsCountQuery,
   useMarkNotificationAsReadMutation,

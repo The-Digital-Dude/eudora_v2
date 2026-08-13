@@ -11,6 +11,7 @@ import {
   Layers,
   Plus,
   Search,
+  Settings,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -38,6 +39,8 @@ import {
 } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
+import { CourseClassEnrollmentDialog } from "./components/course-class-enrollment-dialog";
+
 const PAGE_SIZE = 20;
 
 export default function ClassesPage() {
@@ -63,6 +66,9 @@ export default function ClassesPage() {
   const { data: classesData, isLoading: classesLoading } = useGetCourseClassesQuery();
   const { data: makeupData, isLoading: makeupLoading } = useGetMakeupRequestsQuery();
   const [updateMakeupRequest, { isLoading: updatingMakeup }] = useUpdateMakeupRequestMutation();
+
+  // Dialog state for a class's guardian-enrollment settings
+  const [enrollmentDialogClass, setEnrollmentDialogClass] = useState<any>(null);
 
   // Dialog state for approving makeup request (setting scheduled date)
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
@@ -314,15 +320,31 @@ export default function ClassesPage() {
                       </p>
                     )}
                   </div>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
-                      c.status === "ACTIVE"
-                        ? "border border-success/20 bg-success/10 text-success"
-                        : "border border-border bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {c.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {c.isOpenForEnrollment && (
+                      <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[9px] font-bold text-primary">
+                        Open enrollment
+                      </span>
+                    )}
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                        c.status === "ACTIVE"
+                          ? "border border-success/20 bg-success/10 text-success"
+                          : "border border-border bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {c.status}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setEnrollmentDialogClass(c)}
+                      className="h-7 w-7 cursor-pointer rounded-lg p-0"
+                      title="Enrollment settings"
+                    >
+                      <Settings className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               ))
             ) : (
@@ -332,6 +354,14 @@ export default function ClassesPage() {
             )}
           </div>
         </Card>
+
+        <CourseClassEnrollmentDialog
+          courseClass={enrollmentDialogClass}
+          open={!!enrollmentDialogClass}
+          onOpenChange={(open) => {
+            if (!open) setEnrollmentDialogClass(null);
+          }}
+        />
 
         {/* Make-up Queue */}
         <Card className="space-y-4 rounded-3xl border border-border bg-card p-6">

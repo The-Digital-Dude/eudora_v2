@@ -1,93 +1,13 @@
 ﻿"use client";
 
-import {
-  AlertCircle,
-  CreditCard,
-  GraduationCap,
-  Plus,
-  School,
-  Users,
-} from "lucide-react";
-import React, { useState } from "react";
+import { CreditCard, GraduationCap, Plus, School, Users } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  useCreateBillingPlanMutation,
-  useGetBillingPlansQuery,
-} from "@/features/dashboard/dashboardApi";
+import { useGetBillingPlansQuery } from "@/features/dashboard/dashboardApi";
 
 export default function BillingPage() {
   const { data: plansData, isLoading: plansLoading } = useGetBillingPlansQuery();
-  const [createBillingPlan, { isLoading: creatingPlan }] = useCreateBillingPlanMutation();
-
-  const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false);
-  const [planName, setPlanName] = useState("");
-  const [planCode, setPlanCode] = useState("");
-  const [planDesc, setPlanDesc] = useState("");
-  const [priceMonthly, setPriceMonthly] = useState("29");
-  const [priceAnnual, setPriceAnnual] = useState("290");
-  const [planCurrency, setPlanCurrency] = useState("USD");
-  const [stripePriceIdMonthly, setStripePriceIdMonthly] = useState("");
-  const [stripePriceIdAnnual, setStripePriceIdAnnual] = useState("");
-  const [maxStudents, setMaxStudents] = useState("");
-  const [maxCampuses, setMaxCampuses] = useState("");
-  const [maxPrograms, setMaxPrograms] = useState("");
-
-  const [formError, setFormError] = useState("");
-
-  const handleOpenPlanDialog = () => {
-    setFormError("");
-    setPlanName("");
-    setPlanCode("");
-    setPlanDesc("");
-    setPriceMonthly("29");
-    setPriceAnnual("290");
-    setPlanCurrency("USD");
-    setStripePriceIdMonthly("");
-    setStripePriceIdAnnual("");
-    setMaxStudents("");
-    setMaxCampuses("");
-    setMaxPrograms("");
-    setIsPlanDialogOpen(true);
-  };
-
-  const handleSavePlan = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!planName || !planCode || !priceMonthly || !priceAnnual) {
-      setFormError("Plan Name, Code, and both Monthly & Annual Prices are required.");
-      return;
-    }
-
-    try {
-      await createBillingPlan({
-        name: planName,
-        code: planCode.toUpperCase(),
-        description: planDesc,
-        priceMonthly: parseFloat(priceMonthly),
-        priceAnnual: parseFloat(priceAnnual),
-        currency: planCurrency.toUpperCase(),
-        active: true,
-        stripePriceIdMonthly: stripePriceIdMonthly || undefined,
-        stripePriceIdAnnual: stripePriceIdAnnual || undefined,
-        maxStudents: maxStudents ? parseInt(maxStudents, 10) : null,
-        maxCampuses: maxCampuses ? parseInt(maxCampuses, 10) : null,
-        maxPrograms: maxPrograms ? parseInt(maxPrograms, 10) : null,
-      } as any).unwrap();
-      setIsPlanDialogOpen(false);
-    } catch (err: any) {
-      setFormError(err?.data?.message || "Failed to create subscription plan.");
-    }
-  };
 
   return (
     <div className="animate-fade-in space-y-6 text-foreground">
@@ -103,10 +23,12 @@ export default function BillingPage() {
         </div>
         <div>
           <Button
-            onClick={handleOpenPlanDialog}
-            className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90 active:scale-98"
+            asChild
+            className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90 active:scale-98"
           >
-            <Plus className="h-4 w-4" /> Add Plan
+            <Link href="/plans/create">
+              <Plus className="h-4 w-4" /> Add Plan
+            </Link>
           </Button>
         </div>
       </div>
@@ -124,8 +46,9 @@ export default function BillingPage() {
       ) : plansData && plansData.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {plansData.map((plan) => (
-            <div
+            <Link
               key={plan.id}
+              href={`/plans/${plan.id}`}
               className="relative flex flex-col justify-between overflow-hidden rounded-3xl border border-t-4 border-border/80 border-t-neutral-900 bg-card p-6 shadow-[0_4px_16px_rgba(0,0,0,0.015)] transition-all hover:shadow-lg dark:border-t-zinc-200"
             >
               <div className="space-y-4">
@@ -227,7 +150,7 @@ export default function BillingPage() {
                   )}
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (
@@ -241,189 +164,6 @@ export default function BillingPage() {
           </p>
         </div>
       )}
-
-      {/* Plan Form Dialog */}
-      <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 text-foreground">
-          <DialogHeader>
-            <DialogTitle className="font-display text-base font-bold text-foreground">
-              Create Subscription Plan
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Formulate plan tiers and optional Stripe references.
-            </DialogDescription>
-          </DialogHeader>
-
-          {formError && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-              <AlertCircle className="h-4 w-4" />
-              {formError}
-            </div>
-          )}
-
-          <form onSubmit={handleSavePlan} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Plan Name
-                </Label>
-                <Input
-                  value={planName}
-                  onChange={(e) => setPlanName(e.target.value)}
-                  placeholder="e.g. Premium Plan"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Plan Code
-                </Label>
-                <Input
-                  value={planCode}
-                  onChange={(e) => setPlanCode(e.target.value)}
-                  placeholder="e.g. PLATINUM"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                Description
-              </Label>
-              <textarea
-                value={planDesc}
-                onChange={(e) => setPlanDesc(e.target.value)}
-                placeholder="List features, limits, and program access"
-                className="min-h-[60px] w-full rounded-xl border border-border bg-card p-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none dark:placeholder:text-muted-foreground"
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Price/Mo ($)
-                </Label>
-                <Input
-                  type="number"
-                  value={priceMonthly}
-                  onChange={(e) => setPriceMonthly(e.target.value)}
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Price/Yr ($)
-                </Label>
-                <Input
-                  type="number"
-                  value={priceAnnual}
-                  onChange={(e) => setPriceAnnual(e.target.value)}
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Currency
-                </Label>
-                <Input
-                  value={planCurrency}
-                  onChange={(e) => setPlanCurrency(e.target.value)}
-                  placeholder="USD"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Max Students
-                </Label>
-                <Input
-                  type="number"
-                  value={maxStudents}
-                  onChange={(e) => setMaxStudents(e.target.value)}
-                  placeholder="Unlimited"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Max Campuses
-                </Label>
-                <Input
-                  type="number"
-                  value={maxCampuses}
-                  onChange={(e) => setMaxCampuses(e.target.value)}
-                  placeholder="Unlimited"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Max Programs
-                </Label>
-                <Input
-                  type="number"
-                  value={maxPrograms}
-                  onChange={(e) => setMaxPrograms(e.target.value)}
-                  placeholder="Unlimited"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Stripe Price ID (Mo)
-                </Label>
-                <Input
-                  value={stripePriceIdMonthly}
-                  onChange={(e) => setStripePriceIdMonthly(e.target.value)}
-                  placeholder="price_..."
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Stripe Price ID (Yr)
-                </Label>
-                <Input
-                  value={stripePriceIdAnnual}
-                  onChange={(e) => setStripePriceIdAnnual(e.target.value)}
-                  placeholder="price_..."
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsPlanDialogOpen(false)}
-                className="h-10 rounded-xl border-border text-xs font-semibold text-foreground"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={creatingPlan}
-                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
-              >
-                {creatingPlan ? "Creating..." : "Create Plan"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

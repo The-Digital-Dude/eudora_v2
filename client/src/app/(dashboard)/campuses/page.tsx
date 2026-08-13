@@ -1,42 +1,12 @@
-﻿"use client";
+"use client";
 
-import {
-  AlertCircle,
-  Clock,
-  Edit2,
-  GraduationCap,
-  Mail,
-  MapPin,
-  Phone,
-  Plus,
-  School,
-  Search,
-  Trash2,
-} from "lucide-react";
-import React, { useState } from "react";
+import { Clock, GraduationCap, Mail, MapPin, Phone, Plus, School, Search } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  useCreateCampusMutation,
-  useCreateProgramMutation,
-  useDeleteCampusMutation,
-  useDeleteProgramMutation,
-  useGetCampusesQuery,
-  useGetProgramsQuery,
-  useUpdateCampusMutation,
-  useUpdateProgramMutation,
-} from "@/features/dashboard/dashboardApi";
+import { useGetCampusesQuery, useGetProgramsQuery } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
 export default function CampusesPage() {
@@ -48,7 +18,6 @@ export default function CampusesPage() {
     setValue("search", next),
   );
 
-  // Queries & Mutations
   // Both lists search server-side. The campus search in particular used to run client-side against
   // `c.code`, a field the API never returns — so typing here threw on the first keystroke.
   const { data: campusesData, isLoading: campusesLoading } = useGetCampusesQuery({
@@ -58,176 +27,6 @@ export default function CampusesPage() {
     search: values.search || undefined,
   });
 
-  const [createCampus, { isLoading: creatingCampus }] = useCreateCampusMutation();
-  const [updateCampus, { isLoading: updatingCampus }] = useUpdateCampusMutation();
-  const [deleteCampus] = useDeleteCampusMutation();
-
-  const [createProgram, { isLoading: creatingProgram }] = useCreateProgramMutation();
-  const [updateProgram, { isLoading: updatingProgram }] = useUpdateProgramMutation();
-  const [deleteProgram] = useDeleteProgramMutation();
-
-  // Dialog States
-  const [isCampusDialogOpen, setIsCampusDialogOpen] = useState(false);
-  const [selectedCampus, setSelectedCampus] = useState<any>(null); // Null for create mode
-
-  const [isProgramDialogOpen, setIsProgramDialogOpen] = useState(false);
-  const [selectedProgram, setSelectedProgram] = useState<any>(null); // Null for create mode
-
-  // Form States - Campus
-  const [campusName, setCampusName] = useState("");
-  const [campusCode, setCampusCode] = useState("");
-  const [campusDesc, setCampusDesc] = useState("");
-  const [campusEmail, setCampusEmail] = useState("");
-  const [campusPhone, setCampusPhone] = useState("");
-  const [campusAddress, setCampusAddress] = useState("");
-  const [campusWebsite, setCampusWebsite] = useState("");
-  const [campusStatus, setCampusStatus] = useState<"ACTIVE" | "INACTIVE">("ACTIVE");
-
-  // Form States - Program
-  const [programName, setProgramName] = useState("");
-  const [programCode, setProgramCode] = useState("");
-  const [programDesc, setProgramDesc] = useState("");
-  const [programDuration, setProgramDuration] = useState("4");
-  const [programCampusId, setProgramCampusId] = useState("");
-  const [programStatus, setProgramStatus] = useState<"ACTIVE" | "INACTIVE">("ACTIVE");
-
-  const [formError, setFormError] = useState("");
-
-  const handleOpenCampusDialog = (campus: any = null) => {
-    setFormError("");
-    if (campus) {
-      setSelectedCampus(campus);
-      setCampusName(campus.name || "");
-      setCampusCode(campus.code || "");
-      setCampusDesc(campus.description || "");
-      setCampusEmail(campus.email || "");
-      setCampusPhone(campus.phoneNumber || "");
-      setCampusAddress(campus.address || "");
-      setCampusWebsite(campus.website || "");
-      setCampusStatus(campus.status || "ACTIVE");
-    } else {
-      setSelectedCampus(null);
-      setCampusName("");
-      setCampusCode("");
-      setCampusDesc("");
-      setCampusEmail("");
-      setCampusPhone("");
-      setCampusAddress("");
-      setCampusWebsite("");
-      setCampusStatus("ACTIVE");
-    }
-    setIsCampusDialogOpen(true);
-  };
-
-  const handleOpenProgramDialog = (program: any = null) => {
-    setFormError("");
-    // Pre-populate campus selection to first active campus if none selected
-    const activeCampuses = campusesData?.items?.filter((c) => c.status === "ACTIVE") || [];
-    if (program) {
-      setSelectedProgram(program);
-      setProgramName(program.name || "");
-      setProgramCode(program.code || "");
-      setProgramDesc(program.description || "");
-      setProgramDuration(String(program.durationYears || 4));
-      setProgramCampusId(program.campusId || "");
-      setProgramStatus(program.status || "ACTIVE");
-    } else {
-      setSelectedProgram(null);
-      setProgramName("");
-      setProgramCode("");
-      setProgramDesc("");
-      setProgramDuration("4");
-      setProgramCampusId(activeCampuses[0]?.id || "");
-      setProgramStatus("ACTIVE");
-    }
-    setIsProgramDialogOpen(true);
-  };
-
-  const handleSaveCampus = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!campusName || !campusCode) {
-      setFormError("Name and Code are required.");
-      return;
-    }
-    setFormError("");
-
-    const payload = {
-      name: campusName,
-      code: campusCode.toUpperCase(),
-      description: campusDesc,
-      email: campusEmail,
-      phoneNumber: campusPhone,
-      address: campusAddress,
-      website: campusWebsite,
-      status: campusStatus,
-    };
-
-    try {
-      if (selectedCampus) {
-        await updateCampus({ id: selectedCampus.id, body: payload }).unwrap();
-      } else {
-        await createCampus(payload).unwrap();
-      }
-      setIsCampusDialogOpen(false);
-    } catch (err: any) {
-      setFormError(err?.data?.message || "Failed to save campus information.");
-    }
-  };
-
-  const handleSaveProgram = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!programName || !programCode || !programCampusId) {
-      setFormError("Name, Code, and Campus are required.");
-      return;
-    }
-    setFormError("");
-
-    const payload = {
-      name: programName,
-      code: programCode.toUpperCase(),
-      description: programDesc,
-      durationYears: parseInt(programDuration, 10),
-      campusId: programCampusId,
-      status: programStatus,
-    };
-
-    try {
-      if (selectedProgram) {
-        await updateProgram({ id: selectedProgram.id, body: payload }).unwrap();
-      } else {
-        await createProgram(payload).unwrap();
-      }
-      setIsProgramDialogOpen(false);
-    } catch (err: any) {
-      setFormError(err?.data?.message || "Failed to save academic program.");
-    }
-  };
-
-  const handleDeleteCampus = async (id: string) => {
-    if (
-      confirm(
-        "Are you sure you want to delete this campus? This will delete associated programs and classrooms.",
-      )
-    ) {
-      try {
-        await deleteCampus(id).unwrap();
-      } catch (err: any) {
-        alert(err?.data?.message || "Failed to delete campus.");
-      }
-    }
-  };
-
-  const handleDeleteProgram = async (id: string) => {
-    if (confirm("Are you sure you want to delete this academic program?")) {
-      try {
-        await deleteProgram(id).unwrap();
-      } catch (err: any) {
-        alert(err?.data?.message || "Failed to delete program.");
-      }
-    }
-  };
-
-  // Already filtered by the server.
   const filteredCampuses = campusesData?.items || [];
   const filteredPrograms = programsData?.items || [];
 
@@ -245,13 +44,13 @@ export default function CampusesPage() {
         </div>
         <div>
           <Button
-            onClick={() =>
-              activeTab === "campuses" ? handleOpenCampusDialog() : handleOpenProgramDialog()
-            }
+            asChild
             className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90 active:scale-98"
           >
-            <Plus className="h-4 w-4" />
-            {activeTab === "campuses" ? "Add Campus" : "Add Program"}
+            <Link href={activeTab === "campuses" ? "/campuses/create" : "/campuses/programs/create"}>
+              <Plus className="h-4 w-4" />
+              {activeTab === "campuses" ? "Add Campus" : "Add Program"}
+            </Link>
           </Button>
         </div>
       </div>
@@ -304,8 +103,9 @@ export default function CampusesPage() {
           ) : filteredCampuses.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredCampuses.map((campus) => (
-                <div
+                <Link
                   key={campus.id}
+                  href={`/campuses/${campus.id}`}
                   className="group flex flex-col justify-between rounded-3xl border border-border/80 bg-card p-5 shadow-[0_4px_12px_rgba(0,0,0,0.015)] transition-all hover:shadow-md"
                 >
                   <div className="space-y-3">
@@ -356,24 +156,7 @@ export default function CampusesPage() {
                       )}
                     </div>
                   </div>
-
-                  <div className="mt-5 flex items-center justify-end gap-2 border-t border-border/30 pt-3">
-                    <Button
-                      onClick={() => handleOpenCampusDialog(campus)}
-                      variant="outline"
-                      className="h-8 rounded-lg border-border p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:hover:text-foreground"
-                    >
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      onClick={() => handleDeleteCampus(campus.id)}
-                      variant="outline"
-                      className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
@@ -403,8 +186,9 @@ export default function CampusesPage() {
           ) : filteredPrograms.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredPrograms.map((program) => (
-                <div
+                <Link
                   key={program.id}
+                  href={`/campuses/programs/${program.id}`}
                   className="group flex flex-col justify-between rounded-3xl border border-border/80 bg-card p-5 shadow-[0_4px_12px_rgba(0,0,0,0.015)] transition-all hover:shadow-md"
                 >
                   <div className="space-y-3">
@@ -451,24 +235,7 @@ export default function CampusesPage() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="mt-5 flex items-center justify-end gap-2 border-t border-border/30 pt-3">
-                    <Button
-                      onClick={() => handleOpenProgramDialog(program)}
-                      variant="outline"
-                      className="h-8 rounded-lg border-border p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:hover:text-foreground"
-                    >
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      onClick={() => handleDeleteProgram(program.id)}
-                      variant="outline"
-                      className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
@@ -484,284 +251,6 @@ export default function CampusesPage() {
           )}
         </TabsContent>
       </Tabs>
-
-      {/* Campus Form Dialog */}
-      <Dialog open={isCampusDialogOpen} onOpenChange={setIsCampusDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 text-foreground">
-          <DialogHeader>
-            <DialogTitle className="font-display text-base font-bold text-foreground">
-              {selectedCampus ? "Edit Campus" : "Add Campus Branch"}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Configure parameters and contact info for this campus.
-            </DialogDescription>
-          </DialogHeader>
-
-          {formError && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-              <AlertCircle className="h-4 w-4" />
-              {formError}
-            </div>
-          )}
-
-          <form onSubmit={handleSaveCampus} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Campus Name
-                </Label>
-                <Input
-                  value={campusName}
-                  onChange={(e) => setCampusName(e.target.value)}
-                  placeholder="e.g. Main Campus"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Code (Unique ID)
-                </Label>
-                <Input
-                  value={campusCode}
-                  onChange={(e) => setCampusCode(e.target.value)}
-                  placeholder="e.g. MC-01"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                Description
-              </Label>
-              <textarea
-                value={campusDesc}
-                onChange={(e) => setCampusDesc(e.target.value)}
-                placeholder="Brief information about this campus"
-                className="min-h-[70px] w-full rounded-xl border border-border bg-card p-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Contact Email
-                </Label>
-                <Input
-                  type="email"
-                  value={campusEmail}
-                  onChange={(e) => setCampusEmail(e.target.value)}
-                  placeholder="contact@example.edu"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Phone Number
-                </Label>
-                <Input
-                  value={campusPhone}
-                  onChange={(e) => setCampusPhone(e.target.value)}
-                  placeholder="+1 (555) 019-2834"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                Address
-              </Label>
-              <Input
-                value={campusAddress}
-                onChange={(e) => setCampusAddress(e.target.value)}
-                placeholder="Street address, City, Country"
-                className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Website URL
-                </Label>
-                <Input
-                  value={campusWebsite}
-                  onChange={(e) => setCampusWebsite(e.target.value)}
-                  placeholder="https://example.edu"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Status
-                </Label>
-                <select
-                  value={campusStatus}
-                  onChange={(e: any) => setCampusStatus(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
-                >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                </select>
-              </div>
-            </div>
-
-            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsCampusDialogOpen(false)}
-                className="h-10 rounded-xl border-border text-xs font-semibold text-foreground"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={creatingCampus || updatingCampus}
-                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
-              >
-                {creatingCampus || updatingCampus ? "Saving..." : "Save Campus"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Program Form Dialog */}
-      <Dialog open={isProgramDialogOpen} onOpenChange={setIsProgramDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 text-foreground">
-          <DialogHeader>
-            <DialogTitle className="font-display text-base font-bold text-foreground">
-              {selectedProgram ? "Edit Program" : "Add Academic Program"}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Create and associate a curriculum/degree course.
-            </DialogDescription>
-          </DialogHeader>
-
-          {formError && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-              <AlertCircle className="h-4 w-4" />
-              {formError}
-            </div>
-          )}
-
-          <form onSubmit={handleSaveProgram} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Program Name
-                </Label>
-                <Input
-                  value={programName}
-                  onChange={(e) => setProgramName(e.target.value)}
-                  placeholder="e.g. Computer Science"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Program Code
-                </Label>
-                <Input
-                  value={programCode}
-                  onChange={(e) => setProgramCode(e.target.value)}
-                  placeholder="e.g. CS-BS"
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                Description
-              </Label>
-              <textarea
-                value={programDesc}
-                onChange={(e) => setProgramDesc(e.target.value)}
-                placeholder="Degree program objectives and details"
-                className="min-h-[70px] w-full rounded-xl border border-border bg-card p-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Campus Branch
-                </Label>
-                <select
-                  value={programCampusId}
-                  onChange={(e) => setProgramCampusId(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
-                  required
-                >
-                  <option value="" disabled>
-                    Select Campus
-                  </option>
-                  {campusesData?.items
-                    ?.filter((c) => c.status === "ACTIVE")
-                    .map((campus) => (
-                      <option key={campus.id} value={campus.id}>
-                        {campus.name} ({campus.code})
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Duration (Years)
-                </Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="7"
-                  value={programDuration}
-                  onChange={(e) => setProgramDuration(e.target.value)}
-                  className="h-10 border-border bg-muted/50 text-xs text-foreground/50"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                Status
-              </Label>
-              <select
-                value={programStatus}
-                onChange={(e: any) => setProgramStatus(e.target.value)}
-                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
-              >
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="INACTIVE">INACTIVE</option>
-              </select>
-            </div>
-
-            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsProgramDialogOpen(false)}
-                className="h-10 rounded-xl border-border text-xs font-semibold text-foreground"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={creatingProgram || updatingProgram}
-                className="flex h-10 cursor-pointer items-center gap-1 rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
-              >
-                {creatingProgram || updatingProgram ? "Saving..." : "Save Program"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { CreditCard, GraduationCap, Loader2, MessageSquare, ShieldAlert } from "lucide-react";
+import { BookOpen, CreditCard, GraduationCap, Loader2, MessageSquare, ShieldAlert } from "lucide-react";
 import React, { useEffect,useState } from "react";
 
 import { MessagingCenter } from "@/features/messaging/components/MessagingCenter";
@@ -10,6 +10,8 @@ import { useAppSelector } from "@/store/hooks";
 import { AttendanceCalendar } from "./components/attendance-calendar";
 import { BillingHistoryPanel } from "./components/billing-history-panel";
 import { ChildStatusCard } from "./components/child-status-card";
+import { ClassEnrollmentPanel } from "./components/class-enrollment-panel";
+import { CoursePlanPanel } from "./components/course-plan-panel";
 import { HomeworkGradesPanel } from "./components/homework-grades-panel";
 import { LearningPanel } from "./components/learning-panel";
 
@@ -20,7 +22,7 @@ export default function ParentPage() {
 
   const { data: children = [], isLoading: isChildrenLoading } = useGetChildrenQuery();
   const [activeStudentId, setActiveStudentId] = useState<string>("");
-  const [activeSection, setActiveSection] = useState<"academics" | "billing" | "messages">("academics");
+  const [activeSection, setActiveSection] = useState<"academics" | "courses" | "billing" | "messages">("academics");
 
   // Automatically select the first child
   useEffect(() => {
@@ -90,6 +92,17 @@ export default function ParentPage() {
           >
             <GraduationCap className="h-4 w-4" />
             Academics
+          </button>
+          <button
+            onClick={() => setActiveSection("courses")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeSection === "courses"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <BookOpen className="h-4 w-4" />
+            Courses
           </button>
           <button
             onClick={() => setActiveSection("billing")}
@@ -174,6 +187,34 @@ export default function ParentPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {activeSection === "courses" && selectedChild && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Learning plan</h2>
+            <p className="text-xs text-muted-foreground">
+              Choose which self-paced courses {selectedChild.fullName} should work on. Switch
+              children from the Academics tab.
+            </p>
+          </div>
+          <CoursePlanPanel
+            studentProfileId={selectedChild.studentProfileId}
+            childName={selectedChild.fullName}
+          />
+
+          <div className="border-t border-border pt-6">
+            <h2 className="text-lg font-bold text-foreground">Class enrollment</h2>
+            <p className="text-xs text-muted-foreground">
+              Term-based classes staff has opened for self-enrollment — separate from the
+              self-paced plan above.
+            </p>
+          </div>
+          <ClassEnrollmentPanel
+            studentProfileId={selectedChild.studentProfileId}
+            childName={selectedChild.fullName}
+          />
         </div>
       )}
 

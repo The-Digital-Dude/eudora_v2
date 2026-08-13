@@ -1,45 +1,23 @@
-﻿"use client";
+"use client";
 
-import {
-  AlertCircle,
-  Briefcase,
-  Edit2,
-  Mail,
-  Plus,
-  Search,
-  Trash,
-  Trash2,
-  Users2,
-} from "lucide-react";
-import React, { useState } from "react";
+import { Briefcase, Mail, Plus, Search, Trash2, Users2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { ListPagination } from "@/components/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  useAssignTeacherClassMutation,
-  useCreateTeacherProfileMutation,
   useDeleteTeacherProfileMutation,
-  useGetClassSectionsQuery,
   useGetTeacherProfilesQuery,
-  useRemoveTeacherClassMutation,
-  useUpdateTeacherProfileMutation,
 } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
 const PAGE_SIZE = 20;
 
 export default function TeachersPage() {
+  const router = useRouter();
   const { values, setValue } = useListQueryState(
     { search: "", status: "all", page: 1 },
     { pageKey: "page" },
@@ -58,7 +36,6 @@ export default function TeachersPage() {
     search: values.search || undefined,
     status: values.status === "all" ? undefined : values.status,
   });
-  const { data: sectionsData } = useGetClassSectionsQuery();
 
   // Registry-wide metrics, deliberately independent of the current page and filter — the cards
   // describe the whole registry. limit:1 keeps each of these to essentially a count query.
@@ -66,112 +43,7 @@ export default function TeachersPage() {
   const { data: activeTeachersMeta } = useGetTeacherProfilesQuery({ limit: 1, status: "ACTIVE" });
   const { data: leaveTeachersMeta } = useGetTeacherProfilesQuery({ limit: 1, status: "ON_LEAVE" });
 
-  const [createTeacherProfile, { isLoading: creatingProfile }] = useCreateTeacherProfileMutation();
-  const [updateTeacherProfile, { isLoading: updatingProfile }] = useUpdateTeacherProfileMutation();
   const [deleteTeacherProfile] = useDeleteTeacherProfileMutation();
-
-  const [assignTeacherClass, { isLoading: assigning }] = useAssignTeacherClassMutation();
-  const [removeTeacherClass] = useRemoveTeacherClassMutation();
-
-  // Dialog states - Profile CRUD
-  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
-  const [selectedTeacher, setSelectedTeacher] = useState<any>(null); // Null for create
-  const [formError, setFormError] = useState("");
-
-  // Dialog states - Class Assignment Configuration
-  const [isClassDialogOpen, setIsClassDialogOpen] = useState(false);
-  const [assignmentTeacher, setAssignmentTeacher] = useState<any>(null);
-  const [assignmentError, setAssignmentError] = useState("");
-
-  // Form states - Profile Create/Edit
-  const [profileEmail, setProfileEmail] = useState("");
-  const [profileFirstName, setProfileFirstName] = useState("");
-  const [profileLastName, setProfileLastName] = useState("");
-  const [profileFullName, setProfileFullName] = useState(""); // for updates
-  const [profileEmployeeCode, setProfileEmployeeCode] = useState("");
-  const [profilePhone, setProfilePhone] = useState("");
-  const [profileSpecialization, setProfileSpecialization] = useState("");
-  const [profileStatus, setProfileStatus] = useState<"ACTIVE" | "INACTIVE" | "ON_LEAVE">("ACTIVE");
-
-  // Form states - Class Assignment
-  const [assignSectionId, setAssignSectionId] = useState("");
-  const [assignRole, setAssignRole] = useState("PRIMARY"); // PRIMARY, ASSISTANT, SUBSTITUTE
-
-  // Open Profile Modal
-  const handleOpenProfileDialog = (teacher: any = null) => {
-    setFormError("");
-    if (teacher) {
-      setSelectedTeacher(teacher);
-      setProfileEmail(teacher.user?.email || "");
-      setProfileFirstName(teacher.user?.firstName || "");
-      setProfileLastName(teacher.user?.lastName || "");
-      setProfileFullName(teacher.fullName || "");
-      setProfileEmployeeCode(teacher.employeeCode || "");
-      setProfilePhone(teacher.phone || "");
-      setProfileSpecialization(teacher.specialization || "");
-      setProfileStatus(teacher.status || "ACTIVE");
-    } else {
-      setSelectedTeacher(null);
-      setProfileEmail("");
-      setProfileFirstName("");
-      setProfileLastName("");
-      setProfileFullName("");
-      setProfileEmployeeCode("");
-      setProfilePhone("");
-      setProfileSpecialization("");
-      setProfileStatus("ACTIVE");
-    }
-    setIsProfileDialogOpen(true);
-  };
-
-  // Open Class Assignment Modal
-  const handleOpenClassDialog = (teacher: any) => {
-    setAssignmentError("");
-    setAssignmentTeacher(teacher);
-    const firstSection = sectionsData?.items?.[0]?.id || "";
-    setAssignSectionId(firstSection);
-    setAssignRole("PRIMARY");
-    setIsClassDialogOpen(true);
-  };
-
-  // Save Teacher Profile (Create / Edit)
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-
-    try {
-      if (selectedTeacher) {
-        // Update uses UpdateTeacherDto
-        const payload = {
-          fullName: profileFullName || `${profileFirstName} ${profileLastName}`,
-          employeeCode: profileEmployeeCode || undefined,
-          phone: profilePhone || undefined,
-          specialization: profileSpecialization || undefined,
-          status: profileStatus,
-        };
-        await updateTeacherProfile({ id: selectedTeacher.id, body: payload }).unwrap();
-      } else {
-        // Create uses CreateTeacherDto (includes User fields)
-        if (!profileEmail || !profileFirstName || !profileLastName) {
-          setFormError("Email, First Name, and Last Name are required.");
-          return;
-        }
-        const payload = {
-          email: profileEmail,
-          firstName: profileFirstName,
-          lastName: profileLastName,
-          employeeCode: profileEmployeeCode || undefined,
-          phone: profilePhone || undefined,
-          specialization: profileSpecialization || undefined,
-          status: profileStatus,
-        };
-        await createTeacherProfile(payload).unwrap();
-      }
-      setIsProfileDialogOpen(false);
-    } catch (err: any) {
-      setFormError(err?.data?.message || "Failed to save teacher details.");
-    }
-  };
 
   // Delete Teacher Profile (Soft Delete)
   const handleDeleteProfile = async (id: string) => {
@@ -180,61 +52,6 @@ export default function TeachersPage() {
         await deleteTeacherProfile(id).unwrap();
       } catch (err: any) {
         alert(err?.data?.message || "Failed to delete teacher.");
-      }
-    }
-  };
-
-  // Add Class Assignment
-  const handleAddAssignment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!assignSectionId) {
-      setAssignmentError("Class Section is required.");
-      return;
-    }
-    setAssignmentError("");
-
-    try {
-      await assignTeacherClass({
-        id: assignmentTeacher.id,
-        classSectionId: assignSectionId,
-        role: assignRole,
-      }).unwrap();
-
-      // Update local modal state to reflect changes immediately
-      const addedSection = sectionsData?.items?.find((s: any) => s.id === assignSectionId);
-      setAssignmentTeacher((prev: any) => ({
-        ...prev,
-        classAssignments: [
-          ...(prev.classAssignments || []),
-          {
-            teacherProfileId: prev.id,
-            classSectionId: assignSectionId,
-            role: assignRole,
-            classSection: addedSection,
-          },
-        ],
-      }));
-    } catch (err: any) {
-      setAssignmentError(err?.data?.message || "Failed to assign teacher to class.");
-    }
-  };
-
-  // Remove Class Assignment
-  const handleRemoveAssignment = async (classSectionId: string) => {
-    if (confirm("Remove teacher from this class section assignment?")) {
-      try {
-        await removeTeacherClass({
-          id: assignmentTeacher.id,
-          classSectionId,
-        }).unwrap();
-
-        setAssignmentTeacher((prev: any) => ({
-          ...prev,
-          classAssignments:
-            prev.classAssignments?.filter((c: any) => c.classSectionId !== classSectionId) || [],
-        }));
-      } catch (err: any) {
-        setAssignmentError(err?.data?.message || "Failed to remove class assignment.");
       }
     }
   };
@@ -261,10 +78,12 @@ export default function TeachersPage() {
           </p>
         </div>
         <Button
-          onClick={() => handleOpenProfileDialog()}
+          asChild
           className="flex h-10 w-fit cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90"
         >
-          <Plus className="h-4 w-4" /> Add Teacher
+          <Link href="/teachers/create">
+            <Plus className="h-4 w-4" /> Add Teacher
+          </Link>
         </Button>
       </div>
 
@@ -403,7 +222,8 @@ export default function TeachersPage() {
                   return (
                     <tr
                       key={teacher.id}
-                      className="border-b border-border/30 transition-colors last:border-0 hover:bg-muted/50"
+                      onClick={() => router.push(`/teachers/${teacher.id}`)}
+                      className="cursor-pointer border-b border-border/30 transition-colors last:border-0 hover:bg-muted/50"
                     >
                       <td className="py-4">
                         <div className="flex items-center gap-3">
@@ -467,21 +287,10 @@ export default function TeachersPage() {
                       <td className="py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button
-                            onClick={() => handleOpenClassDialog(teacher)}
-                            variant="outline"
-                            className="h-8 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                          >
-                            Assign Sections
-                          </Button>
-                          <Button
-                            onClick={() => handleOpenProfileDialog(teacher)}
-                            variant="outline"
-                            className="h-8 rounded-lg p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            onClick={() => handleDeleteProfile(teacher.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProfile(teacher.id);
+                            }}
                             variant="outline"
                             className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                           >
@@ -513,277 +322,6 @@ export default function TeachersPage() {
           label="teacher"
         />
       </Card>
-
-      {/* Profile Create / Edit Dialog */}
-      <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6">
-          <DialogHeader>
-            <DialogTitle className="font-display text-base font-bold text-foreground">
-              {selectedTeacher ? "Edit Teacher Profile" : "Register Teacher Profile"}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {selectedTeacher
-                ? "Update profile details for this teacher."
-                : "Create user account and profile demographics for the teacher."}
-            </DialogDescription>
-          </DialogHeader>
-
-          {formError && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-              <AlertCircle className="h-4 w-4" />
-              {formError}
-            </div>
-          )}
-
-          <form onSubmit={handleSaveProfile} className="space-y-4">
-            {!selectedTeacher ? (
-              <>
-                <div className="space-y-1">
-                  <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                    Email Address
-                  </Label>
-                  <Input
-                    type="email"
-                    value={profileEmail}
-                    onChange={(e) => setProfileEmail(e.target.value)}
-                    placeholder="prof.turing@eudora.app"
-                    className="h-10 border-border text-xs"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                      First Name
-                    </Label>
-                    <Input
-                      value={profileFirstName}
-                      onChange={(e) => setProfileFirstName(e.target.value)}
-                      placeholder="Alan"
-                      className="h-10 border-border text-xs"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                      Last Name
-                    </Label>
-                    <Input
-                      value={profileLastName}
-                      onChange={(e) => setProfileLastName(e.target.value)}
-                      placeholder="Turing"
-                      className="h-10 border-border text-xs"
-                      required
-                    />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                  Full Name
-                </Label>
-                <Input
-                  value={profileFullName}
-                  onChange={(e) => setProfileFullName(e.target.value)}
-                  className="h-10 border-border text-xs"
-                  required
-                />
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                  Employee Code
-                </Label>
-                <Input
-                  value={profileEmployeeCode}
-                  onChange={(e) => setProfileEmployeeCode(e.target.value)}
-                  placeholder="EMP-012"
-                  className="h-10 border-border text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                  Contact Number
-                </Label>
-                <Input
-                  value={profilePhone}
-                  onChange={(e) => setProfilePhone(e.target.value)}
-                  placeholder="(555) 019-3832"
-                  className="h-10 border-border text-xs"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                Academic Specialization
-              </Label>
-              <Input
-                value={profileSpecialization}
-                onChange={(e) => setProfileSpecialization(e.target.value)}
-                placeholder="Computer Science, Calculus, Chemistry"
-                className="h-10 border-border text-xs"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                Status
-              </Label>
-              <select
-                value={profileStatus}
-                onChange={(e: any) => setProfileStatus(e.target.value)}
-                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
-              >
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="INACTIVE">INACTIVE</option>
-                <option value="ON_LEAVE">ON LEAVE</option>
-              </select>
-            </div>
-
-            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsProfileDialogOpen(false)}
-                className="h-10 rounded-xl text-xs font-semibold"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={creatingProfile || updatingProfile}
-                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
-              >
-                {creatingProfile || updatingProfile ? "Saving..." : "Save Profile"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Class Section Assignment Dialog */}
-      <Dialog open={isClassDialogOpen} onOpenChange={setIsClassDialogOpen}>
-        <DialogContent className="max-w-lg rounded-2xl border border-border bg-card p-6">
-          <DialogHeader>
-            <DialogTitle className="font-display text-base font-bold text-foreground">
-              Section Allocations: {assignmentTeacher?.fullName}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Assign or revoke section placements for class homerooms.
-            </DialogDescription>
-          </DialogHeader>
-
-          {assignmentError && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-              <AlertCircle className="h-4 w-4" />
-              {assignmentError}
-            </div>
-          )}
-
-          <div className="space-y-6">
-            <form
-              onSubmit={handleAddAssignment}
-              className="grid grid-cols-3 items-end gap-3 rounded-2xl border border-border bg-muted/50 p-4"
-            >
-              <div className="col-span-1 space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                  Class Section
-                </Label>
-                <select
-                  value={assignSectionId}
-                  onChange={(e) => setAssignSectionId(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
-                  required
-                >
-                  <option value="" disabled>
-                    Select Section
-                  </option>
-                  {sectionsData?.items
-                    ?.filter((s: any) => s.status === "ACTIVE")
-                    .map((s: any) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.code})
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div className="col-span-1 space-y-1">
-                <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                  Teacher Role
-                </Label>
-                <select
-                  value={assignRole}
-                  onChange={(e) => setAssignRole(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
-                  required
-                >
-                  <option value="PRIMARY">PRIMARY</option>
-                  <option value="ASSISTANT">ASSISTANT</option>
-                  <option value="SUBSTITUTE">SUBSTITUTE</option>
-                </select>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={assigning}
-                className="h-10 cursor-pointer rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
-              >
-                {assigning ? "Assigning..." : "Assign Section"}
-              </Button>
-            </form>
-
-            <div className="space-y-2">
-              <h3 className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                Currently Assigned Sections
-              </h3>
-              <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
-                {assignmentTeacher?.classAssignments &&
-                assignmentTeacher.classAssignments.length > 0 ? (
-                  assignmentTeacher.classAssignments.map((a: any) => (
-                    <div
-                      key={a.classSectionId}
-                      className="flex items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm"
-                    >
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">
-                          {a.classSection?.name || "Homeroom Class"}
-                        </p>
-                        <p className="text-[9px] font-semibold text-success">Role: {a.role}</p>
-                      </div>
-                      <Button
-                        onClick={() => handleRemoveAssignment(a.classSectionId)}
-                        variant="outline"
-                        className="animate-fade-in h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="py-3 text-center text-xs font-medium text-muted-foreground">
-                    No active class section allocations.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="border-t border-border pt-4">
-            <Button
-              type="button"
-              onClick={() => setIsClassDialogOpen(false)}
-              className="h-10 rounded-xl bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90"
-            >
-              Done Setup
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

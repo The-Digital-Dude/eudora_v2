@@ -63,6 +63,27 @@ export class GuardianAccessService {
     await this.assertCanAccessStudent(user.id, studentProfileId);
   }
 
+  /**
+   * Union of the campuses every linked student (with academic access) is
+   * actively placed at — used to resolve catalog visibility for a guardian
+   * browsing generally, not viewing one specific child (that case already
+   * has its own studentProfileId param on the relevant endpoints).
+   */
+  async getLinkedCampusIds(userId: string): Promise<string[]> {
+    const studentProfileIds = await this.getLinkedStudentIds(userId);
+    if (studentProfileIds.length === 0) {
+      return [];
+    }
+    const placements = await this.prisma.studentClassPlacement.findMany({
+      where: {
+        studentProfileId: { in: studentProfileIds },
+        isActive: true,
+      },
+      select: { classSection: { select: { program: { select: { campusId: true } } } } },
+    });
+    return [...new Set(placements.map((p) => p.classSection.program.campusId))];
+  }
+
   async getGuardianFamilyId(userId: string): Promise<string | null> {
     const guardianProfile = await this.prisma.guardianProfile.findUnique({
       where: { userId },

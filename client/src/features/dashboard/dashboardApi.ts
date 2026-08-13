@@ -33,6 +33,16 @@ export interface Role {
   description?: string;
 }
 
+export interface CampusCourseAssignment {
+  id: string;
+  campusId: string;
+  courseId: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  course: { id: string; title: string; slug: string; status: string };
+}
+
 export interface User {
   id: string;
   email: string;
@@ -104,6 +114,11 @@ export interface CourseClass {
   name: string;
   code: string;
   status: "ACTIVE" | "INACTIVE";
+  description: string | null;
+  campusId: string | null;
+  capacity: number | null;
+  /** Default false — a class only becomes guardian-self-enrollable once staff opts it in. */
+  isOpenForEnrollment: boolean;
   createdAt: string;
   updatedAt: string;
   term?: {
@@ -318,6 +333,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       providesTags: ["Campuses"],
     } as any),
+    getCampus: builder.query<Campus, string>({
+      query: (id: string) => `/campuses/${id}`,
+      providesTags: ["Campuses"],
+    } as any),
     createCampus: builder.mutation<Campus, Partial<Campus>>({
       query: (body: any) => ({
         url: "/campuses",
@@ -357,6 +376,10 @@ export const dashboardApi = authApi.injectEndpoints({
         items: response.data || [],
         total: response.meta?.total ?? response.data?.length ?? 0,
       }),
+      providesTags: ["Programs"],
+    } as any),
+    getProgram: builder.query<Program, string>({
+      query: (id: string) => `/programs/${id}`,
       providesTags: ["Programs"],
     } as any),
     createProgram: builder.mutation<Program, Partial<Program>>({
@@ -443,11 +466,31 @@ export const dashboardApi = authApi.injectEndpoints({
       query: () => "/billing/plans/public",
       providesTags: ["BillingPlans"],
     } as any),
+    getBillingPlan: builder.query<BillingPlan, string>({
+      query: (id: string) => `/billing/plans/${id}`,
+      providesTags: ["BillingPlans"],
+    } as any),
     createBillingPlan: builder.mutation<BillingPlan, Partial<BillingPlan>>({
       query: (body: any) => ({
         url: "/billing/plans",
         method: "POST",
         body,
+      }),
+      invalidatesTags: ["BillingPlans"],
+    } as any),
+    updateBillingPlan: builder.mutation<BillingPlan, { id: string; body: Partial<BillingPlan> }>({
+      query: ({ id, body }: any) => ({
+        url: `/billing/plans/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["BillingPlans"],
+    } as any),
+    /** Soft-delete — archives the plan (isActive: false) rather than removing the row. */
+    deleteBillingPlan: builder.mutation<BillingPlan, string>({
+      query: (id: string) => ({
+        url: `/billing/plans/${id}`,
+        method: "DELETE",
       }),
       invalidatesTags: ["BillingPlans"],
     } as any),
@@ -512,6 +555,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       providesTags: ["Leads"],
     } as any),
+    getLead: builder.query<Lead, string>({
+      query: (id: string) => `/leads/${id}`,
+      providesTags: ["Leads"],
+    } as any),
     createLead: builder.mutation<Lead, Partial<Lead>>({
       query: (body: any) => ({
         url: "/leads",
@@ -550,6 +597,17 @@ export const dashboardApi = authApi.injectEndpoints({
         total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["CourseClasses"],
+    } as any),
+    updateCourseClass: builder.mutation<
+      CourseClass,
+      { id: string; body: Partial<Pick<CourseClass, "description" | "campusId" | "capacity" | "isOpenForEnrollment">> }
+    >({
+      query: ({ id, body }: any) => ({
+        url: `/course-classes/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["CourseClasses"],
     } as any),
 
     getClassSections: builder.query<
@@ -728,6 +786,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       providesTags: ["Students"],
     } as any),
+    getStudentProfile: builder.query<StudentProfile, string>({
+      query: (id: string) => `/student-profiles/${id}`,
+      providesTags: ["Students"],
+    } as any),
     createStudentProfile: builder.mutation<StudentProfile, Partial<StudentProfile>>({
       query: (body: any) => ({
         url: "/student-profiles",
@@ -837,6 +899,10 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       providesTags: ["Teachers"],
     } as any),
+    getTeacherProfile: builder.query<TeacherProfile, string>({
+      query: (id: string) => `/teacher-profiles/${id}`,
+      providesTags: ["Teachers"],
+    } as any),
     createTeacherProfile: builder.mutation<TeacherProfile, any>({
       query: (body: any) => ({
         url: "/teacher-profiles",
@@ -880,6 +946,40 @@ export const dashboardApi = authApi.injectEndpoints({
         method: "DELETE",
       }),
       invalidatesTags: ["Teachers"],
+    } as any),
+
+    getCampusCourses: builder.query<CampusCourseAssignment[], string>({
+      query: (campusId: string) => `/campuses/${campusId}/courses`,
+      providesTags: ["CampusCourses"],
+    } as any),
+    assignCourseToCampus: builder.mutation<
+      CampusCourseAssignment,
+      { campusId: string; courseId: string; enabled?: boolean }
+    >({
+      query: ({ campusId, courseId, enabled }: any) => ({
+        url: `/campuses/${campusId}/courses`,
+        method: "POST",
+        body: { courseId, enabled },
+      }),
+      invalidatesTags: ["CampusCourses"],
+    } as any),
+    updateCampusCourse: builder.mutation<
+      CampusCourseAssignment,
+      { campusId: string; courseId: string; enabled: boolean }
+    >({
+      query: ({ campusId, courseId, enabled }: any) => ({
+        url: `/campuses/${campusId}/courses/${courseId}`,
+        method: "PATCH",
+        body: { enabled },
+      }),
+      invalidatesTags: ["CampusCourses"],
+    } as any),
+    removeCampusCourse: builder.mutation<void, { campusId: string; courseId: string }>({
+      query: ({ campusId, courseId }: any) => ({
+        url: `/campuses/${campusId}/courses/${courseId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["CampusCourses"],
     } as any),
 
     getNotifications: builder.query<any[], void>({
@@ -929,10 +1029,12 @@ export const dashboardApi = authApi.injectEndpoints({
 
 export const {
   useGetCampusesQuery,
+  useGetCampusQuery,
   useCreateCampusMutation,
   useUpdateCampusMutation,
   useDeleteCampusMutation,
   useGetProgramsQuery,
+  useGetProgramQuery,
   useCreateProgramMutation,
   useUpdateProgramMutation,
   useDeleteProgramMutation,
@@ -943,16 +1045,21 @@ export const {
   useGetRolesQuery,
   useGetBillingPlansQuery,
   useGetPublicPlansQuery,
+  useGetBillingPlanQuery,
   useCreateBillingPlanMutation,
+  useUpdateBillingPlanMutation,
+  useDeleteBillingPlanMutation,
   useSyncBillingPlanToStripeMutation,
   useCreateCheckoutSessionMutation,
   useCreateBillingPortalSessionMutation,
   useGetCampusSubscriptionQuery,
   useGetLeadsQuery,
+  useGetLeadQuery,
   useCreateLeadMutation,
   useUpdateLeadMutation,
   useDeleteLeadMutation,
   useGetCourseClassesQuery,
+  useUpdateCourseClassMutation,
   useGetClassSectionsQuery,
   useGetClassSectionQuery,
   useCreateClassSectionMutation,
@@ -965,6 +1072,7 @@ export const {
   useGetBroadcastsQuery,
   useCreateBroadcastMutation,
   useGetStudentProfilesQuery,
+  useGetStudentProfileQuery,
   useCreateStudentProfileMutation,
   useUpdateStudentProfileMutation,
   useDeleteStudentProfileMutation,
@@ -976,11 +1084,16 @@ export const {
   useCreateGuardianProfileMutation,
   useSelfLinkGuardianMutation,
   useGetTeacherProfilesQuery,
+  useGetTeacherProfileQuery,
   useCreateTeacherProfileMutation,
   useUpdateTeacherProfileMutation,
   useDeleteTeacherProfileMutation,
   useAssignTeacherClassMutation,
   useRemoveTeacherClassMutation,
+  useGetCampusCoursesQuery,
+  useAssignCourseToCampusMutation,
+  useUpdateCampusCourseMutation,
+  useRemoveCampusCourseMutation,
   useGetNotificationsQuery,
   useGetUnreadNotificationsCountQuery,
   useMarkNotificationAsReadMutation,

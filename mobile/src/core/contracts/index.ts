@@ -175,6 +175,12 @@ export interface CourseSummary {
   status: CatalogStatus;
   sortOrder: number;
   gradeBand: 'PRE_K_K' | 'G1_2' | 'G3_4' | 'G5_6' | null;
+  /**
+   * Whether a guardian (or staff) put this course in the student's learning
+   * plan. Only present for student callers; a recommendation, not an access
+   * gate — every listed course is openable either way.
+   */
+  isAssigned?: boolean;
   learningSubject: { id: string; name: string; code: string };
   _count: { concepts: number };
 }

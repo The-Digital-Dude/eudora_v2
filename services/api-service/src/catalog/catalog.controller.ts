@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CatalogService } from './catalog.service';
+import { InstitutionService } from '../institution/institution.service';
 import {
   CreateLearningSubjectDto,
   UpdateLearningSubjectDto,
@@ -35,7 +36,10 @@ function isStaff(user?: CurrentUserDto): boolean {
 @Controller('catalog')
 @UseGuards(RolesGuard)
 export class CatalogController {
-  constructor(private readonly catalogService: CatalogService) {}
+  constructor(
+    private readonly catalogService: CatalogService,
+    private readonly institutionService: InstitutionService,
+  ) {}
 
   // ─── Learning Subjects ───────────────────────────────────────────────────
 
@@ -62,19 +66,34 @@ export class CatalogController {
   // ─── Courses ─────────────────────────────────────────────────────────────
 
   @Get('courses')
-  listCourses(
+  async listCourses(
     @Query('subjectId') subjectId?: string,
     @CurrentUser() user?: CurrentUserDto,
   ) {
-    return this.catalogService.listCourses(subjectId, isStaff(user));
+    const visibleCampusIds = user
+      ? await this.institutionService.resolveCampusIdsForUser(user)
+      : null;
+    return this.catalogService.listCourses(
+      subjectId,
+      isStaff(user),
+      visibleCampusIds,
+      user?.studentProfile?.id ?? null,
+    );
   }
 
   @Get('courses/:id')
-  getCourseDetail(
+  async getCourseDetail(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserDto,
   ) {
-    return this.catalogService.getCourseDetail(id, user.id, isStaff(user));
+    const visibleCampusIds =
+      await this.institutionService.resolveCampusIdsForUser(user);
+    return this.catalogService.getCourseDetail(
+      id,
+      user.id,
+      isStaff(user),
+      visibleCampusIds,
+    );
   }
 
   @Post('courses')

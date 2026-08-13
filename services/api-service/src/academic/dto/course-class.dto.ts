@@ -1,4 +1,13 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsInt,
+  IsPositive,
+  IsBoolean,
+  IsUUID,
+} from 'class-validator';
 import { CourseClassStatus } from '@prisma/client';
 
 export class CreateCourseClassDto {
@@ -17,6 +26,23 @@ export class CreateCourseClassDto {
   @IsEnum(CourseClassStatus)
   @IsOptional()
   status?: CourseClassStatus;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsUUID()
+  @IsOptional()
+  campusId?: string;
+
+  @IsInt()
+  @IsPositive()
+  @IsOptional()
+  capacity?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isOpenForEnrollment?: boolean;
 }
 
 export class UpdateCourseClassDto {
@@ -35,4 +61,21 @@ export class UpdateCourseClassDto {
   @IsEnum(CourseClassStatus)
   @IsOptional()
   status?: CourseClassStatus;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsUUID()
+  @IsOptional()
+  campusId?: string;
+
+  @IsInt()
+  @IsPositive()
+  @IsOptional()
+  capacity?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isOpenForEnrollment?: boolean;
 }

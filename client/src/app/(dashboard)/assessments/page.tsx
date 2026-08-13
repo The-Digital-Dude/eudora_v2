@@ -9,28 +9,20 @@ import {
   Layers,
   MoreVertical,
   Plus,
-  Search,
-  Sparkles} from "lucide-react";
+  Search} from "lucide-react";
 import Link from "next/link";
-import React, { useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { ListPagination } from "@/components/list-pagination";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter,DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Assessment,
   useArchiveAssessmentMutation,
-  useCreateAssessmentMutation,
   useGetAssessmentsQuery,
-  useGetAssessmentTypesQuery,
-  useGetTermsQuery,
   usePublishAssessmentMutation,
 } from "@/features/assessments/assessmentsApi";
 import {
@@ -67,81 +59,18 @@ export default function AssessmentsPage() {
 
   const { data: subjectsData } = useGetSubjectsQuery();
   const { data: levelsData } = useGetLevelsQuery();
-  const { data: typesData } = useGetAssessmentTypesQuery();
-  const { data: termsData } = useGetTermsQuery();
 
   const assessments = assessmentsData?.items || [];
   const subjects = subjectsData?.items || [];
   const levels = levelsData?.items || [];
-  const types = typesData?.items || [];
-  const terms = termsData?.items || [];
 
   // Mutations
-  const [createAssessment, { isLoading: isCreating }] = useCreateAssessmentMutation();
   const [publishAssessment] = usePublishAssessmentMutation();
   const [archiveAssessment] = useArchiveAssessmentMutation();
-
-  // Create modal state
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newTypeId, setNewTypeId] = useState("");
-  const [newSubjectId, setNewSubjectId] = useState("");
-  const [newLevelId, setNewLevelId] = useState("");
-  const [newTermId, setNewTermId] = useState("");
-  const [newWeek, setNewWeek] = useState("");
-  const [newDuration, setNewDuration] = useState("60");
-  const [newTotalMarks, setNewTotalMarks] = useState("100");
-  const [newDescription, setNewDescription] = useState("");
-  const [newCountsTowardGrade, setNewCountsTowardGrade] = useState(true);
-  const [newMaxAttempts, setNewMaxAttempts] = useState("");
 
   // Assignment dialog state
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return toast.error("Please enter a title.");
-    if (!newTypeId) return toast.error("Please select an assessment type.");
-    if (!newSubjectId) return toast.error("Please select a subject.");
-    if (!newLevelId) return toast.error("Please select a grade level.");
-
-    try {
-      await createAssessment({
-        title: newTitle,
-        description: newDescription.trim() || undefined,
-        assessmentTypeId: newTypeId,
-        subjectId: newSubjectId,
-        levelId: newLevelId,
-        termId: newTermId || null,
-        weekNumber: newWeek ? parseInt(newWeek) : null,
-        estimatedDurationMinutes: parseInt(newDuration) || 60,
-        totalMarks: parseInt(newTotalMarks) || 100,
-        countsTowardGrade: newCountsTowardGrade,
-        maxAttempts: newMaxAttempts ? parseInt(newMaxAttempts) : null,
-        status: "draft",
-      }).unwrap();
-
-      toast.success("Assessment created successfully!");
-      setCreateDialogOpen(false);
-
-      // Reset form
-      setNewTitle("");
-      setNewTypeId("");
-      setNewSubjectId("");
-      setNewLevelId("");
-      setNewTermId("");
-      setNewWeek("");
-      setNewDuration("60");
-      setNewTotalMarks("100");
-      setNewDescription("");
-      setNewCountsTowardGrade(true);
-      setNewMaxAttempts("");
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.data?.message || "Failed to create assessment.");
-    }
-  };
 
   const handlePublish = async (id: string) => {
     try {
@@ -194,10 +123,12 @@ export default function AssessmentsPage() {
           </p>
         </div>
         <Button
-          onClick={() => setCreateDialogOpen(true)}
+          asChild
           className="h-11 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
         >
-          <Plus className="mr-2 h-4 w-4" /> Create Assessment
+          <Link href="/assessments/create">
+            <Plus className="mr-2 h-4 w-4" /> Create Assessment
+          </Link>
         </Button>
       </div>
 
@@ -412,214 +343,6 @@ export default function AssessmentsPage() {
         onPageChange={(next) => setValue("page", next)}
         label="assessment"
       />
-
-      {/* Create Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Create Assessment Paper
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleCreate} className="space-y-4 mt-3">
-            {/* Title */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Paper Title
-              </Label>
-              <Input
-                placeholder="e.g. Calculus Mid-Term Examination"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-muted/30"
-                required
-              />
-            </div>
-
-            {/* Description */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Description (optional)
-              </Label>
-              <Textarea
-                placeholder="Shown to students before they start the assessment..."
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-                className="min-h-[70px] rounded-xl text-xs bg-muted/30"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Type */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Assessment Type
-                </Label>
-                <Select value={newTypeId} onValueChange={setNewTypeId}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
-                    <SelectValue placeholder="Select type..." />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {types.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Subject */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Subject
-                </Label>
-                <Select value={newSubjectId} onValueChange={setNewSubjectId}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
-                    <SelectValue placeholder="Select subject..." />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {subjects.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Level */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Grade Level
-                </Label>
-                <Select value={newLevelId} onValueChange={setNewLevelId}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
-                    <SelectValue placeholder="Select level..." />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {levels.map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {l.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Term */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Term / Period
-                </Label>
-                <Select value={newTermId} onValueChange={setNewTermId}>
-                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
-                    <SelectValue placeholder="Optional term..." />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {terms.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              {/* Week */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Week No
-                </Label>
-                <Input
-                  type="number"
-                  placeholder="Optional"
-                  value={newWeek}
-                  onChange={(e) => setNewWeek(e.target.value)}
-                  className="h-10 rounded-xl text-xs bg-muted/30"
-                />
-              </div>
-
-              {/* Duration */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Duration (mins)
-                </Label>
-                <Input
-                  type="number"
-                  placeholder="60"
-                  value={newDuration}
-                  onChange={(e) => setNewDuration(e.target.value)}
-                  className="h-10 rounded-xl text-xs bg-muted/30"
-                  required
-                />
-              </div>
-
-              {/* Max Score */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Max Marks
-                </Label>
-                <Input
-                  type="number"
-                  placeholder="100"
-                  value={newTotalMarks}
-                  onChange={(e) => setNewTotalMarks(e.target.value)}
-                  className="h-10 rounded-xl text-xs bg-muted/30"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Counts toward grade */}
-              <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-3 h-10">
-                <Label className="text-xs font-semibold text-foreground">
-                  Counts toward grade
-                </Label>
-                <Switch checked={newCountsTowardGrade} onCheckedChange={setNewCountsTowardGrade} />
-              </div>
-
-              {/* Max Attempts */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Max Attempts
-                </Label>
-                <Input
-                  type="number"
-                  min="1"
-                  placeholder="Unlimited"
-                  value={newMaxAttempts}
-                  onChange={(e) => setNewMaxAttempts(e.target.value)}
-                  className="h-10 rounded-xl text-xs bg-muted/30"
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="pt-4 flex gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setCreateDialogOpen(false)}
-                className="h-10 flex-1 cursor-pointer rounded-xl text-xs font-semibold"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isCreating}
-                className="h-10 flex-1 cursor-pointer rounded-xl bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-              >
-                {isCreating ? "Creating..." : "Create Paper"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Assignment Wizard */}
       <AssignmentWizardDialog

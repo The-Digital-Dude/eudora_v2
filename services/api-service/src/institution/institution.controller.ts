@@ -34,8 +34,9 @@ export class InstitutionController {
     return this.institutionService.createCampus(dto);
   }
 
+  // Any authenticated user can list campuses (e.g. campus-picker during
+  // signup/onboarding) — mutation and single-campus lookup stay admin-only.
   @Get('campuses')
-  @Roles('ADMIN', 'SUPER_ADMIN')
   async findAllCampuses(
     @Query('page') page?: string,
     @Query('limit') limit?: string,

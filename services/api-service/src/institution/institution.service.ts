@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
@@ -9,6 +10,7 @@ import { CreateProgramDto, UpdateProgramDto } from './dto/program.dto';
 import { CreateCampusCourseDto, UpdateCampusCourseDto } from './dto/campus-course.dto';
 import { GuardianAccessService } from '../family/guardian-access.service';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
+import { SubscriptionService } from '../billing/subscriptions/subscription.service';
 
 // Only these roles bypass campus-restricted catalog visibility entirely.
 // TEACHER is deliberately excluded — a teacher sees what their own campus's
@@ -18,9 +20,12 @@ const CAMPUS_BYPASS_ROLES = ['SUPER_ADMIN', 'ADMIN'];
 
 @Injectable()
 export class InstitutionService {
+  private readonly logger = new Logger(InstitutionService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly guardianAccessService: GuardianAccessService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   /**
@@ -106,9 +111,31 @@ export class InstitutionService {
       }
     }
 
-    return this.prisma.campus.create({
+    const campus = await this.prisma.campus.create({
       data: dto,
     });
+
+    // Every campus needs a subscription for PlanLimitGuard to let it do
+    // anything past this point (create programs, students, etc.) — new
+    // campuses default onto the Free plan so they aren't born locked out.
+    // Non-fatal: a misconfigured deployment (no Free plan seeded) shouldn't
+    // block campus creation itself, just plan-gated actions downstream.
+    const freePlan = await this.prisma.plan.findFirst({
+      where: { isActive: true, priceMonthly: 0, priceAnnual: 0 },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (freePlan) {
+      await this.subscriptionService.create({
+        campusId: campus.id,
+        planId: freePlan.id,
+      });
+    } else {
+      this.logger.warn(
+        `No active Free plan found — campus ${campus.id} was created without a subscription.`,
+      );
+    }
+
+    return campus;
   }
 
   async findAllCampuses(

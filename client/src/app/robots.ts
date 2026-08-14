@@ -9,7 +9,7 @@ import { SITE_URL } from "@/config/site";
 // from, so newly added dashboard routes are excluded automatically.
 const dashboardPaths = Array.from(new Set(flattenNavLeaves().map((leaf) => leaf.url)));
 
-const staticPrivatePaths = ["/login", "/register", "/complete-profile", "/mock-api"];
+const staticPrivatePaths = ["/login", "/register", "/complete-profile"];
 
 export default function robots(): MetadataRoute.Robots {
   return {

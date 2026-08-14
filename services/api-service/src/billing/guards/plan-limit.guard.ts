@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PLAN_FEATURE_KEY } from '../decorators/require-plan-feature.decorator';
 import {
   PLAN_LIMIT_KEY,
   PlanLimitResource,
@@ -17,10 +16,9 @@ import { SubscriptionStatus } from '@prisma/client';
 /**
  * PlanLimitGuard
  *
- * Enforces feature flags and resource limits based on a campus's active plan.
+ * Enforces resource limits based on a campus's active plan.
  *
  * Usage:
- *   - Attach @RequirePlanFeature('analytics') to gate by plan feature flag
  *   - Attach @CheckPlanLimit('students') to gate by resource count vs plan limit
  *
  * The guard resolves the campusId from route params (`:campusId` or `:id`).
@@ -36,18 +34,13 @@ export class PlanLimitGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredFeatures = this.reflector.getAllAndOverride<string[]>(
-      PLAN_FEATURE_KEY,
-      [context.getHandler(), context.getClass()],
-    );
-
     const limitResource = this.reflector.getAllAndOverride<PlanLimitResource>(
       PLAN_LIMIT_KEY,
       [context.getHandler(), context.getClass()],
     );
 
     // Nothing to enforce — pass through
-    if (!requiredFeatures?.length && !limitResource) return true;
+    if (!limitResource) return true;
 
     const request = context.switchToHttp().getRequest();
     let campusId: string | undefined =
@@ -96,22 +89,7 @@ export class PlanLimitGuard implements CanActivate {
 
     const plan = subscription.plan;
 
-    // ── Feature flag check ────────────────────────────────────────────────────
-    if (requiredFeatures?.length) {
-      const missingFeatures = requiredFeatures.filter(
-        (f) => !plan.features.includes(f),
-      );
-      if (missingFeatures.length > 0) {
-        throw new ForbiddenException(
-          `Your current plan does not include: ${missingFeatures.join(', ')}. Please upgrade.`,
-        );
-      }
-    }
-
-    // ── Resource limit check ──────────────────────────────────────────────────
-    if (limitResource) {
-      await this.checkResourceLimit(campusId, limitResource, plan);
-    }
+    await this.checkResourceLimit(campusId, limitResource, plan);
 
     return true;
   }
@@ -122,7 +100,6 @@ export class PlanLimitGuard implements CanActivate {
     plan: {
       maxStudents: number | null;
       maxPrograms: number | null;
-      maxCampuses: number | null;
     },
   ): Promise<void> {
     switch (resource) {
@@ -158,17 +135,6 @@ export class PlanLimitGuard implements CanActivate {
         break;
       }
 
-      case 'campuses': {
-        // campuses limit is checked globally, not per-campus
-        if (plan.maxCampuses === null) return;
-        const count = await this.prisma.campus.count();
-        if (count >= plan.maxCampuses) {
-          throw new ForbiddenException(
-            `Campus limit reached (${count}/${plan.maxCampuses}). Please upgrade your plan.`,
-          );
-        }
-        break;
-      }
     }
   }
 }

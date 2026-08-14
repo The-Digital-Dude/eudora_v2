@@ -102,12 +102,6 @@ async function main() {
     create: { name: 'Main Campus', representative: 'Dr. Alan Turing', status: 'ACTIVE' },
   });
 
-  const northCampus = await prisma.campus.upsert({
-    where: { name: 'North Campus' },
-    update: {},
-    create: { name: 'North Campus', representative: 'Dr. Grace Hopper', status: 'ACTIVE' },
-  });
-
   const program = await prisma.program.upsert({
     where: { code: 'BSC-CS' },
     update: {},

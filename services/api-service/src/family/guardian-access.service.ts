@@ -1,6 +1,7 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
+import { resolveCampusIdsForStudentIds } from '../institution/campus-resolution.util';
 
 const STAFF_ROLES = ['SUPER_ADMIN', 'ADMIN', 'TEACHER'];
 
@@ -71,17 +72,7 @@ export class GuardianAccessService {
    */
   async getLinkedCampusIds(userId: string): Promise<string[]> {
     const studentProfileIds = await this.getLinkedStudentIds(userId);
-    if (studentProfileIds.length === 0) {
-      return [];
-    }
-    const placements = await this.prisma.studentClassPlacement.findMany({
-      where: {
-        studentProfileId: { in: studentProfileIds },
-        isActive: true,
-      },
-      select: { classSection: { select: { program: { select: { campusId: true } } } } },
-    });
-    return [...new Set(placements.map((p) => p.classSection.program.campusId))];
+    return resolveCampusIdsForStudentIds(this.prisma, studentProfileIds);
   }
 
   async getGuardianFamilyId(userId: string): Promise<string | null> {

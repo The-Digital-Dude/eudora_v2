@@ -12,6 +12,7 @@ export enum WidgetType {
   CODE_PLAYGROUND = 'CODE_PLAYGROUND',
   GRID_MATCHING = 'GRID_MATCHING',
   STANDARD_MCQ = 'STANDARD_MCQ',
+  SHAPE_SHADING = 'SHAPE_SHADING',
 }
 
 export class CreateLessonDto {

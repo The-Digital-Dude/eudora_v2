@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -18,6 +19,8 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class GradebookService {
+  private readonly logger = new Logger(GradebookService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async createManualGrade(
@@ -460,7 +463,7 @@ export class GradebookService {
         );
         homeworkSyncCount++;
       } catch (err) {
-        console.error(`Failed to sync homework submission ${sub.id}:`, err);
+        this.logger.error(`Failed to sync homework submission ${sub.id}`, err);
       }
     }
 
@@ -483,7 +486,7 @@ export class GradebookService {
         );
         assessmentSyncCount++;
       } catch (err) {
-        console.error(`Failed to sync assessment attempt ${att.id}:`, err);
+        this.logger.error(`Failed to sync assessment attempt ${att.id}`, err);
       }
     }
 

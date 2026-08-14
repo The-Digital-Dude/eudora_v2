@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DeviceTokensService } from '../device-tokens/device-tokens.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -7,6 +7,8 @@ import { ExpoPushService } from './expo-push.service';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
@@ -33,7 +35,7 @@ export class NotificationsService {
       await this.emailService
         .sendMail(notification.user.email, dto.title, dto.body)
         .catch((err) => {
-          console.error('Failed to send notification email', err);
+          this.logger.error('Failed to send notification email', err);
         });
     }
 
@@ -50,7 +52,7 @@ export class NotificationsService {
         }),
       )
       .catch((err) => {
-        console.error('Failed to send push notification', err);
+        this.logger.error('Failed to send push notification', err);
       });
 
     return notification;

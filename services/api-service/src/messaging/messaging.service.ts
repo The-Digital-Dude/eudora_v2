@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
@@ -10,6 +11,8 @@ import { CreateThreadDto, CreateMessageDto } from './dto/message.dto';
 
 @Injectable()
 export class MessagingService {
+  private readonly logger = new Logger(MessagingService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly guardianAccessService: GuardianAccessService,
@@ -180,7 +183,9 @@ export class MessagingService {
         body: `You have received a new message thread from guardian ${guardianProfile.fullName}.`,
         metadata: { threadId: thread.id },
       })
-      .catch((err) => console.error('Failed to create notification', err));
+      .catch((err) =>
+        this.logger.error('Failed to create notification', err),
+      );
 
     return this.getThreadById(userId, thread.id);
   }
@@ -243,7 +248,9 @@ export class MessagingService {
         body: `${senderName} sent you a new message.`,
         metadata: { threadId, messageId: message.id },
       })
-      .catch((err) => console.error('Failed to create notification', err));
+      .catch((err) =>
+        this.logger.error('Failed to create notification', err),
+      );
 
     return message;
   }

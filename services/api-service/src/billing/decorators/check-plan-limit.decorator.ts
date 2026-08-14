@@ -1,6 +1,10 @@
 import { SetMetadata } from '@nestjs/common';
 
-export type PlanLimitResource = 'students' | 'programs' | 'campuses';
+// 'campuses' is deliberately absent: POST /campuses has no campusId to resolve
+// a subscription from — the campus doesn't exist yet, and its Free-plan
+// subscription is only created after the row is inserted. The check is
+// semantically premature on that route, so the resource isn't offered.
+export type PlanLimitResource = 'students' | 'programs';
 
 export const PLAN_LIMIT_KEY = 'plan_limit';
 

@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GuardianAccessService } from '../family/guardian-access.service';
-import { InstitutionService } from '../institution/institution.service';
 import { CatalogService } from '../catalog/catalog.service';
 import { StudentService } from '../student/student.service';
 
@@ -25,7 +24,6 @@ export class ParentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly guardianAccessService: GuardianAccessService,
-    private readonly institutionService: InstitutionService,
     private readonly catalogService: CatalogService,
     private readonly studentService: StudentService,
   ) {}
@@ -313,20 +311,15 @@ export class ParentService {
   // assume the caller is already authorized for `studentProfileId`.
 
   /**
-   * Catalog courses this child's campus can see, each flagged with whether
-   * it's already in their learning plan. Reuses `CatalogService.listCourses`
-   * so the PUBLISHED + `CampusCourse` visibility rules stay in exactly one
-   * place rather than being re-implemented here.
+   * Catalog courses available to this child, each flagged with whether it's
+   * already in their learning plan. Reuses `CatalogService.listCourses` so the
+   * PUBLISHED visibility rule stays in exactly one place rather than being
+   * re-implemented here.
    */
   async getAvailableCourses(studentProfileId: string) {
-    const campusIds =
-      await this.institutionService.resolveCampusIdsForStudent(
-        studentProfileId,
-      );
     return this.catalogService.listCourses(
       undefined,
       false,
-      campusIds,
       studentProfileId,
     );
   }
@@ -345,19 +338,10 @@ export class ParentService {
     assignedByUserId: string,
   ) {
     // Re-resolve visibility server-side rather than trusting the courseId the
-    // client sent — otherwise a guardian could add a campus-restricted
-    // (e.g. plan-gated) course to their child's plan by guessing its id.
-    // Same "not found, not forbidden" response as `getCourseDetail`, so this
-    // doesn't confirm a restricted course's existence either.
-    const campusIds =
-      await this.institutionService.resolveCampusIdsForStudent(
-        studentProfileId,
-      );
-    const visible = await this.catalogService.listCourses(
-      undefined,
-      false,
-      campusIds,
-    );
+    // client sent — otherwise a guardian could add an unpublished course to
+    // their child's plan by guessing its id. Same "not found, not forbidden"
+    // response as `getCourseDetail`, so this doesn't confirm existence either.
+    const visible = await this.catalogService.listCourses(undefined, false);
     if (!visible.some((course) => course.id === courseId)) {
       throw new NotFoundException('Course not found');
     }
@@ -392,19 +376,12 @@ export class ParentService {
   // once staff has explicitly opted it in via `isOpenForEnrollment`; the
   // default-false migration made nothing self-enrollable by accident.
 
-  private async listOpenClassesForStudent(studentProfileId: string) {
-    const campusIds =
-      await this.institutionService.resolveCampusIdsForStudent(
-        studentProfileId,
-      );
-    if (campusIds.length === 0) return [];
-
+  private async listOpenClassesForStudent() {
     return this.prisma.courseClass.findMany({
       where: {
         deletedAt: null,
         status: 'ACTIVE',
         isOpenForEnrollment: true,
-        campusId: { in: campusIds },
         term: { status: 'ACTIVE' },
       },
       include: {
@@ -417,7 +394,7 @@ export class ParentService {
 
   async getAvailableClasses(studentProfileId: string) {
     const [classes, enrollments] = await Promise.all([
-      this.listOpenClassesForStudent(studentProfileId),
+      this.listOpenClassesForStudent(),
       this.prisma.studentCourseEnrollment.findMany({
         where: { studentProfileId },
         select: { courseClassId: true },
@@ -447,7 +424,7 @@ export class ParentService {
     // Re-run every condition server-side — the client's "available" list is
     // convenience, not the security/business-rule boundary. Same rationale
     // as `assignCourse` re-checking campus visibility above.
-    const open = await this.listOpenClassesForStudent(studentProfileId);
+    const open = await this.listOpenClassesForStudent();
     const target = open.find((cls) => cls.id === courseClassId);
     if (!target) {
       throw new NotFoundException('This class is not open for enrollment');

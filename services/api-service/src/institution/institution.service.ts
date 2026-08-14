@@ -5,208 +5,17 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCampusDto, UpdateCampusDto } from './dto/campus.dto';
 import { CreateProgramDto, UpdateProgramDto } from './dto/program.dto';
-import { CreateCampusCourseDto, UpdateCampusCourseDto } from './dto/campus-course.dto';
-import { CurrentUserDto } from '../auth/dto/current-user.dto';
-import { SubscriptionService } from '../billing/subscriptions/subscription.service';
-import { CampusAccessService } from './campus-access.service';
 
 @Injectable()
 export class InstitutionService {
   private readonly logger = new Logger(InstitutionService.name);
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly campusAccessService: CampusAccessService,
-    private readonly subscriptionService: SubscriptionService,
-  ) {}
-
-  /**
-   * Campus scoping now lives in `CampusAccessService`. These two methods stay
-   * as thin delegations so existing callers (`catalog.controller.ts`,
-   * `parent.service.ts`) don't have to change.
-   */
-  async resolveCampusIdsForUser(
-    user: CurrentUserDto,
-  ): Promise<string[] | null> {
-    return this.campusAccessService.resolveCampusIdsForUser(user);
-  }
-
-  async resolveCampusIdsForStudent(
-    studentProfileId: string,
-  ): Promise<string[]> {
-    return this.campusAccessService.resolveCampusIdsForStudent(
-      studentProfileId,
-    );
-  }
-
-  // --- Campus Operations ---
-
-  async createCampus(dto: CreateCampusDto) {
-    const existing = await this.prisma.campus.findUnique({
-      where: { name: dto.name },
-    });
-    if (existing) {
-      throw new ConflictException('Campus name already exists');
-    }
-    if (dto.code) {
-      const existingCode = await this.prisma.campus.findUnique({
-        where: { code: dto.code },
-      });
-      if (existingCode) {
-        throw new ConflictException('Campus code already exists');
-      }
-    }
-
-    const campus = await this.prisma.campus.create({
-      data: dto,
-    });
-
-    // Every campus needs a subscription for PlanLimitGuard to let it do
-    // anything past this point (create programs, students, etc.) — new
-    // campuses default onto the Free plan so they aren't born locked out.
-    // Non-fatal: a misconfigured deployment (no Free plan seeded) shouldn't
-    // block campus creation itself, just plan-gated actions downstream.
-    const freePlan = await this.prisma.plan.findFirst({
-      where: { isActive: true, priceMonthly: 0, priceAnnual: 0 },
-      orderBy: { createdAt: 'asc' },
-    });
-    if (freePlan) {
-      await this.subscriptionService.create({
-        campusId: campus.id,
-        planId: freePlan.id,
-      });
-    } else {
-      this.logger.warn(
-        `No active Free plan found — campus ${campus.id} was created without a subscription.`,
-      );
-    }
-
-    return campus;
-  }
-
-  async findAllCampuses(
-    page = 1,
-    limit = 10,
-    search?: string,
-    status?: string,
-  ) {
-    const skip = (page - 1) * limit;
-    const where: any = {};
-
-    if (status) {
-      where.status = status;
-    }
-    // `name` only: Campus.representative is accepted by the DTO but no screen sets or shows it, so
-    // it's a pending removal candidate — not something to build a search on.
-    if (search) {
-      where.name = { contains: search, mode: 'insensitive' };
-    }
-
-    const [campuses, total] = await Promise.all([
-      this.prisma.campus.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.campus.count({ where }),
-    ]);
-
-    return {
-      data: campuses,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-  }
-
-  async findCampusById(id: string) {
-    const campus = await this.prisma.campus.findUnique({
-      where: { id },
-      include: { programs: true },
-    });
-    if (!campus) {
-      throw new NotFoundException('Campus not found');
-    }
-    return campus;
-  }
-
-  async updateCampus(id: string, dto: UpdateCampusDto) {
-    const campus = await this.prisma.campus.findUnique({
-      where: { id },
-    });
-    if (!campus) {
-      throw new NotFoundException('Campus not found');
-    }
-
-    if (dto.name && dto.name !== campus.name) {
-      const existing = await this.prisma.campus.findUnique({
-        where: { name: dto.name },
-      });
-      if (existing) {
-        throw new ConflictException('Campus name already exists');
-      }
-    }
-    if (dto.code && dto.code !== campus.code) {
-      const existingCode = await this.prisma.campus.findUnique({
-        where: { code: dto.code },
-      });
-      if (existingCode) {
-        throw new ConflictException('Campus code already exists');
-      }
-    }
-
-    return this.prisma.campus.update({
-      where: { id },
-      data: dto,
-    });
-  }
-
-  async deleteCampus(id: string) {
-    const campus = await this.prisma.campus.findUnique({
-      where: { id },
-    });
-    if (!campus) {
-      throw new NotFoundException('Campus not found');
-    }
-
-    // Cascade-archive programs and their class sections with the campus.
-    const now = new Date();
-    await this.prisma.$transaction(async (tx) => {
-      const programs = await tx.program.findMany({
-        where: { campusId: id },
-        select: { id: true },
-      });
-      const programIds = programs.map((p) => p.id);
-      await tx.classSection.updateMany({
-        where: { programId: { in: programIds }, deletedAt: null },
-        data: { deletedAt: now },
-      });
-      await tx.program.updateMany({
-        where: { campusId: id, deletedAt: null },
-        data: { deletedAt: now },
-      });
-      await tx.campus.update({ where: { id }, data: { deletedAt: now } });
-    });
-
-    return { message: 'Campus archived successfully' };
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   // --- Program Operations ---
 
   async createProgram(dto: CreateProgramDto) {
-    const campus = await this.prisma.campus.findUnique({
-      where: { id: dto.campusId },
-    });
-    if (!campus) {
-      throw new NotFoundException('Campus not found');
-    }
-
     const existingCode = await this.prisma.program.findUnique({
       where: { code: dto.code },
     });
@@ -219,18 +28,10 @@ export class InstitutionService {
     });
   }
 
-  async findAllPrograms(
-    page = 1,
-    limit = 10,
-    campusId?: string,
-    search?: string,
-  ) {
+  async findAllPrograms(page = 1, limit = 10, search?: string) {
     const skip = (page - 1) * limit;
     const where: any = {};
 
-    if (campusId) {
-      where.campusId = campusId;
-    }
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -243,7 +44,6 @@ export class InstitutionService {
         where,
         skip,
         take: limit,
-        include: { campus: true },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.program.count({ where }),
@@ -263,7 +63,6 @@ export class InstitutionService {
   async findProgramById(id: string) {
     const program = await this.prisma.program.findUnique({
       where: { id },
-      include: { campus: true },
     });
     if (!program) {
       throw new NotFoundException('Program not found');
@@ -277,15 +76,6 @@ export class InstitutionService {
     });
     if (!program) {
       throw new NotFoundException('Program not found');
-    }
-
-    if (dto.campusId) {
-      const campus = await this.prisma.campus.findUnique({
-        where: { id: dto.campusId },
-      });
-      if (!campus) {
-        throw new NotFoundException('Campus not found');
-      }
     }
 
     if (dto.code && dto.code !== program.code) {
@@ -316,85 +106,5 @@ export class InstitutionService {
     });
 
     return { message: 'Program deleted successfully' };
-  }
-
-  // --- Campus Course Visibility Operations ---
-
-  async getCampusCourses(campusId: string) {
-    const campus = await this.prisma.campus.findUnique({
-      where: { id: campusId },
-    });
-    if (!campus) {
-      throw new NotFoundException('Campus not found');
-    }
-    return this.prisma.campusCourse.findMany({
-      where: { campusId },
-      include: {
-        course: {
-          select: { id: true, title: true, slug: true, status: true },
-        },
-      },
-      orderBy: { createdAt: 'asc' },
-    });
-  }
-
-  async assignCourseToCampus(campusId: string, dto: CreateCampusCourseDto) {
-    const [campus, course] = await Promise.all([
-      this.prisma.campus.findUnique({ where: { id: campusId } }),
-      this.prisma.course.findUnique({ where: { id: dto.courseId } }),
-    ]);
-    if (!campus) {
-      throw new NotFoundException('Campus not found');
-    }
-    if (!course) {
-      throw new NotFoundException('Course not found');
-    }
-
-    return this.prisma.campusCourse.upsert({
-      where: {
-        campusId_courseId: { campusId, courseId: dto.courseId },
-      },
-      update: { enabled: dto.enabled ?? true },
-      create: {
-        campusId,
-        courseId: dto.courseId,
-        enabled: dto.enabled ?? true,
-      },
-      include: {
-        course: {
-          select: { id: true, title: true, slug: true, status: true },
-        },
-      },
-    });
-  }
-
-  async updateCampusCourse(
-    campusId: string,
-    courseId: string,
-    dto: UpdateCampusCourseDto,
-  ) {
-    const existing = await this.prisma.campusCourse.findUnique({
-      where: { campusId_courseId: { campusId, courseId } },
-    });
-    if (!existing) {
-      throw new NotFoundException('This course is not assigned to this campus');
-    }
-    return this.prisma.campusCourse.update({
-      where: { campusId_courseId: { campusId, courseId } },
-      data: { enabled: dto.enabled },
-    });
-  }
-
-  async removeCampusCourse(campusId: string, courseId: string) {
-    const existing = await this.prisma.campusCourse.findUnique({
-      where: { campusId_courseId: { campusId, courseId } },
-    });
-    if (!existing) {
-      throw new NotFoundException('This course is not assigned to this campus');
-    }
-    await this.prisma.campusCourse.delete({
-      where: { campusId_courseId: { campusId, courseId } },
-    });
-    return { message: 'Course removed from campus' };
   }
 }

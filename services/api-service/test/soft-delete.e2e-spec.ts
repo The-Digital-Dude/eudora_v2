@@ -163,21 +163,15 @@ describe('Soft delete: archive -> invisible -> restore (e2e)', () => {
     await cleanupWorld(ctx, null, [doomed]);
   });
 
-  it('archives a campus together with its programs', async () => {
-    const campusRes = await http()
-      .post('/api/campuses')
-      .set(asAdmin())
-      .send({ name: `E2E SD Campus ${tag}` })
-      .expect(201);
-    const campusId = unwrap<{ id: string }>(campusRes).id;
+  it('archives a program on delete rather than removing the row', async () => {
     const programRes = await http()
       .post('/api/programs')
       .set(asAdmin())
-      .send({ campusId, name: `E2E SD Program ${tag}`, code: `E2E-SDP-${tag}` })
+      .send({ name: `E2E SD Program ${tag}`, code: `E2E-SDP-${tag}` })
       .expect(201);
     const programId = unwrap<{ id: string }>(programRes).id;
 
-    await http().delete(`/api/campuses/${campusId}`).set(asAdmin()).expect(200);
+    await http().delete(`/api/programs/${programId}`).set(asAdmin()).expect(200);
 
     const program = await (ctx.prisma.program.findUnique as any)({
       where: { id: programId },
@@ -185,8 +179,8 @@ describe('Soft delete: archive -> invisible -> restore (e2e)', () => {
     });
     expect(program!.deletedAt).not.toBeNull();
 
-    await (ctx.prisma.campus.deleteMany as any)({
-      where: { id: campusId },
+    await (ctx.prisma.program.deleteMany as any)({
+      where: { id: programId },
       forceDelete: true,
     });
   });

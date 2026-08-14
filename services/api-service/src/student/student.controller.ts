@@ -22,8 +22,6 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
-import { PlanLimitGuard } from '../billing/guards/plan-limit.guard';
-import { CheckPlanLimit } from '../billing/decorators/check-plan-limit.decorator';
 
 @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller()
@@ -111,8 +109,6 @@ export class StudentController {
   @Post('student-placements')
   @Roles('ADMIN', 'SUPER_ADMIN')
   @RequirePermissions({ action: 'manage', subject: 'Student' })
-  @UseGuards(PlanLimitGuard)
-  @CheckPlanLimit('students')
   async createPlacement(@Body() dto: CreatePlacementDto) {
     return this.studentService.createPlacement(dto);
   }

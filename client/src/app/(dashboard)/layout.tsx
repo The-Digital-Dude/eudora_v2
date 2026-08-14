@@ -14,7 +14,6 @@ import { SidebarInset,SidebarProvider } from "@/components/ui/sidebar";
 import { flattenNavLeaves } from "@/config/nav-config";
 import { useLogoutMutation } from "@/features/auth/authApi";
 import { logout } from "@/features/auth/authSlice";
-import { useGetCampusesQuery } from "@/features/dashboard/dashboardApi";
 import { useSidebarConfig } from "@/hooks/use-sidebar-config";
 import { getUserRoles,hasAccess } from "@/lib/access-control";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -33,13 +32,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const user = auth.user as any;
   const isAuthenticated = auth.isAuthenticated;
   const [logoutMutation] = useLogoutMutation();
-
-  const userRolesForQueries = getUserRoles(user);
-  const isAdminUser =
-    userRolesForQueries.includes("ADMIN") || userRolesForQueries.includes("SUPER_ADMIN");
-  // Campus scope is an admin concept — don't fire the query (403s) for other roles.
-  const { data: campusesData } = useGetCampusesQuery(undefined, { skip: !isAdminUser });
-  const [selectedCampusId, setSelectedCampusId] = useState<string>("all");
 
   const [themeCustomizerOpen, setThemeCustomizerOpen] = useState(false);
   const { config } = useSidebarConfig();
@@ -148,13 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const innerContent = (
     <SidebarInset>
-      <SiteHeader
-        selectedCampusId={selectedCampusId}
-        setSelectedCampusId={setSelectedCampusId}
-        campuses={campusesData?.items || []}
-        user={user}
-        onLogout={handleLogout}
-      />
+      <SiteHeader user={user} onLogout={handleLogout} />
       <main
         id="main-content"
         tabIndex={-1}

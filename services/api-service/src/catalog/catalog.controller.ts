@@ -10,7 +10,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CatalogService } from './catalog.service';
-import { InstitutionService } from '../institution/institution.service';
 import {
   CreateLearningSubjectDto,
   UpdateLearningSubjectDto,
@@ -38,7 +37,6 @@ function isStaff(user?: CurrentUserDto): boolean {
 export class CatalogController {
   constructor(
     private readonly catalogService: CatalogService,
-    private readonly institutionService: InstitutionService,
   ) {}
 
   // ─── Learning Subjects ───────────────────────────────────────────────────
@@ -70,13 +68,9 @@ export class CatalogController {
     @Query('subjectId') subjectId?: string,
     @CurrentUser() user?: CurrentUserDto,
   ) {
-    const visibleCampusIds = user
-      ? await this.institutionService.resolveCampusIdsForUser(user)
-      : null;
     return this.catalogService.listCourses(
       subjectId,
       isStaff(user),
-      visibleCampusIds,
       user?.studentProfile?.id ?? null,
     );
   }
@@ -86,14 +80,7 @@ export class CatalogController {
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserDto,
   ) {
-    const visibleCampusIds =
-      await this.institutionService.resolveCampusIdsForUser(user);
-    return this.catalogService.getCourseDetail(
-      id,
-      user.id,
-      isStaff(user),
-      visibleCampusIds,
-    );
+    return this.catalogService.getCourseDetail(id, user.id, isStaff(user));
   }
 
   @Post('courses')

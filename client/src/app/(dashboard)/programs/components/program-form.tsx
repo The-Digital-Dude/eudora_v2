@@ -6,14 +6,12 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useGetCampusesQuery } from "@/features/dashboard/dashboardApi";
 
 export interface ProgramFormValues {
   name: string;
   code: string;
   description: string;
   durationYears: string;
-  campusId: string;
   status: "ACTIVE" | "INACTIVE";
 }
 
@@ -22,7 +20,6 @@ export const EMPTY_PROGRAM: ProgramFormValues = {
   code: "",
   description: "",
   durationYears: "4",
-  campusId: "",
   status: "ACTIVE",
 };
 
@@ -38,7 +35,7 @@ interface ProgramFormProps {
 
 const labelClass = "text-[10px] font-bold tracking-wider text-muted-foreground uppercase";
 
-/** Shared by /campuses/programs/create and /campuses/programs/[id]. */
+/** Shared by /programs/create and /programs/[id]. */
 export function ProgramForm({
   values,
   onChange,
@@ -48,7 +45,6 @@ export function ProgramForm({
   submitLabel,
   error,
 }: ProgramFormProps) {
-  const { data: campusesData } = useGetCampusesQuery();
   const set = <K extends keyof ProgramFormValues>(key: K, value: ProgramFormValues[K]) =>
     onChange({ ...values, [key]: value });
 
@@ -95,26 +91,6 @@ export function ProgramForm({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label className={labelClass}>Campus Branch</Label>
-          <select
-            value={values.campusId}
-            onChange={(e) => set("campusId", e.target.value)}
-            className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:border-ring focus:ring-1 focus:ring-ring/10 focus:outline-none"
-            required
-          >
-            <option value="" disabled>
-              Select Campus
-            </option>
-            {(campusesData?.items ?? [])
-              .filter((c) => c.status === "ACTIVE")
-              .map((campus) => (
-                <option key={campus.id} value={campus.id}>
-                  {campus.name} ({campus.code})
-                </option>
-              ))}
-          </select>
-        </div>
         <div className="space-y-1">
           <Label className={labelClass}>Duration (Years)</Label>
           <Input

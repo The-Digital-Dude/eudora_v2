@@ -51,7 +51,6 @@ export function csrfHeaders(creds: AuthCreds): Record<string, string> {
 
 export interface AcademicWorld {
   tag: string;
-  campusId: string;
   programId: string;
   academicYearId: string;
   classSectionId: string;
@@ -178,7 +177,7 @@ export async function grantRole(
 
 /**
  * Builds the canonical academic chain through the API:
- * campus -> program -> academic year -> class section -> term -> course class.
+ * program -> academic year -> class section -> term -> course class.
  * `tag` keeps unique-constrained fields (names/codes) collision-free.
  */
 export async function buildAcademicWorld(
@@ -189,17 +188,10 @@ export async function buildAcademicWorld(
   const http = () => request(ctx.app.getHttpServer());
   const auth = { Authorization: `Bearer ${adminToken}` };
 
-  const campusRes = await http()
-    .post('/api/campuses')
-    .set(auth)
-    .send({ name: `E2E Campus ${tag}` })
-    .expect(201);
-  const campusId = unwrap<{ id: string }>(campusRes).id;
-
   const programRes = await http()
     .post('/api/programs')
     .set(auth)
-    .send({ campusId, name: `E2E Program ${tag}`, code: `E2E-PRG-${tag}` })
+    .send({ name: `E2E Program ${tag}`, code: `E2E-PRG-${tag}` })
     .expect(201);
   const programId = unwrap<{ id: string }>(programRes).id;
 
@@ -247,7 +239,6 @@ export async function buildAcademicWorld(
 
   return {
     tag,
-    campusId,
     programId,
     academicYearId,
     classSectionId,
@@ -334,10 +325,6 @@ export async function cleanupWorld(
   if (world) {
     await (prisma.academicYear.deleteMany as any)({
       where: { id: world.academicYearId },
-      forceDelete: true,
-    }).catch(() => undefined);
-    await (prisma.campus.deleteMany as any)({
-      where: { id: world.campusId },
       forceDelete: true,
     }).catch(() => undefined);
   }

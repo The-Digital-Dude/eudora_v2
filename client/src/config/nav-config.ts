@@ -255,8 +255,8 @@ export const navGroups: NavGroup[] = [
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
       {
-        title: "Campuses & Programs",
-        url: "/campuses",
+        title: "Academic Programs",
+        url: "/programs",
         icon: School,
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
@@ -275,12 +275,6 @@ export const navGroups: NavGroup[] = [
         title: "Communication",
         url: "/communication",
         icon: MessageSquare,
-        requirement: { type: "roles", roles: ADMIN_ROLES },
-      },
-      {
-        title: "Billing & Plans",
-        url: "/plans",
-        icon: CreditCard,
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
     ],

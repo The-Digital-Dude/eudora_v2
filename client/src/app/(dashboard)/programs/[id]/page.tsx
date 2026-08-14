@@ -14,7 +14,7 @@ import {
   useUpdateProgramMutation,
 } from "@/features/dashboard/dashboardApi";
 
-import { EMPTY_PROGRAM, ProgramForm, type ProgramFormValues } from "../../components/program-form";
+import { EMPTY_PROGRAM, ProgramForm, type ProgramFormValues } from "../components/program-form";
 
 export default function ProgramDetailPage() {
   const router = useRouter();
@@ -35,7 +35,6 @@ export default function ProgramDetailPage() {
       code: program.code ?? "",
       description: program.description ?? "",
       durationYears: String(program.durationYears ?? 4),
-      campusId: program.campusId ?? "",
       status: program.status ?? "ACTIVE",
     });
   }, [program]);
@@ -52,12 +51,11 @@ export default function ProgramDetailPage() {
           code: values.code.toUpperCase(),
           description: values.description,
           durationYears: parseInt(values.durationYears, 10),
-          campusId: values.campusId,
           status: values.status,
         },
       }).unwrap();
       toast.success("Program updated");
-      router.push("/campuses?tab=programs");
+      router.push("/programs");
     } catch (err: any) {
       setError(err?.data?.message || "Failed to save academic program.");
     }
@@ -68,7 +66,7 @@ export default function ProgramDetailPage() {
     try {
       await deleteProgram(programId).unwrap();
       toast.success("Program deleted");
-      router.push("/campuses?tab=programs");
+      router.push("/programs");
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to delete program.");
     }
@@ -86,7 +84,7 @@ export default function ProgramDetailPage() {
     return (
       <div className="space-y-3">
         <Link
-          href="/campuses?tab=programs"
+          href="/programs"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -102,7 +100,7 @@ export default function ProgramDetailPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
           <Link
-            href="/campuses?tab=programs"
+            href="/programs"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
@@ -128,7 +126,7 @@ export default function ProgramDetailPage() {
           values={values}
           onChange={setValues}
           onSubmit={handleSubmit}
-          onCancel={() => router.push("/campuses?tab=programs")}
+          onCancel={() => router.push("/programs")}
           isSaving={isSaving}
           submitLabel="Save Changes"
           error={error}

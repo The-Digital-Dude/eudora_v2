@@ -100,26 +100,6 @@ export class CatalogService {
     });
   }
 
-  // Prisma `OR` clause implementing the `CampusCourse` opt-in-restriction
-  // model (see schema.prisma): a course with zero assignment rows is global
-  // (visible to every campus); a course with at least one row is visible
-  // only to campuses with an enabled row. `visibleCampusIds` is the caller's
-  // resolved campus list — `null` bypasses this filter entirely (staff), an
-  // empty array matches nothing but courses that are still fully global.
-  private campusVisibilityFilter(visibleCampusIds: string[] | null) {
-    if (visibleCampusIds === null) return {};
-    return {
-      OR: [
-        { campusAssignments: { none: {} } },
-        {
-          campusAssignments: {
-            some: { campusId: { in: visibleCampusIds }, enabled: true },
-          },
-        },
-      ],
-    };
-  }
-
   // `listCourses`/`getCourseDetail` are shared by every role (`CatalogController`
   // is `@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')`) — staff
   // need to see DRAFT courses to author them, students/guardians never should.
@@ -128,7 +108,6 @@ export class CatalogService {
   async listCourses(
     learningSubjectId?: string,
     includeUnpublished = false,
-    visibleCampusIds: string[] | null = null,
     // When set, each row is annotated with `isAssigned` — whether the course
     // is in that student's guardian-curated learning plan. Annotation only;
     // it never filters, because an assignment is a recommendation, not an
@@ -140,7 +119,6 @@ export class CatalogService {
         deletedAt: null,
         ...(includeUnpublished ? {} : { status: 'PUBLISHED' }),
         ...(learningSubjectId ? { learningSubjectId } : {}),
-        ...this.campusVisibilityFilter(visibleCampusIds),
       },
       orderBy: { sortOrder: 'asc' },
       include: {
@@ -169,7 +147,6 @@ export class CatalogService {
     id: string,
     userId?: string,
     includeUnpublished = false,
-    visibleCampusIds: string[] | null = null,
   ) {
     const course = await this.prisma.course.findUnique({
       where: { id },
@@ -193,27 +170,15 @@ export class CatalogService {
             },
           },
         },
-        campusAssignments: { where: { enabled: true }, select: { campusId: true } },
       },
     });
     // Same "not found" (not "forbidden") for deleted vs. unpublished-and-not-
     // staff — doesn't confirm to a probing student whether a draft course
-    // with that id exists at all. A campus-restricted course the caller's
-    // campus isn't assigned to gets the same treatment, for the same reason.
-    // Staff (visibleCampusIds === null) always bypass.
-    const isCampusRestrictedOut =
-      !includeUnpublished &&
-      visibleCampusIds !== null &&
-      !!course &&
-      course.campusAssignments.length > 0 &&
-      !course.campusAssignments.some((a) =>
-        visibleCampusIds.includes(a.campusId),
-      );
+    // with that id exists at all.
     if (
       !course ||
       course.deletedAt ||
-      (!includeUnpublished && course.status !== 'PUBLISHED') ||
-      isCampusRestrictedOut
+      (!includeUnpublished && course.status !== 'PUBLISHED')
     ) {
       throw new NotFoundException('Course not found');
     }
@@ -234,13 +199,8 @@ export class CatalogService {
       ? await this.getCompletedModuleItemIds(studentProfileId, allItemIds)
       : new Set<string>();
 
-    // `campusAssignments` was only fetched to compute `isCampusRestrictedOut`
-    // above — internal visibility metadata, not part of the course-detail
-    // response shape.
-    const { campusAssignments: _campusAssignments, ...courseWithoutAssignments } =
-      course;
     return {
-      ...courseWithoutAssignments,
+      ...course,
       concepts: course.concepts.map((concept) => ({
         ...concept,
         isDone: stateByConcept.get(concept.id)?.isDone ?? false,

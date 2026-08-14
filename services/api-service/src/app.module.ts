@@ -16,7 +16,6 @@ import { InstitutionModule } from './institution/institution.module';
 import { AcademicModule } from './academic/academic.module';
 import { StudentModule } from './student/student.module';
 import { FamilyModule } from './family/family.module';
-import { BillingModule } from './billing/billing.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { HomeworkModule } from './homework/homework.module';
 import { EvaluationModule } from './evaluation/evaluation.module';
@@ -60,7 +59,6 @@ import { AuditModule } from './common/audit/audit.module';
     AcademicModule,
     StudentModule,
     FamilyModule,
-    BillingModule,
     AttendanceModule,
     HomeworkModule,
     EvaluationModule,

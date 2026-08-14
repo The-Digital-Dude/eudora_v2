@@ -54,12 +54,6 @@ export default function Navbar() {
           >
             Analytics
           </a>
-          <Link
-            href="/pricing"
-            className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Pricing
-          </Link>
         </nav>
 
         {/* Right CTA Links */}

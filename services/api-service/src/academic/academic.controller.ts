@@ -25,8 +25,6 @@ import {
 } from './dto/course-class.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { CurrentUserDto } from '../auth/dto/current-user.dto';
 
 @Controller()
 @UseGuards(RolesGuard)
@@ -118,7 +116,6 @@ export class AcademicController {
   @Get('class-sections')
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   async findAllClassSections(
-    @CurrentUser() user: CurrentUserDto,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('academicYearId') academicYearId?: string,
@@ -129,7 +126,6 @@ export class AcademicController {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
     return this.academicService.findAllClassSections(
-      user,
       pageNum,
       limitNum,
       academicYearId,
@@ -141,20 +137,14 @@ export class AcademicController {
 
   @Get('class-sections/:id')
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
-  async findClassSectionById(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserDto,
-  ) {
-    return this.academicService.findClassSectionById(id, user);
+  async findClassSectionById(@Param('id') id: string) {
+    return this.academicService.findClassSectionById(id);
   }
 
   @Get('class-sections/:id/roster')
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
-  async getClassSectionRoster(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserDto,
-  ) {
-    return this.academicService.getClassSectionRoster(id, user);
+  async getClassSectionRoster(@Param('id') id: string) {
+    return this.academicService.getClassSectionRoster(id);
   }
 
   @Patch('class-sections/:id')

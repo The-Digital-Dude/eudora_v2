@@ -32,10 +32,10 @@ describe('Academic setup chain (e2e)', () => {
     await ctx.app.close();
   });
 
-  it('builds the full campus -> program -> year -> section -> term -> course chain', async () => {
+  it('builds the full program -> year -> section -> term -> course chain', async () => {
     world = await buildAcademicWorld(ctx, adminToken, tag);
 
-    expect(world.campusId).toBeTruthy();
+    expect(world.programId).toBeTruthy();
     expect(world.courseClassId).toBeTruthy();
 
     const courseRes = await http()

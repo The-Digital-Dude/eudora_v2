@@ -96,22 +96,16 @@ async function main() {
 
   // ─── Institution & Academic Structure ────────────────────────────────────────
   console.log('🌱 Seeding institution and academic structures...');
-  const campus = await prisma.campus.upsert({
-    where: { name: 'Main Campus' },
-    update: {},
-    create: { name: 'Main Campus', representative: 'Dr. Alan Turing', status: 'ACTIVE' },
-  });
-
   const program = await prisma.program.upsert({
     where: { code: 'BSC-CS' },
     update: {},
-    create: { campusId: campus.id, name: 'Bachelor of Science in Computer Science', code: 'BSC-CS', status: 'ACTIVE' },
+    create: { name: 'Bachelor of Science in Computer Science', code: 'BSC-CS', status: 'ACTIVE' },
   });
 
   const mathProgram = await prisma.program.upsert({
     where: { code: 'BSC-MATH' },
     update: {},
-    create: { campusId: campus.id, name: 'Bachelor of Science in Mathematics', code: 'BSC-MATH', status: 'ACTIVE' },
+    create: { name: 'Bachelor of Science in Mathematics', code: 'BSC-MATH', status: 'ACTIVE' },
   });
 
   const academicYear = await prisma.academicYear.upsert({
@@ -218,30 +212,6 @@ async function main() {
     });
   }
   console.log('✅ Seeded teachers');
-
-  // ─── Billing Plans ────────────────────────────────────────────────────────────
-  console.log('🌱 Seeding billing plans...');
-  const plansData = [
-    { name: 'Free', description: 'Free tier for small campuses', priceMonthly: 0, priceAnnual: 0, currency: 'USD', stripePriceIdMonthly: null, stripePriceIdAnnual: null, maxStudents: 50, maxCampuses: 1, maxPrograms: 5, features: [], isActive: true, isPublic: true },
-    { name: 'Starter', description: 'Starter tier for growing educational institutions', priceMonthly: 29, priceAnnual: 290, currency: 'USD', stripePriceIdMonthly: 'price_starter_monthly_placeholder', stripePriceIdAnnual: 'price_starter_annual_placeholder', maxStudents: 200, maxCampuses: 2, maxPrograms: 15, features: ['basic_analytics'], isActive: true, isPublic: true },
-    { name: 'Pro', description: 'Advanced features for established schools', priceMonthly: 79, priceAnnual: 790, currency: 'USD', stripePriceIdMonthly: 'price_pro_monthly_placeholder', stripePriceIdAnnual: 'price_pro_annual_placeholder', maxStudents: 1000, maxCampuses: 10, maxPrograms: 50, features: ['basic_analytics', 'advanced_reports', 'api_access'], isActive: true, isPublic: true },
-    { name: 'Enterprise', description: 'Custom limits and dedicated support for large networks', priceMonthly: 299, priceAnnual: 2990, currency: 'USD', stripePriceIdMonthly: 'price_enterprise_monthly_placeholder', stripePriceIdAnnual: 'price_enterprise_annual_placeholder', maxStudents: null, maxCampuses: null, maxPrograms: null, features: ['basic_analytics', 'advanced_reports', 'api_access', 'dedicated_support'], isActive: true, isPublic: true },
-  ];
-  const plans: Record<string, any> = {};
-  for (const p of plansData) {
-    plans[p.name] = await prisma.plan.upsert({
-      where: { name: p.name },
-      update: { description: p.description, priceMonthly: p.priceMonthly, priceAnnual: p.priceAnnual, stripePriceIdMonthly: p.stripePriceIdMonthly, stripePriceIdAnnual: p.stripePriceIdAnnual, maxStudents: p.maxStudents, maxCampuses: p.maxCampuses, maxPrograms: p.maxPrograms, features: p.features, isActive: p.isActive, isPublic: p.isPublic },
-      create: p,
-    });
-  }
-
-  const existingSub = await prisma.subscription.findUnique({ where: { campusId: campus.id } });
-  if (!existingSub) {
-    const end = new Date(); end.setFullYear(end.getFullYear() + 100);
-    await prisma.subscription.create({ data: { campusId: campus.id, planId: plans['Free'].id, status: 'ACTIVE', interval: 'MONTHLY', currentPeriodStart: new Date(), currentPeriodEnd: end } });
-  }
-  console.log('✅ Seeded billing plans');
 
   // ─── Concepts, Competencies, Lessons ─────────────────────────────────────────
   console.log('🌱 Seeding curriculum...');
@@ -1113,18 +1083,6 @@ async function main() {
   }
   console.log('✅ Seeded family invoices & payments');
 
-  // ─── Subscription Invoice & Payment ──────────────────────────────────────────
-  console.log('🌱 Seeding subscription invoice...');
-  const subscription = await prisma.subscription.findUnique({ where: { campusId: campus.id } });
-  if (subscription) {
-    const existInv = await prisma.invoice.findFirst({ where: { subscriptionId: subscription.id } });
-    if (!existInv) {
-      const inv = await prisma.invoice.create({ data: { subscriptionId: subscription.id, amount: 0, currency: 'USD', status: 'PAID', dueDate: new Date('2026-10-01'), paidAt: new Date('2026-09-28') } });
-      await prisma.payment.create({ data: { invoiceId: inv.id, amount: 0, currency: 'USD', status: 'SUCCEEDED', paymentMethod: 'card', metadata: { note: 'Free plan billing — $0 charge' } } });
-    }
-  }
-  console.log('✅ Seeded subscription invoice');
-
   // ─── Message Threads & Messages ──────────────────────────────────────────────
   console.log('🌱 Seeding message threads...');
   const turingU = teacherUsers['EMP-TURING'];
@@ -1258,13 +1216,11 @@ async function main() {
   console.log('🌱 Seeding audit logs...');
   await prisma.auditLog.createMany({
     data: [
-      { actorUserId: superAdminUser.id, event: 'CAMPUS_CREATED', targetType: 'Campus', targetId: campus.id, ipAddress: '127.0.0.1', metadata: { name: 'Main Campus' } },
       { actorUserId: superAdminUser.id, event: 'TIMETABLE_PUBLISHED', targetType: 'Timetable', targetId: timetable.id, ipAddress: '127.0.0.1', metadata: { name: 'Fall 2026 — CS Section A' } },
       { actorUserId: superAdminUser.id, event: 'ASSESSMENT_PUBLISHED', targetType: 'Assessment', targetId: mathQuiz1.id, ipAddress: '127.0.0.1', metadata: { title: 'Week 1 Math Quiz — Fractions' } },
       { actorUserId: superAdminUser.id, event: 'ASSESSMENT_PUBLISHED', targetType: 'Assessment', targetId: csQuiz1.id, ipAddress: '127.0.0.1', metadata: { title: 'Week 2 CS Quiz — Data Structures' } },
       { actorUserId: superAdminUser.id, event: 'STUDENT_ENROLLED', targetType: 'StudentProfile', targetId: studentProfiles[0]?.id, ipAddress: '127.0.0.1', metadata: { name: 'Charlotte Harris', section: 'CS Section A' } },
       { actorUserId: superAdminUser.id, event: 'STUDENT_ENROLLED', targetType: 'StudentProfile', targetId: studentProfiles[4]?.id, ipAddress: '127.0.0.1', metadata: { name: 'Noah Johnson', section: 'CS Section A' } },
-      { actorUserId: superAdminUser.id, event: 'PLAN_SUBSCRIBED', targetType: 'Subscription', targetId: campus.id, ipAddress: '127.0.0.1', metadata: { plan: 'Free' } },
       { actorUserId: turingU.id, event: 'HOMEWORK_CREATED', targetType: 'Homework', targetId: hw1.id, ipAddress: '10.0.0.1', metadata: { title: 'DSA Problem Set 1' } },
       { actorUserId: turingU.id, event: 'GRADE_PUBLISHED', targetType: 'GradeBookEntry', targetId: null, ipAddress: '10.0.0.1', metadata: { assessment: 'Week 1 Math Quiz', studentCount: 5 } },
       { actorUserId: turingU.id, event: 'SESSION_CREATED', targetType: 'CourseClassSession', targetId: sessions[0]?.id ?? null, ipAddress: '10.0.0.1', metadata: { topic: 'Introduction to Linked Lists' } },

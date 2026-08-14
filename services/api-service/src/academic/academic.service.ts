@@ -19,15 +19,10 @@ import {
   CreateCourseClassDto,
   UpdateCourseClassDto,
 } from './dto/course-class.dto';
-import { CampusAccessService } from '../institution/campus-access.service';
-import { CurrentUserDto } from '../auth/dto/current-user.dto';
 
 @Injectable()
 export class AcademicService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly campusAccessService: CampusAccessService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   // --- Academic Year Operations ---
 
@@ -319,7 +314,6 @@ export class AcademicService {
   }
 
   async findAllClassSections(
-    user: CurrentUserDto,
     page = 1,
     limit = 10,
     academicYearId?: string,
@@ -329,15 +323,6 @@ export class AcademicService {
   ) {
     const skip = (page - 1) * limit;
     const where: Prisma.ClassSectionWhereInput = {};
-
-    // Non-bypass roles (TEACHER) only see sections at campuses they're
-    // actually assigned to. `null` means ADMIN/SUPER_ADMIN — no scoping.
-    const campusIds =
-      await this.campusAccessService.resolveCampusIdsForUser(user);
-    if (campusIds !== null) {
-      where.program = { campusId: { in: campusIds } };
-    }
-
     if (academicYearId) where.academicYearId = academicYearId;
     if (programId) where.programId = programId;
     // 'none' selects sections not yet tagged, so admins can find what still needs a subject after
@@ -381,7 +366,7 @@ export class AcademicService {
     };
   }
 
-  async findClassSectionById(id: string, user: CurrentUserDto) {
+  async findClassSectionById(id: string) {
     const section = await this.prisma.classSection.findUnique({
       where: { id },
       include: { academicYear: true, program: true, placements: true },
@@ -389,10 +374,6 @@ export class AcademicService {
     if (!section) {
       throw new NotFoundException('Class section not found');
     }
-    await this.campusAccessService.assertCanAccessCampus(
-      user,
-      section.program.campusId,
-    );
     return section;
   }
 
@@ -561,7 +542,7 @@ export class AcademicService {
     return { message: 'Course class deleted successfully' };
   }
 
-  async getClassSectionRoster(classSectionId: string, user: CurrentUserDto) {
+  async getClassSectionRoster(classSectionId: string) {
     const section = await this.prisma.classSection.findUnique({
       where: { id: classSectionId },
       select: {
@@ -569,9 +550,7 @@ export class AcademicService {
         code: true,
         name: true,
         classroom: true,
-        program: {
-          select: { id: true, code: true, name: true, campusId: true },
-        },
+        program: { select: { id: true, code: true, name: true } },
         academicYear: {
           select: { id: true, name: true, startDate: true, endDate: true },
         },
@@ -632,14 +611,6 @@ export class AcademicService {
     if (!section) {
       throw new NotFoundException('Class section not found');
     }
-
-    // This response carries student PII (names, emails, household and guardian
-    // details), so a TEACHER role alone isn't sufficient — the teacher has to
-    // belong to this section's campus.
-    await this.campusAccessService.assertCanAccessCampus(
-      user,
-      section.program.campusId,
-    );
 
     return {
       id: section.id,

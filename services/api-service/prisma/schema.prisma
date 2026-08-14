@@ -191,61 +191,8 @@ enum Gender {
   OTHER
 }
 
-enum PlanInterval {
-  MONTHLY
-  ANNUAL
-}
-
-enum SubscriptionStatus {
-  TRIALING
-  ACTIVE
-  PAST_DUE
-  CANCELED
-  UNPAID
-}
-
-enum PaymentStatus {
-  PENDING
-  SUCCEEDED
-  FAILED
-  REFUNDED
-}
-
-enum InvoiceStatus {
-  DRAFT
-  OPEN
-  PAID
-  VOID
-  UNCOLLECTIBLE
-}
-
-model Campus {
-  id             String                       @id @default(uuid())
-  name           String                       @unique
-  code           String?                      @unique
-  description    String?
-  email          String?
-  phoneNumber    String?
-  address        String?
-  website        String?
-  status         EducationalInstitutionStatus @default(ACTIVE)
-  representative String?
-  createdAt      DateTime                     @default(now())
-  updatedAt      DateTime                     @updatedAt
-  deletedAt      DateTime?
-  deletedById    String?
-
-  programs          Program[]
-  subscription      Subscription?
-  campusAssignments CampusCourse[]
-  courseClasses     CourseClass[]
-
-  @@map("campuses")
-}
-
 model Program {
   id          String                       @id @default(uuid())
-  campusId    String
   name        String
   code        String                       @unique
   status      EducationalInstitutionStatus @default(ACTIVE)
@@ -254,7 +201,6 @@ model Program {
   deletedAt   DateTime?
   deletedById String?
 
-  campus        Campus         @relation(fields: [campusId], references: [id], onDelete: Cascade)
   classSections ClassSection[]
 
   @@map("programs")
@@ -345,11 +291,6 @@ model CourseClass {
   code        String            @unique
   status      CourseClassStatus @default(ACTIVE)
   description String?
-  /// Nullable — existing rows predate campus scoping and have no reliable
-  /// way to derive one (the only prior path was the optional, incidental
-  /// TimetableSlot.courseClassId). Required for guardian self-enrollment
-  /// discovery, which needs an explicit, not transitive, campus.
-  campusId    String?
   /// Null = unlimited. Guardian self-enrollment (`isOpenForEnrollment`)
   /// checks this; staff-mediated enrollment does not.
   capacity    Int?
@@ -363,7 +304,6 @@ model CourseClass {
   deletedById String?
 
   term             Term                      @relation(fields: [termId], references: [id], onDelete: Cascade)
-  campus           Campus?                   @relation(fields: [campusId], references: [id], onDelete: SetNull)
   enrollments      StudentCourseEnrollment[]
   sessions         CourseClassSession[]
   homeworks        Homework[]
@@ -575,103 +515,6 @@ model ClassTeacher {
   @@map("class_teachers")
 }
 
-// ─── Billing ─────────────────────────────────────────────────────────────────
-
-model Plan {
-  id                   String   @id @default(uuid())
-  name                 String   @unique
-  description          String?
-  priceMonthly         Decimal  @db.Decimal(10, 2)
-  priceAnnual          Decimal  @db.Decimal(10, 2)
-  currency             String   @default("USD")
-  stripeProductId      String?
-  stripePriceIdMonthly String?
-  stripePriceIdAnnual  String?
-  maxStudents          Int? // null = unlimited
-  maxCampuses          Int?
-  maxPrograms          Int?
-  features             String[] // e.g. ["analytics", "api_access"]
-  isActive             Boolean  @default(true)
-  isPublic             Boolean  @default(true)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  subscriptions Subscription[]
-
-  @@map("plans")
-}
-
-model Subscription {
-  id                   String             @id @default(uuid())
-  campusId             String             @unique
-  planId               String
-  stripeCustomerId     String?
-  stripeSubscriptionId String?            @unique
-  status               SubscriptionStatus @default(TRIALING)
-  interval             PlanInterval       @default(MONTHLY)
-  currentPeriodStart   DateTime           @default(now())
-  currentPeriodEnd     DateTime
-  trialEndsAt          DateTime?
-  canceledAt           DateTime?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-
-  campus   Campus    @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  plan     Plan      @relation(fields: [planId], references: [id])
-  invoices Invoice[]
-
-  @@map("subscriptions")
-}
-
-model Invoice {
-  id              String        @id @default(uuid())
-  subscriptionId  String
-  stripeInvoiceId String?       @unique
-  amount          Decimal       @db.Decimal(10, 2)
-  currency        String        @default("USD")
-  status          InvoiceStatus @default(DRAFT)
-  dueDate         DateTime?
-  paidAt          DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  deletedAt       DateTime?
-  deletedById     String?
-
-  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  payments     Payment[]
-
-  @@map("invoices")
-}
-
-model Payment {
-  id                    String        @id @default(uuid())
-  invoiceId             String
-  stripePaymentIntentId String?       @unique
-  amount                Decimal       @db.Decimal(10, 2)
-  currency              String        @default("USD")
-  status                PaymentStatus @default(PENDING)
-  paymentMethod         String? // e.g. "card", "bank_transfer"
-  metadata              Json?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  deletedAt             DateTime?
-  deletedById           String?
-
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-
-  @@map("payments")
-}
-
-/// Records every Stripe event we have already processed.
-/// Stripe delivers webhooks at-least-once, so handlers must be idempotent;
-/// inserting the event id under a unique constraint is the dedup mechanism.
-model StripeEvent {
-  id          String   @id
-  type        String
-  processedAt DateTime @default(now())
-
-  @@map("stripe_events")
-}
 
 // ─── Attendance ──────────────────────────────────────────────────────────────
 
@@ -868,7 +711,6 @@ model Course {
   learningSubject    LearningSubject           @relation(fields: [learningSubjectId], references: [id], onDelete: Cascade)
   concepts           Concept[]
   pathCourses        LearningPathCourse[]
-  campusAssignments  CampusCourse[]
   studentAssignments StudentCourseAssignment[]
 
   @@map("courses")
@@ -877,7 +719,7 @@ model Course {
 /// A guardian (or staff member) picking a catalog course for a specific
 /// student — a curated "learning plan", NOT an access grant. Catalog content
 /// is open to any authenticated student already (gated only by
-/// `Course.status` + `CampusCourse` visibility); this only says "this is what
+/// `Course.status`); this only says "this is what
 /// you should work on". Deliberately distinct from `StudentCourseEnrollment`,
 /// which points at a term-bound `CourseClass` and carries real academic
 /// weight (gradebook, attendance, homework) — the two models are unrelated.
@@ -897,27 +739,6 @@ model StudentCourseAssignment {
 
   @@unique([studentProfileId, courseId])
   @@map("student_course_assignments")
-}
-
-/// A course with zero rows here is visible to every campus (the default,
-/// unrestricted state). A course only becomes campus-restricted once at
-/// least one row exists for it — from that point on it's visible only to
-/// campuses with an `enabled: true` row. `enabled` (rather than deleting the
-/// row to revoke access) makes re-granting access a toggle, not re-picking
-/// the course from a dropdown again.
-model CampusCourse {
-  id        String   @id @default(uuid())
-  campusId  String
-  courseId  String
-  enabled   Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  campus Campus @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  @@unique([campusId, courseId])
-  @@map("campus_courses")
 }
 
 model LearningPath {

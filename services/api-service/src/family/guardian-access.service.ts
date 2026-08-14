@@ -1,7 +1,6 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
-import { resolveCampusIdsForStudentIds } from '../institution/campus-resolution.util';
 
 const STAFF_ROLES = ['SUPER_ADMIN', 'ADMIN', 'TEACHER'];
 
@@ -62,17 +61,6 @@ export class GuardianAccessService {
       return;
     }
     await this.assertCanAccessStudent(user.id, studentProfileId);
-  }
-
-  /**
-   * Union of the campuses every linked student (with academic access) is
-   * actively placed at — used to resolve catalog visibility for a guardian
-   * browsing generally, not viewing one specific child (that case already
-   * has its own studentProfileId param on the relevant endpoints).
-   */
-  async getLinkedCampusIds(userId: string): Promise<string[]> {
-    const studentProfileIds = await this.getLinkedStudentIds(userId);
-    return resolveCampusIdsForStudentIds(this.prisma, studentProfileIds);
   }
 
   async getGuardianFamilyId(userId: string): Promise<string | null> {

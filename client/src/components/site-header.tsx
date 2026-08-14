@@ -33,15 +33,7 @@ import {
 } from "@/features/dashboard/dashboardApi";
 import { getPrimaryRole } from "@/lib/access-control";
 
-interface Campus {
-  id: string;
-  name: string;
-}
-
 interface SiteHeaderProps {
-  selectedCampusId: string;
-  setSelectedCampusId: (id: string) => void;
-  campuses: Campus[];
   user: {
     name?: string;
     email?: string;
@@ -50,13 +42,7 @@ interface SiteHeaderProps {
   onLogout: () => void;
 }
 
-export function SiteHeader({
-  selectedCampusId,
-  setSelectedCampusId,
-  campuses = [],
-  user,
-  onLogout,
-}: SiteHeaderProps) {
+export function SiteHeader({ user, onLogout }: SiteHeaderProps) {
   const [searchOpen, setSearchOpen] = React.useState(false);
   const isAdminShell = getPrimaryRole(user) === "ADMIN";
   const { data: notifications = [] } = useGetNotificationsQuery();
@@ -102,28 +88,6 @@ export function SiteHeader({
         <div className="flex w-full items-center gap-2 px-4 py-3 lg:px-6">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
-
-          {/* Global Campus Scope Selector — an admin concept; hidden for learner/parent/teacher shells */}
-          {isAdminShell && (
-          <div className="mr-2 flex items-center gap-1.5">
-            <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-            <Select value={selectedCampusId} onValueChange={setSelectedCampusId}>
-              <SelectTrigger className="h-8 cursor-pointer rounded-xl border-border bg-background px-2 text-[11px] font-semibold text-foreground shadow-xs w-auto min-w-[160px]">
-                <SelectValue placeholder="Global Scope" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-[11px]">
-                  Global Scope (All Centres)
-                </SelectItem>
-                {campuses.map((c) => (
-                  <SelectItem key={c.id} value={c.id} className="text-[11px]">
-                    Centre: {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          )}
 
           <Separator
             orientation="vertical"

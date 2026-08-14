@@ -4,10 +4,6 @@ import { EducationalInstitutionStatus } from '@prisma/client';
 export class CreateProgramDto {
   @IsString()
   @IsNotEmpty()
-  campusId: string;
-
-  @IsString()
-  @IsNotEmpty()
   name: string;
 
   @IsString()
@@ -20,10 +16,6 @@ export class CreateProgramDto {
 }
 
 export class UpdateProgramDto {
-  @IsString()
-  @IsOptional()
-  campusId?: string;
-
   @IsString()
   @IsOptional()
   name?: string;

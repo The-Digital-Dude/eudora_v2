@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CourseClass } from "@/features/dashboard/dashboardApi";
-import { useGetCampusesQuery, useUpdateCourseClassMutation } from "@/features/dashboard/dashboardApi";
+import { useUpdateCourseClassMutation } from "@/features/dashboard/dashboardApi";
 
 const inputClass =
   "h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none";
@@ -36,10 +36,8 @@ export function CourseClassEnrollmentDialog({
   open,
   onOpenChange,
 }: CourseClassEnrollmentDialogProps) {
-  const { data: campusesData } = useGetCampusesQuery();
   const [updateCourseClass, { isLoading: isSaving }] = useUpdateCourseClassMutation();
 
-  const [campusId, setCampusId] = React.useState("");
   const [capacity, setCapacity] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [isOpen, setIsOpen] = React.useState(false);
@@ -47,7 +45,6 @@ export function CourseClassEnrollmentDialog({
 
   React.useEffect(() => {
     if (!courseClass) return;
-    setCampusId(courseClass.campusId ?? "");
     setCapacity(courseClass.capacity != null ? String(courseClass.capacity) : "");
     setDescription(courseClass.description ?? "");
     setIsOpen(courseClass.isOpenForEnrollment);
@@ -56,18 +53,11 @@ export function CourseClassEnrollmentDialog({
 
   const handleSave = async () => {
     if (!courseClass) return;
-    // A campus is required before opening enrollment — otherwise no
-    // guardian's `resolveCampusIdsForStudent` list could ever match it.
-    if (isOpen && !campusId) {
-      setError("A campus is required before opening this class for guardian enrollment.");
-      return;
-    }
     setError("");
     try {
       await updateCourseClass({
         id: courseClass.id,
         body: {
-          campusId: campusId || null,
           capacity: capacity ? Number(capacity) : null,
           description: description || null,
           isOpenForEnrollment: isOpen,
@@ -114,22 +104,6 @@ export function CourseClassEnrollmentDialog({
                 }`}
               />
             </button>
-          </div>
-
-          <div className="space-y-1">
-            <Label className={labelClass}>Campus</Label>
-            <select
-              value={campusId}
-              onChange={(e) => setCampusId(e.target.value)}
-              className={inputClass}
-            >
-              <option value="">Not campus-restricted (invisible to guardians)</option>
-              {(campusesData?.items ?? []).map((c: any) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div className="space-y-1">

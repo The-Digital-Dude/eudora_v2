@@ -343,14 +343,24 @@ export const dashboardApi = authApi.injectEndpoints({
 
     getLeads: builder.query<
       { items: Lead[]; total: number },
-      { page?: number; limit?: number; search?: string; status?: string } | void
+      {
+        page?: number;
+        limit?: number;
+        search?: string;
+        status?: string;
+        sortBy?: string;
+        sortOrder?: string;
+      } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
         const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
         const statusQuery = params?.status ? `&status=${encodeURIComponent(params.status)}` : "";
-        return `/leads?page=${page}&limit=${limit}${searchQuery}${statusQuery}`;
+        const sortQuery = params?.sortBy
+          ? `&sortBy=${encodeURIComponent(params.sortBy)}&sortOrder=${params.sortOrder ?? "asc"}`
+          : "";
+        return `/leads?page=${page}&limit=${limit}${searchQuery}${statusQuery}${sortQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],

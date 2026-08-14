@@ -110,10 +110,23 @@ export const clioApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
     // List all available lessons (optionally filtered by conceptId)
-    getLessons: builder.query<LessonSummary[], { conceptId?: string } | void>({
+    getLessons: builder.query<
+      { items: LessonSummary[]; total: number },
+      | { conceptId?: string; page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: string }
+      | void
+    >({
       query: (params: any) => {
-        const conceptQuery = params?.conceptId ? `?conceptId=${params.conceptId}` : "";
-        return `/lessons${conceptQuery}`;
+        const q = new URLSearchParams();
+        if (params?.conceptId) q.set("conceptId", params.conceptId);
+        if (params?.page) q.set("page", String(params.page));
+        if (params?.limit) q.set("limit", String(params.limit));
+        if (params?.search) q.set("search", params.search);
+        if (params?.sortBy) {
+          q.set("sortBy", params.sortBy);
+          q.set("sortOrder", params.sortOrder ?? "asc");
+        }
+        const query = q.toString();
+        return `/lessons${query ? `?${query}` : ""}`;
       },
       providesTags: ["Lessons"],
     } as any),

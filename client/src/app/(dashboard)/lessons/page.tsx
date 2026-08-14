@@ -1,28 +1,43 @@
 "use client";
 
+import { type ColumnDef } from "@tanstack/react-table";
 import { Award, BookOpen, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
 
+import { DataTable, SortableHeader } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useGetConceptsQuery, useGetLessonsQuery } from "@/features/clio/clioApi";
+import { type LessonSummary, useGetConceptsQuery, useGetLessonsQuery } from "@/features/clio/clioApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
+
+const PAGE_SIZE = 20;
 
 export default function LessonAuthoringPage() {
   const router = useRouter();
-  // Filters live in the URL. Search stays client-side: useGetLessonsQuery returns every lesson
-  // unpaginated, so there's no hidden tail for a server-side search to reach.
-  const { values, setValue } = useListQueryState({ search: "", concept: "all" });
+  const { values, setValue, setValues } = useListQueryState(
+    { search: "", concept: "all", page: 1, sortBy: "", sortOrder: "asc" },
+    { pageKey: "page" },
+  );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
     setValue("search", next),
   );
   const conceptFilter = values.concept;
 
-  const { data: lessons, isLoading: lessonsLoading } = useGetLessonsQuery();
+  const { data: lessonsData, isLoading: lessonsLoading } = useGetLessonsQuery({
+    conceptId: conceptFilter === "all" ? undefined : conceptFilter,
+    search: values.search || undefined,
+    page: values.page,
+    limit: PAGE_SIZE,
+    sortBy: values.sortBy || undefined,
+    sortOrder: values.sortOrder,
+  });
   const { data: concepts } = useGetConceptsQuery();
+
+  const lessons = lessonsData?.items ?? [];
+  const total = lessonsData?.total ?? 0;
 
   // Group concepts by their catalog course so authors can see chapter context
   const conceptGroups = React.useMemo(() => {
@@ -38,14 +53,68 @@ export default function LessonAuthoringPage() {
     return Array.from(groups.values());
   }, [concepts]);
 
-  const filteredLessons = (lessons ?? []).filter((l) => {
-    const title = l.title.toLowerCase();
-    const desc = (l.description ?? "").toLowerCase();
-    const query = values.search.toLowerCase();
-    const matchesQuery = title.includes(query) || desc.includes(query);
-    const matchesConcept = conceptFilter === "all" || l.conceptId === conceptFilter;
-    return matchesQuery && matchesConcept;
-  });
+  const columns: ColumnDef<LessonSummary, any>[] = [
+    {
+      accessorKey: "title",
+      header: ({ column }) => <SortableHeader column={column} label="Lesson / Concept" />,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary">
+            <BookOpen className="h-4.5 w-4.5" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-foreground">{row.original.title}</p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              Concept:{" "}
+              <span className="font-semibold text-muted-foreground">
+                {row.original.concept?.name || "Uncategorized"}
+              </span>
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "sortOrder",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Sort Order
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="text-xs font-bold text-muted-foreground">{row.original.sortOrder}</span>
+      ),
+    },
+    {
+      accessorKey: "xpReward",
+      header: ({ column }) => <SortableHeader column={column} label="XP Reward" />,
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-0.5 rounded-full border border-warning/20 bg-warning/10 px-2.5 py-0.5 text-[10px] font-bold text-warning">
+          <Award className="h-3 w-3 text-warning" />+{row.original.xpReward} XP
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Actions
+        </span>
+      ),
+      cell: ({ row }) => (
+        <Link href={`/lessons/${row.original.id}`} onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="outline"
+            className="ml-auto h-8 rounded-lg border-border px-2.5 text-xs font-bold"
+          >
+            Edit Flow
+          </Button>
+        </Link>
+      ),
+    },
+  ];
 
   return (
     <div className="animate-fade-in space-y-6 font-sans">
@@ -108,95 +177,22 @@ export default function LessonAuthoringPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">
-                  Lesson / Concept
-                </th>
-                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">
-                  Sort Order
-                </th>
-                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">
-                  XP Reward
-                </th>
-                <th className="pb-3 text-right text-[10px] font-bold text-muted-foreground uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {lessonsLoading ? (
-                [...Array(3)].map((_, i) => (
-                  <tr key={i} className="border-b border-border/30">
-                    <td className="py-4">
-                      <div className="h-4 w-48 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="h-4 w-8 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="ml-auto h-4 w-16 animate-pulse rounded bg-muted" />
-                    </td>
-                  </tr>
-                ))
-              ) : filteredLessons.length > 0 ? (
-                filteredLessons.map((lesson) => (
-                  <tr
-                    key={lesson.id}
-                    onClick={() => router.push(`/lessons/${lesson.id}`)}
-                    className="cursor-pointer border-b border-border/30 transition-colors last:border-0 hover:bg-muted/30"
-                  >
-                    <td className="py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary">
-                          <BookOpen className="h-4.5 w-4.5" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-foreground">{lesson.title}</p>
-                          <p className="mt-0.5 text-[10px] text-muted-foreground">
-                            Concept:{" "}
-                            <span className="font-semibold text-muted-foreground">
-                              {lesson.concept?.name || "Uncategorized"}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 text-xs font-bold text-muted-foreground">
-                      {lesson.sortOrder}
-                    </td>
-                    <td className="py-4 text-xs">
-                      <span className="inline-flex items-center gap-0.5 rounded-full border border-warning/20 bg-warning/10 px-2.5 py-0.5 text-[10px] font-bold text-warning">
-                        <Award className="h-3 w-3 text-warning" />+{lesson.xpReward} XP
-                      </span>
-                    </td>
-                    <td className="py-4 text-right">
-                      <Link href={`/lessons/${lesson.id}`} onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="outline"
-                          className="ml-auto h-8 rounded-lg border-border px-2.5 text-xs font-bold"
-                        >
-                          Edit Flow
-                        </Button>
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="py-8 text-center text-xs font-medium text-muted-foreground">
-                    No lessons available. Click &quot;Create Lesson&quot; to build your first curriculum unit.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={columns}
+          data={lessons}
+          isLoading={lessonsLoading}
+          page={values.page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          onPageChange={(next) => setValue("page", next)}
+          paginationLabel="lesson"
+          sortBy={values.sortBy}
+          sortOrder={values.sortOrder as "asc" | "desc"}
+          onSortChange={(sortBy, sortOrder) => setValues({ sortBy, sortOrder })}
+          onRowClick={(lesson) => router.push(`/lessons/${lesson.id}`)}
+          emptyTitle="No lessons available"
+          emptyDescription='Click "Create Lesson" to build your first curriculum unit.'
+        />
       </Card>
     </div>
   );

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import {
   CreateLessonDto,
   CreateCardDto,
@@ -13,6 +14,12 @@ import { generateWidgetInstance } from '../common/widgets/widget-generator';
 import { gradeWidgetSubmission } from '../common/widgets/widget-grader';
 import { ProgressionService } from '../progression/progression.service';
 
+// 'sortOrder' is also a real Lesson column (manual curation position), so it's
+// deliberately excluded below from the user-choosable allowlist to avoid
+// confusing it with the sort *direction* of the same name — it remains the
+// fallback field, reproducing the original hardcoded default.
+const LESSON_SORTABLE_FIELDS = ['title', 'xpReward', 'createdAt'] as const;
+
 @Injectable()
 export class LessonsService {
   constructor(
@@ -20,17 +27,41 @@ export class LessonsService {
     private readonly progression: ProgressionService,
   ) {}
 
-  async listLessons(conceptId?: string) {
-    const where = conceptId ? { conceptId } : {};
-    return this.prisma.lesson.findMany({
-      where,
-      orderBy: { sortOrder: 'asc' },
-      include: {
-        concept: {
-          select: { name: true },
+  async listLessons(
+    conceptId?: string,
+    page = 1,
+    // 500 comfortably covers "give me everything" for callers that don't
+    // paginate (the student learning hub, the lesson-authoring picker)
+    // without an unbounded query.
+    limit = 500,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: string,
+  ) {
+    const where = {
+      ...(conceptId ? { conceptId } : {}),
+      ...(search
+        ? { title: { contains: search, mode: 'insensitive' as const } }
+        : {}),
+    };
+    const orderBy = resolveSort(sortBy, sortOrder, LESSON_SORTABLE_FIELDS, 'sortOrder', 'asc');
+
+    const [items, total] = await Promise.all([
+      this.prisma.lesson.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          concept: {
+            select: { name: true },
+          },
         },
-      },
-    });
+      }),
+      this.prisma.lesson.count({ where }),
+    ]);
+
+    return { items, total, page, pageSize: limit };
   }
 
   private async getOrCreateStudentProfile(userId: string) {

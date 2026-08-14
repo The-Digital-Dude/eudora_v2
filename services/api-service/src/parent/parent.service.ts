@@ -317,11 +317,12 @@ export class ParentService {
    * re-implemented here.
    */
   async getAvailableCourses(studentProfileId: string) {
-    return this.catalogService.listCourses(
+    const { items } = await this.catalogService.listCourses(
       undefined,
       false,
       studentProfileId,
     );
+    return items;
   }
 
   async getCourseAssignments(studentProfileId: string) {
@@ -341,8 +342,13 @@ export class ParentService {
     // client sent — otherwise a guardian could add an unpublished course to
     // their child's plan by guessing its id. Same "not found, not forbidden"
     // response as `getCourseDetail`, so this doesn't confirm existence either.
-    const visible = await this.catalogService.listCourses(undefined, false);
-    if (!visible.some((course) => course.id === courseId)) {
+    // A direct existence check, not listCourses — that returns a bounded page
+    // of results, so checking membership against it would incorrectly 404 a
+    // real course sitting outside that page once the catalog grows past it.
+    const visibleCount = await this.prisma.course.count({
+      where: { id: courseId, deletedAt: null, status: 'PUBLISHED' },
+    });
+    if (visibleCount === 0) {
       throw new NotFoundException('Course not found');
     }
 

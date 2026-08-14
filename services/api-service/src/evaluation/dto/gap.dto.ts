@@ -16,4 +16,19 @@ export class ListGapsQueryDto {
   @IsOptional()
   @IsEnum(GapStatus)
   status?: GapStatus;
+
+  @IsOptional()
+  search?: string;
+
+  @IsOptional()
+  page?: string;
+
+  @IsOptional()
+  limit?: string;
+
+  @IsOptional()
+  sortBy?: string;
+
+  @IsOptional()
+  sortOrder?: string;
 }

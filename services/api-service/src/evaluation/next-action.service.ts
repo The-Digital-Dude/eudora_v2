@@ -4,12 +4,15 @@ import {
   NotImplementedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import { NextActionStatus } from '@prisma/client';
 import {
   CreateNextActionDto,
   ListNextActionsQueryDto,
   UpdateNextActionDto,
 } from './dto/next-action.dto';
+
+const NEXT_ACTION_SORTABLE_FIELDS = ['actionType', 'status', 'dueDate'] as const;
 
 @Injectable()
 export class NextActionService {
@@ -22,17 +25,40 @@ export class NextActionService {
   };
 
   async listNextActions(query: ListNextActionsQueryDto) {
-    return this.prisma.nextAction.findMany({
-      where: {
-        ...(query.ownerUserId ? { ownerUserId: query.ownerUserId } : {}),
-        ...(query.studentProfileId
-          ? { studentProfileId: query.studentProfileId }
-          : {}),
-        ...(query.status ? { status: query.status } : {}),
-      },
-      include: this.listInclude,
-      orderBy: { dueDate: 'asc' },
-    });
+    const page = query.page ? parseInt(query.page, 10) : 1;
+    // 500 comfortably covers "every action" for callers that don't paginate —
+    // this endpoint had none before, so that's still the effective default.
+    const limit = query.limit ? parseInt(query.limit, 10) : 500;
+    const where = {
+      ...(query.ownerUserId ? { ownerUserId: query.ownerUserId } : {}),
+      ...(query.studentProfileId
+        ? { studentProfileId: query.studentProfileId }
+        : {}),
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.search
+        ? { reason: { contains: query.search, mode: 'insensitive' as const } }
+        : {}),
+    };
+    const orderBy = resolveSort(
+      query.sortBy,
+      query.sortOrder,
+      NEXT_ACTION_SORTABLE_FIELDS,
+      'dueDate',
+      'asc',
+    );
+
+    const [items, total] = await Promise.all([
+      this.prisma.nextAction.findMany({
+        where,
+        include: this.listInclude,
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.nextAction.count({ where }),
+    ]);
+
+    return { items, total, page, pageSize: limit };
   }
 
   async getNextActionById(id: string) {

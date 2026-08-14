@@ -63,4 +63,19 @@ export class ListNextActionsQueryDto {
   @IsOptional()
   @IsEnum(NextActionStatus)
   status?: NextActionStatus;
+
+  @IsOptional()
+  search?: string;
+
+  @IsOptional()
+  page?: string;
+
+  @IsOptional()
+  limit?: string;
+
+  @IsOptional()
+  sortBy?: string;
+
+  @IsOptional()
+  sortOrder?: string;
 }

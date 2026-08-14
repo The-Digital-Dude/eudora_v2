@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import {
   CreateLearningSubjectDto,
   UpdateLearningSubjectDto,
@@ -15,6 +16,8 @@ import {
   ReorderPathCoursesDto,
 } from './dto/catalog.dto';
 import { ProgressionService } from '../progression/progression.service';
+
+const COURSE_SORTABLE_FIELDS = ['title', 'status', 'createdAt'] as const;
 
 @Injectable()
 export class CatalogService {
@@ -113,21 +116,53 @@ export class CatalogService {
     // it never filters, because an assignment is a recommendation, not an
     // access grant (catalog content is open to any authenticated student).
     annotateForStudentProfileId: string | null = null,
+    page = 1,
+    // 500 comfortably covers "give me the whole catalog" for callers that
+    // don't paginate (pickers, guardian course-plan browsing) without an
+    // unbounded query — a real school's catalog isn't going to clear that.
+    limit = 500,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: string,
   ) {
-    const courses = await this.prisma.course.findMany({
-      where: {
-        deletedAt: null,
-        ...(includeUnpublished ? {} : { status: 'PUBLISHED' }),
-        ...(learningSubjectId ? { learningSubjectId } : {}),
-      },
-      orderBy: { sortOrder: 'asc' },
-      include: {
-        learningSubject: { select: { id: true, name: true, code: true } },
-        _count: { select: { concepts: true } },
-      },
-    });
+    const where = {
+      deletedAt: null,
+      ...(includeUnpublished ? {} : { status: 'PUBLISHED' as const }),
+      ...(learningSubjectId ? { learningSubjectId } : {}),
+      ...(search
+        ? { title: { contains: search, mode: 'insensitive' as const } }
+        : {}),
+    };
 
-    if (!annotateForStudentProfileId) return courses;
+    // 'sortOrder' is also a real Course column (manual curation position),
+    // so it's deliberately excluded from the user-choosable allowlist below
+    // to avoid confusing it with the sort *direction* of the same name — it
+    // remains the fallback field, reproducing the original hardcoded default.
+    const orderBy = resolveSort(
+      sortBy,
+      sortOrder,
+      COURSE_SORTABLE_FIELDS,
+      'sortOrder',
+      'asc',
+    );
+
+    const [courses, total] = await Promise.all([
+      this.prisma.course.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          learningSubject: { select: { id: true, name: true, code: true } },
+          _count: { select: { concepts: true } },
+        },
+      }),
+      this.prisma.course.count({ where }),
+    ]);
+
+    if (!annotateForStudentProfileId) {
+      return { items: courses, total, page, pageSize: limit };
+    }
 
     const assignments = await this.prisma.studentCourseAssignment.findMany({
       where: {
@@ -137,10 +172,15 @@ export class CatalogService {
       select: { courseId: true },
     });
     const assignedIds = new Set(assignments.map((a) => a.courseId));
-    return courses.map((course) => ({
-      ...course,
-      isAssigned: assignedIds.has(course.id),
-    }));
+    return {
+      items: courses.map((course) => ({
+        ...course,
+        isAssigned: assignedIds.has(course.id),
+      })),
+      total,
+      page,
+      pageSize: limit,
+    };
   }
 
   async getCourseDetail(

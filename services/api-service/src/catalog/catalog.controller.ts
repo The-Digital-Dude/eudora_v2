@@ -66,12 +66,22 @@ export class CatalogController {
   @Get('courses')
   async listCourses(
     @Query('subjectId') subjectId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
     @CurrentUser() user?: CurrentUserDto,
   ) {
     return this.catalogService.listCourses(
       subjectId,
       isStaff(user),
       user?.studentProfile?.id ?? null,
+      page ? parseInt(page, 10) : undefined,
+      limit ? parseInt(limit, 10) : undefined,
+      search,
+      sortBy,
+      sortOrder,
     );
   }
 

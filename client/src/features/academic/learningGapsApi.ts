@@ -24,12 +24,20 @@ export interface ListGapsParams {
   studentProfileId?: string;
   competencyId?: string;
   status?: GapStatus;
+  search?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
 }
 
 export const learningGapsApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
-    listGaps: builder.query<LearningGap[], ListGapsParams | void>({
+    listGaps: builder.query<
+      { items: LearningGap[]; total: number },
+      ListGapsParams | void
+    >({
       query: (params) => ({ url: "/gaps", params: params ?? undefined }),
       providesTags: ["LearningGaps"],
     }),

@@ -12,7 +12,8 @@ import { useGetLessonsQuery } from "@/features/clio/clioApi";
  * goes full-screen.
  */
 export default function LearningHubPage() {
-  const { data: lessons, isLoading, error } = useGetLessonsQuery();
+  const { data: lessonsData, isLoading, error } = useGetLessonsQuery();
+  const lessons = lessonsData?.items;
 
   return (
     <div className="flex flex-col gap-6">

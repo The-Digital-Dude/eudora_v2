@@ -165,10 +165,30 @@ export const catalogApi = authApi.injectEndpoints({
     } as any),
 
     // Courses (content groupings of chapters/concepts)
-    getCourses: builder.query<CourseSummary[], { subjectId?: string } | void>({
+    getCourses: builder.query<
+      { items: CourseSummary[]; total: number },
+      | {
+          subjectId?: string;
+          page?: number;
+          limit?: number;
+          search?: string;
+          sortBy?: string;
+          sortOrder?: string;
+        }
+      | void
+    >({
       query: (params: any) => {
-        const q = params?.subjectId ? `?subjectId=${params.subjectId}` : "";
-        return `/catalog/courses${q}`;
+        const q = new URLSearchParams();
+        if (params?.subjectId) q.set("subjectId", params.subjectId);
+        if (params?.page) q.set("page", String(params.page));
+        if (params?.limit) q.set("limit", String(params.limit));
+        if (params?.search) q.set("search", params.search);
+        if (params?.sortBy) {
+          q.set("sortBy", params.sortBy);
+          q.set("sortOrder", params.sortOrder ?? "asc");
+        }
+        const query = q.toString();
+        return `/catalog/courses${query ? `?${query}` : ""}`;
       },
       providesTags: ["Courses"],
     } as any),

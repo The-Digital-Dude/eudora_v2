@@ -26,6 +26,11 @@ export interface ListNextActionsParams {
   ownerUserId?: string;
   studentProfileId?: string;
   status?: NextActionStatus;
+  search?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
 }
 
 export interface CreateNextActionPayload {
@@ -49,7 +54,10 @@ export interface UpdateNextActionPayload {
 export const nextActionsApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
-    listNextActions: builder.query<NextAction[], ListNextActionsParams | void>({
+    listNextActions: builder.query<
+      { items: NextAction[]; total: number },
+      ListNextActionsParams | void
+    >({
       query: (params) => ({ url: "/next-actions", params: params ?? undefined }),
       providesTags: ["NextActions"],
     }),

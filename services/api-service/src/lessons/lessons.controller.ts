@@ -30,8 +30,22 @@ export class LessonsController {
   constructor(private readonly lessonsService: LessonsService) {}
 
   @Get()
-  async listLessons(@Query('conceptId') conceptId?: string) {
-    return this.lessonsService.listLessons(conceptId);
+  async listLessons(
+    @Query('conceptId') conceptId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+  ) {
+    return this.lessonsService.listLessons(
+      conceptId,
+      page ? parseInt(page, 10) : undefined,
+      limit ? parseInt(limit, 10) : undefined,
+      search,
+      sortBy,
+      sortOrder,
+    );
   }
 
   @Get(':id/flow')

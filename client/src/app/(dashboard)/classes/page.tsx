@@ -15,9 +15,12 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
-import { ListPagination } from "@/components/list-pagination";
+import { type ColumnDef } from "@tanstack/react-table";
+
+import { DataTable, SortableHeader } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -32,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGetLearningSubjectsQuery } from "@/features/catalog/catalogApi";
 import {
+  type ClassSection,
   useGetClassSectionsQuery,
   useGetCourseClassesQuery,
   useGetMakeupRequestsQuery,
@@ -44,9 +48,10 @@ import { CourseClassEnrollmentDialog } from "./components/course-class-enrollmen
 const PAGE_SIZE = 20;
 
 export default function ClassesPage() {
+  const router = useRouter();
   // Class-section list state, held in the URL so a subject-filtered roster view can be shared.
-  const { values, setValue } = useListQueryState(
-    { search: "", subject: "all", page: 1 },
+  const { values, setValue, setValues } = useListQueryState(
+    { search: "", subject: "all", page: 1, sortBy: "", sortOrder: "asc" },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -59,8 +64,68 @@ export default function ClassesPage() {
     limit: PAGE_SIZE,
     search: values.search || undefined,
     learningSubjectId: values.subject === "all" ? undefined : values.subject,
+    sortBy: values.sortBy || undefined,
+    sortOrder: values.sortOrder,
   });
   const sectionList = sectionsData?.items || [];
+
+  const sectionColumns: ColumnDef<ClassSection, any>[] = [
+    {
+      accessorKey: "name",
+      header: ({ column }) => <SortableHeader column={column} label="Section" />,
+      cell: ({ row }) => {
+        const section = row.original;
+        return (
+          <div className="min-w-0">
+            <h3 className="truncate text-xs font-semibold text-foreground">{section.name}</h3>
+            <p className="mt-0.5 font-mono text-[10px] text-muted-foreground uppercase">
+              {section.code}
+              {section.class ? ` · ${section.class}` : ""}
+              {section.classroom ? ` · ${section.classroom}` : ""}
+            </p>
+          </div>
+        );
+      },
+    },
+    {
+      id: "subject",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Subject
+        </span>
+      ),
+      cell: ({ row }) =>
+        row.original.learningSubject ? (
+          <span className="inline-flex items-center gap-1 rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[9px] font-bold text-primary">
+            <Layers className="h-3 w-3" />
+            {row.original.learningSubject.name}
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-md border border-border bg-muted px-2 py-0.5 text-[9px] font-semibold text-muted-foreground">
+            No subject
+          </span>
+        ),
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => <SortableHeader column={column} label="Status" />,
+      cell: ({ row }) => {
+        const status = row.original.status;
+        return (
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
+              status === "ACTIVE"
+                ? "border border-success/20 bg-success/10 text-success"
+                : "border border-border bg-muted text-muted-foreground"
+            }`}
+          >
+            {status}
+          </span>
+        );
+      },
+    },
+  ];
 
   // RTK queries and mutations
   const { data: classesData, isLoading: classesLoading } = useGetCourseClassesQuery();
@@ -224,68 +289,29 @@ export default function ClassesPage() {
           </div>
         </div>
 
-        <div className="space-y-3">
-          {sectionsLoading ? (
-            [...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="h-16 animate-pulse rounded-2xl border border-border bg-muted/50"
-              />
-            ))
-          ) : sectionList.length > 0 ? (
-            sectionList.map((section) => (
-              <Link
-                key={section.id}
-                href={`/classes/${section.id}`}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/50 p-3.5 transition-all hover:border-foreground/20 hover:bg-muted"
-              >
-                <div className="min-w-0">
-                  <h3 className="truncate text-xs font-semibold text-foreground">{section.name}</h3>
-                  <p className="mt-0.5 font-mono text-[10px] text-muted-foreground uppercase">
-                    {section.code}
-                    {section.class ? ` · ${section.class}` : ""}
-                    {section.classroom ? ` · ${section.classroom}` : ""}
-                  </p>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  {section.learningSubject ? (
-                    <span className="inline-flex items-center gap-1 rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[9px] font-bold text-primary">
-                      <Layers className="h-3 w-3" />
-                      {section.learningSubject.name}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-md border border-border bg-muted px-2 py-0.5 text-[9px] font-semibold text-muted-foreground">
-                      No subject
-                    </span>
-                  )}
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
-                      section.status === "ACTIVE"
-                        ? "border border-success/20 bg-success/10 text-success"
-                        : "border border-border bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {section.status}
-                  </span>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <p className="py-6 text-center text-xs font-medium text-muted-foreground">
-              {values.search || values.subject !== "all"
-                ? "No class sections match these filters."
-                : "No class sections yet. Create one to start building rosters."}
-            </p>
-          )}
-        </div>
-
-        <ListPagination
+        <DataTable
+          columns={sectionColumns}
+          data={sectionList}
+          isLoading={sectionsLoading}
           page={values.page}
           pageSize={PAGE_SIZE}
           total={sectionsData?.total ?? 0}
           onPageChange={(next) => setValue("page", next)}
-          label="section"
+          paginationLabel="section"
+          sortBy={values.sortBy}
+          sortOrder={values.sortOrder as "asc" | "desc"}
+          onSortChange={(sortBy, sortOrder) => setValues({ sortBy, sortOrder })}
+          onRowClick={(section) => router.push(`/classes/${section.id}`)}
+          emptyTitle={
+            values.search || values.subject !== "all"
+              ? "No matching class sections"
+              : "No class sections yet"
+          }
+          emptyDescription={
+            values.search || values.subject !== "all"
+              ? "No class sections match these filters."
+              : "Create one to start building rosters."
+          }
         />
       </Card>
 

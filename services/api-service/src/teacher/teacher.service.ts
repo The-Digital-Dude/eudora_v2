@@ -4,6 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import {
   UpdateMyTeacherProfileDto,
@@ -12,6 +13,8 @@ import {
 import { AssignClassDto } from './dto/assign-class.dto';
 import { TeacherStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+
+const TEACHER_SORTABLE_FIELDS = ['fullName', 'employeeCode', 'specialization', 'status'] as const;
 
 @Injectable()
 export class TeacherService {
@@ -80,7 +83,14 @@ export class TeacherService {
     });
   }
 
-  async findAll(page = 1, limit = 10, status?: TeacherStatus, search?: string) {
+  async findAll(
+    page = 1,
+    limit = 10,
+    status?: TeacherStatus,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: string,
+  ) {
     const skip = (page - 1) * limit;
     const where: any = {
       user: { deletedAt: null },
@@ -97,6 +107,8 @@ export class TeacherService {
       ];
     }
 
+    const orderBy = resolveSort(sortBy, sortOrder, TEACHER_SORTABLE_FIELDS, 'fullName');
+
     const [teachers, total] = await Promise.all([
       this.prisma.teacherProfile.findMany({
         where,
@@ -106,7 +118,7 @@ export class TeacherService {
           user: { select: { email: true, firstName: true, lastName: true } },
           classAssignments: { include: { classSection: true } },
         },
-        orderBy: { fullName: 'asc' },
+        orderBy,
       }),
       this.prisma.teacherProfile.count({ where }),
     ]);

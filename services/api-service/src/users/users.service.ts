@@ -4,8 +4,11 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuditService } from '../common/audit/audit.service';
+
+const USER_SORTABLE_FIELDS = ['email', 'firstName', 'lastName', 'createdAt'] as const;
 
 @Injectable()
 export class UsersService {
@@ -14,7 +17,14 @@ export class UsersService {
     private readonly audit: AuditService,
   ) {}
 
-  async findAll(page = 1, limit = 10, search?: string, roleName?: string) {
+  async findAll(
+    page = 1,
+    limit = 10,
+    search?: string,
+    roleName?: string,
+    sortBy?: string,
+    sortOrder?: string,
+  ) {
     const skip = (page - 1) * limit;
 
     const where: any = { deletedAt: null };
@@ -29,11 +39,16 @@ export class UsersService {
       where.roles = { some: { role: { name: roleName } } };
     }
 
+    // No orderBy existed here before sort support — createdAt desc (newest first) is a deliberate
+    // new default, not a preserved one, since Prisma's result order was previously unspecified.
+    const orderBy = resolveSort(sortBy, sortOrder, USER_SORTABLE_FIELDS, 'createdAt', 'desc');
+
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
         skip,
         take: limit,
+        orderBy,
         select: {
           id: true,
           email: true,

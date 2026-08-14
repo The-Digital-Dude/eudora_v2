@@ -39,8 +39,16 @@ export default function AssessmentsPage() {
   // Query filters, held in the URL so a filtered view can be linked or refreshed. `page` used to be
   // a useState whose setter was never destructured, pinning this list to page 1 despite the API
   // paginating properly behind it.
-  const { values, setValue } = useListQueryState(
-    { search: "", subjectId: "all", levelId: "all", status: "all", page: 1 },
+  const { values, setValue, setValues } = useListQueryState(
+    {
+      search: "",
+      subjectId: "all",
+      levelId: "all",
+      status: "all",
+      page: 1,
+      sortBy: "",
+      sortOrder: "asc",
+    },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -55,7 +63,16 @@ export default function AssessmentsPage() {
     status: values.status === "all" ? undefined : values.status,
     page: values.page,
     pageSize: PAGE_SIZE,
+    sortBy: values.sortBy || undefined,
+    sortOrder: values.sortOrder,
   });
+
+  // Cards, not table rows — the sort control is a select rather than a clickable column header.
+  const sortValue = values.sortBy ? `${values.sortBy}:${values.sortOrder}` : "createdAt:desc";
+  const handleSortChange = (next: string) => {
+    const [sortBy, sortOrder] = next.split(":");
+    setValues({ sortBy: sortBy === "createdAt" ? "" : sortBy, sortOrder });
+  };
 
   const { data: subjectsData } = useGetSubjectsQuery();
   const { data: levelsData } = useGetLevelsQuery();
@@ -189,6 +206,23 @@ export default function AssessmentsPage() {
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="published">Published</SelectItem>
               <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Sort */}
+        <div className="w-[170px]">
+          <Select value={sortValue} onValueChange={handleSortChange}>
+            <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="createdAt:desc">Newest first</SelectItem>
+              <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+              <SelectItem value="title:asc">Title A–Z</SelectItem>
+              <SelectItem value="title:desc">Title Z–A</SelectItem>
+              <SelectItem value="totalMarks:desc">Most marks</SelectItem>
+              <SelectItem value="totalMarks:asc">Fewest marks</SelectItem>
             </SelectContent>
           </Select>
         </div>

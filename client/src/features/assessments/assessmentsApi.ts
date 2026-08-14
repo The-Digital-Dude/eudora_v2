@@ -117,6 +117,8 @@ export interface ListAssessmentsParams {
   status?: string;
   page?: number;
   pageSize?: number;
+  sortBy?: string;
+  sortOrder?: string;
 }
 
 export interface ListAssessmentsResponse {

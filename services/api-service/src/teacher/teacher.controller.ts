@@ -63,10 +63,12 @@ export class TeacherController {
     @Query('limit') limit?: string,
     @Query('status') status?: TeacherStatus,
     @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.teacherService.findAll(pageNum, limitNum, status, search);
+    return this.teacherService.findAll(pageNum, limitNum, status, search, sortBy, sortOrder);
   }
 
   @Get(':id')

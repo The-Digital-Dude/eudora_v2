@@ -32,10 +32,12 @@ export class UsersController {
     @Query('limit') limit?: string,
     @Query('search') search?: string,
     @Query('role') role?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.usersService.findAll(pageNum, limitNum, search, role);
+    return this.usersService.findAll(pageNum, limitNum, search, role, sortBy, sortOrder);
   }
 
   @Get(':id')

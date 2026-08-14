@@ -1,52 +1,66 @@
 "use client";
 
-import { Loader2, Plus } from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Edit2, HelpCircle, Plus } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 import { toast } from "sonner";
 
-import { useArchiveQuestionMutation, useGetQuestionsQuery } from "@/features/assessments/questionsApi";
+import { DataTable, SortableHeader } from "@/components/data-table";
+import { type Question, useArchiveQuestionMutation, useGetQuestionsQuery } from "@/features/assessments/questionsApi";
+import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
 import { QuestionFilterBar } from "./components/question-filter-bar";
-import { QuestionTable } from "./components/question-table";
+
+const PAGE_SIZE = 15;
+
+const difficultyColors: Record<string, string> = {
+  easy: "bg-success/10 text-success border-success/20",
+  medium: "bg-warning/10 text-warning border-warning/20/30",
+  hard: "bg-orange-50 text-orange-700 dark:bg-orange-950/20 dark:text-orange-400 border-orange-100 dark:border-orange-900/30",
+  extension: "bg-primary/10 text-primary border-primary/10",
+};
+
+const statusColors: Record<string, string> = {
+  draft: "bg-muted text-muted-foreground",
+  active: "bg-success/10 text-success",
+  archived: "bg-destructive/10 text-destructive",
+};
+
+const formatText = (txt: string) => txt.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function QuestionsPage() {
-  const [filters, setFilters] = useState({
-    search: "",
-    subjectId: "",
-    levelId: "",
-    questionType: "",
-    difficulty: "",
-    status: "",
-  });
-
-  const [page, setPage] = useState(1);
-  const pageSize = 15;
-
-  const { data, isLoading, isFetching } = useGetQuestionsQuery({
-    ...filters,
-    page,
-    pageSize,
-  });
-
-  const [archiveQuestion] = useArchiveQuestionMutation();
-
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setPage(1); // Reset to page 1 on search filter change
-  };
-
-  const handleResetFilters = () => {
-    setFilters({
+  const { values, setValue, setValues, reset } = useListQueryState(
+    {
       search: "",
       subjectId: "",
       levelId: "",
       questionType: "",
       difficulty: "",
       status: "",
-    });
-    setPage(1);
-  };
+      page: 1,
+      sortBy: "",
+      sortOrder: "asc",
+    },
+    { pageKey: "page" },
+  );
+  const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
+    setValue("search", next),
+  );
+
+  const { data, isLoading } = useGetQuestionsQuery({
+    search: values.search || undefined,
+    subjectId: values.subjectId || undefined,
+    levelId: values.levelId || undefined,
+    questionType: values.questionType || undefined,
+    difficulty: values.difficulty || undefined,
+    status: values.status || undefined,
+    page: values.page,
+    pageSize: PAGE_SIZE,
+    sortBy: values.sortBy || undefined,
+    sortOrder: values.sortOrder,
+  });
+
+  const [archiveQuestion] = useArchiveQuestionMutation();
 
   const handleArchiveClick = async (id: string) => {
     if (!window.confirm("Are you sure you want to archive this question? It will not be shown in active selections.")) return;
@@ -60,8 +74,131 @@ export default function QuestionsPage() {
     }
   };
 
+  const questions = data?.items || [];
   const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / pageSize) || 1;
+
+  const columns: ColumnDef<Question, any>[] = [
+    {
+      accessorKey: "prompt",
+      header: ({ column }) => <SortableHeader column={column} label="Prompt Stem" />,
+      cell: ({ row }) => {
+        const q = row.original;
+        const cleanPrompt = q.prompt ? q.prompt.replace(/\$\$[\s\S]+?\$\$|\$[\s\S]+?\$/g, "[Math]") : "";
+        const truncatedPrompt = cleanPrompt.length > 70 ? `${cleanPrompt.slice(0, 70)}...` : cleanPrompt;
+        return (
+          <div className="flex max-w-[280px] flex-col gap-0.5">
+            <span className="truncate text-xs font-semibold text-foreground">
+              {truncatedPrompt || q.prompt}
+            </span>
+            {q.widgetType && (
+              <span className="text-[10px] font-bold text-primary">
+                ⚙ Interactive {formatText(q.widgetType)}
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: "subject",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Subject
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="text-xs font-semibold text-muted-foreground">
+          {row.original.subject?.name || "Unassigned"}
+        </span>
+      ),
+    },
+    {
+      id: "level",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Grade
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="text-xs font-semibold text-muted-foreground">
+          {row.original.level?.name || "Unassigned"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "questionType",
+      header: ({ column }) => <SortableHeader column={column} label="Type" />,
+      cell: ({ row }) => (
+        <span className="text-xs font-medium capitalize text-muted-foreground">
+          {formatText(row.original.questionType)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "difficulty",
+      header: ({ column }) => <SortableHeader column={column} label="Difficulty" />,
+      cell: ({ row }) => (
+        <span
+          className={`inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+            difficultyColors[row.original.difficulty] || ""
+          }`}
+        >
+          {row.original.difficulty}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => <SortableHeader column={column} label="Status" />,
+      cell: ({ row }) => (
+        <span
+          className={`inline-flex items-center rounded-lg px-2.5 py-0.5 text-[10px] font-bold capitalize ${
+            statusColors[row.original.status] || ""
+          }`}
+        >
+          {row.original.status}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Actions
+        </span>
+      ),
+      cell: ({ row }) => {
+        const q = row.original;
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <Link
+              href={`/questions/${q.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="rounded-xl border border-border bg-card p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              title="Edit question"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </Link>
+            {q.status !== "archived" && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleArchiveClick(q.id);
+                }}
+                className="rounded-xl border border-border bg-card p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-destructive"
+                title="Archive question"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -85,57 +222,39 @@ export default function QuestionsPage() {
 
       {/* Filter Bar */}
       <QuestionFilterBar
-        filters={filters}
-        onFilterChange={handleFilterChange as any}
-        onReset={handleResetFilters}
+        filters={{
+          search: searchDraft,
+          subjectId: values.subjectId,
+          levelId: values.levelId,
+          questionType: values.questionType,
+          difficulty: values.difficulty,
+          status: values.status,
+        }}
+        onFilterChange={(key, value) => {
+          if (key === "search") {
+            setSearchDraft(value);
+          } else {
+            setValue(key, value);
+          }
+        }}
+        onReset={reset}
       />
 
-      {/* Main Table view */}
-      {isLoading ? (
-        <div className="flex h-60 w-full items-center justify-center bg-card border border-border rounded-3xl/50">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-7 w-7 animate-spin text-primary" />
-            <span className="text-xs font-medium text-muted-foreground">Loading question bank...</span>
-          </div>
-        </div>
-      ) : (
-        <div className={isFetching ? "opacity-60" : ""}>
-          <QuestionTable
-            questions={data?.items || []}
-            onArchive={handleArchiveClick}
-          />
-
-          {/* Pagination Controls */}
-          {total > pageSize && (
-            <div className="mt-4 flex items-center justify-between px-2">
-              <span className="text-xs text-muted-foreground font-semibold">
-                Showing {Math.min((page - 1) * pageSize + 1, total)} to{" "}
-                {Math.min(page * pageSize, total)} of {total} questions
-              </span>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                  disabled={page === 1}
-                  className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs font-semibold hover:bg-muted/50 disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <span className="text-xs font-bold text-foreground px-2 select-none">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                  disabled={page === totalPages}
-                  className="h-9 cursor-pointer rounded-xl border border-border bg-card px-3 text-xs font-semibold hover:bg-muted/50 disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        data={questions}
+        isLoading={isLoading}
+        page={values.page}
+        pageSize={PAGE_SIZE}
+        total={total}
+        onPageChange={(next) => setValue("page", next)}
+        paginationLabel="question"
+        sortBy={values.sortBy}
+        sortOrder={values.sortOrder as "asc" | "desc"}
+        onSortChange={(sortBy, sortOrder) => setValues({ sortBy, sortOrder })}
+        emptyTitle="No questions found"
+        emptyDescription="Try expanding your search query or creating a new question to seed the bank."
+      />
     </div>
   );
 }

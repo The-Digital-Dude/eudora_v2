@@ -37,7 +37,7 @@ export class LeadsService {
       ];
     }
 
-    const orderBy = resolveSort(sortBy, sortOrder, LEAD_SORTABLE_FIELDS, 'createdAt');
+    const orderBy = resolveSort(sortBy, sortOrder, LEAD_SORTABLE_FIELDS, 'createdAt', 'desc');
 
     const [leads, total] = await Promise.all([
       this.prisma.lead.findMany({

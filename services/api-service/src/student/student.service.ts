@@ -5,6 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import {
   CreateStudentProfileDto,
   UpdateMyStudentProfileDto,
@@ -12,6 +13,8 @@ import {
 } from './dto/student-profile.dto';
 import { CreatePlacementDto, UpdatePlacementDto } from './dto/placement.dto';
 import { CreateEnrollmentDto, UpdateEnrollmentDto } from './dto/enrollment.dto';
+
+const STUDENT_SORTABLE_FIELDS = ['fullName', 'gender', 'status'] as const;
 
 @Injectable()
 export class StudentService {
@@ -68,6 +71,8 @@ export class StudentService {
     status?: string,
     includeArchived = false,
     search?: string,
+    sortBy?: string,
+    sortOrder?: string,
   ) {
     const skip = (page - 1) * limit;
     const where: any = {};
@@ -82,6 +87,7 @@ export class StudentService {
     }
     // includeArchived is a scoping-extension arg, stripped before validation.
     const archivedArg = includeArchived ? { includeArchived: true } : {};
+    const orderBy = resolveSort(sortBy, sortOrder, STUDENT_SORTABLE_FIELDS, 'fullName');
 
     const [profiles, total, placedStudents, enrollmentTotal] = await Promise.all([
       this.prisma.studentProfile.findMany({
@@ -91,7 +97,7 @@ export class StudentService {
         include: {
           user: { select: { email: true, firstName: true, lastName: true } },
         },
-        orderBy: { fullName: 'asc' },
+        orderBy,
         ...archivedArg,
       } as any),
       this.prisma.studentProfile.count({ where, ...archivedArg } as any),

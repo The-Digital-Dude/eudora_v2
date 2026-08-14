@@ -51,6 +51,14 @@ export class ListAssessmentsQueryDto {
   @IsOptional()
   @IsString()
   pageSize?: string;
+
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @IsOptional()
+  @IsString()
+  sortOrder?: string;
 }
 
 export class LookupQueryDto {
@@ -247,6 +255,14 @@ export class ListQuestionsQueryDto {
   @IsOptional()
   @IsString()
   pageSize?: string;
+
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @IsOptional()
+  @IsString()
+  sortOrder?: string;
 }
 
 export class CreateQuestionDto {

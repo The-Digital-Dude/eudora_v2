@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import {
   AddAssessmentQuestionDto,
   CreateQuestionDto,
@@ -26,6 +27,14 @@ import {
   toPage,
   audit,
 } from './assessments.common';
+
+const QUESTION_SORTABLE_FIELDS = [
+  'prompt',
+  'questionType',
+  'difficulty',
+  'status',
+  'createdAt',
+] as const;
 
 @Injectable()
 export class QuestionsService {
@@ -69,10 +78,18 @@ export class QuestionsService {
       ]),
       ...enumFilter('status', query.status, ['draft', 'active', 'archived']),
     };
+    const orderBy = resolveSort(
+      query.sortBy,
+      query.sortOrder,
+      QUESTION_SORTABLE_FIELDS,
+      'createdAt',
+      'desc',
+    );
+
     const [items, total] = await Promise.all([
       this.prisma.question.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: pagination.skip,
         take: pagination.pageSize,
         select: questionSelect,

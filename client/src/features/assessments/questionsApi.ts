@@ -34,6 +34,8 @@ export interface ListQuestionsParams {
   status?: string;
   page?: number;
   pageSize?: number;
+  sortBy?: string;
+  sortOrder?: string;
 }
 
 export interface ListQuestionsResponse {

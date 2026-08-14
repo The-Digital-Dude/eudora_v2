@@ -1,6 +1,7 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import {
   CreateAssessmentDto,
   CreateLookupDto,
@@ -29,6 +30,8 @@ import {
   toPage,
   audit,
 } from './assessments.common';
+
+const ASSESSMENT_SORTABLE_FIELDS = ['title', 'status', 'totalMarks', 'createdAt'] as const;
 
 @Injectable()
 export class AssessmentSetupService {
@@ -184,10 +187,18 @@ export class AssessmentSetupService {
       ...numberFilter('weekNumber', query.weekNumber),
       ...enumFilter('status', query.status, ['draft', 'published', 'archived']),
     };
+    const orderBy = resolveSort(
+      query.sortBy,
+      query.sortOrder,
+      ASSESSMENT_SORTABLE_FIELDS,
+      'createdAt',
+      'desc',
+    );
+
     const [items, total] = await Promise.all([
       this.prisma.assessment.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: pagination.skip,
         take: pagination.pageSize,
         select: assessmentSelect,

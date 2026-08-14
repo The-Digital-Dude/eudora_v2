@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import {
   CreateAcademicYearDto,
   UpdateAcademicYearDto,
@@ -19,6 +20,8 @@ import {
   CreateCourseClassDto,
   UpdateCourseClassDto,
 } from './dto/course-class.dto';
+
+const CLASS_SECTION_SORTABLE_FIELDS = ['name', 'code', 'status'] as const;
 
 @Injectable()
 export class AcademicService {
@@ -320,6 +323,8 @@ export class AcademicService {
     programId?: string,
     learningSubjectId?: string,
     search?: string,
+    sortBy?: string,
+    sortOrder?: string,
   ) {
     const skip = (page - 1) * limit;
     const where: Prisma.ClassSectionWhereInput = {};
@@ -340,6 +345,8 @@ export class AcademicService {
       ];
     }
 
+    const orderBy = resolveSort(sortBy, sortOrder, CLASS_SECTION_SORTABLE_FIELDS, 'name');
+
     const [sections, total] = await Promise.all([
       this.prisma.classSection.findMany({
         where,
@@ -350,7 +357,7 @@ export class AcademicService {
           program: true,
           learningSubject: { select: { id: true, name: true, code: true } },
         },
-        orderBy: { name: 'asc' },
+        orderBy,
       }),
       this.prisma.classSection.count({ where }),
     ]);

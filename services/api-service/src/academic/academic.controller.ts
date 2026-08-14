@@ -122,6 +122,8 @@ export class AcademicController {
     @Query('programId') programId?: string,
     @Query('learningSubjectId') learningSubjectId?: string,
     @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
@@ -132,6 +134,8 @@ export class AcademicController {
       programId,
       learningSubjectId,
       search,
+      sortBy,
+      sortOrder,
     );
   }
 

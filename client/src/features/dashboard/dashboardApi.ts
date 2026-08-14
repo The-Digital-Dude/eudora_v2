@@ -295,14 +295,24 @@ export const dashboardApi = authApi.injectEndpoints({
 
     getUsers: builder.query<
       { items: User[]; total: number },
-      { page?: number; limit?: number; search?: string; role?: string } | void
+      {
+        page?: number;
+        limit?: number;
+        search?: string;
+        role?: string;
+        sortBy?: string;
+        sortOrder?: string;
+      } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
         const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
         const roleQuery = params?.role ? `&role=${encodeURIComponent(params.role)}` : "";
-        return `/users?page=${page}&limit=${limit}${searchQuery}${roleQuery}`;
+        const sortQuery = params?.sortBy
+          ? `&sortBy=${encodeURIComponent(params.sortBy)}&sortOrder=${params.sortOrder ?? "asc"}`
+          : "";
+        return `/users?page=${page}&limit=${limit}${searchQuery}${roleQuery}${sortQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -431,6 +441,8 @@ export const dashboardApi = authApi.injectEndpoints({
           /** Pass "none" to list only sections that have no subject tagged yet. */
           learningSubjectId?: string;
           search?: string;
+          sortBy?: string;
+          sortOrder?: string;
         }
       | void
     >({
@@ -441,7 +453,10 @@ export const dashboardApi = authApi.injectEndpoints({
           ? `&learningSubjectId=${encodeURIComponent(params.learningSubjectId)}`
           : "";
         const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
-        return `/class-sections?page=${page}&limit=${limit}${subjectQuery}${searchQuery}`;
+        const sortQuery = params?.sortBy
+          ? `&sortBy=${encodeURIComponent(params.sortBy)}&sortOrder=${params.sortOrder ?? "asc"}`
+          : "";
+        return `/class-sections?page=${page}&limit=${limit}${subjectQuery}${searchQuery}${sortQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -576,6 +591,8 @@ export const dashboardApi = authApi.injectEndpoints({
           status?: string;
           includeArchived?: boolean;
           search?: string;
+          sortBy?: string;
+          sortOrder?: string;
         }
       | void
     >({
@@ -587,7 +604,10 @@ export const dashboardApi = authApi.injectEndpoints({
           ? "&includeArchived=true"
           : "";
         const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
-        return `/student-profiles?page=${page}&limit=${limit}${statusQuery}${archivedQuery}${searchQuery}`;
+        const sortQuery = params?.sortBy
+          ? `&sortBy=${encodeURIComponent(params.sortBy)}&sortOrder=${params.sortOrder ?? "asc"}`
+          : "";
+        return `/student-profiles?page=${page}&limit=${limit}${statusQuery}${archivedQuery}${searchQuery}${sortQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -697,14 +717,24 @@ export const dashboardApi = authApi.injectEndpoints({
 
     getTeacherProfiles: builder.query<
       { items: TeacherProfile[]; total: number },
-      { page?: number; limit?: number; status?: string; search?: string } | void
+      {
+        page?: number;
+        limit?: number;
+        status?: string;
+        search?: string;
+        sortBy?: string;
+        sortOrder?: string;
+      } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 10;
         const statusQuery = params?.status ? `&status=${params.status}` : "";
         const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
-        return `/teacher-profiles?page=${page}&limit=${limit}${statusQuery}${searchQuery}`;
+        const sortQuery = params?.sortBy
+          ? `&sortBy=${encodeURIComponent(params.sortBy)}&sortOrder=${params.sortOrder ?? "asc"}`
+          : "";
+        return `/teacher-profiles?page=${page}&limit=${limit}${statusQuery}${searchQuery}${sortQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],

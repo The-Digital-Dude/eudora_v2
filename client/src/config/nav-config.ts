@@ -1,17 +1,14 @@
 import {
-  AlertTriangle,
   BookOpen,
   CalendarCheck,
   CalendarRange,
   ClipboardCheck,
   ClipboardList,
-  CreditCard,
   GraduationCap,
   HeartHandshake,
   Layers,
   LayoutDashboard,
   Library,
-  ListChecks,
   type LucideIcon,
   MessageSquare,
   NotebookPen,
@@ -198,32 +195,15 @@ export const navGroups: NavGroup[] = [
         ],
       },
       {
-        title: "Student Insights",
-        icon: ListChecks,
-        children: [
-          {
-            title: "Learning Gaps",
-            url: "/learning-gaps",
-            icon: AlertTriangle,
-            requirement: { type: "permission", action: "read", subject: "LearningGap" },
-          },
-          {
-            title: "Next Actions",
-            url: "/next-actions",
-            icon: ListChecks,
-            requirement: { type: "permission", action: "read", subject: "NextAction" },
-          },
-          {
-            title: "Placement",
-            url: "/placement",
-            icon: Layers,
-            requirement: { type: "permission", action: "read", subject: "Placement" },
-            // Descoped alongside Diagnostics: Placement's recommendation-generation path also throws
-            // NotImplementedException, and it depends on Diagnostics to ever feed it new records,
-            // so on its own it could only ever show stale seed data.
-            hidden: true,
-          },
-        ],
+        // Learning Gaps and Next Actions (Student Insights' other two children) were removed
+        // entirely — nothing ever created a LearningGap row, the detection engine was never built.
+        // Placement is kept as a route (still reachable directly) but stays out of the nav: it's
+        // hidden for the same "depends on Diagnostics, which is also unbuilt" reason as before.
+        title: "Placement",
+        url: "/placement",
+        icon: Layers,
+        requirement: { type: "permission", action: "read", subject: "Placement" },
+        hidden: true,
       },
     ],
   },

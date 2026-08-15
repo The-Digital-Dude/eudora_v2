@@ -43,7 +43,6 @@ model User {
   guardianThreads         MessageThread[]        @relation("GuardianThreads")
   teacherThreads          MessageThread[]        @relation("TeacherThreads")
   sentMessages            Message[]              @relation("SentMessages")
-  ownedNextActions        NextAction[]           @relation("OwnedNextActions")
   hostedLiveClassSessions LiveClassSession[]     @relation("HostedLiveClassSessions")
   assignedCourses         StudentCourseAssignment[] @relation("AssignedCourses")
 
@@ -351,8 +350,6 @@ model StudentProfile {
   gradeBookEntries         GradeBookEntry[]
   messageThreads           MessageThread[]
   masteryStatusChanges     MasteryStatusChange[]
-  learningGaps             LearningGap[]
-  nextActions              NextAction[]
   placementRecommendations PlacementRecommendation[]
   moduleItemProgress       ModuleItemProgress[]
   discussionPosts          DiscussionPost[]
@@ -888,8 +885,6 @@ model Competency {
   evidences            AssessmentEvidence[]
   masteries            CompetencyMastery[]
   masteryStatusChanges MasteryStatusChange[]
-  learningGaps         LearningGap[]
-  nextActions          NextAction[]
 
   @@map("competencies")
 }
@@ -1035,79 +1030,6 @@ model MasteryStatusChange {
 
   @@index([studentProfileId, competencyId, createdAt])
   @@map("mastery_status_changes")
-}
-
-enum GapSeverity {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-enum GapStatus {
-  OPEN
-  ADDRESSING
-  RESOLVED
-}
-
-model LearningGap {
-  id               String      @id @default(uuid())
-  studentProfileId String
-  competencyId     String
-  severity         GapSeverity @default(MEDIUM)
-  rootCause        String
-  status           GapStatus   @default(OPEN)
-  detectedFrom     String // "ASSESSMENT" | "LESSON" | "RUBRIC" | "OBSERVATION"
-  evidenceCount    Int         @default(1)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  resolvedAt       DateTime?
-
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  competency     Competency     @relation(fields: [competencyId], references: [id], onDelete: Cascade)
-  nextActions    NextAction[]
-
-  @@index([studentProfileId, status])
-  @@index([competencyId, status])
-  @@map("learning_gaps")
-}
-
-enum NextActionType {
-  REVIEW
-  REASSESS
-  INTERVENTION
-  PRACTICE
-}
-
-enum NextActionStatus {
-  PENDING
-  IN_PROGRESS
-  DONE
-  CANCELLED
-}
-
-model NextAction {
-  id               String           @id @default(uuid())
-  gapId            String?
-  studentProfileId String
-  competencyId     String
-  actionType       NextActionType
-  reason           String
-  ownerUserId      String
-  dueDate          DateTime
-  reassessmentPlan String?
-  status           NextActionStatus @default(PENDING)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  completedAt      DateTime?
-
-  gap            LearningGap?   @relation(fields: [gapId], references: [id], onDelete: SetNull)
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  competency     Competency     @relation(fields: [competencyId], references: [id], onDelete: Cascade)
-  owner          User           @relation("OwnedNextActions", fields: [ownerUserId], references: [id])
-
-  @@index([ownerUserId, status])
-  @@index([studentProfileId, status])
-  @@map("next_actions")
 }
 
 model AuthSession {

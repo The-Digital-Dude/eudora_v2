@@ -13,12 +13,10 @@ import { Input } from "@/components/ui/input";
 import { type LessonSummary, useGetConceptsQuery, useGetLessonsQuery } from "@/features/clio/clioApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
-const PAGE_SIZE = 20;
-
 export default function LessonAuthoringPage() {
   const router = useRouter();
   const { values, setValue, setValues } = useListQueryState(
-    { search: "", concept: "all", page: 1, sortBy: "", sortOrder: "asc" },
+    { search: "", concept: "all", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -30,7 +28,7 @@ export default function LessonAuthoringPage() {
     conceptId: conceptFilter === "all" ? undefined : conceptFilter,
     search: values.search || undefined,
     page: values.page,
-    limit: PAGE_SIZE,
+    limit: values.pageSize,
     sortBy: values.sortBy || undefined,
     sortOrder: values.sortOrder,
   });
@@ -182,9 +180,10 @@ export default function LessonAuthoringPage() {
           data={lessons}
           isLoading={lessonsLoading}
           page={values.page}
-          pageSize={PAGE_SIZE}
+          pageSize={values.pageSize}
           total={total}
           onPageChange={(next) => setValue("page", next)}
+          onPageSizeChange={(size) => setValue("pageSize", size)}
           paginationLabel="lesson"
           sortBy={values.sortBy}
           sortOrder={values.sortOrder as "asc" | "desc"}

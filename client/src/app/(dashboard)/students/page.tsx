@@ -17,12 +17,10 @@ import {
 } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
-const PAGE_SIZE = 20;
-
 export default function StudentsPage() {
   const router = useRouter();
   const { values, setValue, setValues } = useListQueryState(
-    { search: "", status: "all", archived: "no", page: 1, sortBy: "", sortOrder: "asc" },
+    { search: "", status: "all", archived: "no", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -33,7 +31,7 @@ export default function StudentsPage() {
   // Queries & Mutations
   const { data: studentsData, isLoading: studentsLoading } = useGetStudentProfilesQuery({
     page: values.page,
-    limit: PAGE_SIZE,
+    limit: values.pageSize,
     includeArchived: showArchived,
     search: values.search || undefined,
     status: values.status === "all" ? undefined : values.status,
@@ -329,9 +327,10 @@ export default function StudentsPage() {
           data={filteredStudents}
           isLoading={studentsLoading}
           page={values.page}
-          pageSize={PAGE_SIZE}
+          pageSize={values.pageSize}
           total={totalMatching}
           onPageChange={(next) => setValue("page", next)}
+          onPageSizeChange={(size) => setValue("pageSize", size)}
           paginationLabel="student"
           sortBy={values.sortBy}
           sortOrder={values.sortOrder as "asc" | "desc"}

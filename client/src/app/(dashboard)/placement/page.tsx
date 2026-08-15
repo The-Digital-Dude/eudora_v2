@@ -25,8 +25,6 @@ import {
 } from "@/features/academic/placementRecommendationsApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
-const PAGE_SIZE = 20;
-
 const STATUS_VARIANT: Record<PlacementRecStatus, "outline" | "secondary" | "default"> = {
   SUGGESTED: "outline",
   ACCEPTED: "default",
@@ -35,7 +33,7 @@ const STATUS_VARIANT: Record<PlacementRecStatus, "outline" | "secondary" | "defa
 
 export default function PlacementPage() {
   const { values, setValue, setValues } = useListQueryState(
-    { search: "", status: "SUGGESTED", page: 1, sortBy: "", sortOrder: "asc" },
+    { search: "", status: "SUGGESTED", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -46,7 +44,7 @@ export default function PlacementPage() {
     status: values.status === "ALL" ? undefined : (values.status as PlacementRecStatus),
     search: values.search || undefined,
     page: values.page,
-    limit: PAGE_SIZE,
+    limit: values.pageSize,
     sortBy: values.sortBy || undefined,
     sortOrder: values.sortOrder,
   });
@@ -207,9 +205,10 @@ export default function PlacementPage() {
             data={recommendations}
             isLoading={isLoading}
             page={values.page}
-            pageSize={PAGE_SIZE}
+            pageSize={values.pageSize}
             total={total}
             onPageChange={(next) => setValue("page", next)}
+            onPageSizeChange={(size) => setValue("pageSize", size)}
             paginationLabel="recommendation"
             sortBy={values.sortBy}
             sortOrder={values.sortOrder as "asc" | "desc"}

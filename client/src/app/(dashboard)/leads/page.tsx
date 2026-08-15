@@ -12,12 +12,10 @@ import { Input } from "@/components/ui/input";
 import { type Lead, useDeleteLeadMutation, useGetLeadsQuery } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
-const PAGE_SIZE = 20;
-
 export default function LeadsPage() {
   const router = useRouter();
   const { values, setValue, setValues } = useListQueryState(
-    { search: "", page: 1, sortBy: "", sortOrder: "asc" },
+    { search: "", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -27,7 +25,7 @@ export default function LeadsPage() {
   // RTK Queries & Mutations
   const { data: leadsData, isLoading } = useGetLeadsQuery({
     page: values.page,
-    limit: PAGE_SIZE,
+    limit: values.pageSize,
     search: values.search || undefined,
     sortBy: values.sortBy || undefined,
     sortOrder: values.sortOrder,
@@ -218,9 +216,10 @@ export default function LeadsPage() {
           data={filteredLeads}
           isLoading={isLoading}
           page={values.page}
-          pageSize={PAGE_SIZE}
+          pageSize={values.pageSize}
           total={totalMatching}
           onPageChange={(next) => setValue("page", next)}
+          onPageSizeChange={(size) => setValue("pageSize", size)}
           paginationLabel="lead"
           sortBy={values.sortBy}
           sortOrder={values.sortOrder as "asc" | "desc"}

@@ -31,6 +31,7 @@ interface DataTableProps<TData> {
   pageSize: number;
   total: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
   /** Singular noun passed through to ListPagination, e.g. "lead" renders "of 12 leads". */
   paginationLabel?: string;
 
@@ -65,6 +66,7 @@ export function DataTable<TData>({
   pageSize,
   total,
   onPageChange,
+  onPageSizeChange,
   paginationLabel,
   sortBy,
   sortOrder,
@@ -155,7 +157,9 @@ export function DataTable<TData>({
         pageSize={pageSize}
         total={total}
         onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
         label={paginationLabel}
+        bordered={false}
       />
     </div>
   );

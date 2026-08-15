@@ -45,13 +45,11 @@ import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-quer
 
 import { CourseClassEnrollmentDialog } from "./components/course-class-enrollment-dialog";
 
-const PAGE_SIZE = 20;
-
 export default function ClassesPage() {
   const router = useRouter();
   // Class-section list state, held in the URL so a subject-filtered roster view can be shared.
   const { values, setValue, setValues } = useListQueryState(
-    { search: "", subject: "all", page: 1, sortBy: "", sortOrder: "asc" },
+    { search: "", subject: "all", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -61,7 +59,7 @@ export default function ClassesPage() {
   const { data: subjects } = useGetLearningSubjectsQuery();
   const { data: sectionsData, isLoading: sectionsLoading } = useGetClassSectionsQuery({
     page: values.page,
-    limit: PAGE_SIZE,
+    limit: values.pageSize,
     search: values.search || undefined,
     learningSubjectId: values.subject === "all" ? undefined : values.subject,
     sortBy: values.sortBy || undefined,
@@ -294,9 +292,10 @@ export default function ClassesPage() {
           data={sectionList}
           isLoading={sectionsLoading}
           page={values.page}
-          pageSize={PAGE_SIZE}
+          pageSize={values.pageSize}
           total={sectionsData?.total ?? 0}
           onPageChange={(next) => setValue("page", next)}
+          onPageSizeChange={(size) => setValue("pageSize", size)}
           paginationLabel="section"
           sortBy={values.sortBy}
           sortOrder={values.sortOrder as "asc" | "desc"}

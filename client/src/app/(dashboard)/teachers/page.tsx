@@ -16,12 +16,10 @@ import {
 } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
-const PAGE_SIZE = 20;
-
 export default function TeachersPage() {
   const router = useRouter();
   const { values, setValue, setValues } = useListQueryState(
-    { search: "", status: "all", page: 1, sortBy: "", sortOrder: "asc" },
+    { search: "", status: "all", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -34,7 +32,7 @@ export default function TeachersPage() {
   // invisible, with no pagination control to hint that anything had been left out.
   const { data: teachersData, isLoading: teachersLoading } = useGetTeacherProfilesQuery({
     page: values.page,
-    limit: PAGE_SIZE,
+    limit: values.pageSize,
     search: values.search || undefined,
     status: values.status === "all" ? undefined : values.status,
     sortBy: values.sortBy || undefined,
@@ -291,9 +289,10 @@ export default function TeachersPage() {
           data={filteredTeachers}
           isLoading={teachersLoading}
           page={values.page}
-          pageSize={PAGE_SIZE}
+          pageSize={values.pageSize}
           total={totalMatching}
           onPageChange={(next) => setValue("page", next)}
+          onPageSizeChange={(size) => setValue("pageSize", size)}
           paginationLabel="teacher"
           sortBy={values.sortBy}
           sortOrder={values.sortOrder as "asc" | "desc"}

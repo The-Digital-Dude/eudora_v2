@@ -11,8 +11,6 @@ import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-quer
 
 import { QuestionFilterBar } from "./components/question-filter-bar";
 
-const PAGE_SIZE = 15;
-
 const difficultyColors: Record<string, string> = {
   easy: "bg-success/10 text-success border-success/20",
   medium: "bg-warning/10 text-warning border-warning/20/30",
@@ -38,6 +36,7 @@ export default function QuestionsPage() {
       difficulty: "",
       status: "",
       page: 1,
+      pageSize: 10,
       sortBy: "",
       sortOrder: "asc",
     },
@@ -55,7 +54,7 @@ export default function QuestionsPage() {
     difficulty: values.difficulty || undefined,
     status: values.status || undefined,
     page: values.page,
-    pageSize: PAGE_SIZE,
+    pageSize: values.pageSize,
     sortBy: values.sortBy || undefined,
     sortOrder: values.sortOrder,
   });
@@ -245,9 +244,10 @@ export default function QuestionsPage() {
         data={questions}
         isLoading={isLoading}
         page={values.page}
-        pageSize={PAGE_SIZE}
+        pageSize={values.pageSize}
         total={total}
         onPageChange={(next) => setValue("page", next)}
+        onPageSizeChange={(size) => setValue("pageSize", size)}
         paginationLabel="question"
         sortBy={values.sortBy}
         sortOrder={values.sortOrder as "asc" | "desc"}

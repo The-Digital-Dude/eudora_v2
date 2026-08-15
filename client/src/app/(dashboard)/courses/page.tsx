@@ -27,8 +27,6 @@ import {
 } from "@/features/catalog/catalogApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
-const PAGE_SIZE = 20;
-
 const statusColors: Record<string, string> = {
   PUBLISHED: "bg-success/10 text-success",
   DRAFT: "bg-muted text-muted-foreground",
@@ -39,7 +37,7 @@ export default function CoursesPage() {
   const router = useRouter();
   // Subject, search, sort and page all live in the URL so a filtered catalogue view can be shared.
   const { values, setValue, setValues } = useListQueryState(
-    { search: "", subjectId: "all", page: 1, sortBy: "", sortOrder: "asc" },
+    { search: "", subjectId: "all", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -58,7 +56,7 @@ export default function CoursesPage() {
     subjectId: subjectId === "all" ? undefined : subjectId,
     search: values.search || undefined,
     page: values.page,
-    limit: PAGE_SIZE,
+    limit: values.pageSize,
     sortBy: values.sortBy || undefined,
     sortOrder: values.sortOrder,
   });
@@ -235,9 +233,10 @@ export default function CoursesPage() {
         data={courses}
         isLoading={isLoading}
         page={values.page}
-        pageSize={PAGE_SIZE}
+        pageSize={values.pageSize}
         total={total}
         onPageChange={(next) => setValue("page", next)}
+        onPageSizeChange={(size) => setValue("pageSize", size)}
         paginationLabel="course"
         sortBy={values.sortBy}
         sortOrder={values.sortOrder as "asc" | "desc"}

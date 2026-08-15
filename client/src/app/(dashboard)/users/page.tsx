@@ -34,11 +34,9 @@ import {
 } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
-const PAGE_SIZE = 20;
-
 export default function UsersPage() {
   const { values, setValue, setValues } = useListQueryState(
-    { search: "", page: 1, sortBy: "", sortOrder: "asc" },
+    { search: "", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -48,7 +46,7 @@ export default function UsersPage() {
   // Queries & Mutations
   const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
     page: values.page,
-    limit: PAGE_SIZE,
+    limit: values.pageSize,
     search: values.search || undefined,
     sortBy: values.sortBy || undefined,
     sortOrder: values.sortOrder,
@@ -258,9 +256,10 @@ export default function UsersPage() {
           data={filteredUsers}
           isLoading={usersLoading}
           page={values.page}
-          pageSize={PAGE_SIZE}
+          pageSize={values.pageSize}
           total={totalMatching}
           onPageChange={(next) => setValue("page", next)}
+          onPageSizeChange={(size) => setValue("pageSize", size)}
           paginationLabel="user"
           sortBy={values.sortBy}
           sortOrder={values.sortOrder as "asc" | "desc"}

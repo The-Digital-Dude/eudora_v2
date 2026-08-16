@@ -18,15 +18,15 @@ describe('AttendanceService', () => {
     studentClassPlacement: {
       findMany: jest.fn(),
     },
-    courseClass: {
+    batch: {
       findUnique: jest.fn(),
     },
-    courseClassSession: {
+    batchSession: {
       create: jest.fn(),
       findUnique: jest.fn(),
       findMany: jest.fn(),
     },
-    courseClassAttendance: {
+    batchAttendance: {
       findMany: jest.fn(),
       upsert: jest.fn(),
     },

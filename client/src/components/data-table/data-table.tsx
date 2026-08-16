@@ -2,15 +2,16 @@
 
 import {
   type ColumnDef,
-  type SortingState,
-  type Updater,
   flexRender,
   getCoreRowModel,
+  type SortingState,
+  type Updater,
   useReactTable,
 } from "@tanstack/react-table";
 import * as React from "react";
 
 import { ListPagination } from "@/components/list-pagination";
+import { DataState } from "@/components/ui/data-state";
 import {
   Table,
   TableBody,
@@ -19,7 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DataState } from "@/components/ui/data-state";
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, any>[];

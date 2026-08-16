@@ -225,7 +225,7 @@ export class CatalogService {
 
   // ─── Course teaching staff ───────────────────────────────────────────────
   // A plain many-to-many. "One course, many teachers" never needed a cohort
-  // system — `CourseClass` is a cohort and exists for live delivery instead.
+  // system — `Batch` is a cohort and exists for live delivery instead.
 
   async listCourseTeachers(courseId: string) {
     return this.prisma.courseTeacher.findMany({

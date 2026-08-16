@@ -126,7 +126,7 @@ export class StudentService {
       include: {
         user: { select: { email: true, firstName: true, lastName: true } },
         placements: { include: { classSection: true, academicYear: true } },
-        enrollments: { include: { courseClass: true } },
+        enrollments: { include: { batch: true } },
         guardians: { include: { guardianProfile: true } },
         families: { include: { family: true } },
       },
@@ -362,26 +362,26 @@ export class StudentService {
   // --- Student Course Enrollment Operations ---
 
   async createEnrollment(dto: CreateEnrollmentDto) {
-    const [student, courseClass] = await Promise.all([
+    const [student, batch] = await Promise.all([
       this.prisma.studentProfile.findUnique({
         where: { id: dto.studentProfileId },
       }),
-      this.prisma.courseClass.findUnique({ where: { id: dto.courseClassId } }),
+      this.prisma.batch.findUnique({ where: { id: dto.batchId } }),
     ]);
 
     if (!student) {
       throw new NotFoundException('Student profile not found');
     }
-    if (!courseClass) {
+    if (!batch) {
       throw new NotFoundException('Course class not found');
     }
 
     const existingEnrollment =
       await this.prisma.studentCourseEnrollment.findUnique({
         where: {
-          studentProfileId_courseClassId: {
+          studentProfileId_batchId: {
             studentProfileId: dto.studentProfileId,
-            courseClassId: dto.courseClassId,
+            batchId: dto.batchId,
           },
         },
       });
@@ -394,7 +394,7 @@ export class StudentService {
     return this.prisma.studentCourseEnrollment.create({
       data: {
         studentProfileId: dto.studentProfileId,
-        courseClassId: dto.courseClassId,
+        batchId: dto.batchId,
         enrollmentDate: dto.enrollmentDate
           ? new Date(dto.enrollmentDate)
           : undefined,
@@ -407,12 +407,12 @@ export class StudentService {
     page = 1,
     limit = 10,
     studentProfileId?: string,
-    courseClassId?: string,
+    batchId?: string,
   ) {
     const skip = (page - 1) * limit;
     const where: any = {};
     if (studentProfileId) where.studentProfileId = studentProfileId;
-    if (courseClassId) where.courseClassId = courseClassId;
+    if (batchId) where.batchId = batchId;
 
     const [enrollments, total] = await Promise.all([
       this.prisma.studentCourseEnrollment.findMany({
@@ -421,7 +421,7 @@ export class StudentService {
         take: limit,
         include: {
           studentProfile: true,
-          courseClass: true,
+          batch: true,
         },
         orderBy: { enrollmentDate: 'desc' },
       }),
@@ -444,7 +444,7 @@ export class StudentService {
       where: { id },
       include: {
         studentProfile: true,
-        courseClass: true,
+        batch: true,
       },
     });
     if (!enrollment) {

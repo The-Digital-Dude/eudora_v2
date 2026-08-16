@@ -79,7 +79,7 @@ export interface Lead {
   updatedAt: string;
 }
 
-export interface CourseClass {
+export interface Batch {
   id: string;
   termId: string;
   name: string;
@@ -121,7 +121,7 @@ export interface ClassSection {
 export interface MakeupRequest {
   id: string;
   studentProfileId: string;
-  courseClassId: string;
+  batchId: string;
   originalDate: string;
   reason?: string;
   status: string;
@@ -132,7 +132,7 @@ export interface MakeupRequest {
     id: string;
     fullName: string;
   };
-  courseClass?: {
+  batch?: {
     id: string;
     name: string;
   };
@@ -205,8 +205,8 @@ export interface StudentProfile {
   }[];
   enrollments?: {
     id: string;
-    courseClassId: string;
-    courseClass?: {
+    batchId: string;
+    batch?: {
       id: string;
       name: string;
       code: string;
@@ -226,7 +226,7 @@ export interface StudentPlacement {
 export interface StudentEnrollment {
   id: string;
   studentProfileId: string;
-  courseClassId: string;
+  batchId: string;
   enrollmentDate: string;
   status: "ENROLLED" | "COMPLETED" | "DROPPED";
 }
@@ -464,31 +464,31 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["Leads"],
     } as any),
 
-    getCourseClasses: builder.query<
-      { items: CourseClass[]; total: number },
+    getBatches: builder.query<
+      { items: Batch[]; total: number },
       { page?: number; limit?: number } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
-        return `/course-classes?page=${page}&limit=${limit}`;
+        return `/batches?page=${page}&limit=${limit}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
         total: response.meta?.total ?? response.data?.length ?? 0,
       }),
-      providesTags: ["CourseClasses"],
+      providesTags: ["Batches"],
     } as any),
-    updateCourseClass: builder.mutation<
-      CourseClass,
-      { id: string; body: Partial<Pick<CourseClass, "description" | "capacity" | "isOpenForEnrollment">> }
+    updateBatch: builder.mutation<
+      Batch,
+      { id: string; body: Partial<Pick<Batch, "description" | "capacity" | "isOpenForEnrollment">> }
     >({
       query: ({ id, body }: any) => ({
-        url: `/course-classes/${id}`,
+        url: `/batches/${id}`,
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["CourseClasses"],
+      invalidatesTags: ["Batches"],
     } as any),
 
     getClassSections: builder.query<
@@ -739,7 +739,7 @@ export const dashboardApi = authApi.injectEndpoints({
 
     createStudentEnrollment: builder.mutation<
       StudentEnrollment,
-      { studentProfileId: string; courseClassId: string }
+      { studentProfileId: string; batchId: string }
     >({
       query: (body: any) => ({
         url: "/student-enrollments",
@@ -913,8 +913,8 @@ export const {
   useCreateLeadMutation,
   useUpdateLeadMutation,
   useDeleteLeadMutation,
-  useGetCourseClassesQuery,
-  useUpdateCourseClassMutation,
+  useGetBatchesQuery,
+  useUpdateBatchMutation,
   useGetClassSectionsQuery,
   useGetClassSectionQuery,
   useCreateClassSectionMutation,

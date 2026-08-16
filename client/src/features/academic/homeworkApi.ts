@@ -2,7 +2,7 @@ import { authApi } from "../auth/authApi";
 
 export interface Homework {
   id: string;
-  courseClassId: string;
+  batchId: string;
   title: string;
   description?: string | null;
   dueDate: string;
@@ -11,7 +11,7 @@ export interface Homework {
   recordedById?: string | null;
   createdAt: string;
   updatedAt: string;
-  courseClass?: {
+  batch?: {
     id: string;
     name: string;
     code: string;
@@ -40,7 +40,7 @@ export interface HomeworkSubmission {
 }
 
 export interface CreateHomeworkPayload {
-  courseClassId: string;
+  batchId: string;
   title: string;
   description?: string;
   dueDate: string;
@@ -73,9 +73,9 @@ export const homeworkApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
     getHomeworkForClass: builder.query<Homework[], string>({
-      query: (courseClassId) => `/homework/course-class/${courseClassId}`,
-      providesTags: (result, error, courseClassId) => [
-        { type: "Homework", id: `LIST-${courseClassId}` },
+      query: (batchId) => `/homework/batch/${batchId}`,
+      providesTags: (result, error, batchId) => [
+        { type: "Homework", id: `LIST-${batchId}` },
       ],
     }),
 
@@ -111,8 +111,8 @@ export const homeworkApi = authApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { courseClassId }) => [
-        { type: "Homework", id: `LIST-${courseClassId}` },
+      invalidatesTags: (result, error, { batchId }) => [
+        { type: "Homework", id: `LIST-${batchId}` },
         { type: "Homework", id: "MY-PENDING" },
       ],
     }),
@@ -144,8 +144,8 @@ export const homeworkApi = authApi.injectEndpoints({
       invalidatesTags: [{ type: "Homework" }],
     }),
 
-    getCourseClassById: builder.query<any, string>({
-      query: (id) => `/course-classes/${id}`,
+    getBatchById: builder.query<any, string>({
+      query: (id) => `/batches/${id}`,
     }),
   }),
 });
@@ -160,5 +160,5 @@ export const {
   useUpdateHomeworkMutation,
   useSubmitHomeworkMutation,
   useGradeHomeworkSubmissionMutation,
-  useGetCourseClassByIdQuery,
+  useGetBatchByIdQuery,
 } = homeworkApi;

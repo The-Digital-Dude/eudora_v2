@@ -36,10 +36,10 @@ describe('Academic setup chain (e2e)', () => {
     world = await buildAcademicWorld(ctx, adminToken, tag);
 
     expect(world.programId).toBeTruthy();
-    expect(world.courseClassId).toBeTruthy();
+    expect(world.batchId).toBeTruthy();
 
     const courseRes = await http()
-      .get(`/api/course-classes/${world.courseClassId}`)
+      .get(`/api/course-classes/${world.batchId}`)
       .set(asAdmin())
       .expect(200);
     const course = unwrap<{ id: string; code: string; termId: string }>(

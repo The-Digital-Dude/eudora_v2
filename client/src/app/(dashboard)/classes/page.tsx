@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { type ColumnDef } from "@tanstack/react-table";
 import {
   AlertCircle,
   AlertTriangle,
@@ -18,8 +19,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
-import { type ColumnDef } from "@tanstack/react-table";
-
 import { DataTable, SortableHeader } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,14 +35,14 @@ import { Label } from "@/components/ui/label";
 import { useGetLearningSubjectsQuery } from "@/features/catalog/catalogApi";
 import {
   type ClassSection,
+  useGetBatchesQuery,
   useGetClassSectionsQuery,
-  useGetCourseClassesQuery,
   useGetMakeupRequestsQuery,
   useUpdateMakeupRequestMutation,
 } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
-import { CourseClassEnrollmentDialog } from "./components/course-class-enrollment-dialog";
+import { BatchEnrollmentDialog } from "./components/batch-enrollment-dialog";
 
 export default function ClassesPage() {
   const router = useRouter();
@@ -126,7 +125,7 @@ export default function ClassesPage() {
   ];
 
   // RTK queries and mutations
-  const { data: classesData, isLoading: classesLoading } = useGetCourseClassesQuery();
+  const { data: classesData, isLoading: classesLoading } = useGetBatchesQuery();
   const { data: makeupData, isLoading: makeupLoading } = useGetMakeupRequestsQuery();
   const [updateMakeupRequest, { isLoading: updatingMakeup }] = useUpdateMakeupRequestMutation();
 
@@ -380,8 +379,8 @@ export default function ClassesPage() {
           </div>
         </Card>
 
-        <CourseClassEnrollmentDialog
-          courseClass={enrollmentDialogClass}
+        <BatchEnrollmentDialog
+          batch={enrollmentDialogClass}
           open={!!enrollmentDialogClass}
           onOpenChange={(open) => {
             if (!open) setEnrollmentDialogClass(null);
@@ -412,7 +411,7 @@ export default function ClassesPage() {
                     <p className="mt-0.5 text-[10px] text-muted-foreground">
                       Class:{" "}
                       <span className="font-semibold text-muted-foreground">
-                        {m.courseClass?.name || "N/A"}
+                        {m.batch?.name || "N/A"}
                       </span>
                     </p>
                     <p className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground">

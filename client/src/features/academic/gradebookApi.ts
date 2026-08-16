@@ -3,7 +3,7 @@ import { authApi } from "../auth/authApi";
 export interface GradeBookEntry {
   id: string;
   studentProfileId: string;
-  courseClassId: string | null;
+  batchId: string | null;
   classSectionId: string | null;
   termId: string | null;
   sourceType: "HOMEWORK_SUBMISSION" | "ASSESSMENT_ATTEMPT" | "RUBRIC_ASSESSMENT" | "MANUAL";
@@ -47,7 +47,7 @@ export interface ClassGradebookSummaryItem extends StudentGradeSummary {
 
 export interface CreateManualGradePayload {
   studentProfileId: string;
-  courseClassId?: string;
+  batchId?: string;
   classSectionId?: string;
   termId?: string;
   title: string;
@@ -78,10 +78,10 @@ export const gradebookApi = authApi.injectEndpoints({
   endpoints: (builder) => ({
     getGradebookForClass: builder.query<
       ClassGradebookResponse,
-      { courseClassId: string; termId?: string }
+      { batchId: string; termId?: string }
     >({
-      query: ({ courseClassId, termId }) => ({
-        url: `/gradebook/course-class/${courseClassId}`,
+      query: ({ batchId, termId }) => ({
+        url: `/gradebook/batch/${batchId}`,
         params: termId ? { termId } : {},
       }),
       providesTags: ["Gradebook"],
@@ -122,10 +122,10 @@ export const gradebookApi = authApi.injectEndpoints({
 
     getClassSummary: builder.query<
       ClassGradebookSummaryItem[],
-      { courseClassId: string; termId?: string }
+      { batchId: string; termId?: string }
     >({
-      query: ({ courseClassId, termId }) => ({
-        url: `/gradebook/course-class/${courseClassId}/summary`,
+      query: ({ batchId, termId }) => ({
+        url: `/gradebook/batch/${batchId}/summary`,
         params: termId ? { termId } : {},
       }),
       providesTags: ["Gradebook"],

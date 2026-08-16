@@ -150,7 +150,7 @@ export function StudentHomeworkView() {
                         variant="outline"
                         className="mb-1.5 rounded-lg border-border text-[9px] font-bold uppercase tracking-wider text-muted-foreground"
                       >
-                        {hw.courseClass?.name || "Subject"}
+                        {hw.batch?.name || "Subject"}
                       </Badge>
                       <CardTitle className="text-sm font-black text-foreground">
                         {hw.title}

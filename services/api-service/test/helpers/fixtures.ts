@@ -55,7 +55,7 @@ export interface AcademicWorld {
   academicYearId: string;
   classSectionId: string;
   termId: string;
-  courseClassId: string;
+  batchId: string;
 }
 
 /** Boots the full AppModule the same way main.ts does. */
@@ -235,7 +235,7 @@ export async function buildAcademicWorld(
     .set(auth)
     .send({ termId, name: `E2E Course ${tag}`, code: `E2E-CRS-${tag}` })
     .expect(201);
-  const courseClassId = unwrap<{ id: string }>(courseRes).id;
+  const batchId = unwrap<{ id: string }>(courseRes).id;
 
   return {
     tag,
@@ -243,7 +243,7 @@ export async function buildAcademicWorld(
     academicYearId,
     classSectionId,
     termId,
-    courseClassId,
+    batchId,
   };
 }
 
@@ -309,7 +309,7 @@ export async function cleanupWorld(
       await prisma.dailyAttendance
         .deleteMany({ where: byProfile })
         .catch(() => undefined);
-      await prisma.courseClassAttendance
+      await prisma.batchAttendance
         .deleteMany({ where: byProfile })
         .catch(() => undefined);
       await prisma.competencyMastery

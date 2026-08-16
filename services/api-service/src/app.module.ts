@@ -24,6 +24,7 @@ import { LiveClassesModule } from './live-classes/live-classes.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { CatalogModule } from './catalog/catalog.module';
+import { ClassesModule } from './classes/classes.module';
 import { EntitlementsModule } from './entitlements/entitlements.module';
 import { BillingModule } from './billing/billing.module';
 import { LeadsModule } from './leads/leads.module';
@@ -68,6 +69,7 @@ import { AuditModule } from './common/audit/audit.module';
     AssessmentsModule,
     LessonsModule,
     CatalogModule,
+    ClassesModule,
     EntitlementsModule,
     BillingModule,
     LeadsModule,

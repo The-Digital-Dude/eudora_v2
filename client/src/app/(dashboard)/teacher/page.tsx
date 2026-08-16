@@ -149,7 +149,7 @@ export default function TeacherPage() {
                     >
                       <div>
                         <h4 className="font-extrabold text-xs text-foreground">
-                          {slot.courseClass?.name}
+                          {slot.batch?.name}
                         </h4>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
                           Roster: {slot.classSection?.name}

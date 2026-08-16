@@ -13,30 +13,30 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { CourseClass } from "@/features/dashboard/dashboardApi";
-import { useUpdateCourseClassMutation } from "@/features/dashboard/dashboardApi";
+import type { Batch } from "@/features/dashboard/dashboardApi";
+import { useUpdateBatchMutation } from "@/features/dashboard/dashboardApi";
 
 const inputClass =
   "h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none";
 const labelClass = "text-[10px] font-bold tracking-wider text-muted-foreground uppercase";
 
-interface CourseClassEnrollmentDialogProps {
-  courseClass: CourseClass | null;
+interface BatchEnrollmentDialogProps {
+  batch: Batch | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 /**
- * Staff-only toggle for guardian self-enrollment on one `CourseClass`.
+ * Staff-only toggle for guardian self-enrollment on one `Batch`.
  * `isOpenForEnrollment` defaults false — nothing is guardian-enrollable
  * until set here, so this dialog is the only way that ever changes.
  */
-export function CourseClassEnrollmentDialog({
-  courseClass,
+export function BatchEnrollmentDialog({
+  batch,
   open,
   onOpenChange,
-}: CourseClassEnrollmentDialogProps) {
-  const [updateCourseClass, { isLoading: isSaving }] = useUpdateCourseClassMutation();
+}: BatchEnrollmentDialogProps) {
+  const [updateBatch, { isLoading: isSaving }] = useUpdateBatchMutation();
 
   const [capacity, setCapacity] = React.useState("");
   const [description, setDescription] = React.useState("");
@@ -44,19 +44,19 @@ export function CourseClassEnrollmentDialog({
   const [error, setError] = React.useState("");
 
   React.useEffect(() => {
-    if (!courseClass) return;
-    setCapacity(courseClass.capacity != null ? String(courseClass.capacity) : "");
-    setDescription(courseClass.description ?? "");
-    setIsOpen(courseClass.isOpenForEnrollment);
+    if (!batch) return;
+    setCapacity(batch.capacity != null ? String(batch.capacity) : "");
+    setDescription(batch.description ?? "");
+    setIsOpen(batch.isOpenForEnrollment);
     setError("");
-  }, [courseClass]);
+  }, [batch]);
 
   const handleSave = async () => {
-    if (!courseClass) return;
+    if (!batch) return;
     setError("");
     try {
-      await updateCourseClass({
-        id: courseClass.id,
+      await updateBatch({
+        id: batch.id,
         body: {
           capacity: capacity ? Number(capacity) : null,
           description: description || null,
@@ -75,7 +75,7 @@ export function CourseClassEnrollmentDialog({
         <DialogHeader>
           <DialogTitle>Enrollment settings</DialogTitle>
           <DialogDescription>
-            {courseClass?.name} — control whether guardians can self-enroll their children.
+            {batch?.name} — control whether guardians can self-enroll their children.
           </DialogDescription>
         </DialogHeader>
 

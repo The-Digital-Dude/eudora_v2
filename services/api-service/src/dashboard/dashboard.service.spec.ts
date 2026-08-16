@@ -139,7 +139,7 @@ describe('DashboardService', () => {
       );
 
       const mockSlots = [
-        { id: 'slot-1', courseClassId: 'course-class-1', dayOfWeek: 'MONDAY' },
+        { id: 'slot-1', batchId: 'batch-1', dayOfWeek: 'MONDAY' },
       ];
       mockPrismaService.timetableSlot.findMany.mockResolvedValue(mockSlots);
 
@@ -198,7 +198,7 @@ describe('DashboardService', () => {
         id: 'student-1',
         userId: 'user-1',
         placements: [{ classSectionId: 'section-1' }],
-        enrollments: [{ courseClassId: 'course-class-1' }],
+        enrollments: [{ batchId: 'batch-1' }],
       };
 
       mockPrismaService.studentProfile.findUnique.mockResolvedValue(
@@ -206,7 +206,7 @@ describe('DashboardService', () => {
       );
 
       const mockSlots = [
-        { id: 'slot-1', courseClassId: 'course-class-1', dayOfWeek: 'MONDAY' },
+        { id: 'slot-1', batchId: 'batch-1', dayOfWeek: 'MONDAY' },
       ];
       mockPrismaService.timetableSlot.findMany.mockResolvedValue(mockSlots);
 
@@ -215,7 +215,7 @@ describe('DashboardService', () => {
           id: 'hw-1',
           title: 'Math Worksheet',
           dueDate: new Date(),
-          courseClass: { name: 'Algebra 1' },
+          batch: { name: 'Algebra 1' },
         },
       ];
       mockPrismaService.homework.findMany.mockResolvedValue(mockHomework);
@@ -278,7 +278,7 @@ describe('DashboardService', () => {
               id: 'child-1',
               fullName: 'John Doe',
               placements: [{ classSectionId: 'section-1' }],
-              enrollments: [{ courseClassId: 'course-class-1' }],
+              enrollments: [{ batchId: 'batch-1' }],
             },
           },
         ],
@@ -289,7 +289,7 @@ describe('DashboardService', () => {
       );
 
       const mockSlots = [
-        { id: 'slot-1', courseClassId: 'course-class-1', dayOfWeek: 'MONDAY' },
+        { id: 'slot-1', batchId: 'batch-1', dayOfWeek: 'MONDAY' },
       ];
       mockPrismaService.timetableSlot.findMany.mockResolvedValue(mockSlots);
 

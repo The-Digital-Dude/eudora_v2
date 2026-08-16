@@ -37,7 +37,7 @@ describe('Homework flow: assign -> submit -> grade -> gradebook (e2e)', () => {
     await http()
       .post('/api/student-enrollments')
       .set(asAdmin())
-      .send({ studentProfileId, courseClassId: world.courseClassId })
+      .send({ studentProfileId, batchId: world.batchId })
       .expect(201);
   });
 
@@ -56,7 +56,7 @@ describe('Homework flow: assign -> submit -> grade -> gradebook (e2e)', () => {
       .post('/api/homework')
       .set(asAdmin())
       .send({
-        courseClassId: world.courseClassId,
+        batchId: world.batchId,
         title: `E2E Homework ${tag}`,
         description: 'Solve the practice set',
         dueDate: '2026-12-31T23:59:59.000Z',
@@ -69,7 +69,7 @@ describe('Homework flow: assign -> submit -> grade -> gradebook (e2e)', () => {
 
   it('lists the homework for the course class', async () => {
     const res = await http()
-      .get(`/api/homework/course-class/${world.courseClassId}`)
+      .get(`/api/homework/course-class/${world.batchId}`)
       .set(asAdmin())
       .expect(200);
     const payload = unwrap<any>(res);
@@ -137,7 +137,7 @@ describe('Homework flow: assign -> submit -> grade -> gradebook (e2e)', () => {
       .post('/api/homework')
       .set(asStudent())
       .send({
-        courseClassId: world.courseClassId,
+        batchId: world.batchId,
         title: `E2E Illegal ${tag}`,
         dueDate: '2026-12-31T23:59:59.000Z',
         maxPoints: 10,

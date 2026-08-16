@@ -168,8 +168,8 @@ function EntitlementRow({ entitlement }: { entitlement: OwnedEntitlement }) {
         <div className="min-w-0">
           <p className="text-xs font-bold text-foreground">{title}</p>
           <p className="mt-0.5 text-[10px] text-muted-foreground">
-            {entitlement.courseClass
-              ? `Live batch · ${entitlement.courseClass.name}`
+            {entitlement.batch
+              ? `Live batch · ${entitlement.batch.name}`
               : entitlement.accessExpiresAt
                 ? `Access until ${format(new Date(entitlement.accessExpiresAt), "d MMM yyyy")}`
                 : "Lifetime access"}
@@ -218,7 +218,7 @@ function EntitlementRow({ entitlement }: { entitlement: OwnedEntitlement }) {
           A payment didn&apos;t go through. Update your card to restore access.
         </p>
       )}
-      {isExpired && entitlement.courseClass && (
+      {isExpired && entitlement.batch && (
         <p className="mt-3 text-[10px] text-muted-foreground">
           This live batch has finished.
         </p>

@@ -31,7 +31,7 @@ export const SOFT_DELETE_MODELS: ReadonlySet<string> = new Set([
   'AcademicYear',
   'ClassSection',
   'Term',
-  'CourseClass',
+  'Batch',
   'StudentProfile',
   'GuardianProfile',
   'Family',

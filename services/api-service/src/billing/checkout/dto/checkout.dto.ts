@@ -28,7 +28,7 @@ export class CreateCheckoutSessionDto {
   /** Required when the course is delivered LIVE — a seat in a dated cohort. */
   @IsOptional()
   @IsUUID()
-  courseClassId?: string;
+  batchId?: string;
 
   /**
    * Relative paths only — validated in the controller. Accepting an absolute

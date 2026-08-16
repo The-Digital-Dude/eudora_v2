@@ -13,7 +13,7 @@ export class CreateMakeupRequestDto {
 
   @IsUUID()
   @IsNotEmpty()
-  courseClassId: string;
+  batchId: string;
 
   @IsDateString()
   @IsNotEmpty()

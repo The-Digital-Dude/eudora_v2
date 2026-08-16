@@ -52,6 +52,31 @@ export interface LookupItem {
   status: string;
 }
 
+export type CatalogStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+export interface ClassItem {
+  id: string;
+  code: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  sortOrder: number;
+  status: CatalogStatus;
+}
+
+export interface ClassListResponse {
+  items: ClassItem[];
+  total: number;
+}
+
+export interface CreateClassPayload {
+  code: string;
+  name: string;
+  description?: string;
+  sortOrder?: number;
+  status?: CatalogStatus;
+}
+
 export interface ListLookupResponse {
   items: LookupItem[];
   total: number;
@@ -121,8 +146,36 @@ export const questionsApi = authApi.injectEndpoints({
         body,
       }),
     }),
-    getClasses: builder.query<ListLookupResponse, void>({
-      query: () => "/assessments/classes?pageSize=100",
+    /**
+     * The `Class` taxonomy master — grade levels, the top of
+     * Class -> Program -> Course. Still served from `/assessments/classes`
+     * because it grew out of the old `Level` lookup; moving it to its own
+     * route is queued with the wider Class/ClassSection/Batch renaming.
+     */
+    getClasses: builder.query<ClassListResponse, void>({
+      query: () => "/classes?pageSize=100",
+      providesTags: ["Classes"],
+    }),
+
+    createClass: builder.mutation<ClassItem, CreateClassPayload>({
+      query: (body) => ({
+        url: "/classes",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Classes"],
+    }),
+
+    updateClass: builder.mutation<
+      ClassItem,
+      { id: string } & Partial<Omit<CreateClassPayload, "code">>
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/classes/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Classes"],
     }),
     getSubjects: builder.query<ListLookupResponse, void>({
       query: () => "/subjects?pageSize=100",
@@ -138,5 +191,7 @@ export const {
   useArchiveQuestionMutation,
   usePreviewWidgetInstanceMutation,
   useGetClassesQuery,
+  useCreateClassMutation,
+  useUpdateClassMutation,
   useGetSubjectsQuery,
 } = questionsApi;

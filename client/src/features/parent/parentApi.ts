@@ -89,7 +89,7 @@ export interface CourseAssignment {
   };
 }
 
-/** A term-bound CourseClass staff has opted into guardian self-enrollment. */
+/** A term-bound Batch staff has opted into guardian self-enrollment. */
 export interface AvailableClass {
   id: string;
   name: string;
@@ -105,10 +105,10 @@ export interface AvailableClass {
 export interface ClassEnrollment {
   id: string;
   studentProfileId: string;
-  courseClassId: string;
+  batchId: string;
   enrollmentDate: string;
   status: "ENROLLED" | "COMPLETED" | "DROPPED";
-  courseClass: {
+  batch: {
     id: string;
     name: string;
     code: string;
@@ -205,11 +205,11 @@ export const parentApi = authApi.injectEndpoints({
       query: (studentProfileId) => `/parent/children/${studentProfileId}/class-enrollments`,
       providesTags: (result, error, id) => [{ type: "ParentPortal", id: `CLASS-ENROLLMENTS-${id}` }],
     }),
-    enrollInClass: builder.mutation<ClassEnrollment, { studentProfileId: string; courseClassId: string }>({
-      query: ({ studentProfileId, courseClassId }) => ({
+    enrollInClass: builder.mutation<ClassEnrollment, { studentProfileId: string; batchId: string }>({
+      query: ({ studentProfileId, batchId }) => ({
         url: `/parent/children/${studentProfileId}/class-enrollments`,
         method: "POST",
-        body: { courseClassId },
+        body: { batchId },
       }),
       invalidatesTags: (result, error, { studentProfileId }) => [
         { type: "ParentPortal", id: `CLASS-ENROLLMENTS-${studentProfileId}` },

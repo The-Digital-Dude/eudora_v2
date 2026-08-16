@@ -110,7 +110,7 @@ export class ParentController {
   }
 
   // --- Class enrollment ------------------------------------------------------
-  // Separate from the learning-plan routes above: a `CourseClass` carries
+  // Separate from the learning-plan routes above: a `Batch` carries
   // real academic weight (gradebook, attendance, homework, capacity), so
   // this only ever touches classes staff explicitly opted in via
   // `isOpenForEnrollment` — never the admin-only `POST /student-enrollments`.
@@ -139,7 +139,7 @@ export class ParentController {
   ) {
     return this.parentService.enrollInClass(
       studentProfileId,
-      dto.courseClassId,
+      dto.batchId,
     );
   }
 

@@ -5,9 +5,9 @@ import { Layers, Search } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 
+import { DataTable, SortableHeader } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DataTable, SortableHeader } from "@/components/data-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {

@@ -175,9 +175,9 @@ export class GradeCalculationService {
     };
   }
 
-  async getClassGradebookSummary(courseClassId: string, termId?: string) {
-    const classInfo = await this.prisma.courseClass.findUnique({
-      where: { id: courseClassId },
+  async getClassGradebookSummary(batchId: string, termId?: string) {
+    const classInfo = await this.prisma.batch.findUnique({
+      where: { id: batchId },
       include: {
         enrollments: {
           include: {

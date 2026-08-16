@@ -110,9 +110,9 @@ export class WebhookService {
       // Reading the batch here rather than trusting the order keeps the expiry
       // correct even if the batch was rescheduled after purchase.
       let accessExpiresAt: Date | null = null;
-      if (item.courseClassId) {
-        const batch = await tx.courseClass.findUnique({
-          where: { id: item.courseClassId },
+      if (item.batchId) {
+        const batch = await tx.batch.findUnique({
+          where: { id: item.batchId },
           select: { endDate: true },
         });
         accessExpiresAt = batch?.endDate ?? null;
@@ -124,7 +124,7 @@ export class WebhookService {
           studentProfileId: item.studentProfileId,
           programId: item.programId,
           courseId: item.courseId,
-          courseClassId: item.courseClassId,
+          batchId: item.batchId,
           orderItemId: item.id,
           source: 'PURCHASE',
           status: EntitlementStatus.ACTIVE,
@@ -142,17 +142,17 @@ export class WebhookService {
       // A live purchase is a seat in a cohort, so it also becomes a real
       // enrolment — that is what makes gradebook, attendance and homework
       // start working for this student without any further step.
-      if (item.courseClassId) {
+      if (item.batchId) {
         await tx.studentCourseEnrollment.upsert({
           where: {
-            studentProfileId_courseClassId: {
+            studentProfileId_batchId: {
               studentProfileId: item.studentProfileId,
-              courseClassId: item.courseClassId,
+              batchId: item.batchId,
             },
           },
           create: {
             studentProfileId: item.studentProfileId,
-            courseClassId: item.courseClassId,
+            batchId: item.batchId,
             status: 'ENROLLED',
           },
           update: { status: 'ENROLLED' },

@@ -29,7 +29,7 @@ export class GradebookService {
   ): Promise<GradeBookEntry> {
     const {
       studentProfileId,
-      courseClassId,
+      batchId,
       classSectionId,
       termId,
       title,
@@ -73,7 +73,7 @@ export class GradebookService {
       },
       create: {
         studentProfileId,
-        courseClassId,
+        batchId,
         classSectionId,
         termId,
         sourceType: GradeSourceType.MANUAL,
@@ -90,7 +90,7 @@ export class GradebookService {
         assessedAt: new Date(),
       },
       update: {
-        courseClassId,
+        batchId,
         classSectionId,
         termId,
         title,
@@ -171,7 +171,7 @@ export class GradebookService {
       for (const entry of dto.entries) {
         const {
           studentProfileId,
-          courseClassId,
+          batchId,
           classSectionId,
           termId,
           title,
@@ -207,7 +207,7 @@ export class GradebookService {
           },
           create: {
             studentProfileId,
-            courseClassId,
+            batchId,
             classSectionId,
             termId,
             sourceType: GradeSourceType.MANUAL,
@@ -224,7 +224,7 @@ export class GradebookService {
             assessedAt: new Date(),
           },
           update: {
-            courseClassId,
+            batchId,
             classSectionId,
             termId,
             title,
@@ -256,7 +256,7 @@ export class GradebookService {
       include: {
         homework: {
           include: {
-            courseClass: true,
+            batch: true,
           },
         },
       },
@@ -283,9 +283,9 @@ export class GradebookService {
       },
       create: {
         studentProfileId: submission.studentProfileId,
-        courseClassId: submission.homework.courseClassId,
+        batchId: submission.homework.batchId,
         classSectionId: placement?.classSectionId || null,
-        termId: submission.homework.courseClass.termId,
+        termId: submission.homework.batch.termId,
         sourceType: GradeSourceType.HOMEWORK_SUBMISSION,
         sourceId: submissionId,
         title: submission.homework.title,
@@ -298,9 +298,9 @@ export class GradebookService {
         assessedAt,
       },
       update: {
-        courseClassId: submission.homework.courseClassId,
+        batchId: submission.homework.batchId,
         classSectionId: placement?.classSectionId || null,
-        termId: submission.homework.courseClass.termId,
+        termId: submission.homework.batch.termId,
         title: submission.homework.title,
         pointsEarned,
         pointsPossible: maxPoints,
@@ -344,7 +344,7 @@ export class GradebookService {
       },
       create: {
         studentProfileId: attempt.studentProfileId,
-        courseClassId: null,
+        batchId: null,
         classSectionId: attempt.assignment.classSectionId,
         termId: attempt.assignment.assessment.termId,
         sourceType: GradeSourceType.ASSESSMENT_ATTEMPT,
@@ -371,14 +371,14 @@ export class GradebookService {
     });
   }
 
-  async getGradebookForClass(courseClassId: string, termId?: string) {
-    const where: any = { courseClassId };
+  async getGradebookForClass(batchId: string, termId?: string) {
+    const where: any = { batchId };
     if (termId) {
       where.termId = termId;
     }
 
-    const classInfo = await this.prisma.courseClass.findUnique({
-      where: { id: courseClassId },
+    const classInfo = await this.prisma.batch.findUnique({
+      where: { id: batchId },
       include: {
         enrollments: {
           include: {

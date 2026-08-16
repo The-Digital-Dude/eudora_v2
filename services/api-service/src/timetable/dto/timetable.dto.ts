@@ -84,7 +84,7 @@ export class CreateTimetableSlotDto {
 
   @IsString()
   @IsOptional()
-  courseClassId?: string;
+  batchId?: string;
 
   @IsString()
   @IsOptional()
@@ -127,7 +127,7 @@ export class UpdateTimetableSlotDto {
 
   @IsString()
   @IsOptional()
-  courseClassId?: string;
+  batchId?: string;
 
   @IsString()
   @IsOptional()
@@ -173,7 +173,7 @@ export class UpsertTimetableSlotDto {
 
   @IsString()
   @IsOptional()
-  courseClassId?: string;
+  batchId?: string;
 
   @IsString()
   @IsOptional()

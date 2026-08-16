@@ -18,6 +18,7 @@ export const lookupSelect = {
 export const classSelect = {
   ...lookupSelect,
   slug: true,
+  description: true,
   sortOrder: true,
 };
 

@@ -182,6 +182,15 @@ export const navGroups: NavGroup[] = [
             hidden: true,
           },
           {
+            // The `Class` taxonomy master. Titled "Grade Levels" because
+            // "Classes & Attendance" below is ClassSection, and a batch is a
+            // Batch — three different models, one overloaded word.
+            title: "Grade Levels",
+            url: "/grade-levels",
+            icon: GraduationCap,
+            requirement: { type: "roles", roles: ADMIN_ROLES },
+          },
+          {
             title: "Courses",
             url: "/courses",
             icon: BookOpen,

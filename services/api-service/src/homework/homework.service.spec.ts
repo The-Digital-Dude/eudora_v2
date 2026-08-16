@@ -9,7 +9,7 @@ describe('HomeworkService', () => {
   let service: HomeworkService;
 
   const mockPrismaService = {
-    courseClass: {
+    batch: {
       findUnique: jest.fn(),
     },
     homework: {
@@ -57,11 +57,11 @@ describe('HomeworkService', () => {
 
   describe('createHomework', () => {
     it('should throw NotFoundException if course class does not exist', async () => {
-      mockPrismaService.courseClass.findUnique.mockResolvedValue(null);
+      mockPrismaService.batch.findUnique.mockResolvedValue(null);
       await expect(
         service.createHomework(
           {
-            courseClassId: 'non-existent',
+            batchId: 'non-existent',
             title: 'Title',
             dueDate: new Date().toISOString(),
             maxPoints: 100,
@@ -72,13 +72,13 @@ describe('HomeworkService', () => {
     });
 
     it('should throw BadRequestException if due date is invalid', async () => {
-      mockPrismaService.courseClass.findUnique.mockResolvedValue({
+      mockPrismaService.batch.findUnique.mockResolvedValue({
         id: 'class-1',
       });
       await expect(
         service.createHomework(
           {
-            courseClassId: 'class-1',
+            batchId: 'class-1',
             title: 'Title',
             dueDate: 'invalid-date',
             maxPoints: 100,
@@ -91,12 +91,12 @@ describe('HomeworkService', () => {
     it('should create a homework assignment successfully', async () => {
       const mockClass = { id: 'class-1' };
       const mockHomework = { id: 'hw-1', title: 'Title' };
-      mockPrismaService.courseClass.findUnique.mockResolvedValue(mockClass);
+      mockPrismaService.batch.findUnique.mockResolvedValue(mockClass);
       mockPrismaService.homework.create.mockResolvedValue(mockHomework);
 
       const result = await service.createHomework(
         {
-          courseClassId: 'class-1',
+          batchId: 'class-1',
           title: 'Title',
           description: 'Desc',
           dueDate: new Date().toISOString(),
@@ -133,7 +133,7 @@ describe('HomeworkService', () => {
     it('should throw BadRequestException if student is not enrolled', async () => {
       mockPrismaService.homework.findUnique.mockResolvedValue({
         id: 'hw-1',
-        courseClassId: 'class-1',
+        batchId: 'class-1',
       });
       mockPrismaService.studentCourseEnrollment.findUnique.mockResolvedValue(
         null,
@@ -150,7 +150,7 @@ describe('HomeworkService', () => {
     it('should submit homework successfully', async () => {
       const mockHomework = {
         id: 'hw-1',
-        courseClassId: 'class-1',
+        batchId: 'class-1',
         dueDate: new Date(Date.now() + 10000), // future due date
       };
       mockPrismaService.homework.findUnique.mockResolvedValue(mockHomework);
@@ -174,7 +174,7 @@ describe('HomeworkService', () => {
     it('should mark submission as late if past due date', async () => {
       const mockHomework = {
         id: 'hw-1',
-        courseClassId: 'class-1',
+        batchId: 'class-1',
         dueDate: new Date(Date.now() - 10000), // past due date
       };
       mockPrismaService.homework.findUnique.mockResolvedValue(mockHomework);
@@ -265,17 +265,17 @@ describe('HomeworkService', () => {
     it('should return pending homeworks successfully', async () => {
       mockPrismaService.studentProfile.findUnique.mockResolvedValue({
         id: 'student-1',
-        enrollments: [{ courseClassId: 'class-1' }],
+        enrollments: [{ batchId: 'class-1' }],
       });
       mockPrismaService.homework.findMany.mockResolvedValue([
         {
           id: 'hw-1',
-          courseClassId: 'class-1',
+          batchId: 'class-1',
           submissions: [], // No submission
         },
         {
           id: 'hw-2',
-          courseClassId: 'class-1',
+          batchId: 'class-1',
           submissions: [{ id: 'sub-1' }], // Has submission
         },
       ]);

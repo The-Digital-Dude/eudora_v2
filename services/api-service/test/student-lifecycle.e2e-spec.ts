@@ -76,18 +76,18 @@ describe('Student lifecycle: create -> place -> enroll -> attendance (e2e)', () 
     const res = await http()
       .post('/api/student-enrollments')
       .set(asAdmin())
-      .send({ studentProfileId, courseClassId: world.courseClassId })
+      .send({ studentProfileId, batchId: world.batchId })
       .expect(201);
-    const enrollment = unwrap<{ id: string; courseClassId: string }>(res);
-    expect(enrollment.courseClassId).toBe(world.courseClassId);
+    const enrollment = unwrap<{ id: string; batchId: string }>(res);
+    expect(enrollment.batchId).toBe(world.batchId);
   });
 
   it('rejects a duplicate enrollment in the same course class', async () => {
     const res = await http()
       .post('/api/student-enrollments')
       .set(asAdmin())
-      .send({ studentProfileId, courseClassId: world.courseClassId });
-    // Unique constraint [studentProfileId, courseClassId] — any 4xx is a
+      .send({ studentProfileId, batchId: world.batchId });
+    // Unique constraint [studentProfileId, batchId] — any 4xx is a
     // correct rejection; a 2xx or 5xx here is a regression.
     expect(res.status).toBeGreaterThanOrEqual(400);
     expect(res.status).toBeLessThan(500);

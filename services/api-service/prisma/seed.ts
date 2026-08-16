@@ -201,11 +201,11 @@ async function main() {
 
 
   // ─── Course Classes ───────────────────────────────────────────────────────────
-  const dsaClass = await prisma.courseClass.upsert({ where: { code: 'CS-DSA-2026' }, update: {}, create: { termId: term.id, name: 'Algorithms & Data Structures', code: 'CS-DSA-2026', status: 'ACTIVE' } });
-  const algClass = await prisma.courseClass.upsert({ where: { code: 'CS-ALG-2026' }, update: {}, create: { termId: term.id, name: 'Introduction to Algorithms', code: 'CS-ALG-2026', status: 'ACTIVE' } });
-  const webClass = await prisma.courseClass.upsert({ where: { code: 'CS-WEB-2026' }, update: {}, create: { termId: term.id, name: 'Web Development Fundamentals', code: 'CS-WEB-2026', status: 'ACTIVE' } });
-  const calcClass = await prisma.courseClass.upsert({ where: { code: 'MATH-CALC-2026' }, update: {}, create: { termId: term.id, name: 'Calculus I', code: 'MATH-CALC-2026', status: 'ACTIVE' } });
-  const engClass = await prisma.courseClass.upsert({ where: { code: 'ENG-COMP-2026' }, update: {}, create: { termId: term.id, name: 'English Composition', code: 'ENG-COMP-2026', status: 'ACTIVE' } });
+  const dsaClass = await prisma.batch.upsert({ where: { code: 'CS-DSA-2026' }, update: {}, create: { termId: term.id, name: 'Algorithms & Data Structures', code: 'CS-DSA-2026', status: 'ACTIVE' } });
+  const algClass = await prisma.batch.upsert({ where: { code: 'CS-ALG-2026' }, update: {}, create: { termId: term.id, name: 'Introduction to Algorithms', code: 'CS-ALG-2026', status: 'ACTIVE' } });
+  const webClass = await prisma.batch.upsert({ where: { code: 'CS-WEB-2026' }, update: {}, create: { termId: term.id, name: 'Web Development Fundamentals', code: 'CS-WEB-2026', status: 'ACTIVE' } });
+  const calcClass = await prisma.batch.upsert({ where: { code: 'MATH-CALC-2026' }, update: {}, create: { termId: term.id, name: 'Calculus I', code: 'MATH-CALC-2026', status: 'ACTIVE' } });
+  const engClass = await prisma.batch.upsert({ where: { code: 'ENG-COMP-2026' }, update: {}, create: { termId: term.id, name: 'English Composition', code: 'ENG-COMP-2026', status: 'ACTIVE' } });
 
   console.log('✅ Seeded institution & academic structures');
 
@@ -435,9 +435,9 @@ async function main() {
     // Enroll in course classes
     for (const cc of [dsaClass, algClass, webClass, calcClass, engClass]) {
       await prisma.studentCourseEnrollment.upsert({
-        where: { studentProfileId_courseClassId: { studentProfileId: profile.id, courseClassId: cc.id } },
+        where: { studentProfileId_batchId: { studentProfileId: profile.id, batchId: cc.id } },
         update: {},
-        create: { studentProfileId: profile.id, courseClassId: cc.id, status: 'ENROLLED' },
+        create: { studentProfileId: profile.id, batchId: cc.id, status: 'ENROLLED' },
       });
     }
 
@@ -525,30 +525,30 @@ async function main() {
   // startTimeMinutes: 480 = 8:00am, 540 = 9:00am, 600 = 10:00am, 660 = 11:00am, 750 = 12:30pm, 810 = 13:30pm
   const slotDefinitions = [
     // MONDAY
-    { day: 'MONDAY', period: 1, start: 480, end: 540, room: 'Lab 1', courseClassId: dsaClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'MONDAY', period: 2, start: 540, end: 620, room: 'Room 101', courseClassId: algClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'MONDAY', period: 3, start: 640, end: 720, room: 'Lab 2', courseClassId: webClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'MONDAY', period: 4, start: 750, end: 830, room: 'Room 201', courseClassId: calcClass.id, teacherCode: 'EMP-EULER' },
+    { day: 'MONDAY', period: 1, start: 480, end: 540, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'MONDAY', period: 2, start: 540, end: 620, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
+    { day: 'MONDAY', period: 3, start: 640, end: 720, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'MONDAY', period: 4, start: 750, end: 830, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
     // TUESDAY
-    { day: 'TUESDAY', period: 1, start: 480, end: 540, room: 'Room 103', courseClassId: engClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'TUESDAY', period: 2, start: 540, end: 620, room: 'Lab 1', courseClassId: dsaClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'TUESDAY', period: 3, start: 640, end: 720, room: 'Room 101', courseClassId: algClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'TUESDAY', period: 4, start: 750, end: 830, room: 'Lab 2', courseClassId: webClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'TUESDAY', period: 1, start: 480, end: 540, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-HOPPER' },
+    { day: 'TUESDAY', period: 2, start: 540, end: 620, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'TUESDAY', period: 3, start: 640, end: 720, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
+    { day: 'TUESDAY', period: 4, start: 750, end: 830, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
     // WEDNESDAY
-    { day: 'WEDNESDAY', period: 1, start: 480, end: 540, room: 'Room 201', courseClassId: calcClass.id, teacherCode: 'EMP-EULER' },
-    { day: 'WEDNESDAY', period: 2, start: 540, end: 620, room: 'Room 103', courseClassId: engClass.id, teacherCode: 'EMP-LOVELACE' },
-    { day: 'WEDNESDAY', period: 3, start: 640, end: 720, room: 'Lab 1', courseClassId: dsaClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'WEDNESDAY', period: 4, start: 750, end: 830, room: 'Room 101', courseClassId: algClass.id, teacherCode: 'EMP-HOPPER' },
+    { day: 'WEDNESDAY', period: 1, start: 480, end: 540, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
+    { day: 'WEDNESDAY', period: 2, start: 540, end: 620, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-LOVELACE' },
+    { day: 'WEDNESDAY', period: 3, start: 640, end: 720, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'WEDNESDAY', period: 4, start: 750, end: 830, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
     // THURSDAY
-    { day: 'THURSDAY', period: 1, start: 480, end: 540, room: 'Lab 2', courseClassId: webClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'THURSDAY', period: 2, start: 540, end: 620, room: 'Room 201', courseClassId: calcClass.id, teacherCode: 'EMP-EULER' },
-    { day: 'THURSDAY', period: 3, start: 640, end: 720, room: 'Room 103', courseClassId: engClass.id, teacherCode: 'EMP-LOVELACE' },
-    { day: 'THURSDAY', period: 4, start: 750, end: 830, room: 'Lab 1', courseClassId: dsaClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'THURSDAY', period: 1, start: 480, end: 540, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'THURSDAY', period: 2, start: 540, end: 620, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
+    { day: 'THURSDAY', period: 3, start: 640, end: 720, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-LOVELACE' },
+    { day: 'THURSDAY', period: 4, start: 750, end: 830, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
     // FRIDAY
-    { day: 'FRIDAY', period: 1, start: 480, end: 540, room: 'Room 101', courseClassId: algClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'FRIDAY', period: 2, start: 540, end: 620, room: 'Lab 2', courseClassId: webClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'FRIDAY', period: 3, start: 640, end: 720, room: 'Room 201', courseClassId: calcClass.id, teacherCode: 'EMP-EULER' },
-    { day: 'FRIDAY', period: 4, start: 750, end: 830, room: 'Room 103', courseClassId: engClass.id, teacherCode: 'EMP-LOVELACE' },
+    { day: 'FRIDAY', period: 1, start: 480, end: 540, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
+    { day: 'FRIDAY', period: 2, start: 540, end: 620, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'FRIDAY', period: 3, start: 640, end: 720, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
+    { day: 'FRIDAY', period: 4, start: 750, end: 830, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-LOVELACE' },
   ] as const;
 
   for (const s of slotDefinitions) {
@@ -563,7 +563,7 @@ async function main() {
           endTimeMinutes: s.end,
           room: s.room,
           classSectionId: sectionA.id,
-          courseClassId: s.courseClassId,
+          batchId: s.batchId,
           teacherProfileId: teacherProfiles[s.teacherCode].id,
           status: 'ACTIVE',
         },
@@ -577,25 +577,25 @@ async function main() {
   const turingUser = teacherUsers['EMP-TURING'];
 
   const hw1 = await prisma.homework.upsert({
-    where: { id: (await prisma.homework.findFirst({ where: { title: 'DSA Problem Set 1', courseClassId: dsaClass.id } }))?.id ?? 'nonexistent-id' },
+    where: { id: (await prisma.homework.findFirst({ where: { title: 'DSA Problem Set 1', batchId: dsaClass.id } }))?.id ?? 'nonexistent-id' },
     update: {},
-    create: { courseClassId: dsaClass.id, title: 'DSA Problem Set 1', description: 'Implement a linked list with insert, delete, and search operations.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: turingUser.id },
+    create: { batchId: dsaClass.id, title: 'DSA Problem Set 1', description: 'Implement a linked list with insert, delete, and search operations.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: turingUser.id },
   }).catch(async () => {
-    const existing = await prisma.homework.findFirst({ where: { title: 'DSA Problem Set 1', courseClassId: dsaClass.id } });
+    const existing = await prisma.homework.findFirst({ where: { title: 'DSA Problem Set 1', batchId: dsaClass.id } });
     if (existing) return existing;
-    return prisma.homework.create({ data: { courseClassId: dsaClass.id, title: 'DSA Problem Set 1', description: 'Implement a linked list with insert, delete, and search operations.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: turingUser.id } });
+    return prisma.homework.create({ data: { batchId: dsaClass.id, title: 'DSA Problem Set 1', description: 'Implement a linked list with insert, delete, and search operations.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: turingUser.id } });
   });
 
   const hw2 = await (async () => {
-    const existing = await prisma.homework.findFirst({ where: { title: 'Web Dev Project 1', courseClassId: webClass.id } });
+    const existing = await prisma.homework.findFirst({ where: { title: 'Web Dev Project 1', batchId: webClass.id } });
     if (existing) return existing;
-    return prisma.homework.create({ data: { courseClassId: webClass.id, title: 'Web Dev Project 1', description: 'Build a responsive landing page using HTML and CSS.', dueDate: new Date('2026-09-30'), maxPoints: 100, recordedById: turingUser.id } });
+    return prisma.homework.create({ data: { batchId: webClass.id, title: 'Web Dev Project 1', description: 'Build a responsive landing page using HTML and CSS.', dueDate: new Date('2026-09-30'), maxPoints: 100, recordedById: turingUser.id } });
   })();
 
   const hw3 = await (async () => {
-    const existing = await prisma.homework.findFirst({ where: { title: 'Calculus Assignment 1', courseClassId: calcClass.id } });
+    const existing = await prisma.homework.findFirst({ where: { title: 'Calculus Assignment 1', batchId: calcClass.id } });
     if (existing) return existing;
-    return prisma.homework.create({ data: { courseClassId: calcClass.id, title: 'Calculus Assignment 1', description: 'Solve limits and derivatives from Chapter 2.', dueDate: new Date('2026-09-22'), maxPoints: 50, recordedById: superAdminUser.id } });
+    return prisma.homework.create({ data: { batchId: calcClass.id, title: 'Calculus Assignment 1', description: 'Solve limits and derivatives from Chapter 2.', dueDate: new Date('2026-09-22'), maxPoints: 50, recordedById: superAdminUser.id } });
   })();
 
   // Homework submissions
@@ -685,7 +685,7 @@ async function main() {
       const existing = await prisma.gradeBookEntry.findFirst({ where: { studentProfileId: profile.id, sourceType: e.srcType, sourceId: e.srcId } });
       if (!existing) {
         await prisma.gradeBookEntry.create({
-          data: { studentProfileId: profile.id, classSectionId: sectionA.id, courseClassId: dsaClass.id, termId: term.id, sourceType: e.srcType, sourceId: e.srcId, title: e.title, category: e.category, pointsEarned: e.points, pointsPossible: e.possible, percentage: e.points, weight: 1.0, status: 'PUBLISHED', assessedAt: new Date('2026-09-16'), publishedAt: new Date(), createdById: superAdminUser.id },
+          data: { studentProfileId: profile.id, classSectionId: sectionA.id, batchId: dsaClass.id, termId: term.id, sourceType: e.srcType, sourceId: e.srcId, title: e.title, category: e.category, pointsEarned: e.points, pointsPossible: e.possible, percentage: e.points, weight: 1.0, status: 'PUBLISHED', assessedAt: new Date('2026-09-16'), publishedAt: new Date(), createdById: superAdminUser.id },
         });
       }
     }
@@ -782,10 +782,10 @@ async function main() {
   const elijahP = studentProfiles.find(p => p.firstName === 'Elijah');
   const noahP = studentProfiles.find(p => p.firstName === 'Noah');
 
-  if (charlotteP) await prisma.makeupRequest.create({ data: { studentProfileId: charlotteP.id, courseClassId: dsaClass.id, originalDate: new Date('2026-06-12'), reason: 'Medical Leave', status: 'Awaiting Action' } });
-  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, courseClassId: dsaClass.id, originalDate: new Date('2026-06-16'), reason: 'Family Event', status: 'Scheduled', scheduledDate: new Date('2026-06-25') } });
-  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, courseClassId: algClass.id, originalDate: new Date('2026-06-17'), reason: 'Family Event', status: 'Awaiting Action' } });
-  if (noahP) await prisma.makeupRequest.create({ data: { studentProfileId: noahP.id, courseClassId: webClass.id, originalDate: new Date('2026-06-10'), reason: 'Doctor appointment', status: 'Declined' } });
+  if (charlotteP) await prisma.makeupRequest.create({ data: { studentProfileId: charlotteP.id, batchId: dsaClass.id, originalDate: new Date('2026-06-12'), reason: 'Medical Leave', status: 'Awaiting Action' } });
+  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, batchId: dsaClass.id, originalDate: new Date('2026-06-16'), reason: 'Family Event', status: 'Scheduled', scheduledDate: new Date('2026-06-25') } });
+  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, batchId: algClass.id, originalDate: new Date('2026-06-17'), reason: 'Family Event', status: 'Awaiting Action' } });
+  if (noahP) await prisma.makeupRequest.create({ data: { studentProfileId: noahP.id, batchId: webClass.id, originalDate: new Date('2026-06-10'), reason: 'Doctor appointment', status: 'Declined' } });
   console.log('✅ Seeded makeup requests');
 
   // ─── Notifications ────────────────────────────────────────────────────────────
@@ -806,36 +806,36 @@ async function main() {
   // ─── Course Class Sessions & Session Attendance ─────────────────────────────
   console.log('🌱 Seeding course class sessions...');
   const sessionDefs = [
-    { courseClassId: dsaClass.id, date: '2026-09-15', topic: 'Introduction to Linked Lists', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-09-18', topic: 'Stacks and Queues', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-09-22', topic: 'Binary Trees', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-09-25', topic: 'Tree Traversal Algorithms', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-09-29', topic: 'Hash Tables', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-10-02', topic: 'Graph Representation', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-10-06', topic: 'BFS and DFS', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-10-09', topic: 'Dynamic Programming Introduction', start: '08:00', end: '09:00' },
-    { courseClassId: algClass.id, date: '2026-09-15', topic: 'Big-O Notation', start: '09:10', end: '10:20' },
-    { courseClassId: algClass.id, date: '2026-09-18', topic: 'Divide and Conquer', start: '09:10', end: '10:20' },
-    { courseClassId: algClass.id, date: '2026-09-22', topic: 'Sorting Algorithms', start: '09:10', end: '10:20' },
-    { courseClassId: algClass.id, date: '2026-09-25', topic: 'Merge Sort & Quick Sort', start: '09:10', end: '10:20' },
-    { courseClassId: webClass.id, date: '2026-09-15', topic: 'HTML Structure & Semantics', start: '10:40', end: '12:00' },
-    { courseClassId: webClass.id, date: '2026-09-18', topic: 'CSS Selectors & Box Model', start: '10:40', end: '12:00' },
-    { courseClassId: webClass.id, date: '2026-09-22', topic: 'Responsive Design', start: '10:40', end: '12:00' },
-    { courseClassId: calcClass.id, date: '2026-09-15', topic: 'Limits and Continuity', start: '12:30', end: '13:50' },
-    { courseClassId: calcClass.id, date: '2026-09-18', topic: 'Introduction to Derivatives', start: '12:30', end: '13:50' },
-    { courseClassId: calcClass.id, date: '2026-09-22', topic: 'Chain Rule', start: '12:30', end: '13:50' },
-    { courseClassId: engClass.id, date: '2026-09-15', topic: 'Paragraph Structure', start: '14:00', end: '15:00' },
-    { courseClassId: engClass.id, date: '2026-09-18', topic: 'Thesis Statements', start: '14:00', end: '15:00' },
-    { courseClassId: engClass.id, date: '2026-09-22', topic: 'Evidence & Citations', start: '14:00', end: '15:00' },
+    { batchId: dsaClass.id, date: '2026-09-15', topic: 'Introduction to Linked Lists', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-18', topic: 'Stacks and Queues', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-22', topic: 'Binary Trees', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-25', topic: 'Tree Traversal Algorithms', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-29', topic: 'Hash Tables', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-10-02', topic: 'Graph Representation', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-10-06', topic: 'BFS and DFS', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-10-09', topic: 'Dynamic Programming Introduction', start: '08:00', end: '09:00' },
+    { batchId: algClass.id, date: '2026-09-15', topic: 'Big-O Notation', start: '09:10', end: '10:20' },
+    { batchId: algClass.id, date: '2026-09-18', topic: 'Divide and Conquer', start: '09:10', end: '10:20' },
+    { batchId: algClass.id, date: '2026-09-22', topic: 'Sorting Algorithms', start: '09:10', end: '10:20' },
+    { batchId: algClass.id, date: '2026-09-25', topic: 'Merge Sort & Quick Sort', start: '09:10', end: '10:20' },
+    { batchId: webClass.id, date: '2026-09-15', topic: 'HTML Structure & Semantics', start: '10:40', end: '12:00' },
+    { batchId: webClass.id, date: '2026-09-18', topic: 'CSS Selectors & Box Model', start: '10:40', end: '12:00' },
+    { batchId: webClass.id, date: '2026-09-22', topic: 'Responsive Design', start: '10:40', end: '12:00' },
+    { batchId: calcClass.id, date: '2026-09-15', topic: 'Limits and Continuity', start: '12:30', end: '13:50' },
+    { batchId: calcClass.id, date: '2026-09-18', topic: 'Introduction to Derivatives', start: '12:30', end: '13:50' },
+    { batchId: calcClass.id, date: '2026-09-22', topic: 'Chain Rule', start: '12:30', end: '13:50' },
+    { batchId: engClass.id, date: '2026-09-15', topic: 'Paragraph Structure', start: '14:00', end: '15:00' },
+    { batchId: engClass.id, date: '2026-09-18', topic: 'Thesis Statements', start: '14:00', end: '15:00' },
+    { batchId: engClass.id, date: '2026-09-22', topic: 'Evidence & Citations', start: '14:00', end: '15:00' },
   ];
 
   const sessions: any[] = [];
   for (const sd of sessionDefs) {
     const d = new Date(sd.date);
-    const existing = await prisma.courseClassSession.findFirst({ where: { courseClassId: sd.courseClassId, date: d } });
-    const session = existing ?? await prisma.courseClassSession.create({
+    const existing = await prisma.batchSession.findFirst({ where: { batchId: sd.batchId, date: d } });
+    const session = existing ?? await prisma.batchSession.create({
       data: {
-        courseClassId: sd.courseClassId,
+        batchId: sd.batchId,
         date: d,
         startTime: new Date(`${sd.date}T${sd.start}:00.000Z`),
         endTime: new Date(`${sd.date}T${sd.end}:00.000Z`),
@@ -856,14 +856,14 @@ async function main() {
     'Noah': ['2026-10-02'],
   };
   for (const session of sessions) {
-    if (session.courseClassId !== dsaClass.id) continue; // only seed DSA session attendance
+    if (session.batchId !== dsaClass.id) continue; // only seed DSA session attendance
     const dateStr = (session.date instanceof Date ? session.date : new Date(session.date)).toISOString().slice(0, 10);
     for (const profile of sectionAAll) {
       const isAbsent = sessionAbsences[profile.firstName]?.includes(dateStr);
       const isLate = !isAbsent && sessionLate[profile.firstName]?.includes(dateStr);
-      const existing = await prisma.courseClassAttendance.findFirst({ where: { studentProfileId: profile.id, sessionId: session.id } });
+      const existing = await prisma.batchAttendance.findFirst({ where: { studentProfileId: profile.id, sessionId: session.id } });
       if (!existing) {
-        await prisma.courseClassAttendance.create({
+        await prisma.batchAttendance.create({
           data: {
             studentProfileId: profile.id,
             sessionId: session.id,
@@ -1152,7 +1152,7 @@ async function main() {
       { day: 'FRIDAY',    period: 2, start: 640,  end: 720,  room: 'Room 103', ccId: engClass.id,  tc: 'EMP-LOVELACE' },
     ] as const;
     for (const s of bSlots) {
-      await prisma.timetableSlot.create({ data: { timetableId: timetableB.id, dayOfWeek: s.day, periodIndex: s.period, startTimeMinutes: s.start, endTimeMinutes: s.end, room: s.room, classSectionId: sectionB.id, courseClassId: s.ccId, teacherProfileId: teacherProfiles[s.tc].id, status: 'ACTIVE' } });
+      await prisma.timetableSlot.create({ data: { timetableId: timetableB.id, dayOfWeek: s.day, periodIndex: s.period, startTimeMinutes: s.start, endTimeMinutes: s.end, room: s.room, classSectionId: sectionB.id, batchId: s.ccId, teacherProfileId: teacherProfiles[s.tc].id, status: 'ACTIVE' } });
     }
   }
 
@@ -1222,7 +1222,7 @@ async function main() {
       { actorUserId: superAdminUser.id, event: 'STUDENT_ENROLLED', targetType: 'StudentProfile', targetId: studentProfiles[4]?.id, ipAddress: '127.0.0.1', metadata: { name: 'Noah Johnson', section: 'CS Section A' } },
       { actorUserId: turingU.id, event: 'HOMEWORK_CREATED', targetType: 'Homework', targetId: hw1.id, ipAddress: '10.0.0.1', metadata: { title: 'DSA Problem Set 1' } },
       { actorUserId: turingU.id, event: 'GRADE_PUBLISHED', targetType: 'GradeBookEntry', targetId: null, ipAddress: '10.0.0.1', metadata: { assessment: 'Week 1 Math Quiz', studentCount: 5 } },
-      { actorUserId: turingU.id, event: 'SESSION_CREATED', targetType: 'CourseClassSession', targetId: sessions[0]?.id ?? null, ipAddress: '10.0.0.1', metadata: { topic: 'Introduction to Linked Lists' } },
+      { actorUserId: turingU.id, event: 'SESSION_CREATED', targetType: 'BatchSession', targetId: sessions[0]?.id ?? null, ipAddress: '10.0.0.1', metadata: { topic: 'Introduction to Linked Lists' } },
       { actorUserId: teacherUsers['EMP-LOVELACE'].id, event: 'HOMEWORK_GRADED', targetType: 'Homework', targetId: hw3.id, ipAddress: '10.0.0.2', metadata: { title: 'Calculus Assignment 1' } },
       { actorUserId: teacherUsers['EMP-HOPPER'].id, event: 'TIMETABLE_PUBLISHED', targetType: 'Timetable', targetId: null, ipAddress: '10.0.0.3', metadata: { name: 'Fall 2026 — CS Section B' } },
       { actorUserId: superAdminUser.id, event: 'ATTENDANCE_RECORDED', targetType: 'DailyAttendance', targetId: null, ipAddress: '127.0.0.1', metadata: { date: '2026-06-23', sections: ['CS-2026-A', 'CS-2026-B'], totalRecords: 11 } },
@@ -3202,14 +3202,14 @@ async function main() {
     // the actual submission flow with. One per class she doesn't already
     // have a homework in, so the "Due" list has real variety to tap into.
     const pendingHomeworkSpecs = [
-      { title: 'DSA Problem Set 2', courseClass: dsaClass, description: 'Implement a binary search tree with insert, delete, and in-order traversal.', dueDate: new Date('2026-08-20'), maxPoints: 100 },
-      { title: 'Algorithms Quiz Prep', courseClass: algClass, description: 'Write pseudocode for binary search and bubble sort, and note each one’s worst-case complexity.', dueDate: new Date('2026-08-13'), maxPoints: 50 },
-      { title: 'Essay: Persuasive Writing', courseClass: engClass, description: 'Write a 500-word persuasive essay on a topic of your choice.', dueDate: new Date('2026-08-18'), maxPoints: 100 },
+      { title: 'DSA Problem Set 2', batch: dsaClass, description: 'Implement a binary search tree with insert, delete, and in-order traversal.', dueDate: new Date('2026-08-20'), maxPoints: 100 },
+      { title: 'Algorithms Quiz Prep', batch: algClass, description: 'Write pseudocode for binary search and bubble sort, and note each one’s worst-case complexity.', dueDate: new Date('2026-08-13'), maxPoints: 50 },
+      { title: 'Essay: Persuasive Writing', batch: engClass, description: 'Write a 500-word persuasive essay on a topic of your choice.', dueDate: new Date('2026-08-18'), maxPoints: 100 },
     ];
     for (const spec of pendingHomeworkSpecs) {
-      const existingHw = await prisma.homework.findFirst({ where: { title: spec.title, courseClassId: spec.courseClass.id } });
+      const existingHw = await prisma.homework.findFirst({ where: { title: spec.title, batchId: spec.batch.id } });
       if (!existingHw) {
-        await prisma.homework.create({ data: { courseClassId: spec.courseClass.id, title: spec.title, description: spec.description, dueDate: spec.dueDate, maxPoints: spec.maxPoints, recordedById: turingUser.id } });
+        await prisma.homework.create({ data: { batchId: spec.batch.id, title: spec.title, description: spec.description, dueDate: spec.dueDate, maxPoints: spec.maxPoints, recordedById: turingUser.id } });
       }
     }
 
@@ -3317,7 +3317,7 @@ async function main() {
   // ─── Batches & teaching staff ───────────────────────────────────────────────
   // A LIVE course is unsellable without an open cohort, so the demo needs one.
   // `courseId` here is the weld that finally joins the catalogue tree to the
-  // operational one — before it, CourseClass pointed only at a Term.
+  // operational one — before it, Batch pointed only at a Term.
   const liveCourse = algorithmsCourse;
   await prisma.course.update({
     where: { id: liveCourse.id },
@@ -3336,7 +3336,7 @@ async function main() {
     select: { id: true },
   });
 
-  await prisma.courseClass.upsert({
+  await prisma.batch.upsert({
     where: { code: 'ALGO-BATCH-1' },
     update: {
       courseId: liveCourse.id,

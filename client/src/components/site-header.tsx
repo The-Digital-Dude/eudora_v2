@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Check, Globe, LogOut, Trash } from "lucide-react";
+import { Bell, Check, LogOut, Trash } from "lucide-react";
 import * as React from "react";
 
 import { CommandSearch, SearchTrigger } from "@/components/command-search";
@@ -15,13 +15,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {

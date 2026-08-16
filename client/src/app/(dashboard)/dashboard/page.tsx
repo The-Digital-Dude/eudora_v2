@@ -10,7 +10,6 @@ import {
   CreditCard,
   FileText,
   Plus,
-  School,
   Sparkles,
   TrendingUp,
   UserCheck,

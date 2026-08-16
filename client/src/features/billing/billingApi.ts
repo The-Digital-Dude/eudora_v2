@@ -70,7 +70,7 @@ export interface OwnedEntitlement {
   paidThroughDate: string | null;
   program: { id: string; name: string; slug: string } | null;
   course: { id: string; title: string; slug: string } | null;
-  courseClass: { id: string; name: string; endDate: string | null } | null;
+  batch: { id: string; name: string; endDate: string | null } | null;
   orderItem: {
     plan: {
       installmentsPaid: number;
@@ -128,7 +128,7 @@ export const billingApi = authApi.injectEndpoints({
         skuType: SkuType;
         skuId: string;
         billingMode: BillingMode;
-        courseClassId?: string;
+        batchId?: string;
         successPath?: string;
         cancelPath?: string;
       }

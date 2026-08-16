@@ -20,9 +20,9 @@ import {
   UpdateClassSectionDto,
 } from './dto/class-section.dto';
 import {
-  CreateCourseClassDto,
-  UpdateCourseClassDto,
-} from './dto/course-class.dto';
+  CreateBatchDto,
+  UpdateBatchDto,
+} from './dto/batch.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
@@ -168,40 +168,40 @@ export class AcademicController {
 
   // --- Course Class Endpoints ---
 
-  @Post('course-classes')
+  @Post('batches')
   @Roles('ADMIN', 'SUPER_ADMIN')
-  async createCourseClass(@Body() dto: CreateCourseClassDto) {
-    return this.academicService.createCourseClass(dto);
+  async createBatch(@Body() dto: CreateBatchDto) {
+    return this.academicService.createBatch(dto);
   }
 
-  @Get('course-classes')
-  async findAllCourseClasses(
+  @Get('batches')
+  async findAllBatches(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('termId') termId?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.academicService.findAllCourseClasses(pageNum, limitNum, termId);
+    return this.academicService.findAllBatches(pageNum, limitNum, termId);
   }
 
-  @Get('course-classes/:id')
-  async findCourseClassById(@Param('id') id: string) {
-    return this.academicService.findCourseClassById(id);
+  @Get('batches/:id')
+  async findBatchById(@Param('id') id: string) {
+    return this.academicService.findBatchById(id);
   }
 
-  @Patch('course-classes/:id')
+  @Patch('batches/:id')
   @Roles('ADMIN', 'SUPER_ADMIN')
-  async updateCourseClass(
+  async updateBatch(
     @Param('id') id: string,
-    @Body() dto: UpdateCourseClassDto,
+    @Body() dto: UpdateBatchDto,
   ) {
-    return this.academicService.updateCourseClass(id, dto);
+    return this.academicService.updateBatch(id, dto);
   }
 
-  @Delete('course-classes/:id')
+  @Delete('batches/:id')
   @Roles('ADMIN', 'SUPER_ADMIN')
-  async deleteCourseClass(@Param('id') id: string) {
-    return this.academicService.deleteCourseClass(id);
+  async deleteBatch(@Param('id') id: string) {
+    return this.academicService.deleteBatch(id);
   }
 }

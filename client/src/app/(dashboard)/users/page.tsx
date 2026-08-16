@@ -25,10 +25,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  type User,
   useAssignUserRoleMutation,
   useGetRolesQuery,
   useGetUsersQuery,
+  type User,
   useRemoveUserRoleMutation,
   useUpdateUserMutation,
 } from "@/features/dashboard/dashboardApi";

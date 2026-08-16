@@ -70,7 +70,7 @@ export class CheckoutController {
       skuType: dto.skuType,
       skuId: dto.skuId,
       billingMode: dto.billingMode,
-      courseClassId: dto.courseClassId,
+      batchId: dto.batchId,
       successUrl: safeUrl(
         dto.successPath,
         '/checkout/success?session_id={CHECKOUT_SESSION_ID}',

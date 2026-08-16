@@ -151,7 +151,7 @@ enum CourseTermStatus {
   COMPLETED
 }
 
-enum CourseClassStatus {
+enum BatchStatus {
   ACTIVE
   INACTIVE
 }
@@ -322,7 +322,7 @@ model OrderItem {
   programId     String?
   courseId      String?
   /// LIVE purchases consume a seat in a specific batch. Wired in Phase 5.
-  courseClassId String?
+  batchId String?
 
   billingMode      BillingMode
   /// What is actually charged for this line, after `creditAppliedCents`.
@@ -420,7 +420,7 @@ model Entitlement {
   courseId         String?
   /// Set for LIVE purchases; the batch's end date is what `accessExpiresAt`
   /// tracks. Wired up in Phase 5.
-  courseClassId    String?
+  batchId    String?
   /// The purchase this grant came from. Null for ADMIN_GRANT / TRIAL / PROMO.
   orderItemId      String? @unique
 
@@ -445,7 +445,7 @@ model Entitlement {
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
   program        Program?       @relation(fields: [programId], references: [id], onDelete: Cascade)
   course         Course?        @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  courseClass    CourseClass?   @relation(fields: [courseClassId], references: [id], onDelete: SetNull)
+  batch    Batch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
   orderItem      OrderItem?     @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
   grantedBy      User?          @relation("GrantedEntitlements", fields: [grantedByUserId], references: [id], onDelete: SetNull)
 
@@ -547,7 +547,7 @@ model Term {
   deletedById    String?
 
   academicYear     AcademicYear     @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  courseClasses    CourseClass[]
+  batches    Batch[]
   assessments      Assessment[]
   timetables       Timetable[]
   gradeBookEntries GradeBookEntry[]
@@ -555,13 +555,13 @@ model Term {
   @@map("terms")
 }
 
-/// A dated cohort of a Course — a "batch" in product language.
+/// A dated cohort of a Course.
 ///
-/// The model keeps its original name deliberately: `CourseClass` has 364
-/// references across 49 files, and renaming it mid-initiative would be a
-/// merge-conflict machine for zero user-visible gain. It is labelled "Batch"
-/// in the UI and the public API instead. Rename as its own mechanical PR.
-model CourseClass {
+/// Previously `CourseClass`, renamed in its own dedicated pass once the
+/// commerce work had settled. The old name collided with `Class` (the grade
+/// level) and `ClassSection` (the roster) — three unrelated models sharing one
+/// word, which made it easy to reach for the wrong one.
+model Batch {
   id String @id @default(uuid())
   /// Nullable only because every row predating the catalogue weld has no
   /// course. New batches always carry one — the API requires it. This link is
@@ -571,7 +571,7 @@ model CourseClass {
   termId      String?
   name        String
   code        String            @unique
-  status      CourseClassStatus @default(ACTIVE)
+  status      BatchStatus @default(ACTIVE)
   description String?
   /// Null = unlimited. Guardian self-enrollment (`isOpenForEnrollment`)
   /// checks this; staff-mediated enrollment does not.
@@ -601,7 +601,7 @@ model CourseClass {
   leadTeacher      TeacherProfile?           @relation("LeadBatchTeacher", fields: [leadTeacherProfileId], references: [id], onDelete: SetNull)
   enrollments      StudentCourseEnrollment[]
   entitlements     Entitlement[]
-  sessions         CourseClassSession[]
+  sessions         BatchSession[]
   homeworks        Homework[]
   makeupRequests   MakeupRequest[]
   timetableSlots   TimetableSlot[]
@@ -609,11 +609,11 @@ model CourseClass {
 
   @@index([courseId, status])
   @@index([startDate])
-  @@map("course_classes")
+  @@map("batches")
 }
 
 /// Teachers attached to a Course. This is the actual answer to "one course,
-/// many teachers" — a join table, not a cohort system. `CourseClass` above is
+/// many teachers" — a join table, not a cohort system. `Batch` above is
 /// a cohort and earns its place separately, through live delivery.
 model CourseTeacher {
   courseId         String
@@ -662,7 +662,7 @@ model StudentProfile {
   guardians                GuardianStudentRelationship[]
   families                 FamilyStudent[]
   dailyAttendance          DailyAttendance[]
-  courseAttendance         CourseClassAttendance[]
+  courseAttendance         BatchAttendance[]
   homeworkSubmissions      HomeworkSubmission[]
   assessmentEvidences      AssessmentEvidence[]
   competencyMasteries      CompetencyMastery[]
@@ -705,16 +705,16 @@ model StudentClassPlacement {
 model StudentCourseEnrollment {
   id               String           @id @default(uuid())
   studentProfileId String
-  courseClassId    String
+  batchId    String
   enrollmentDate   DateTime         @default(now())
   status           EnrollmentStatus @default(ENROLLED)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  courseClass    CourseClass    @relation(fields: [courseClassId], references: [id], onDelete: Cascade)
+  batch    Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
-  @@unique([studentProfileId, courseClassId])
+  @@unique([studentProfileId, batchId])
   @@map("student_course_enrollments")
 }
 
@@ -822,7 +822,7 @@ model TeacherProfile {
   user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   classAssignments ClassTeacher[]
   courseTeachers   CourseTeacher[]
-  leadBatches      CourseClass[]   @relation("LeadBatchTeacher")
+  leadBatches      Batch[]   @relation("LeadBatchTeacher")
   timetableSlots   TimetableSlot[]
 
   @@map("teacher_profiles")
@@ -871,9 +871,9 @@ model DailyAttendance {
   @@map("daily_attendance")
 }
 
-model CourseClassSession {
+model BatchSession {
   id            String    @id @default(uuid())
-  courseClassId String
+  batchId String
   date          DateTime  @db.Date
   startTime     DateTime?
   endTime       DateTime?
@@ -881,14 +881,14 @@ model CourseClassSession {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  courseClass CourseClass             @relation(fields: [courseClassId], references: [id], onDelete: Cascade)
-  attendance  CourseClassAttendance[]
+  batch Batch             @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  attendance  BatchAttendance[]
 
-  @@index([courseClassId, date])
-  @@map("course_class_sessions")
+  @@index([batchId, date])
+  @@map("batch_sessions")
 }
 
-model CourseClassAttendance {
+model BatchAttendance {
   id               String           @id @default(uuid())
   studentProfileId String
   sessionId        String
@@ -899,10 +899,10 @@ model CourseClassAttendance {
   updatedAt        DateTime         @updatedAt
 
   studentProfile StudentProfile     @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
-  session        CourseClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session        BatchSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([studentProfileId, sessionId])
-  @@map("course_class_attendance")
+  @@map("batch_attendance")
 }
 
 // ─── Homework ───────────────────────────────────────────────────────────────
@@ -916,7 +916,7 @@ enum SubmissionStatus {
 
 model Homework {
   id             String   @id @default(uuid())
-  courseClassId  String
+  batchId  String
   title          String
   description    String?
   dueDate        DateTime
@@ -926,7 +926,7 @@ model Homework {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  courseClass CourseClass          @relation(fields: [courseClassId], references: [id], onDelete: Cascade)
+  batch Batch          @relation(fields: [batchId], references: [id], onDelete: Cascade)
   submissions HomeworkSubmission[]
 
   @@map("homeworks")
@@ -1061,7 +1061,7 @@ model Course {
   programCourses     ProgramCourse[]
   studentAssignments StudentCourseAssignment[]
   entitlements       Entitlement[]
-  courseClasses      CourseClass[]
+  batches      Batch[]
   courseTeachers     CourseTeacher[]
   orderItems         OrderItem[]
 
@@ -1075,7 +1075,7 @@ model Course {
 /// is open to any authenticated student already (gated only by
 /// `Course.status`); this only says "this is what
 /// you should work on". Deliberately distinct from `StudentCourseEnrollment`,
-/// which points at a term-bound `CourseClass` and carries real academic
+/// which points at a term-bound `Batch` and carries real academic
 /// weight (gradebook, attendance, homework) — the two models are unrelated.
 model StudentCourseAssignment {
   id               String   @id @default(uuid())
@@ -1776,7 +1776,7 @@ model Broadcast {
 model MakeupRequest {
   id               String    @id @default(uuid())
   studentProfileId String
-  courseClassId    String
+  batchId    String
   originalDate     DateTime  @db.Date
   reason           String?
   status           String    @default("Awaiting Action") // "Awaiting Action", "Scheduled", "Declined"
@@ -1785,7 +1785,7 @@ model MakeupRequest {
   updatedAt        DateTime  @updatedAt
 
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  courseClass    CourseClass    @relation(fields: [courseClassId], references: [id], onDelete: Cascade)
+  batch    Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   @@map("makeup_requests")
 }
@@ -2042,7 +2042,7 @@ model TimetableSlot {
   endTimeMinutes   Int
   room             String?
   classSectionId   String
-  courseClassId    String?
+  batchId    String?
   teacherProfileId String?
   status           TimetableSlotStatus @default(ACTIVE)
   notes            String?
@@ -2051,7 +2051,7 @@ model TimetableSlot {
 
   timetable      Timetable       @relation(fields: [timetableId], references: [id], onDelete: Cascade)
   classSection   ClassSection    @relation(fields: [classSectionId], references: [id], onDelete: Cascade)
-  courseClass    CourseClass?    @relation(fields: [courseClassId], references: [id], onDelete: SetNull)
+  batch    Batch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
   teacherProfile TeacherProfile? @relation(fields: [teacherProfileId], references: [id], onDelete: SetNull)
 
   @@index([dayOfWeek, startTimeMinutes, endTimeMinutes])
@@ -2078,7 +2078,7 @@ model GradeBookEntry {
   id               String               @id @default(uuid())
   studentProfileId String
   classSectionId   String?
-  courseClassId    String?
+  batchId    String?
   termId           String?
   sourceType       GradeSourceType
   sourceId         String?
@@ -2101,11 +2101,11 @@ model GradeBookEntry {
 
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
   classSection   ClassSection?  @relation(fields: [classSectionId], references: [id], onDelete: SetNull)
-  courseClass    CourseClass?   @relation(fields: [courseClassId], references: [id], onDelete: SetNull)
+  batch    Batch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
   term           Term?          @relation(fields: [termId], references: [id], onDelete: SetNull)
 
   @@unique([studentProfileId, sourceType, sourceId])
-  @@index([courseClassId, termId])
+  @@index([batchId, termId])
   @@index([classSectionId, termId])
   @@index([studentProfileId, termId])
   @@map("gradebook_entries")

@@ -9,13 +9,13 @@ export interface TimetableSlot {
   endTimeMinutes: number;
   room?: string | null;
   classSectionId: string;
-  courseClassId?: string | null;
+  batchId?: string | null;
   teacherProfileId?: string | null;
   status: "ACTIVE" | "CANCELLED";
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
-  courseClass?: {
+  batch?: {
     id: string;
     name: string;
     code: string;

@@ -19,10 +19,10 @@ export class HomeworkService {
   // ─── Homework Assignments Operations ────────────────────────────────────────
 
   async createHomework(dto: CreateHomeworkDto, recordedByUserId?: string) {
-    const courseClass = await this.prisma.courseClass.findUnique({
-      where: { id: dto.courseClassId },
+    const batch = await this.prisma.batch.findUnique({
+      where: { id: dto.batchId },
     });
-    if (!courseClass) {
+    if (!batch) {
       throw new NotFoundException('Course class not found');
     }
 
@@ -33,7 +33,7 @@ export class HomeworkService {
 
     return this.prisma.homework.create({
       data: {
-        courseClassId: dto.courseClassId,
+        batchId: dto.batchId,
         title: dto.title,
         description: dto.description,
         dueDate: due,
@@ -72,16 +72,16 @@ export class HomeworkService {
     });
   }
 
-  async getHomeworkForClass(courseClassId: string) {
-    const courseClass = await this.prisma.courseClass.findUnique({
-      where: { id: courseClassId },
+  async getHomeworkForClass(batchId: string) {
+    const batch = await this.prisma.batch.findUnique({
+      where: { id: batchId },
     });
-    if (!courseClass) {
+    if (!batch) {
       throw new NotFoundException('Course class not found');
     }
 
     return this.prisma.homework.findMany({
-      where: { courseClassId },
+      where: { batchId },
       orderBy: { dueDate: 'desc' },
     });
   }
@@ -108,9 +108,9 @@ export class HomeworkService {
     // Verify student is enrolled in the course class
     const enrollment = await this.prisma.studentCourseEnrollment.findUnique({
       where: {
-        studentProfileId_courseClassId: {
+        studentProfileId_batchId: {
           studentProfileId,
-          courseClassId: homework.courseClassId,
+          batchId: homework.batchId,
         },
       },
     });
@@ -228,7 +228,7 @@ export class HomeworkService {
       include: {
         homework: {
           include: {
-            courseClass: true,
+            batch: true,
           },
         },
       },
@@ -249,19 +249,19 @@ export class HomeworkService {
       throw new NotFoundException('Student profile not found');
     }
 
-    const enrolledCourseClassIds = student.enrollments.map(
-      (e) => e.courseClassId,
+    const enrolledBatchIds = student.enrollments.map(
+      (e) => e.batchId,
     );
-    if (enrolledCourseClassIds.length === 0) {
+    if (enrolledBatchIds.length === 0) {
       return [];
     }
 
     const allHomework = await this.prisma.homework.findMany({
       where: {
-        courseClassId: { in: enrolledCourseClassIds },
+        batchId: { in: enrolledBatchIds },
       },
       include: {
-        courseClass: true,
+        batch: true,
         submissions: {
           where: { studentProfileId },
         },

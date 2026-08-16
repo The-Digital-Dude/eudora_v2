@@ -245,7 +245,7 @@ export class CheckoutService {
    * reconcile against even if the buyer closes the tab mid-payment.
    */
   /**
-   * Batches (`CourseClass`) that can still take a seat for this course.
+   * Batches (`Batch`) that can still take a seat for this course.
    *
    * A LIVE course is unsellable without one, which is exactly why self-paced
    * is the default: it sells every day of the year, while live can only sell
@@ -253,7 +253,7 @@ export class CheckoutService {
    */
   async listOpenBatches(courseId: string) {
     const now = new Date();
-    const batches = await this.prisma.courseClass.findMany({
+    const batches = await this.prisma.batch.findMany({
       where: {
         courseId,
         deletedAt: null,
@@ -291,9 +291,9 @@ export class CheckoutService {
    * a convenience; capacity and deadline are only true at the moment of
    * purchase, and two buyers can race for the last seat.
    */
-  private async assertBatchSellable(courseId: string, courseClassId: string) {
-    const batch = await this.prisma.courseClass.findFirst({
-      where: { id: courseClassId, deletedAt: null },
+  private async assertBatchSellable(courseId: string, batchId: string) {
+    const batch = await this.prisma.batch.findFirst({
+      where: { id: batchId, deletedAt: null },
       select: {
         id: true,
         courseId: true,
@@ -326,7 +326,7 @@ export class CheckoutService {
     skuId: string;
     billingMode: BillingMode;
     /** Required when the course is delivered LIVE. */
-    courseClassId?: string;
+    batchId?: string;
     successUrl: string;
     cancelUrl: string;
   }) {
@@ -364,20 +364,20 @@ export class CheckoutService {
 
     // A LIVE course is a seat in a dated cohort, so the batch is part of what
     // is being bought — validated here, before any money moves.
-    let courseClassId: string | null = null;
+    let batchId: string | null = null;
     if (params.skuType === 'COURSE') {
       const course = await this.prisma.course.findFirst({
         where: { id: params.skuId },
         select: { deliveryMode: true },
       });
       if (course?.deliveryMode === 'LIVE') {
-        if (!params.courseClassId) {
+        if (!params.batchId) {
           throw new BadRequestException(
             'Choose a batch before enrolling in a live course',
           );
         }
-        await this.assertBatchSellable(params.skuId, params.courseClassId);
-        courseClassId = params.courseClassId;
+        await this.assertBatchSellable(params.skuId, params.batchId);
+        batchId = params.batchId;
       }
     }
 
@@ -394,7 +394,7 @@ export class CheckoutService {
             studentProfileId: params.studentProfileId,
             programId: params.skuType === 'PROGRAM' ? params.skuId : null,
             courseId: params.skuType === 'COURSE' ? params.skuId : null,
-            courseClassId,
+            batchId,
             billingMode: params.billingMode,
             priceCents: sku.priceCents,
             installmentCount: isInstallment ? sku.installmentCount : null,
@@ -575,7 +575,7 @@ export class CheckoutService {
                 paidThroughDate: true,
                 program: { select: { id: true, name: true, slug: true } },
                 course: { select: { id: true, title: true, slug: true } },
-                courseClass: {
+                batch: {
                   select: { id: true, name: true, endDate: true },
                 },
                 orderItem: {

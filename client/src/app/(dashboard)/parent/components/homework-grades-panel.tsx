@@ -137,7 +137,7 @@ export function HomeworkGradesPanel({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted/80 text-muted-foreground uppercase">
-                          {grade.courseClass?.name || "General"}
+                          {grade.batch?.name || "General"}
                         </span>
                         {grade.term && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 dark:bg-primary/10 text-primary uppercase">

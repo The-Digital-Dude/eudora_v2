@@ -14,7 +14,7 @@ export class CreateEnrollmentDto {
 
   @IsUUID()
   @IsNotEmpty()
-  courseClassId: string;
+  batchId: string;
 
   @IsDateString()
   @IsOptional()

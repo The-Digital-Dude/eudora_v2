@@ -3,5 +3,5 @@ import { IsUUID, IsNotEmpty } from 'class-validator';
 export class CreateClassEnrollmentDto {
   @IsUUID()
   @IsNotEmpty()
-  courseClassId: string;
+  batchId: string;
 }

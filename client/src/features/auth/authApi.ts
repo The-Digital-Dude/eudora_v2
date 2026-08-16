@@ -112,7 +112,7 @@ export const authApi = createApi({
     "Users",
     "Roles",
     "Leads",
-    "CourseClasses",
+    "Batches",
     "ClassSections",
     "MakeupRequests",
     "Attempts",
@@ -148,6 +148,7 @@ export const authApi = createApi({
     "LiveClasses",
     "PlacementRecommendations",
     "Entitlements",
+    "Classes",
   ],
   endpoints: (builder) => ({
     login: builder.mutation({

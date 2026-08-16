@@ -5,11 +5,11 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { CloudShape } from "@/components/decorative/cloud-shape";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CloudShape } from "@/components/decorative/cloud-shape";
 import { useGetPublicCoursesQuery } from "@/features/catalog/catalogApi";
 
 import Footer from "../landing/components/footer";

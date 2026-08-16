@@ -17,17 +17,17 @@ export class MakeupService {
       throw new NotFoundException('Student profile not found');
     }
 
-    const courseClass = await this.prisma.courseClass.findUnique({
-      where: { id: dto.courseClassId },
+    const batch = await this.prisma.batch.findUnique({
+      where: { id: dto.batchId },
     });
-    if (!courseClass) {
+    if (!batch) {
       throw new NotFoundException('Course class not found');
     }
 
     return this.prisma.makeupRequest.create({
       data: {
         studentProfileId: dto.studentProfileId,
-        courseClassId: dto.courseClassId,
+        batchId: dto.batchId,
         originalDate: new Date(dto.originalDate),
         reason: dto.reason,
         status: 'Awaiting Action',
@@ -47,7 +47,7 @@ export class MakeupService {
               fullName: true,
             },
           },
-          courseClass: {
+          batch: {
             select: {
               name: true,
             },
@@ -78,7 +78,7 @@ export class MakeupService {
             fullName: true,
           },
         },
-        courseClass: {
+        batch: {
           select: {
             name: true,
           },

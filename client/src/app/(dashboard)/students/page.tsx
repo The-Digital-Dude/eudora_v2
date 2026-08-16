@@ -160,7 +160,7 @@ export default function StudentsPage() {
                     key={e.id}
                     className="mr-1 inline-flex items-center gap-1 rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[9px] font-semibold text-primary"
                   >
-                    Course: {e.courseClass?.name || "N/A"}
+                    Course: {e.batch?.name || "N/A"}
                   </div>
                 ))
               : null}

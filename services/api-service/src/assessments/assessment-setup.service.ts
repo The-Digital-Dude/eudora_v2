@@ -1,8 +1,7 @@
 import { Injectable, ConflictException } from '@nestjs/common';
-import { CatalogStatus, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { resolveSort } from '../common/sort.util';
-import { slugify } from '../common/slug.util';
 import {
   CreateAssessmentDto,
   CreateLookupDto,
@@ -18,12 +17,10 @@ import {
   enumFilter,
   enumValue,
   idFilter,
-  classSelect,
   lookupSelect,
   normalizeCode,
   normalizePagination,
   normalizeSections,
-  nullableNumber,
   numberFilter,
   requireRecord,
   requireText,
@@ -38,11 +35,6 @@ const ASSESSMENT_SORTABLE_FIELDS = [
   'totalMarks',
   'createdAt',
 ] as const;
-
-/// `Class` moved from a free-text status to `CatalogStatus` when it absorbed
-/// the old `Level` model, so it can be drafted without leaking into the public
-/// catalog.
-const CATALOG_STATUSES = Object.values(CatalogStatus);
 
 @Injectable()
 export class AssessmentSetupService {
@@ -111,78 +103,6 @@ export class AssessmentSetupService {
       actorUserId,
       'assessments.assessmentType.updated',
       'assessmentType',
-      record.id,
-    );
-    return record;
-  }
-
-  async listClasses(query: LookupQueryDto = {}) {
-    const pagination = normalizePagination(query);
-    const where = {
-      ...searchFilter(query.search, ['code', 'name']),
-      ...enumFilter('status', query.status, CATALOG_STATUSES),
-    };
-    const [items, total] = await Promise.all([
-      this.prisma.class.findMany({
-        where,
-        orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
-        skip: pagination.skip,
-        take: pagination.pageSize,
-        select: classSelect,
-      }),
-      this.prisma.class.count({ where }),
-    ]);
-
-    return toPage(items, total, pagination);
-  }
-
-  async createClass(input: CreateLookupDto, actorUserId: string) {
-    const code = normalizeCode(input.code);
-    await this.assertClassCodeAvailable(code);
-    const name = requireText(input.name, 'name');
-    const record = await this.prisma.class.create({
-      data: {
-        code,
-        name,
-        // Slug is required and unique — it is the public catalog URL segment.
-        slug: slugify(name),
-        sortOrder: input.sortOrder ?? 0,
-      },
-      select: classSelect,
-    });
-    await audit(
-      this.prisma,
-      actorUserId,
-      'assessments.class.created',
-      'class',
-      record.id,
-    );
-    return record;
-  }
-
-  async updateClass(id: string, input: UpdateLookupDto, actorUserId: string) {
-    const data: Prisma.ClassUpdateInput = {};
-    if (input.name !== undefined) {
-      const name = requireText(input.name, 'name');
-      data.name = name;
-      data.slug = slugify(name);
-    }
-    if (input.status !== undefined) {
-      data.status = enumValue(input.status, CATALOG_STATUSES, 'status');
-    }
-    if (input.sortOrder !== undefined) {
-      data.sortOrder = nullableNumber(input.sortOrder, 'sortOrder') ?? 0;
-    }
-    const record = await this.prisma.class.update({
-      where: { id },
-      data,
-      select: classSelect,
-    });
-    await audit(
-      this.prisma,
-      actorUserId,
-      'assessments.class.updated',
-      'class',
       record.id,
     );
     return record;
@@ -392,16 +312,6 @@ export class AssessmentSetupService {
     });
     if (existing) {
       throw new ConflictException('Assessment type code already exists');
-    }
-  }
-
-  private async assertClassCodeAvailable(code: string): Promise<void> {
-    const existing = await this.prisma.class.findUnique({
-      where: { code },
-      select: { id: true },
-    });
-    if (existing) {
-      throw new ConflictException('Class code already exists');
     }
   }
 }

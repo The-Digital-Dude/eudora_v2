@@ -129,7 +129,7 @@ export default function CheckoutPage() {
         skuType: sku.type,
         skuId,
         billingMode,
-        courseClassId: needsBatch ? selectedBatchId : undefined,
+        batchId: needsBatch ? selectedBatchId : undefined,
         successPath: "/checkout/success",
         cancelPath: `/checkout/cancelled?type=${sku.type.toLowerCase()}&slug=${sku.slug}`,
       }).unwrap();

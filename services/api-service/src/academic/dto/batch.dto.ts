@@ -9,15 +9,15 @@ import {
   IsDateString,
   IsUUID,
 } from 'class-validator';
-import { CourseClassStatus } from '@prisma/client';
+import { BatchStatus } from '@prisma/client';
 
 /**
- * A `CourseClass` is a batch — a dated cohort of a Course.
+ * A `Batch` is a batch — a dated cohort of a Course.
  *
  * `campusId` used to sit here and was dropped: multi-campus was removed in
  * `e86d9ac`, so it had been silently ignored ever since.
  */
-export class CreateCourseClassDto {
+export class CreateBatchDto {
   /**
    * The course this batch teaches. Optional only so pre-existing term-based
    * classes keep working; a batch with no course can never be sold, because
@@ -40,9 +40,9 @@ export class CreateCourseClassDto {
   @IsNotEmpty()
   code: string;
 
-  @IsEnum(CourseClassStatus)
+  @IsEnum(BatchStatus)
   @IsOptional()
-  status?: CourseClassStatus;
+  status?: BatchStatus;
 
   @IsString()
   @IsOptional()
@@ -76,7 +76,7 @@ export class CreateCourseClassDto {
   leadTeacherProfileId?: string;
 }
 
-export class UpdateCourseClassDto {
+export class UpdateBatchDto {
   @IsUUID()
   @IsOptional()
   courseId?: string;
@@ -93,9 +93,9 @@ export class UpdateCourseClassDto {
   @IsOptional()
   code?: string;
 
-  @IsEnum(CourseClassStatus)
+  @IsEnum(BatchStatus)
   @IsOptional()
-  status?: CourseClassStatus;
+  status?: BatchStatus;
 
   @IsString()
   @IsOptional()

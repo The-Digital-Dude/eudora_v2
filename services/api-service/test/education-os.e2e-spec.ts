@@ -20,7 +20,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
   let academicYearId: string;
   let termId: string;
   let classSectionId: string;
-  let courseClassId: string;
+  let batchId: string;
 
   // Profiles and relationship trackers
   let studentUserId: string;
@@ -131,9 +131,9 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .delete({ where: { id: guardianUserId } })
         .catch(() => {});
     }
-    if (courseClassId) {
-      await prisma.courseClass
-        .delete({ where: { id: courseClassId } })
+    if (batchId) {
+      await prisma.batch
+        .delete({ where: { id: batchId } })
         .catch(() => {});
     }
     if (classSectionId) {
@@ -271,8 +271,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .expect(201);
 
       const body = res.body as { data: { id: string } };
-      courseClassId = body.data.id;
-      expect(courseClassId).toBeDefined();
+      batchId = body.data.id;
+      expect(batchId).toBeDefined();
     });
   });
 
@@ -338,16 +338,16 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
           studentProfileId,
-          courseClassId,
+          batchId,
           status: 'ENROLLED',
         })
         .expect(201);
 
       const body = res.body as {
-        data: { studentProfileId: string; courseClassId: string };
+        data: { studentProfileId: string; batchId: string };
       };
       expect(body.data.studentProfileId).toBe(studentProfileId);
-      expect(body.data.courseClassId).toBe(courseClassId);
+      expect(body.data.batchId).toBe(batchId);
     });
   });
 

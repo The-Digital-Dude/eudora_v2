@@ -16,9 +16,8 @@ import { useGetTeacherProfilesQuery } from "@/features/dashboard/dashboardApi";
 /**
  * Teaching staff for a course.
  *
- * This is the answer to "one course, many teachers" — a join table. The Batch
- * (`CourseClass`) concept is separate and exists for live cohorts, each of
- * which carries its own lead teacher.
+ * This is the answer to "one course, many teachers" — a join table. `Batch` is
+ * a separate concept for live cohorts, each carrying its own lead teacher.
  */
 export function CourseTeachersPanel({ courseId }: { courseId: string }) {
   const { data: assigned } = useGetCourseTeachersQuery(courseId);

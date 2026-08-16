@@ -17,9 +17,9 @@ import {
   UpdateClassSectionDto,
 } from './dto/class-section.dto';
 import {
-  CreateCourseClassDto,
-  UpdateCourseClassDto,
-} from './dto/course-class.dto';
+  CreateBatchDto,
+  UpdateBatchDto,
+} from './dto/batch.dto';
 
 const CLASS_SECTION_SORTABLE_FIELDS = ['name', 'code', 'status'] as const;
 
@@ -139,7 +139,7 @@ export class AcademicService {
         select: { id: true },
       });
       const termIds = terms.map((t) => t.id);
-      await tx.courseClass.updateMany({
+      await tx.batch.updateMany({
         where: { termId: { in: termIds }, deletedAt: null },
         data: { deletedAt: now },
       });
@@ -222,7 +222,7 @@ export class AcademicService {
   async findTermById(id: string) {
     const term = await this.prisma.term.findUnique({
       where: { id },
-      include: { academicYear: true, courseClasses: true },
+      include: { academicYear: true, batches: true },
     });
     if (!term) {
       throw new NotFoundException('Term not found');
@@ -442,7 +442,7 @@ export class AcademicService {
 
   // --- Course Class Operations ---
 
-  async createCourseClass(dto: CreateCourseClassDto) {
+  async createBatch(dto: CreateBatchDto) {
     // A term is optional now: a rolling batch belongs to none. Still validated
     // when supplied so a typo fails loudly rather than silently detaching.
     if (dto.termId) {
@@ -468,7 +468,7 @@ export class AcademicService {
       throw new BadRequestException('endDate cannot be before startDate');
     }
 
-    const existingCode = await this.prisma.courseClass.findUnique({
+    const existingCode = await this.prisma.batch.findUnique({
       where: { code: dto.code },
     });
     if (existingCode) {
@@ -477,7 +477,7 @@ export class AcademicService {
 
     const { startDate, endDate, enrollmentDeadline, ...rest } = dto;
 
-    return this.prisma.courseClass.create({
+    return this.prisma.batch.create({
       data: {
         ...rest,
         startDate: startDate ? new Date(startDate) : null,
@@ -489,19 +489,19 @@ export class AcademicService {
     });
   }
 
-  async findAllCourseClasses(page = 1, limit = 10, termId?: string) {
+  async findAllBatches(page = 1, limit = 10, termId?: string) {
     const skip = (page - 1) * limit;
     const where = termId ? { termId } : {};
 
     const [classes, total] = await Promise.all([
-      this.prisma.courseClass.findMany({
+      this.prisma.batch.findMany({
         where,
         skip,
         take: limit,
         include: { term: { include: { academicYear: true } } },
         orderBy: { name: 'asc' },
       }),
-      this.prisma.courseClass.count({ where }),
+      this.prisma.batch.count({ where }),
     ]);
 
     return {
@@ -515,8 +515,8 @@ export class AcademicService {
     };
   }
 
-  async findCourseClassById(id: string) {
-    const cls = await this.prisma.courseClass.findUnique({
+  async findBatchById(id: string) {
+    const cls = await this.prisma.batch.findUnique({
       where: { id },
       include: {
         term: { include: { academicYear: true } },
@@ -529,8 +529,8 @@ export class AcademicService {
     return cls;
   }
 
-  async updateCourseClass(id: string, dto: UpdateCourseClassDto) {
-    const cls = await this.prisma.courseClass.findUnique({
+  async updateBatch(id: string, dto: UpdateBatchDto) {
+    const cls = await this.prisma.batch.findUnique({
       where: { id },
     });
     if (!cls) {
@@ -547,7 +547,7 @@ export class AcademicService {
     }
 
     if (dto.code && dto.code !== cls.code) {
-      const existingCode = await this.prisma.courseClass.findUnique({
+      const existingCode = await this.prisma.batch.findUnique({
         where: { code: dto.code },
       });
       if (existingCode) {
@@ -575,7 +575,7 @@ export class AcademicService {
 
     const { startDate, endDate, enrollmentDeadline, ...rest } = dto;
 
-    return this.prisma.courseClass.update({
+    return this.prisma.batch.update({
       where: { id },
       data: {
         ...rest,
@@ -596,15 +596,15 @@ export class AcademicService {
     });
   }
 
-  async deleteCourseClass(id: string) {
-    const cls = await this.prisma.courseClass.findUnique({
+  async deleteBatch(id: string) {
+    const cls = await this.prisma.batch.findUnique({
       where: { id },
     });
     if (!cls) {
       throw new NotFoundException('Course class not found');
     }
 
-    await this.prisma.courseClass.delete({
+    await this.prisma.batch.delete({
       where: { id },
     });
 

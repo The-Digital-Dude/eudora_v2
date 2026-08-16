@@ -13,8 +13,8 @@ import {
   useDeleteStudentEnrollmentMutation,
   useDeleteStudentPlacementMutation,
   useGetAcademicYearsQuery,
+  useGetBatchesQuery,
   useGetClassSectionsQuery,
-  useGetCourseClassesQuery,
 } from "@/features/dashboard/dashboardApi";
 
 const selectClass =
@@ -29,7 +29,7 @@ const labelClass = "text-[10px] font-bold tracking-wider text-muted-foreground u
 export function StudentAcademicRoutes({ student }: { student: StudentProfile }) {
   const { data: sectionsData } = useGetClassSectionsQuery();
   const { data: yearsData } = useGetAcademicYearsQuery();
-  const { data: courseClassesData } = useGetCourseClassesQuery();
+  const { data: batchesData } = useGetBatchesQuery();
 
   const [createPlacement, { isLoading: placing }] = useCreateStudentPlacementMutation();
   const [deletePlacement] = useDeleteStudentPlacementMutation();
@@ -80,7 +80,7 @@ export function StudentAcademicRoutes({ student }: { student: StudentProfile }) 
     try {
       await createEnrollment({
         studentProfileId: student.id,
-        courseClassId: enrollmentClassId,
+        batchId: enrollmentClassId,
       }).unwrap();
       setEnrollmentClassId("");
     } catch (err: any) {
@@ -229,7 +229,7 @@ export function StudentAcademicRoutes({ student }: { student: StudentProfile }) 
                 <option value="" disabled>
                   Select Course Class
                 </option>
-                {(courseClassesData?.items ?? [])
+                {(batchesData?.items ?? [])
                   .filter((c: any) => c.status === "ACTIVE")
                   .map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -259,10 +259,10 @@ export function StudentAcademicRoutes({ student }: { student: StudentProfile }) 
                   >
                     <div>
                       <p className="text-xs font-semibold text-foreground">
-                        {e.courseClass?.name || "Course Lecture"}
+                        {e.batch?.name || "Course Lecture"}
                       </p>
                       <p className="font-mono text-[9px] text-muted-foreground">
-                        Class Code: {e.courseClass?.code || "N/A"}
+                        Class Code: {e.batch?.code || "N/A"}
                       </p>
                     </div>
                     <Button

@@ -189,7 +189,7 @@ export class StudentController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('studentProfileId') studentProfileId?: string,
-    @Query('courseClassId') courseClassId?: string,
+    @Query('batchId') batchId?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
@@ -197,7 +197,7 @@ export class StudentController {
       pageNum,
       limitNum,
       studentProfileId,
-      courseClassId,
+      batchId,
     );
   }
 

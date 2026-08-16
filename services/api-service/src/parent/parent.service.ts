@@ -61,7 +61,7 @@ export class ParentService {
       const child = rel.studentProfile;
       const classSection =
         child.placements.find((p) => p.isActive)?.classSection || null;
-      const courseClassIds = child.enrollments.map((e) => e.courseClassId);
+      const batchIds = child.enrollments.map((e) => e.batchId);
 
       // 1. Calculate Attendance Rate
       const totalAttendance = await this.prisma.dailyAttendance.count({
@@ -80,9 +80,9 @@ export class ParentService {
 
       // 2. Calculate Pending Homework Count
       let pendingHomeworkCount = 0;
-      if (courseClassIds.length > 0) {
+      if (batchIds.length > 0) {
         const homework = await this.prisma.homework.findMany({
-          where: { courseClassId: { in: courseClassIds } },
+          where: { batchId: { in: batchIds } },
           include: {
             submissions: {
               where: { studentProfileId: child.id },
@@ -200,15 +200,15 @@ export class ParentService {
       throw new NotFoundException('Student profile not found');
     }
 
-    const courseClassIds = student.enrollments.map((e) => e.courseClassId);
-    if (courseClassIds.length === 0) {
+    const batchIds = student.enrollments.map((e) => e.batchId);
+    if (batchIds.length === 0) {
       return [];
     }
 
     const homework = await this.prisma.homework.findMany({
-      where: { courseClassId: { in: courseClassIds } },
+      where: { batchId: { in: batchIds } },
       include: {
-        courseClass: { select: { name: true } },
+        batch: { select: { name: true } },
         submissions: {
           where: { studentProfileId },
           select: {
@@ -228,7 +228,7 @@ export class ParentService {
       description: hw.description,
       dueDate: hw.dueDate,
       pointsPossible: hw.maxPoints,
-      courseName: hw.courseClass.name,
+      courseName: hw.batch.name,
       submission: hw.submissions[0] || null,
     }));
   }
@@ -240,7 +240,7 @@ export class ParentService {
         status: 'PUBLISHED',
       },
       include: {
-        courseClass: { select: { name: true } },
+        batch: { select: { name: true } },
         term: { select: { name: true } },
       },
       orderBy: { assessedAt: 'desc' },
@@ -386,7 +386,7 @@ export class ParentService {
   // default-false migration made nothing self-enrollable by accident.
 
   private async listOpenClassesForStudent() {
-    return this.prisma.courseClass.findMany({
+    return this.prisma.batch.findMany({
       where: {
         deletedAt: null,
         status: 'ACTIVE',
@@ -406,10 +406,10 @@ export class ParentService {
       this.listOpenClassesForStudent(),
       this.prisma.studentCourseEnrollment.findMany({
         where: { studentProfileId },
-        select: { courseClassId: true },
+        select: { batchId: true },
       }),
     ]);
-    const enrolledIds = new Set(enrollments.map((e) => e.courseClassId));
+    const enrolledIds = new Set(enrollments.map((e) => e.batchId));
     return classes
       .filter(
         (cls) => cls.capacity === null || cls._count.enrollments < cls.capacity,
@@ -421,7 +421,7 @@ export class ParentService {
     return this.prisma.studentCourseEnrollment.findMany({
       where: { studentProfileId },
       include: {
-        courseClass: {
+        batch: {
           include: {
             term: { select: { id: true, name: true, endDate: true } },
           },
@@ -431,12 +431,12 @@ export class ParentService {
     });
   }
 
-  async enrollInClass(studentProfileId: string, courseClassId: string) {
+  async enrollInClass(studentProfileId: string, batchId: string) {
     // Re-run every condition server-side — the client's "available" list is
     // convenience, not the security/business-rule boundary. Same rationale
     // as `assignCourse` re-checking campus visibility above.
     const open = await this.listOpenClassesForStudent();
-    const target = open.find((cls) => cls.id === courseClassId);
+    const target = open.find((cls) => cls.id === batchId);
     if (!target) {
       throw new NotFoundException('This class is not open for enrollment');
     }
@@ -447,7 +447,7 @@ export class ParentService {
     // as "class is full" instead of the actually-true "already enrolled".
     const existing = await this.prisma.studentCourseEnrollment.findUnique({
       where: {
-        studentProfileId_courseClassId: { studentProfileId, courseClassId },
+        studentProfileId_batchId: { studentProfileId, batchId },
       },
     });
     if (existing) {
@@ -465,7 +465,7 @@ export class ParentService {
 
     return this.studentService.createEnrollment({
       studentProfileId,
-      courseClassId,
+      batchId,
     });
   }
 

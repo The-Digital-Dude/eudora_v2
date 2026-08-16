@@ -12,7 +12,7 @@ import { Type } from 'class-transformer';
 export class CreateHomeworkDto {
   @IsString()
   @IsNotEmpty()
-  courseClassId: string;
+  batchId: string;
 
   @IsString()
   @IsNotEmpty()

@@ -6,6 +6,7 @@ import React, { Suspense,useState } from "react";
 
 // New dashboard layout elements
 import { AppSidebar } from "@/components/app-sidebar";
+import { PortalTopbar } from "@/components/portal-topbar";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ThemeCustomizer, ThemeCustomizerTrigger } from "@/components/theme-customizer";
@@ -15,7 +16,7 @@ import { flattenNavLeaves } from "@/config/nav-config";
 import { useLogoutMutation } from "@/features/auth/authApi";
 import { logout } from "@/features/auth/authSlice";
 import { useSidebarConfig } from "@/hooks/use-sidebar-config";
-import { getUserRoles,hasAccess } from "@/lib/access-control";
+import { getPrimaryRole,getUserRoles, hasAccess } from "@/lib/access-control";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 const AUTHORIZED_ROLES = ["SUPER_ADMIN", "ADMIN", "TEACHER", "USER", "GUARDIAN"];
@@ -125,6 +126,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Guardian/Student get a lightweight topbar-only shell instead of the
+  // admin-style collapsible sidebar — their real navigation surface is just
+  // their portal home plus a handful of permission-gated pages, so the full
+  // sidebar chrome (multi-group nav, theme customizer) is unwarranted complexity.
+  const primaryRole = getPrimaryRole(user);
+  if (primaryRole === "GUARDIAN" || primaryRole === "STUDENT") {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <PortalTopbar user={user} onLogout={handleLogout} />
+        <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col outline-none">
+          <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 py-6 md:gap-6 lg:px-6">
+            <Suspense
+              fallback={
+                <div className="flex min-h-[50vh] items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              }
+            >
+              {children}
+            </Suspense>
+          </div>
+        </main>
+        <SiteFooter />
       </div>
     );
   }

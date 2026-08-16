@@ -1,11 +1,11 @@
 "use client";
 
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Lock } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 
-import { useGetCourseDetailQuery } from "@/features/catalog/catalogApi";
 import type { ModuleItem } from "@/features/catalog/catalogApi";
+import { useGetCourseDetailQuery } from "@/features/catalog/catalogApi";
 
 import { AssessmentItemView } from "./components/AssessmentItemView";
 import { CourseOutlineSidebar } from "./components/CourseOutlineSidebar";
@@ -29,8 +29,13 @@ export default function CourseOutlinePage() {
     return course.concepts.flatMap((c) => c.items);
   }, [course]);
 
+  // Default to the first item the viewer can actually open. Falling back to
+  // item[0] would land an unenrolled visitor on a locked item and render an
+  // empty player, which reads as broken rather than as gated.
   const selectedItem: ModuleItem | undefined =
-    flattenedItems.find((i) => i.id === selectedItemId) ?? flattenedItems[0];
+    flattenedItems.find((i) => i.id === selectedItemId) ??
+    flattenedItems.find((i) => !i.isContentLocked) ??
+    flattenedItems[0];
 
   if (isLoading) {
     return (
@@ -71,10 +76,32 @@ export default function CourseOutlinePage() {
       />
 
       <main className="relative flex-1 overflow-y-auto">
+        {!course.isEntitled && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-warning/20 bg-warning/10 px-6 py-3">
+            <Lock className="h-3.5 w-3.5 shrink-0 text-warning" />
+            <p className="text-xs font-semibold text-foreground">
+              You&apos;re previewing this course.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Items marked FREE are open — the rest unlock when you enrol.
+            </p>
+          </div>
+        )}
         {!selectedItem ? (
           <div className="flex h-full items-center justify-center">
             <p className="text-sm text-muted-foreground">
               This course doesn&apos;t have any items yet.
+            </p>
+          </div>
+        ) : selectedItem.isContentLocked ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+            <Lock className="h-8 w-8 text-muted-foreground/60" />
+            <p className="text-sm font-bold text-foreground">
+              {selectedItem.title}
+            </p>
+            <p className="max-w-sm text-xs text-muted-foreground">
+              This content is part of a paid programme. Enrol to unlock every
+              lesson, practice set and assessment in this course.
             </p>
           </div>
         ) : (

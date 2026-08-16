@@ -1,11 +1,43 @@
 import {
+  BadRequestException,
   Injectable,
   Logger,
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProgramDto, UpdateProgramDto } from './dto/program.dto';
+import { slugify } from '../common/slug.util';
+import {
+  AttachProgramCourseDto,
+  CreateProgramDto,
+  MIN_SELLABLE_PRICE_CENTS,
+  ReorderProgramCoursesDto,
+  UpdateProgramDto,
+} from './dto/program.dto';
+
+/// Programs are the primary sellable SKU, so reads carry the Class they sit
+/// under (null for standalone bundles) and the Courses they bundle.
+const programInclude = {
+  class: { select: { id: true, code: true, name: true, slug: true } },
+  programCourses: {
+    orderBy: { sortOrder: 'asc' as const },
+    select: {
+      id: true,
+      sortOrder: true,
+      isRequired: true,
+      course: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          status: true,
+          gradeBand: true,
+          estimatedHours: true,
+        },
+      },
+    },
+  },
+};
 
 @Injectable()
 export class InstitutionService {
@@ -15,6 +47,40 @@ export class InstitutionService {
 
   // --- Program Operations ---
 
+  /**
+   * Rejects prices below the floor rather than silently accepting them: a
+   * sub-$9 SKU loses ~10% to Stripe's fixed fee and cannot carry its own
+   * support cost.
+   */
+  private assertPriceFloor(dto: CreateProgramDto | UpdateProgramDto) {
+    for (const [field, value] of [
+      ['priceOneTimeCents', dto.priceOneTimeCents],
+      ['priceMonthlyCents', dto.priceMonthlyCents],
+    ] as const) {
+      if (
+        value !== undefined &&
+        value > 0 &&
+        value < MIN_SELLABLE_PRICE_CENTS
+      ) {
+        throw new BadRequestException(
+          `${field} must be at least ${MIN_SELLABLE_PRICE_CENTS} cents (or 0 / omitted for "not sold")`,
+        );
+      }
+    }
+    if (dto.priceMonthlyCents && !dto.installmentCount) {
+      throw new BadRequestException(
+        'installmentCount is required when priceMonthlyCents is set',
+      );
+    }
+  }
+
+  private async assertSlugAvailable(slug: string, excludeId?: string) {
+    const existing = await this.prisma.program.findUnique({ where: { slug } });
+    if (existing && existing.id !== excludeId) {
+      throw new ConflictException('Program slug already exists');
+    }
+  }
+
   async createProgram(dto: CreateProgramDto) {
     const existingCode = await this.prisma.program.findUnique({
       where: { code: dto.code },
@@ -23,8 +89,14 @@ export class InstitutionService {
       throw new ConflictException('Program code already exists');
     }
 
+    this.assertPriceFloor(dto);
+
+    const slug = dto.slug ? slugify(dto.slug) : slugify(dto.name);
+    await this.assertSlugAvailable(slug);
+
     return this.prisma.program.create({
-      data: dto,
+      data: { ...dto, slug },
+      include: programInclude,
     });
   }
 
@@ -45,6 +117,7 @@ export class InstitutionService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: programInclude,
       }),
       this.prisma.program.count({ where }),
     ]);
@@ -63,6 +136,7 @@ export class InstitutionService {
   async findProgramById(id: string) {
     const program = await this.prisma.program.findUnique({
       where: { id },
+      include: programInclude,
     });
     if (!program) {
       throw new NotFoundException('Program not found');
@@ -87,10 +161,79 @@ export class InstitutionService {
       }
     }
 
+    this.assertPriceFloor(dto);
+
+    // Only re-slug on an explicit slug change. Renaming a published program
+    // must not silently break its public URL and any inbound links to it.
+    const slug = dto.slug ? slugify(dto.slug) : undefined;
+    if (slug) {
+      await this.assertSlugAvailable(slug, id);
+    }
+
     return this.prisma.program.update({
       where: { id },
-      data: dto,
+      data: { ...dto, ...(slug ? { slug } : {}) },
+      include: programInclude,
     });
+  }
+
+  // --- Program <-> Course wiring -------------------------------------------
+  // Courses are reusable across Programs (Class 9 and Class 10 Science both
+  // teach Physics), so this is a join rather than a `programId` on Course.
+
+  async attachCourse(programId: string, dto: AttachProgramCourseDto) {
+    await this.findProgramById(programId);
+
+    const course = await this.prisma.course.findFirst({
+      where: { id: dto.courseId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+
+    const existing = await this.prisma.programCourse.findUnique({
+      where: { programId_courseId: { programId, courseId: dto.courseId } },
+    });
+    if (existing) {
+      throw new ConflictException('Course is already attached to this program');
+    }
+
+    return this.prisma.programCourse.create({
+      data: {
+        programId,
+        courseId: dto.courseId,
+        sortOrder: dto.sortOrder ?? 0,
+        isRequired: dto.isRequired ?? true,
+      },
+    });
+  }
+
+  async detachCourse(programId: string, courseId: string) {
+    const link = await this.prisma.programCourse.findUnique({
+      where: { programId_courseId: { programId, courseId } },
+    });
+    if (!link) {
+      throw new NotFoundException('Course is not attached to this program');
+    }
+
+    await this.prisma.programCourse.delete({ where: { id: link.id } });
+    return { message: 'Course detached from program' };
+  }
+
+  async reorderCourses(programId: string, dto: ReorderProgramCoursesDto) {
+    await this.findProgramById(programId);
+
+    await this.prisma.$transaction(
+      dto.courseIds.map((courseId, index) =>
+        this.prisma.programCourse.update({
+          where: { programId_courseId: { programId, courseId } },
+          data: { sortOrder: index },
+        }),
+      ),
+    );
+
+    return this.findProgramById(programId);
   }
 
   async deleteProgram(id: string) {

@@ -7,7 +7,7 @@ export interface PlacementRecommendation {
   studentProfileId: string | null;
   leadId: string | null;
   assessmentAttemptId: string;
-  recommendedLevelId: string;
+  recommendedClassId: string;
   recommendedClassSectionId: string | null;
   rationale: string;
   status: PlacementRecStatus;
@@ -16,7 +16,7 @@ export interface PlacementRecommendation {
   createdAt: string;
   updatedAt: string;
   studentProfile: { id: string; fullName: string } | null;
-  recommendedLevel: { id: string; name: string };
+  recommendedClass: { id: string; name: string };
   recommendedClassSection: { id: string; name: string } | null;
 }
 

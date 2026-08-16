@@ -26,7 +26,7 @@ import {
   usePublishAssessmentMutation,
 } from "@/features/assessments/assessmentsApi";
 import {
-  useGetLevelsQuery,
+  useGetClassesQuery,
   useGetSubjectsQuery,
 } from "@/features/assessments/questionsApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
@@ -43,7 +43,7 @@ export default function AssessmentsPage() {
     {
       search: "",
       subjectId: "all",
-      levelId: "all",
+      classId: "all",
       status: "all",
       page: 1,
       sortBy: "",
@@ -59,7 +59,7 @@ export default function AssessmentsPage() {
   const { data: assessmentsData, isLoading } = useGetAssessmentsQuery({
     search: values.search || undefined,
     subjectId: values.subjectId === "all" ? undefined : values.subjectId,
-    levelId: values.levelId === "all" ? undefined : values.levelId,
+    classId: values.classId === "all" ? undefined : values.classId,
     status: values.status === "all" ? undefined : values.status,
     page: values.page,
     pageSize: PAGE_SIZE,
@@ -75,11 +75,11 @@ export default function AssessmentsPage() {
   };
 
   const { data: subjectsData } = useGetSubjectsQuery();
-  const { data: levelsData } = useGetLevelsQuery();
+  const { data: classesData } = useGetClassesQuery();
 
   const assessments = assessmentsData?.items || [];
   const subjects = subjectsData?.items || [];
-  const levels = levelsData?.items || [];
+  const classes = classesData?.items || [];
 
   // Mutations
   const [publishAssessment] = usePublishAssessmentMutation();
@@ -180,13 +180,13 @@ export default function AssessmentsPage() {
 
         {/* Level Filter */}
         <div className="w-[160px]">
-          <Select value={values.levelId} onValueChange={(next) => setValue("levelId", next)}>
+          <Select value={values.classId} onValueChange={(next) => setValue("classId", next)}>
             <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
               <SelectValue placeholder="All Levels" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="all">All Levels</SelectItem>
-              {levels.map((l) => (
+              {classes.map((l) => (
                 <SelectItem key={l.id} value={l.id}>
                   {l.name}
                 </SelectItem>
@@ -261,9 +261,9 @@ export default function AssessmentsPage() {
                       {item.subject.name}
                     </span>
                   )}
-                  {item.level && (
+                  {item.class && (
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">
-                      {item.level.name}
+                      {item.class.name}
                     </span>
                   )}
                 </div>

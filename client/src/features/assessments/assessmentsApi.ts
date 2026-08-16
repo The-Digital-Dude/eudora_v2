@@ -31,7 +31,7 @@ export interface Assessment {
   id: string;
   assessmentTypeId: string;
   subjectId: string;
-  levelId: string;
+  classId: string;
   termId?: string | null;
   weekNumber?: number | null;
   title: string;
@@ -46,7 +46,7 @@ export interface Assessment {
   updatedAt: string;
   assessmentType?: { id: string; code: string; name: string };
   subject?: { id: string; code: string; name: string };
-  level?: { id: string; code: string; name: string };
+  class?: { id: string; code: string; name: string };
   term?: { id: string; name: string } | null;
   sections?: AssessmentSection[];
   questions?: AssessmentQuestion[];
@@ -113,7 +113,7 @@ export interface Attempt {
 export interface ListAssessmentsParams {
   search?: string;
   subjectId?: string;
-  levelId?: string;
+  classId?: string;
   status?: string;
   page?: number;
   pageSize?: number;

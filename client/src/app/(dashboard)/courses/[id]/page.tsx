@@ -18,6 +18,7 @@ import { useParams } from "next/navigation";
 import React, { useState } from "react";
 import { toast } from "sonner";
 
+import { CourseTeachersPanel } from "@/app/(dashboard)/courses/components/course-teachers-panel";
 import { useGetAssessmentsQuery } from "@/features/assessments/assessmentsApi";
 import type { ModuleItemKind } from "@/features/catalog/catalogApi";
 import { useCreateModuleItemMutation,useGetCourseDetailQuery } from "@/features/catalog/catalogApi";
@@ -418,6 +419,8 @@ export default function CourseDetailPage() {
           </div>
         )}
       </div>
+
+      <CourseTeachersPanel courseId={courseId} />
     </div>
   );
 }

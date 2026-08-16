@@ -63,7 +63,7 @@ export class QuestionsService {
     const where = {
       ...searchFilter(query.search, ['prompt', 'correctAnswer']),
       ...idFilter('subjectId', query.subjectId),
-      ...idFilter('levelId', query.levelId),
+      ...idFilter('classId', query.classId),
       ...enumFilter('questionType', query.questionType, [
         'mcq',
         'short_answer',
@@ -125,7 +125,7 @@ export class QuestionsService {
     const question = await this.prisma.question.create({
       data: {
         subjectId: emptyToNull(input.subjectId),
-        levelId: emptyToNull(input.levelId),
+        classId: emptyToNull(input.classId),
         questionType,
         prompt: requireText(input.prompt, 'prompt'),
         correctAnswer: emptyToNull(input.correctAnswer),
@@ -189,8 +189,8 @@ export class QuestionsService {
           ...(input.subjectId !== undefined
             ? { subjectId: emptyToNull(input.subjectId) }
             : {}),
-          ...(input.levelId !== undefined
-            ? { levelId: emptyToNull(input.levelId) }
+          ...(input.classId !== undefined
+            ? { classId: emptyToNull(input.classId) }
             : {}),
           ...(questionType !== undefined ? { questionType } : {}),
           ...(input.prompt !== undefined

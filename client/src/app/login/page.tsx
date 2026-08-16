@@ -2,7 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleLogin } from "@react-oauth/google";
-import { ArrowRight, Eye, EyeOff, Lock, Mail, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -24,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { useGoogleLoginMutation, useLoginMutation } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
 import { getPrimaryRole, getRoleHome } from "@/lib/access-control";
+import { readNextParam, withNext } from "@/lib/safe-next";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 const googleOAuthConfigured = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -117,6 +119,10 @@ export default function LoginPage() {
   const [loginAs, setLoginAs] = useState<"student" | "guardian" | "admin">("student");
 
   const router = useRouter();
+  // Read once on mount: the funnel destination, if this login was reached
+  // from an "Enrol" CTA rather than directly.
+  const [nextParam, setNextParam] = useState<string | null>(null);
+  useEffect(() => setNextParam(readNextParam()), []);
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const user = useAppSelector((state) => state.auth.user) as any;
@@ -135,6 +141,10 @@ export default function LoginPage() {
     (u: any) => {
       if (!u) return;
 
+      // A buyer who started at "Enrol" carries their destination in `next`.
+      // Validated on read — it is attacker-controllable.
+      const next = readNextParam();
+
       // Every role lands on its purpose-built home: admin -> /dashboard,
       // teacher -> /teacher, guardian -> /parent, student -> /student.
       if (getPrimaryRole(u) === "GUARDIAN") {
@@ -143,10 +153,17 @@ export default function LoginPage() {
           hasProfile &&
           Array.isArray(u.guardianProfile.students) &&
           u.guardianProfile.students.length > 0;
-        router.replace(!hasProfile || !hasStudents ? "/complete-profile" : "/parent");
+
+        // Still carry `next` through profile completion, otherwise a guardian
+        // buying for a first child loses the checkout they were mid-way into.
+        if (!hasProfile || !hasStudents) {
+          router.replace(withNext("/complete-profile", next));
+          return;
+        }
+        router.replace(next ?? "/parent");
         return;
       }
-      router.replace(getRoleHome(u));
+      router.replace(next ?? getRoleHome(u));
     },
     [router],
   );
@@ -197,13 +214,10 @@ export default function LoginPage() {
     <div className="dot-grid bg-background text-foreground relative flex min-h-screen flex-col items-center justify-center px-4 py-12 font-sans select-none">
       <div className="animate-fade-in-up w-full max-w-[440px] space-y-8">
         {/* Brand Logo */}
-        <div className="flex flex-col items-center space-y-3">
-          <div className="bg-foreground text-background rounded-xl p-2.5 shadow-sm">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <span className="font-display text-foreground text-xl font-bold tracking-tight">
-            Eudora
-          </span>
+        <div className="flex flex-col items-center">
+          <Link href="/">
+            <Image src="/landing/eudora_logo.png" alt="Eudora" width={218} height={72} className="h-11 w-auto" />
+          </Link>
         </div>
 
         {/* Login Card */}
@@ -433,7 +447,7 @@ export default function LoginPage() {
         <div className="text-muted-foreground text-center text-xs">
           Don&apos;t have an account?{" "}
           <Link
-            href="/register"
+            href={withNext("/register", nextParam)}
             className="text-foreground font-semibold transition-colors hover:underline"
           >
             Create an account

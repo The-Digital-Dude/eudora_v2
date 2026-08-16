@@ -40,11 +40,10 @@ model User {
   deviceTokens            DeviceToken[]
   devicePairingCodes      DevicePairingCode[]
   fileUploads             FileUpload[]
-  guardianThreads         MessageThread[]        @relation("GuardianThreads")
-  teacherThreads          MessageThread[]        @relation("TeacherThreads")
-  sentMessages            Message[]              @relation("SentMessages")
   hostedLiveClassSessions LiveClassSession[]     @relation("HostedLiveClassSessions")
   assignedCourses         StudentCourseAssignment[] @relation("AssignedCourses")
+  grantedEntitlements     Entitlement[]             @relation("GrantedEntitlements")
+  orders                  Order[]                   @relation("GuardianOrders")
 
   @@map("users")
 }
@@ -131,6 +130,16 @@ enum EducationalInstitutionStatus {
   INACTIVE
 }
 
+/// How a Program or Course is consumed. Drives both the duration semantics and
+/// what a purchase grants: SELF_PACED sells an access window starting at
+/// purchase (permanent once fully paid), LIVE sells a seat in a dated batch and
+/// access ends with that batch.
+enum DeliveryMode {
+  SELF_PACED
+  LIVE
+  HYBRID
+}
+
 enum ClassStatus {
   ACTIVE
   INACTIVE
@@ -190,19 +199,279 @@ enum Gender {
   OTHER
 }
 
+/// The primary sellable SKU. A Program bundles Courses (via `ProgramCourse`)
+/// and carries the price, duration and marketing copy that the public catalog
+/// and checkout render.
 model Program {
-  id          String                       @id @default(uuid())
-  name        String
-  code        String                       @unique
-  status      EducationalInstitutionStatus @default(ACTIVE)
-  createdAt   DateTime                     @default(now())
-  updatedAt   DateTime                     @updatedAt
+  id String @id @default(uuid())
+  /// Nullable on purpose: a Program with no Class is a standalone bundle — the
+  /// K-6 micro-course packs — which sits outside the academic
+  /// Class -> Program tree but reuses the same SKU machinery.
+  classId String?
+  name    String
+  code    String @unique
+  slug    String @unique
+
+  /// Marketing surface. `shortDescription` is the SEO meta description;
+  /// `description` is the long body on the public program page.
+  shortDescription String?
+  description      String?
+  thumbnailUrl     String?
+  outcomes         String[]
+  /// The formal/board syllabus PDF parents look for. Course outlines are
+  /// derived from the Concept tree instead of authored — this is the only
+  /// hand-supplied syllabus artefact.
+  syllabusFileId   String?
+
+  deliveryMode DeliveryMode @default(SELF_PACED)
+  /// Null when there is no fixed calendar length — self-paced bundles with
+  /// permanent access.
+  durationMonths Int?
+
+  /// Money is always integer minor units (cents). Never `Decimal` — Stripe
+  /// works in the smallest currency unit and the two round differently.
+  /// Billing mode is derived, not stored: a monthly price present means
+  /// installments are offered, absent means one-time only.
+  priceOneTimeCents Int?
+  priceMonthlyCents Int?
+  installmentCount  Int?
+  currency          String @default("USD")
+
+  stripeProductId      String?
+  stripePriceOneTimeId String?
+  stripePriceMonthlyId String?
+
+  status      CatalogStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   deletedAt   DateTime?
   deletedById String?
 
-  classSections ClassSection[]
+  class          Class?          @relation(fields: [classId], references: [id], onDelete: SetNull)
+  syllabusFile   FileUpload?     @relation("ProgramSyllabus", fields: [syllabusFileId], references: [id], onDelete: SetNull)
+  classSections  ClassSection[]
+  programCourses ProgramCourse[]
+  entitlements   Entitlement[]
+  orderItems     OrderItem[]
 
+  @@index([classId])
+  @@index([status])
   @@map("programs")
+}
+
+/// How a purchase is paid for. Derived from which price fields a SKU has set,
+/// never chosen freely: a monthly price present means installments are offered.
+/// SUBSCRIPTION is declared but has no handler — the K-6 tier is one-time only
+/// (decision 4b). Keeping the value avoids a migration if that is revisited.
+enum BillingMode {
+  ONE_TIME
+  INSTALLMENT
+  SUBSCRIPTION
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PlanStatus {
+  ACTIVE
+  COMPLETED
+  PAST_DUE
+  CANCELLED
+}
+
+/// A checkout attempt. Keyed to the guardian who pays, while the Entitlement it
+/// produces is keyed to the student who consumes — one guardian, three
+/// children, one order.
+model Order {
+  id             String      @id @default(uuid())
+  guardianUserId String
+  status         OrderStatus @default(PENDING)
+  /// Sum of the order's item prices in integer minor units, after any upgrade
+  /// credit. There is no tax or shipping, so this is the amount charged.
+  totalCents     Int
+  currency       String      @default("USD")
+
+  stripeCheckoutSessionId String? @unique
+  stripeCustomerId        String?
+  stripePaymentIntentId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  guardian User        @relation("GuardianOrders", fields: [guardianUserId], references: [id], onDelete: Cascade)
+  items    OrderItem[]
+
+  @@index([guardianUserId, status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id               String @id @default(uuid())
+  orderId          String
+  /// The child this purchase is for, chosen in the cart rather than after
+  /// payment — buying and then not knowing where the course went is the
+  /// classic failure here.
+  studentProfileId String
+
+  /// Exactly one of programId / courseId, same rule as Entitlement.
+  programId     String?
+  courseId      String?
+  /// LIVE purchases consume a seat in a specific batch. Wired in Phase 5.
+  courseClassId String?
+
+  billingMode      BillingMode
+  /// What is actually charged for this line, after `creditAppliedCents`.
+  priceCents       Int
+  installmentCount Int?
+
+  /// Set when upgrading from already-owned a-la-carte courses into the program
+  /// that contains them, so the buyer is not charged twice for the overlap.
+  creditAppliedCents      Int     @default(0)
+  creditFromEntitlementId String?
+
+  createdAt DateTime @default(now())
+
+  order          Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  program        Program?         @relation(fields: [programId], references: [id], onDelete: SetNull)
+  course         Course?          @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  entitlement    Entitlement?
+  plan           InstallmentPlan?
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+/// A fixed-length installment plan, NOT an open-ended subscription: it carries
+/// a `cancel_at` in Stripe so it self-terminates after the final payment, at
+/// which point self-paced access becomes permanent.
+model InstallmentPlan {
+  id          String @id @default(uuid())
+  orderItemId String @unique
+
+  stripeSubscriptionId String @unique
+
+  installmentCount          Int
+  installmentsPaid          Int @default(0)
+  amountPerInstallmentCents Int
+  /// Absorbs the rounding remainder: 10000 over 3 is 3333 + 3333 + 3334.
+  finalInstallmentCents     Int
+
+  status          PlanStatus @default(ACTIVE)
+  paidThroughDate DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@map("installment_plans")
+}
+
+/// Idempotency ledger. Stripe retries deliveries, and granting an entitlement
+/// twice is the failure mode here that costs real money.
+model StripeWebhookEvent {
+  id            String   @id @default(uuid())
+  stripeEventId String   @unique
+  type          String
+  processedAt   DateTime @default(now())
+
+  @@map("stripe_webhook_events")
+}
+
+enum EntitlementSource {
+  PURCHASE
+  ADMIN_GRANT
+  TRIAL
+  PROMO
+}
+
+enum EntitlementStatus {
+  ACTIVE
+  /// An installment payment failed. Access is withheld but the row is kept so
+  /// a successful retry restores it without re-purchasing.
+  PAST_DUE
+  EXPIRED
+  REVOKED
+}
+
+/// The access grant. Course content is otherwise open to any authenticated
+/// student, so this is what makes a purchase mean anything — every content
+/// route resolves through `EntitlementService`.
+///
+/// Deliberately distinct from `StudentCourseAssignment` (a guardian's "work on
+/// this next" planner, which grants nothing) and from `StudentCourseEnrollment`
+/// (a seat in a term-bound class).
+///
+/// NOT registered in `SOFT_DELETE_MODELS`: revoking access is a `status`
+/// transition, not a delete, so the history stays queryable for support and
+/// refund disputes.
+model Entitlement {
+  id               String @id @default(uuid())
+  studentProfileId String
+  /// Exactly one of programId / courseId is set — enforced by a CHECK
+  /// constraint in the migration, since Prisma cannot express it.
+  programId        String?
+  courseId         String?
+  /// Set for LIVE purchases; the batch's end date is what `accessExpiresAt`
+  /// tracks. Wired up in Phase 5.
+  courseClassId    String?
+  /// The purchase this grant came from. Null for ADMIN_GRANT / TRIAL / PROMO.
+  orderItemId      String? @unique
+
+  source EntitlementSource
+  status EntitlementStatus @default(ACTIVE)
+
+  accessStartsAt DateTime @default(now())
+  /// Null = permanent. Self-paced access stays permanent once fully paid;
+  /// live access expires with its batch.
+  accessExpiresAt DateTime?
+  /// While an installment plan is running, access is only live up to here.
+  /// Null once the plan completes (or for one-time purchases).
+  paidThroughDate DateTime?
+
+  /// Who granted it, for ADMIN_GRANT. Kept so support actions are auditable.
+  grantedByUserId String?
+  note            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  program        Program?       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  course         Course?        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseClass    CourseClass?   @relation(fields: [courseClassId], references: [id], onDelete: SetNull)
+  orderItem      OrderItem?     @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  grantedBy      User?          @relation("GrantedEntitlements", fields: [grantedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([studentProfileId, programId])
+  @@unique([studentProfileId, courseId])
+  @@index([studentProfileId, status])
+  @@map("entitlements")
+}
+
+/// Courses are reusable across Programs (Class 9 and Class 10 Science both
+/// teach Physics), so this is a join rather than a `programId` on Course.
+/// Same shape as the existing `LearningPathCourse`.
+model ProgramCourse {
+  id         String   @id @default(uuid())
+  programId  String
+  courseId   String
+  sortOrder  Int      @default(0)
+  isRequired Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([programId, courseId])
+  @@index([courseId])
+  @@map("program_courses")
 }
 
 model AcademicYear {
@@ -230,9 +499,12 @@ model ClassSection {
   academicYearId    String
   name              String
   code              String      @unique
-  /// Free-text grade level ("Grade 10"), distinct from `classroom` (the physical room). Overlaps
-  /// with the `Level` model, which is currently wired only to Assessment/Question/Placement —
-  /// consolidating the two is deliberately left as separate work.
+  /// DEPRECATED — superseded by `program.class` now that `Class` is the taxonomy
+  /// master. Kept (not dropped) because `Program.classId` is nullable and
+  /// backfilled only where every section under a program agreed on one grade;
+  /// dropping this before admins have assigned a Class to every Program would
+  /// lose the value with nothing to derive it from. Remove in a follow-up once
+  /// `Program.classId` is fully populated. Read `program.class.name` in new code.
   class             String?
   classroom         String?
   /// Subject this section teaches. Nullable because `Program` can span multiple subjects, so the
@@ -283,9 +555,20 @@ model Term {
   @@map("terms")
 }
 
+/// A dated cohort of a Course — a "batch" in product language.
+///
+/// The model keeps its original name deliberately: `CourseClass` has 364
+/// references across 49 files, and renaming it mid-initiative would be a
+/// merge-conflict machine for zero user-visible gain. It is labelled "Batch"
+/// in the UI and the public API instead. Rename as its own mechanical PR.
 model CourseClass {
-  id          String            @id @default(uuid())
-  termId      String
+  id String @id @default(uuid())
+  /// Nullable only because every row predating the catalogue weld has no
+  /// course. New batches always carry one — the API requires it. This link is
+  /// what finally joins the catalogue tree to the operational one.
+  courseId String?
+  /// Nullable now: a rolling batch belongs to no school term.
+  termId      String?
   name        String
   code        String            @unique
   status      CourseClassStatus @default(ACTIVE)
@@ -297,20 +580,54 @@ model CourseClass {
   /// migration makes nothing newly self-enrollable. Staff opt each class in
   /// deliberately.
   isOpenForEnrollment Boolean   @default(false)
+
+  /// A LIVE purchase buys a seat in a dated cohort, and `endDate` is what the
+  /// resulting entitlement's `accessExpiresAt` tracks — live access ends with
+  /// the batch, unlike self-paced which is permanent once paid.
+  startDate          DateTime?
+  endDate            DateTime?
+  /// After this, the batch stops accepting new seats even if capacity remains.
+  enrollmentDeadline DateTime?
+
+  leadTeacherProfileId String?
+
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   deletedAt   DateTime?
   deletedById String?
 
-  term             Term                      @relation(fields: [termId], references: [id], onDelete: Cascade)
+  course           Course?                   @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  term             Term?                     @relation(fields: [termId], references: [id], onDelete: SetNull)
+  leadTeacher      TeacherProfile?           @relation("LeadBatchTeacher", fields: [leadTeacherProfileId], references: [id], onDelete: SetNull)
   enrollments      StudentCourseEnrollment[]
+  entitlements     Entitlement[]
   sessions         CourseClassSession[]
   homeworks        Homework[]
   makeupRequests   MakeupRequest[]
   timetableSlots   TimetableSlot[]
   gradeBookEntries GradeBookEntry[]
 
+  @@index([courseId, status])
+  @@index([startDate])
   @@map("course_classes")
+}
+
+/// Teachers attached to a Course. This is the actual answer to "one course,
+/// many teachers" — a join table, not a cohort system. `CourseClass` above is
+/// a cohort and earns its place separately, through live delivery.
+model CourseTeacher {
+  courseId         String
+  teacherProfileId String
+  /// LEAD | ASSISTANT
+  role             String   @default("LEAD")
+  assignedAt       DateTime @default(now())
+
+  course         Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacherProfile TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, teacherProfileId])
+  @@index([teacherProfileId])
+  @@map("course_teachers")
 }
 
 model StudentProfile {
@@ -319,6 +636,13 @@ model StudentProfile {
   fullName              String
   birthDate             DateTime
   gender                Gender
+  /// The child's grade level, captured when a guardian adds them.
+  ///
+  /// Deliberately a direct link rather than going through
+  /// `StudentClassPlacement -> ClassSection`: that path is the operational
+  /// roster and needs a Program and an AcademicYear, which a consumer signup
+  /// has neither of. A guardian buying a course just needs to say "Grade 3".
+  classId               String?
   status                StudentStatus @default(ACTIVE)
   // Self-service profile-completion fields (mobile/web Settings) — nullable
   // because every existing StudentProfile was created without them.
@@ -332,6 +656,7 @@ model StudentProfile {
   deletedById           String?
 
   user                     User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class                    Class?                        @relation(fields: [classId], references: [id], onDelete: SetNull)
   placements               StudentClassPlacement[]
   enrollments              StudentCourseEnrollment[]
   guardians                GuardianStudentRelationship[]
@@ -348,13 +673,15 @@ model StudentProfile {
   streak                   StudentStreak?
   experience               StudentExperience?
   gradeBookEntries         GradeBookEntry[]
-  messageThreads           MessageThread[]
   masteryStatusChanges     MasteryStatusChange[]
   placementRecommendations PlacementRecommendation[]
   moduleItemProgress       ModuleItemProgress[]
   discussionPosts          DiscussionPost[]
   courseAssignments        StudentCourseAssignment[]
+  entitlements             Entitlement[]
+  orderItems               OrderItem[]
 
+  @@index([classId])
   @@map("student_profiles")
 }
 
@@ -494,6 +821,8 @@ model TeacherProfile {
 
   user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   classAssignments ClassTeacher[]
+  courseTeachers   CourseTeacher[]
+  leadBatches      CourseClass[]   @relation("LeadBatchTeacher")
   timetableSlots   TimetableSlot[]
 
   @@map("teacher_profiles")
@@ -678,11 +1007,15 @@ model LearningSubject {
   @@map("learning_subjects")
 }
 
-/// K-6 grade-band tag on a Course — added for the K-6 curriculum expansion.
-/// One Course already represents "one subject's worth of content at one
-/// level" (e.g. `algebra-foundations` implicitly targets Grade 5-6), so
-/// Course is the natural granularity for this rather than tagging Concept
-/// or LearningSubject.
+/// K-6 grade-band tag on a Course. One Course already represents "one
+/// subject's worth of content at one level", so Course is the natural
+/// granularity for this rather than tagging Concept or LearningSubject.
+///
+/// Deliberately NOT superseded by the Class -> Program taxonomy: standalone
+/// micro-courses (alphabet, times tables, fractions) belong to no Program and
+/// therefore have no Class to derive a level from. `gradeBand` is the only
+/// thing that categorises them, and it is what the public /kids browse route
+/// filters on.
 enum GradeBand {
   PRE_K_K
   G1_2
@@ -696,20 +1029,44 @@ model Course {
   title             String
   slug              String        @unique
   description       String?
+  thumbnailUrl      String?
+  /// Content effort ("12 hours of material"). Distinct from `durationWeeks`,
+  /// which is calendar length — the two are unrelated numbers.
   estimatedHours    Int?
+  durationWeeks     Int?
   status            CatalogStatus @default(DRAFT)
   sortOrder         Int           @default(0)
   gradeBand         GradeBand?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  deletedAt         DateTime?
-  deletedById       String?
+  deliveryMode      DeliveryMode  @default(SELF_PACED)
+
+  /// Null = not sold a la carte; the Course is only reachable by buying a
+  /// Program that contains it. Integer cents, never `Decimal`.
+  priceOneTimeCents Int?
+  priceMonthlyCents Int?
+  installmentCount  Int?
+  currency          String @default("USD")
+
+  stripeProductId      String?
+  stripePriceOneTimeId String?
+  stripePriceMonthlyId String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  deletedById String?
 
   learningSubject    LearningSubject           @relation(fields: [learningSubjectId], references: [id], onDelete: Cascade)
   concepts           Concept[]
   pathCourses        LearningPathCourse[]
+  programCourses     ProgramCourse[]
   studentAssignments StudentCourseAssignment[]
+  entitlements       Entitlement[]
+  courseClasses      CourseClass[]
+  courseTeachers     CourseTeacher[]
+  orderItems         OrderItem[]
 
+  @@index([gradeBand])
+  @@index([status])
   @@map("courses")
 }
 
@@ -815,6 +1172,10 @@ model ModuleItem {
   videoDurationSeconds Int?
   readingContent       String?
   assessmentId         String?
+  /// Ungated even for anonymous visitors. A public course page with nothing
+  /// playable converts badly and gives search engines nothing to index, so a
+  /// few items per course are deliberately given away.
+  isFreePreview        Boolean        @default(false)
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
   deletedAt            DateTime?
@@ -1091,20 +1452,31 @@ model Subject {
   @@map("subjects")
 }
 
-model Level {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  name      String
-  sortOrder Int      @default(0)
-  status    String   @default("active")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+/// Academic level master — the top of the Class -> Program -> Course taxonomy.
+///
+/// Absorbs the former `Level` model, whose rows were always grade levels
+/// (K, G1, G3, G5, G10, G11) but which was wired only to
+/// Assessment/Question/PlacementRecommendation. Merging it here removed one of
+/// three competing level concepts. `Course.gradeBand` deliberately survives —
+/// see the comment on that field.
+model Class {
+  id          String        @id @default(uuid())
+  code        String        @unique
+  name        String
+  slug        String        @unique
+  description String?
+  sortOrder   Int           @default(0)
+  status      CatalogStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
+  programs                 Program[]
+  studentProfiles          StudentProfile[]
   assessments              Assessment[]
   questions                Question[]
   placementRecommendations PlacementRecommendation[]
 
-  @@map("levels")
+  @@map("classes")
 }
 
 model AssessmentType {
@@ -1124,7 +1496,7 @@ model Assessment {
   id                       String    @id @default(uuid())
   assessmentTypeId         String
   subjectId                String
-  levelId                  String
+  classId                  String
   termId                   String?
   weekNumber               Int?
   title                    String
@@ -1142,7 +1514,7 @@ model Assessment {
 
   assessmentType AssessmentType @relation(fields: [assessmentTypeId], references: [id])
   subject        Subject        @relation(fields: [subjectId], references: [id])
-  level          Level          @relation(fields: [levelId], references: [id])
+  class          Class          @relation(fields: [classId], references: [id])
   term           Term?          @relation(fields: [termId], references: [id], onDelete: SetNull)
 
   sections    AssessmentSection[]
@@ -1188,7 +1560,7 @@ model AssessmentQuestion {
 model Question {
   id            String      @id @default(uuid())
   subjectId     String
-  levelId       String
+  classId       String
   questionType  String // mcq, short_answer, numeric
   prompt        String
   correctAnswer String?
@@ -1205,7 +1577,7 @@ model Question {
   deletedById   String?
 
   subject     Subject              @relation(fields: [subjectId], references: [id])
-  level       Level                @relation(fields: [levelId], references: [id])
+  class       Class                @relation(fields: [classId], references: [id])
   options     QuestionOption[]
   assessments AssessmentQuestion[]
   responses   StudentResponse[]
@@ -1333,7 +1705,7 @@ model PlacementRecommendation {
   studentProfileId          String?
   leadId                    String?
   assessmentAttemptId       String             @unique
-  recommendedLevelId        String
+  recommendedClassId        String
   recommendedClassSectionId String?
   rationale                 String
   status                    PlacementRecStatus @default(SUGGESTED)
@@ -1345,7 +1717,7 @@ model PlacementRecommendation {
   studentProfile          StudentProfile?   @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
   lead                    Lead?             @relation(fields: [leadId], references: [id], onDelete: SetNull)
   assessmentAttempt       AssessmentAttempt @relation(fields: [assessmentAttemptId], references: [id], onDelete: Cascade)
-  recommendedLevel        Level             @relation(fields: [recommendedLevelId], references: [id])
+  recommendedClass        Class             @relation(fields: [recommendedClassId], references: [id])
   recommendedClassSection ClassSection?     @relation(fields: [recommendedClassSectionId], references: [id], onDelete: SetNull)
 
   @@map("placement_recommendations")
@@ -1610,7 +1982,8 @@ model FileUpload {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programSyllabi  Program[] @relation("ProgramSyllabus")
 
   @@map("file_uploads")
 }
@@ -1776,46 +2149,4 @@ model FamilyPayment {
 
   @@index([familyId, paymentDate])
   @@map("family_payments")
-}
-
-enum MessageThreadStatus {
-  OPEN
-  ARCHIVED
-}
-
-model MessageThread {
-  id               String              @id @default(uuid())
-  subject          String
-  studentProfileId String? // context: which child the thread is about
-  guardianUserId   String // participant 1 (parent)
-  teacherUserId    String // participant 2 (teacher)
-  status           MessageThreadStatus @default(OPEN)
-  lastMessageAt    DateTime            @default(now())
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-
-  studentProfile StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
-  guardian       User            @relation("GuardianThreads", fields: [guardianUserId], references: [id], onDelete: Cascade)
-  teacher        User            @relation("TeacherThreads", fields: [teacherUserId], references: [id], onDelete: Cascade)
-  messages       Message[]
-
-  @@index([guardianUserId, status])
-  @@index([teacherUserId, status])
-  @@map("message_threads")
-}
-
-model Message {
-  id             String    @id @default(uuid())
-  threadId       String
-  senderUserId   String
-  body           String
-  readAt         DateTime?
-  attachmentUrls String[]  @default([])
-  createdAt      DateTime  @default(now())
-
-  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  sender User          @relation("SentMessages", fields: [senderUserId], references: [id], onDelete: Cascade)
-
-  @@index([threadId, createdAt])
-  @@map("messages")
 }

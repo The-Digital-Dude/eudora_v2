@@ -1,12 +1,11 @@
 ﻿"use client";
 
 import { format, isValid } from "date-fns";
-import { BookOpen, Calendar, ClipboardCheck, ExternalLink,Loader2, MessageSquare } from "lucide-react";
+import { BookOpen, Calendar, ClipboardCheck, ExternalLink,Loader2 } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect,useState } from "react";
 
 import { useGetDashboardSnapshotQuery } from "@/features/dashboard/dashboardApi";
-import { MessagingCenter } from "@/features/messaging/components/MessagingCenter";
 import { useGetTeacherClassesQuery } from "@/features/teacher/teacherPortalApi";
 import { useAppSelector } from "@/store/hooks";
 
@@ -17,9 +16,8 @@ import { QuickAttendance } from "./components/quick-attendance";
 export default function TeacherPage() {
   const auth = useAppSelector((state) => state.auth);
   const user = auth.user as any;
-  const currentUserId = user?.id;
 
-  const [activeSection, setActiveSection] = useState<"attendance" | "grading" | "messages">("attendance");
+  const [activeSection, setActiveSection] = useState<"attendance" | "grading">("attendance");
   const [activeClassId, setActiveClassId] = useState<string>("");
 
   // Query assigned classes
@@ -91,17 +89,6 @@ export default function TeacherPage() {
           >
             <BookOpen className="h-4 w-4" />
             Grading & Schedule
-          </button>
-          <button
-            onClick={() => setActiveSection("messages")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeSection === "messages"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <MessageSquare className="h-4 w-4" />
-            Parent Messages
           </button>
         </div>
       </div>
@@ -243,20 +230,6 @@ export default function TeacherPage() {
             </h3>
             <PerformanceAlerts />
           </div>
-        </div>
-      )}
-
-      {activeSection === "messages" && (
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">
-              Parent Messaging Center
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Reply to incoming communications from parents and guardians of your students.
-            </p>
-          </div>
-          <MessagingCenter currentUserId={currentUserId} isGuardian={false} />
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Sparkles } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -28,33 +28,19 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-amber-200/40 bg-amber-50/70 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 select-none">
         {/* Logo */}
-        <Link href="/" className="group flex items-center gap-2">
-          <div className="rounded-lg bg-foreground p-1.5 text-background shadow-sm transition-transform group-hover:scale-105">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <span className="font-display text-base font-bold tracking-tight text-foreground">
-            Eudora
-          </span>
+        <Link href="/" className="group flex items-center">
+          <Image
+            src="/landing/eudora_logo.png"
+            alt="Eudora"
+            width={218}
+            height={72}
+            priority
+            className="h-9 w-auto transition-transform group-hover:scale-105"
+          />
         </Link>
-
-        {/* Mid Navigation Links */}
-        <nav className="hidden items-center gap-8 md:flex">
-          <a
-            href="#features"
-            className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Features
-          </a>
-          <a
-            href="#stats"
-            className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Analytics
-          </a>
-        </nav>
 
         {/* Right CTA Links */}
         <div className="flex items-center gap-4 text-sm">

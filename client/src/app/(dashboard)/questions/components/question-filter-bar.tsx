@@ -5,12 +5,12 @@ import React from "react";
 
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useGetLevelsQuery,useGetSubjectsQuery } from "@/features/assessments/questionsApi";
+import { useGetClassesQuery,useGetSubjectsQuery } from "@/features/assessments/questionsApi";
 
 interface FilterState {
   search: string;
   subjectId: string;
-  levelId: string;
+  classId: string;
   questionType: string;
   difficulty: string;
   status: string;
@@ -24,10 +24,10 @@ interface QuestionFilterBarProps {
 
 export function QuestionFilterBar({ filters, onFilterChange, onReset }: QuestionFilterBarProps) {
   const { data: subjectsData } = useGetSubjectsQuery();
-  const { data: levelsData } = useGetLevelsQuery();
+  const { data: classesData } = useGetClassesQuery();
 
   const subjects = subjectsData?.items || [];
-  const levels = levelsData?.items || [];
+  const classes = classesData?.items || [];
 
   return (
     <div className="flex flex-wrap gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -65,15 +65,15 @@ export function QuestionFilterBar({ filters, onFilterChange, onReset }: Question
       {/* Level Filter */}
       <div className="w-[140px]">
         <Select
-          value={filters.levelId || "all"}
-          onValueChange={(val) => onFilterChange("levelId", val === "all" ? "" : val)}
+          value={filters.classId || "all"}
+          onValueChange={(val) => onFilterChange("classId", val === "all" ? "" : val)}
         >
           <SelectTrigger className="h-10 rounded-xl border-border bg-muted/50 text-xs">
             <SelectValue placeholder="All Levels" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="all">All Levels</SelectItem>
-            {levels.map((lvl) => (
+            {classes.map((lvl) => (
               <SelectItem key={lvl.id} value={lvl.id}>
                 {lvl.name}
               </SelectItem>

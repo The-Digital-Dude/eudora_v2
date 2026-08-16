@@ -18,25 +18,25 @@ import {
   useGetAssessmentTypesQuery,
   useGetTermsQuery,
 } from "@/features/assessments/assessmentsApi";
-import { useGetLevelsQuery, useGetSubjectsQuery } from "@/features/assessments/questionsApi";
+import { useGetClassesQuery, useGetSubjectsQuery } from "@/features/assessments/questionsApi";
 
 export default function CreateAssessmentPage() {
   const router = useRouter();
   const { data: subjectsData } = useGetSubjectsQuery();
-  const { data: levelsData } = useGetLevelsQuery();
+  const { data: classesData } = useGetClassesQuery();
   const { data: typesData } = useGetAssessmentTypesQuery();
   const { data: termsData } = useGetTermsQuery();
   const [createAssessment, { isLoading: isCreating }] = useCreateAssessmentMutation();
 
   const subjects = subjectsData?.items || [];
-  const levels = levelsData?.items || [];
+  const classes = classesData?.items || [];
   const types = typesData?.items || [];
   const terms = termsData?.items || [];
 
   const [title, setTitle] = React.useState("");
   const [typeId, setTypeId] = React.useState("");
   const [subjectId, setSubjectId] = React.useState("");
-  const [levelId, setLevelId] = React.useState("");
+  const [classId, setClassId] = React.useState("");
   const [termId, setTermId] = React.useState("");
   const [week, setWeek] = React.useState("");
   const [duration, setDuration] = React.useState("60");
@@ -50,7 +50,7 @@ export default function CreateAssessmentPage() {
     if (!title.trim()) return toast.error("Please enter a title.");
     if (!typeId) return toast.error("Please select an assessment type.");
     if (!subjectId) return toast.error("Please select a subject.");
-    if (!levelId) return toast.error("Please select a grade level.");
+    if (!classId) return toast.error("Please select a grade level.");
 
     try {
       const created = await createAssessment({
@@ -58,7 +58,7 @@ export default function CreateAssessmentPage() {
         description: description.trim() || undefined,
         assessmentTypeId: typeId,
         subjectId,
-        levelId,
+        classId,
         termId: termId || null,
         weekNumber: week ? parseInt(week) : null,
         estimatedDurationMinutes: parseInt(duration) || 60,
@@ -159,12 +159,12 @@ export default function CreateAssessmentPage() {
               <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                 Grade Level
               </Label>
-              <Select value={levelId} onValueChange={setLevelId}>
+              <Select value={classId} onValueChange={setClassId}>
                 <SelectTrigger className="h-10 rounded-xl bg-muted/30 text-xs">
                   <SelectValue placeholder="Select level..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  {levels.map((l) => (
+                  {classes.map((l) => (
                     <SelectItem key={l.id} value={l.id}>
                       {l.name}
                     </SelectItem>

@@ -31,7 +31,7 @@ export default function QuestionsPage() {
     {
       search: "",
       subjectId: "",
-      levelId: "",
+      classId: "",
       questionType: "",
       difficulty: "",
       status: "",
@@ -49,7 +49,7 @@ export default function QuestionsPage() {
   const { data, isLoading } = useGetQuestionsQuery({
     search: values.search || undefined,
     subjectId: values.subjectId || undefined,
-    levelId: values.levelId || undefined,
+    classId: values.classId || undefined,
     questionType: values.questionType || undefined,
     difficulty: values.difficulty || undefined,
     status: values.status || undefined,
@@ -122,7 +122,7 @@ export default function QuestionsPage() {
       ),
       cell: ({ row }) => (
         <span className="text-xs font-semibold text-muted-foreground">
-          {row.original.level?.name || "Unassigned"}
+          {row.original.class?.name || "Unassigned"}
         </span>
       ),
     },
@@ -224,7 +224,7 @@ export default function QuestionsPage() {
         filters={{
           search: searchDraft,
           subjectId: values.subjectId,
-          levelId: values.levelId,
+          classId: values.classId,
           questionType: values.questionType,
           difficulty: values.difficulty,
           status: values.status,

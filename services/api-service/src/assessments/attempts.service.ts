@@ -50,11 +50,7 @@ export class AttemptsService {
    * own), with each question's widget instance regenerated from the same
    * seed `submitResponse`/`autoMarkResponse` will grade against.
    */
-  async getAttemptQuestions(
-    id: string,
-    userId: string,
-    roles: string[],
-  ) {
+  async getAttemptQuestions(id: string, userId: string, roles: string[]) {
     const attempt = await this.prisma.assessmentAttempt.findUnique({
       where: { id },
       select: {

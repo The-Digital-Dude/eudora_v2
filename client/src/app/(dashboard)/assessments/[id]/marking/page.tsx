@@ -212,7 +212,7 @@ export default function AssessmentMarkingPage() {
               Marking Workspace: {assessment.title}
             </h1>
             <p className="text-[10px] text-muted-foreground font-medium">
-              Subject: {assessment.subject?.name} • Grade: {assessment.level?.name}
+              Subject: {assessment.subject?.name} • Grade: {assessment.class?.name}
             </p>
           </div>
         </div>

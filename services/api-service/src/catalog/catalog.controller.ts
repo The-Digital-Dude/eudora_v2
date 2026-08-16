@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Headers,
   Post,
   Patch,
   Delete,
@@ -19,11 +20,14 @@ import {
   UpdateLearningPathDto,
   AddCourseToPathDto,
   ReorderPathCoursesDto,
+  AttachCourseTeacherDto,
 } from './dto/catalog.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
+import { ACTING_STUDENT_HEADER } from '../entitlements/acting-student.service';
 
 const STAFF_ROLES = ['SUPER_ADMIN', 'ADMIN', 'TEACHER'];
 
@@ -35,9 +39,7 @@ function isStaff(user?: CurrentUserDto): boolean {
 @Controller('catalog')
 @UseGuards(RolesGuard)
 export class CatalogController {
-  constructor(
-    private readonly catalogService: CatalogService,
-  ) {}
+  constructor(private readonly catalogService: CatalogService) {}
 
   // ─── Learning Subjects ───────────────────────────────────────────────────
 
@@ -62,6 +64,60 @@ export class CatalogController {
   }
 
   // ─── Courses ─────────────────────────────────────────────────────────────
+
+  /**
+   * Anonymous search for the marketing site — no auth, no role check.
+   * catalogService.listPublicCourses hardcodes PUBLISHED-only and a fixed,
+   * safe field selection, so there's nothing here to accidentally over-expose.
+   */
+  @Public()
+  @Get('public/courses')
+  async listPublicCourses(
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.catalogService.listPublicCourses(
+      search,
+      page ? parseInt(page, 10) : undefined,
+      limit ? parseInt(limit, 10) : undefined,
+    );
+  }
+
+  /**
+   * Anonymous SKU surface for the marketing site. Unlike `public/courses`
+   * above these DO return price — a programme page that cannot show its price
+   * cannot sell — but never Stripe ids, and never a non-PUBLISHED row.
+   */
+  @Public()
+  @Get('public/programs')
+  async listPublicPrograms(
+    @Query('classSlug') classSlug?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.catalogService.listPublicPrograms(
+      classSlug,
+      limit ? parseInt(limit, 10) : undefined,
+    );
+  }
+
+  @Public()
+  @Get('public/programs/:slug')
+  async getPublicProgram(@Param('slug') slug: string) {
+    return this.catalogService.getPublicProgramBySlug(slug);
+  }
+
+  @Public()
+  @Get('public/courses/:slug')
+  async getPublicCourse(@Param('slug') slug: string) {
+    return this.catalogService.getPublicCourseBySlug(slug);
+  }
+
+  @Public()
+  @Get('public/classes')
+  async listPublicClasses() {
+    return this.catalogService.listPublicClasses();
+  }
 
   @Get('courses')
   async listCourses(
@@ -89,14 +145,50 @@ export class CatalogController {
   async getCourseDetail(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
-    return this.catalogService.getCourseDetail(id, user.id, isStaff(user));
+    return this.catalogService.getCourseDetail(
+      id,
+      user.id,
+      isStaff(user),
+      user.roles,
+      actingStudentId ?? null,
+    );
   }
 
   @Post('courses')
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   createCourse(@Body() dto: CreateCourseDto) {
     return this.catalogService.createCourse(dto);
+  }
+
+  // ─── Course teaching staff ───────────────────────────────────────────────
+
+  @Get('courses/:id/teachers')
+  listCourseTeachers(@Param('id') id: string) {
+    return this.catalogService.listCourseTeachers(id);
+  }
+
+  @Post('courses/:id/teachers')
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  attachCourseTeacher(
+    @Param('id') id: string,
+    @Body() dto: AttachCourseTeacherDto,
+  ) {
+    return this.catalogService.attachCourseTeacher(
+      id,
+      dto.teacherProfileId,
+      dto.role,
+    );
+  }
+
+  @Delete('courses/:id/teachers/:teacherProfileId')
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  detachCourseTeacher(
+    @Param('id') id: string,
+    @Param('teacherProfileId') teacherProfileId: string,
+  ) {
+    return this.catalogService.detachCourseTeacher(id, teacherProfileId);
   }
 
   @Patch('courses/:id')

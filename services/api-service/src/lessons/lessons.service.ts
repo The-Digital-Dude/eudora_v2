@@ -44,7 +44,13 @@ export class LessonsService {
         ? { title: { contains: search, mode: 'insensitive' as const } }
         : {}),
     };
-    const orderBy = resolveSort(sortBy, sortOrder, LESSON_SORTABLE_FIELDS, 'sortOrder', 'asc');
+    const orderBy = resolveSort(
+      sortBy,
+      sortOrder,
+      LESSON_SORTABLE_FIELDS,
+      'sortOrder',
+      'asc',
+    );
 
     const [items, total] = await Promise.all([
       this.prisma.lesson.findMany({
@@ -155,7 +161,10 @@ export class LessonsService {
   // always regenerates the same instance, so this stays stable across
   // refreshes and retries within one attempt.
   private enrichCardsForAttempt<
-    T extends { id: string; question: Parameters<typeof generateWidgetInstance>[0] | null },
+    T extends {
+      id: string;
+      question: Parameters<typeof generateWidgetInstance>[0] | null;
+    },
   >(cards: T[], attemptId: string): T[] {
     return cards.map((card) => {
       if (!card.question) {
@@ -172,6 +181,21 @@ export class LessonsService {
         },
       };
     });
+  }
+
+  /**
+   * Resolves the owning lesson so the controller can run the entitlement gate
+   * before any grading or XP award happens.
+   */
+  async getLessonIdForCard(cardId: string): Promise<string> {
+    const card = await this.prisma.card.findUnique({
+      where: { id: cardId },
+      select: { lessonId: true },
+    });
+    if (!card) {
+      throw new NotFoundException('Card not found');
+    }
+    return card.lessonId;
   }
 
   async submitCardResponse(

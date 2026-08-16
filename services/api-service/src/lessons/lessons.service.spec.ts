@@ -18,6 +18,7 @@ describe('LessonsService', () => {
       findMany: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
+      count: jest.fn(),
     },
     card: {
       findUnique: jest.fn(),
@@ -86,13 +87,27 @@ describe('LessonsService', () => {
         { id: '2', title: 'Lesson 2', conceptId: 'c1' },
       ];
       mockPrismaService.lesson.findMany.mockResolvedValue(mockLessons);
+      mockPrismaService.lesson.count.mockResolvedValue(mockLessons.length);
 
+      // `listLessons` returns a page envelope, not a bare array — this test
+      // predated that change and was silently failing while the jest harness
+      // was unrunnable.
       const result = await service.listLessons('c1');
-      expect(result).toEqual(mockLessons);
+      expect(result).toEqual({
+        items: mockLessons,
+        total: mockLessons.length,
+        page: 1,
+        pageSize: 500,
+      });
       expect(mockPrismaService.lesson.findMany).toHaveBeenCalledWith({
         where: { conceptId: 'c1' },
         orderBy: { sortOrder: 'asc' },
+        skip: 0,
+        take: 500,
         include: { concept: { select: { name: true } } },
+      });
+      expect(mockPrismaService.lesson.count).toHaveBeenCalledWith({
+        where: { conceptId: 'c1' },
       });
     });
   });

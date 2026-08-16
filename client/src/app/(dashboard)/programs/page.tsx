@@ -73,7 +73,7 @@ export default function ProgramsPage() {
                   </div>
                   <span
                     className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                      program.status === "ACTIVE"
+                      program.status === "PUBLISHED"
                         ? "border border-success/20 bg-success/10 text-success"
                         : "border border-border bg-muted text-muted-foreground"
                     }`}
@@ -82,19 +82,39 @@ export default function ProgramsPage() {
                   </span>
                 </div>
 
-                {program.description && (
+                {(program.shortDescription || program.description) && (
                   <p className="line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
-                    {program.description}
+                    {program.shortDescription || program.description}
                   </p>
                 )}
 
                 <div className="space-y-1.5 border-t border-border/30 pt-2">
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                    Duration:{" "}
-                    <span className="font-semibold text-foreground">
-                      {program.durationYears} Years
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <GraduationCap className="h-3.5 w-3.5" />
+                      <span className="font-semibold text-foreground">
+                        {program.class?.name ?? "Standalone bundle"}
+                      </span>
                     </span>
+                    {program.durationMonths ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span className="font-semibold text-foreground">
+                          {program.durationMonths} mo
+                        </span>
+                      </span>
+                    ) : null}
+                    <span className="font-semibold text-foreground">
+                      {program.priceOneTimeCents
+                        ? `$${(program.priceOneTimeCents / 100).toFixed(2)}`
+                        : "Not sold"}
+                    </span>
+                    {program.programCourses?.length ? (
+                      <span>
+                        {program.programCourses.length}{" "}
+                        {program.programCourses.length === 1 ? "course" : "courses"}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </div>

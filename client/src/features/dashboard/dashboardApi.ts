@@ -1,12 +1,47 @@
 import { authApi } from "../auth/authApi";
 
+export type DeliveryMode = "SELF_PACED" | "LIVE" | "HYBRID";
+export type CatalogStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+export interface ProgramCourseLink {
+  id: string;
+  sortOrder: number;
+  isRequired: boolean;
+  course: {
+    id: string;
+    title: string;
+    slug: string;
+    status: CatalogStatus;
+    gradeBand: "PRE_K_K" | "G1_2" | "G3_4" | "G5_6" | null;
+    estimatedHours: number | null;
+  };
+}
+
+/**
+ * The primary sellable SKU. Prices are integer minor units (cents) — never
+ * floats — because Stripe works in the smallest currency unit.
+ */
 export interface Program {
   id: string;
   name: string;
   code: string;
-  description?: string;
-  durationYears: number;
-  status: "ACTIVE" | "INACTIVE";
+  slug: string;
+  /** Null for a standalone bundle that sits outside the Class -> Program tree. */
+  classId: string | null;
+  class?: { id: string; code: string; name: string; slug: string } | null;
+  shortDescription?: string | null;
+  description?: string | null;
+  thumbnailUrl?: string | null;
+  outcomes: string[];
+  syllabusFileId?: string | null;
+  deliveryMode: DeliveryMode;
+  durationMonths: number | null;
+  priceOneTimeCents: number | null;
+  priceMonthlyCents: number | null;
+  installmentCount: number | null;
+  currency: string;
+  status: CatalogStatus;
+  programCourses?: ProgramCourseLink[];
   createdAt: string;
   updatedAt: string;
 }
@@ -288,6 +323,29 @@ export const dashboardApi = authApi.injectEndpoints({
     deleteProgram: builder.mutation<void, string>({
       query: (id: any) => ({
         url: `/programs/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Programs"],
+    } as any),
+    // Program <-> Course wiring. Courses are reusable across programs, so these
+    // manage a join rather than a field on Course.
+    attachProgramCourse: builder.mutation<
+      unknown,
+      { programId: string; courseId: string; isRequired?: boolean }
+    >({
+      query: ({ programId, ...body }: any) => ({
+        url: `/programs/${programId}/courses`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Programs"],
+    } as any),
+    detachProgramCourse: builder.mutation<
+      unknown,
+      { programId: string; courseId: string }
+    >({
+      query: ({ programId, courseId }: any) => ({
+        url: `/programs/${programId}/courses/${courseId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Programs"],
@@ -843,6 +901,8 @@ export const {
   useCreateProgramMutation,
   useUpdateProgramMutation,
   useDeleteProgramMutation,
+  useAttachProgramCourseMutation,
+  useDetachProgramCourseMutation,
   useGetUsersQuery,
   useUpdateUserMutation,
   useAssignUserRoleMutation,

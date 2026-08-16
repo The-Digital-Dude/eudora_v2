@@ -10,7 +10,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { InstitutionService } from './institution.service';
-import { CreateProgramDto, UpdateProgramDto } from './dto/program.dto';
+import {
+  AttachProgramCourseDto,
+  CreateProgramDto,
+  ReorderProgramCoursesDto,
+  UpdateProgramDto,
+} from './dto/program.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
@@ -49,6 +54,33 @@ export class InstitutionController {
   @Roles('ADMIN', 'SUPER_ADMIN')
   async updateProgram(@Param('id') id: string, @Body() dto: UpdateProgramDto) {
     return this.institutionService.updateProgram(id, dto);
+  }
+
+  @Post('programs/:id/courses')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async attachCourse(
+    @Param('id') id: string,
+    @Body() dto: AttachProgramCourseDto,
+  ) {
+    return this.institutionService.attachCourse(id, dto);
+  }
+
+  @Patch('programs/:id/courses/reorder')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async reorderCourses(
+    @Param('id') id: string,
+    @Body() dto: ReorderProgramCoursesDto,
+  ) {
+    return this.institutionService.reorderCourses(id, dto);
+  }
+
+  @Delete('programs/:id/courses/:courseId')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async detachCourse(
+    @Param('id') id: string,
+    @Param('courseId') courseId: string,
+  ) {
+    return this.institutionService.detachCourse(id, courseId);
   }
 
   @Delete('programs/:id')

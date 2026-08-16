@@ -78,14 +78,14 @@ export default function PlacementPage() {
       ),
     },
     {
-      id: "recommendedLevel",
+      id: "recommendedClass",
       enableSorting: false,
       header: () => (
         <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
           Recommended Level
         </span>
       ),
-      cell: ({ row }) => <span className="text-xs">{row.original.recommendedLevel?.name ?? "—"}</span>,
+      cell: ({ row }) => <span className="text-xs">{row.original.recommendedClass?.name ?? "—"}</span>,
     },
     {
       id: "recommendedClassSection",

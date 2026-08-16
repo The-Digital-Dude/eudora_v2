@@ -30,7 +30,7 @@ export class ListAssessmentsQueryDto {
 
   @IsOptional()
   @IsUUID()
-  levelId?: string;
+  classId?: string;
 
   @IsOptional()
   @IsUUID()
@@ -122,7 +122,7 @@ export class CreateAssessmentDto {
   subjectId: string;
 
   @IsUUID()
-  levelId: string;
+  classId: string;
 
   @IsOptional()
   @IsUUID()
@@ -171,7 +171,7 @@ export class UpdateAssessmentDto {
 
   @IsOptional()
   @IsUUID()
-  levelId?: string;
+  classId?: string;
 
   @IsOptional()
   @IsUUID()
@@ -234,7 +234,7 @@ export class ListQuestionsQueryDto {
 
   @IsOptional()
   @IsUUID()
-  levelId?: string;
+  classId?: string;
 
   @IsOptional()
   @IsEnum(['mcq', 'short_answer', 'numeric', 'written'])
@@ -272,7 +272,7 @@ export class CreateQuestionDto {
 
   @IsOptional()
   @IsUUID()
-  levelId?: string | null;
+  classId?: string | null;
 
   @IsEnum(['mcq', 'short_answer', 'numeric', 'written'])
   questionType: string;
@@ -324,7 +324,7 @@ export class UpdateQuestionDto {
 
   @IsOptional()
   @IsUUID()
-  levelId?: string | null;
+  classId?: string | null;
 
   @IsOptional()
   @IsEnum(['mcq', 'short_answer', 'numeric', 'written'])

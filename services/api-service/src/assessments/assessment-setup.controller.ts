@@ -58,29 +58,29 @@ export class AssessmentSetupController {
     return this.assessmentSetupService.updateAssessmentType(id, body, user.id);
   }
 
-  @Get('levels')
+  @Get('classes')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
-  async listLevels(@Query() query: LookupQueryDto) {
-    return this.assessmentSetupService.listLevels(query);
+  async listClasses(@Query() query: LookupQueryDto) {
+    return this.assessmentSetupService.listClasses(query);
   }
 
-  @Post('levels')
+  @Post('classes')
   @RequirePermissions({ action: 'manage', subject: 'Assessment' })
-  async createLevel(
+  async createClass(
     @Body() body: CreateLookupDto,
     @CurrentUser() user: CurrentUserDto,
   ) {
-    return this.assessmentSetupService.createLevel(body, user.id);
+    return this.assessmentSetupService.createClass(body, user.id);
   }
 
-  @Put('levels/:id')
+  @Put('classes/:id')
   @RequirePermissions({ action: 'manage', subject: 'Assessment' })
-  async updateLevel(
+  async updateClass(
     @Param('id') id: string,
     @Body() body: UpdateLookupDto,
     @CurrentUser() user: CurrentUserDto,
   ) {
-    return this.assessmentSetupService.updateLevel(id, body, user.id);
+    return this.assessmentSetupService.updateClass(id, body, user.id);
   }
 
   @Get()

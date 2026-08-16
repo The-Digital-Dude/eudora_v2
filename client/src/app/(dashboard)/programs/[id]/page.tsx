@@ -14,7 +14,14 @@ import {
   useUpdateProgramMutation,
 } from "@/features/dashboard/dashboardApi";
 
-import { EMPTY_PROGRAM, ProgramForm, type ProgramFormValues } from "../components/program-form";
+import { ProgramCoursesPanel } from "../components/program-courses-panel";
+import {
+  centsToDollars,
+  EMPTY_PROGRAM,
+  ProgramForm,
+  type ProgramFormValues,
+  toProgramPayload,
+} from "../components/program-form";
 
 export default function ProgramDetailPage() {
   const router = useRouter();
@@ -33,9 +40,16 @@ export default function ProgramDetailPage() {
     setValues({
       name: program.name ?? "",
       code: program.code ?? "",
+      slug: program.slug ?? "",
+      classId: program.classId ?? "",
+      shortDescription: program.shortDescription ?? "",
       description: program.description ?? "",
-      durationYears: String(program.durationYears ?? 4),
-      status: program.status ?? "ACTIVE",
+      deliveryMode: program.deliveryMode ?? "SELF_PACED",
+      durationMonths: program.durationMonths ? String(program.durationMonths) : "",
+      priceOneTime: centsToDollars(program.priceOneTimeCents),
+      priceMonthly: centsToDollars(program.priceMonthlyCents),
+      installmentCount: program.installmentCount ? String(program.installmentCount) : "",
+      status: program.status ?? "DRAFT",
     });
   }, [program]);
 
@@ -46,13 +60,7 @@ export default function ProgramDetailPage() {
     try {
       await updateProgram({
         id: programId,
-        body: {
-          name: values.name,
-          code: values.code.toUpperCase(),
-          description: values.description,
-          durationYears: parseInt(values.durationYears, 10),
-          status: values.status,
-        },
+        body: toProgramPayload(values),
       }).unwrap();
       toast.success("Program updated");
       router.push("/programs");
@@ -132,6 +140,8 @@ export default function ProgramDetailPage() {
           error={error}
         />
       </Card>
+
+      <ProgramCoursesPanel program={program} />
     </div>
   );
 }

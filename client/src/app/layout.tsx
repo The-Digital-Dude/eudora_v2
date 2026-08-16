@@ -2,6 +2,7 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 import {
+  Fredoka,
   Inter,
   Nunito_Sans,
   Outfit,
@@ -33,6 +34,9 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const nunitoSans = Nunito_Sans({ subsets: ["latin"], variable: "--font-nunito" });
 const sourceSerif = Source_Serif_4({ subsets: ["latin"], variable: "--font-source-serif" });
+// Landing-page-only font, scoped in globals.css via .font-landing — not part
+// of the customizer's swappable set.
+const fredoka = Fredoka({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"], variable: "--font-fredoka" });
 
 const fontVariables = [
   plusJakartaSans.variable,
@@ -40,12 +44,13 @@ const fontVariables = [
   inter.variable,
   nunitoSans.variable,
   sourceSerif.variable,
+  fredoka.variable,
 ].join(" ");
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Eudora — Education OS",
+    default: "Eudora",
     template: "%s | Eudora",
   },
   description:
@@ -56,14 +61,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
-    title: "Eudora — Education OS",
+    title: "Eudora",
     description:
       "AI-powered education operating system: personalized learning paths, automated grading, and school administration in one place.",
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Eudora — Education OS",
+    title: "Eudora",
     description:
       "AI-powered education operating system: personalized learning paths, automated grading, and school administration in one place.",
   },

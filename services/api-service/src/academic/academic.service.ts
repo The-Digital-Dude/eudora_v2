@@ -443,11 +443,29 @@ export class AcademicService {
   // --- Course Class Operations ---
 
   async createCourseClass(dto: CreateCourseClassDto) {
-    const term = await this.prisma.term.findUnique({
-      where: { id: dto.termId },
-    });
-    if (!term) {
-      throw new NotFoundException('Term not found');
+    // A term is optional now: a rolling batch belongs to none. Still validated
+    // when supplied so a typo fails loudly rather than silently detaching.
+    if (dto.termId) {
+      const term = await this.prisma.term.findUnique({
+        where: { id: dto.termId },
+      });
+      if (!term) {
+        throw new NotFoundException('Term not found');
+      }
+    }
+
+    if (dto.courseId) {
+      const course = await this.prisma.course.findFirst({
+        where: { id: dto.courseId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!course) {
+        throw new NotFoundException('Course not found');
+      }
+    }
+
+    if (dto.startDate && dto.endDate && dto.endDate < dto.startDate) {
+      throw new BadRequestException('endDate cannot be before startDate');
     }
 
     const existingCode = await this.prisma.courseClass.findUnique({
@@ -457,8 +475,17 @@ export class AcademicService {
       throw new ConflictException('Course class code already exists');
     }
 
+    const { startDate, endDate, enrollmentDeadline, ...rest } = dto;
+
     return this.prisma.courseClass.create({
-      data: dto,
+      data: {
+        ...rest,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        enrollmentDeadline: enrollmentDeadline
+          ? new Date(enrollmentDeadline)
+          : null,
+      },
     });
   }
 
@@ -528,9 +555,44 @@ export class AcademicService {
       }
     }
 
+    if (dto.courseId) {
+      const course = await this.prisma.course.findFirst({
+        where: { id: dto.courseId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!course) {
+        throw new NotFoundException('Course not found');
+      }
+    }
+
+    // Compare against whatever the batch will actually end up with, not just
+    // the fields in this request — a partial update can otherwise invert them.
+    const nextStart = dto.startDate ? new Date(dto.startDate) : cls.startDate;
+    const nextEnd = dto.endDate ? new Date(dto.endDate) : cls.endDate;
+    if (nextStart && nextEnd && nextEnd < nextStart) {
+      throw new BadRequestException('endDate cannot be before startDate');
+    }
+
+    const { startDate, endDate, enrollmentDeadline, ...rest } = dto;
+
     return this.prisma.courseClass.update({
       where: { id },
-      data: dto,
+      data: {
+        ...rest,
+        ...(startDate !== undefined
+          ? { startDate: startDate ? new Date(startDate) : null }
+          : {}),
+        ...(endDate !== undefined
+          ? { endDate: endDate ? new Date(endDate) : null }
+          : {}),
+        ...(enrollmentDeadline !== undefined
+          ? {
+              enrollmentDeadline: enrollmentDeadline
+                ? new Date(enrollmentDeadline)
+                : null,
+            }
+          : {}),
+      },
     });
   }
 

@@ -44,7 +44,7 @@ export class PlacementService {
       this.prisma.placementRecommendation.findMany({
         where,
         include: {
-          recommendedLevel: true,
+          recommendedClass: true,
           recommendedClassSection: true,
           studentProfile: { select: { id: true, fullName: true } },
         },
@@ -62,7 +62,7 @@ export class PlacementService {
     const rec = await this.prisma.placementRecommendation.findUnique({
       where: { id },
       include: {
-        recommendedLevel: true,
+        recommendedClass: true,
         recommendedClassSection: true,
         assessmentAttempt: true,
       },

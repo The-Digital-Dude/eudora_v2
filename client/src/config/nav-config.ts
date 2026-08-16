@@ -17,6 +17,7 @@ import {
   Radio,
   Route,
   School,
+  ShieldCheck,
   Sparkles,
   SquareStack,
   Stethoscope,
@@ -220,6 +221,14 @@ export const navGroups: NavGroup[] = [
         title: "Student Roster",
         url: "/students",
         icon: UsersRound,
+        requirement: { type: "roles", roles: ADMIN_ROLES },
+      },
+      {
+        // Support tooling for access: refunds, comps, and "I paid but I
+        // can't see it" tickets all get resolved here.
+        title: "Entitlements",
+        url: "/entitlements",
+        icon: ShieldCheck,
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
       {

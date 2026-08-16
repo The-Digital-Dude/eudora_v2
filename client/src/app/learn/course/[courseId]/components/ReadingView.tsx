@@ -4,8 +4,8 @@ import { CheckCircle2 } from "lucide-react";
 import React from "react";
 
 import { MathRenderer } from "@/components/MathRenderer";
-import { useUpdateModuleItemProgressMutation } from "@/features/catalog/catalogApi";
 import type { ModuleItem } from "@/features/catalog/catalogApi";
+import { useUpdateModuleItemProgressMutation } from "@/features/catalog/catalogApi";
 
 interface ReadingViewProps {
   item: ModuleItem;

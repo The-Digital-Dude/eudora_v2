@@ -1,6 +1,8 @@
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+import { getActingChildId } from "@/lib/acting-child";
+
 import { login, logout } from "./authSlice";
 
 // Helper to extract a cookie value from the browser on client-side
@@ -22,6 +24,13 @@ const baseQuery = fetchBaseQuery({
     const csrfToken = getCookie("csrf_token");
     if (csrfToken) {
       headers.set("x-csrf-token", csrfToken);
+    }
+    // Tells the API which child a guardian is acting for. Purely a hint — the
+    // server re-checks the guardian-child link on every request, and ignores
+    // this entirely for callers who are themselves students.
+    const actingChildId = getActingChildId();
+    if (actingChildId) {
+      headers.set("x-acting-student-id", actingChildId);
     }
     return headers;
   },
@@ -80,7 +89,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   if (result.data && typeof result.data === "object" && "success" in result.data) {
     const envelope = result.data as any;
     if (Array.isArray(envelope.data) && envelope.meta?.pagination) {
-      const total = envelope.meta.pagination.total ?? envelope.data.length;
+      const total = envelope.meta.pagination.totalItems ?? envelope.data.length;
       result.data = {
         items: envelope.data,
         data: envelope.data,
@@ -132,13 +141,13 @@ export const authApi = createApi({
     "Questions",
     "Assessments",
     "Assignments",
-    "Messages",
     "ParentPortal",
     "Gamification",
     "Leaderboard",
     "TeacherPortal",
     "LiveClasses",
     "PlacementRecommendations",
+    "Entitlements",
   ],
   endpoints: (builder) => ({
     login: builder.mutation({

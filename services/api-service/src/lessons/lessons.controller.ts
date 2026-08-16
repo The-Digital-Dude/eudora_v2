@@ -1,5 +1,7 @@
 import {
   Controller,
+  ForbiddenException,
+  Headers,
   Get,
   Post,
   Patch,
@@ -10,6 +12,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { LessonsService } from './lessons.service';
+import { ACTING_STUDENT_HEADER } from '../entitlements/acting-student.service';
+import { EntitlementsService } from '../entitlements/entitlements.service';
 import {
   CreateLessonDto,
   CreateCardDto,
@@ -27,7 +31,10 @@ import { CurrentUserDto } from '../auth/dto/current-user.dto';
 @Controller('lessons')
 @UseGuards(RolesGuard)
 export class LessonsController {
-  constructor(private readonly lessonsService: LessonsService) {}
+  constructor(
+    private readonly lessonsService: LessonsService,
+    private readonly entitlements: EntitlementsService,
+  ) {}
 
   @Get()
   async listLessons(
@@ -48,11 +55,16 @@ export class LessonsController {
     );
   }
 
+  // Lesson cards are the other content surface besides ModuleItem, so they
+  // gate on the same service rather than growing a second rule set.
+
   @Get(':id/flow')
   async getLessonFlow(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
+    await this.assertLessonAccess(id, user, actingStudentId);
     return this.lessonsService.getLessonFlow(id, user.id);
   }
 
@@ -61,8 +73,29 @@ export class LessonsController {
     @Param('cardId') cardId: string,
     @Body() body: SubmitCardResponseDto,
     @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
+    const lessonId = await this.lessonsService.getLessonIdForCard(cardId);
+    await this.assertLessonAccess(lessonId, user, actingStudentId);
     return this.lessonsService.submitCardResponse(user.id, cardId, body);
+  }
+
+  private async assertLessonAccess(
+    lessonId: string,
+    user: CurrentUserDto,
+    actingStudentId?: string | null,
+  ) {
+    const allowed = await this.entitlements.canAccessLesson(
+      user.id,
+      user.roles,
+      lessonId,
+      actingStudentId ?? null,
+    );
+    if (!allowed) {
+      throw new ForbiddenException(
+        'This content requires an active enrollment',
+      );
+    }
   }
 
   // Admin and teacher-only capabilities for authoring lessons

@@ -120,6 +120,18 @@ export interface ClassEnrollment {
 export const parentApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
+    /**
+     * Creates a child under the signed-in guardian. Unlike the older
+     * link-by-email flow this needs no account for the child — they have no
+     * login of their own and reach content through the guardian's session.
+     */
+    createChild: builder.mutation<
+      { id: string; fullName: string },
+      { fullName: string; birthDate: string; classId?: string }
+    >({
+      query: (body) => ({ url: "/parent/children", method: "POST", body }),
+      invalidatesTags: ["ParentPortal"],
+    }),
     getChildren: builder.query<ChildRollup[], void>({
       query: () => "/parent/children",
       providesTags: ["ParentPortal"],
@@ -218,6 +230,7 @@ export const parentApi = authApi.injectEndpoints({
 });
 
 export const {
+  useCreateChildMutation,
   useGetChildrenQuery,
   useGetChildTeachersQuery,
   useGetChildAttendanceQuery,

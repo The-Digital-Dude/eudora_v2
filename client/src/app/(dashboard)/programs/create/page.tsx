@@ -9,7 +9,12 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { useCreateProgramMutation } from "@/features/dashboard/dashboardApi";
 
-import { EMPTY_PROGRAM, ProgramForm, type ProgramFormValues } from "../components/program-form";
+import {
+  EMPTY_PROGRAM,
+  ProgramForm,
+  type ProgramFormValues,
+  toProgramPayload,
+} from "../components/program-form";
 
 export default function CreateProgramPage() {
   const router = useRouter();
@@ -22,13 +27,7 @@ export default function CreateProgramPage() {
     setError("");
 
     try {
-      await createProgram({
-        name: values.name,
-        code: values.code.toUpperCase(),
-        description: values.description,
-        durationYears: parseInt(values.durationYears, 10),
-        status: values.status,
-      }).unwrap();
+      await createProgram(toProgramPayload(values)).unwrap();
       toast.success("Program created");
       router.push("/programs");
     } catch (err: any) {

@@ -1,7 +1,8 @@
 import { Injectable, ConflictException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { CatalogStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { resolveSort } from '../common/sort.util';
+import { slugify } from '../common/slug.util';
 import {
   CreateAssessmentDto,
   CreateLookupDto,
@@ -17,7 +18,7 @@ import {
   enumFilter,
   enumValue,
   idFilter,
-  levelSelect,
+  classSelect,
   lookupSelect,
   normalizeCode,
   normalizePagination,
@@ -31,7 +32,17 @@ import {
   audit,
 } from './assessments.common';
 
-const ASSESSMENT_SORTABLE_FIELDS = ['title', 'status', 'totalMarks', 'createdAt'] as const;
+const ASSESSMENT_SORTABLE_FIELDS = [
+  'title',
+  'status',
+  'totalMarks',
+  'createdAt',
+] as const;
+
+/// `Class` moved from a free-text status to `CatalogStatus` when it absorbed
+/// the old `Level` model, so it can be drafted without leaking into the public
+/// catalog.
+const CATALOG_STATUSES = Object.values(CatalogStatus);
 
 @Injectable()
 export class AssessmentSetupService {
@@ -105,72 +116,73 @@ export class AssessmentSetupService {
     return record;
   }
 
-  async listLevels(query: LookupQueryDto = {}) {
+  async listClasses(query: LookupQueryDto = {}) {
     const pagination = normalizePagination(query);
     const where = {
       ...searchFilter(query.search, ['code', 'name']),
-      ...enumFilter('status', query.status, ['active', 'inactive', 'archived']),
+      ...enumFilter('status', query.status, CATALOG_STATUSES),
     };
     const [items, total] = await Promise.all([
-      this.prisma.level.findMany({
+      this.prisma.class.findMany({
         where,
         orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
         skip: pagination.skip,
         take: pagination.pageSize,
-        select: levelSelect,
+        select: classSelect,
       }),
-      this.prisma.level.count({ where }),
+      this.prisma.class.count({ where }),
     ]);
 
     return toPage(items, total, pagination);
   }
 
-  async createLevel(input: CreateLookupDto, actorUserId: string) {
+  async createClass(input: CreateLookupDto, actorUserId: string) {
     const code = normalizeCode(input.code);
-    await this.assertLevelCodeAvailable(code);
-    const record = await this.prisma.level.create({
+    await this.assertClassCodeAvailable(code);
+    const name = requireText(input.name, 'name');
+    const record = await this.prisma.class.create({
       data: {
         code,
-        name: requireText(input.name, 'name'),
+        name,
+        // Slug is required and unique — it is the public catalog URL segment.
+        slug: slugify(name),
         sortOrder: input.sortOrder ?? 0,
       },
-      select: levelSelect,
+      select: classSelect,
     });
     await audit(
       this.prisma,
       actorUserId,
-      'assessments.level.created',
-      'level',
+      'assessments.class.created',
+      'class',
       record.id,
     );
     return record;
   }
 
-  async updateLevel(id: string, input: UpdateLookupDto, actorUserId: string) {
-    const data: Prisma.LevelUpdateInput = {};
+  async updateClass(id: string, input: UpdateLookupDto, actorUserId: string) {
+    const data: Prisma.ClassUpdateInput = {};
     if (input.name !== undefined) {
-      data.name = requireText(input.name, 'name');
+      const name = requireText(input.name, 'name');
+      data.name = name;
+      data.slug = slugify(name);
     }
     if (input.status !== undefined) {
-      data.status = enumValue(
-        input.status,
-        ['active', 'inactive', 'archived'],
-        'status',
-      );
+      data.status = enumValue(input.status, CATALOG_STATUSES, 'status');
     }
     if (input.sortOrder !== undefined) {
       data.sortOrder = nullableNumber(input.sortOrder, 'sortOrder') ?? 0;
     }
-    const record = await this.prisma.level.update({
+    const record = await this.prisma.class.update({
       where: { id },
       data,
-      select: levelSelect,
+      select: classSelect,
     });
     await audit(
       this.prisma,
       actorUserId,
-      'assessments.level.updated',
-      'level',
+      'assessments.class.updated',
+      'class',
       record.id,
     );
     return record;
@@ -182,7 +194,7 @@ export class AssessmentSetupService {
       ...searchFilter(query.search, ['title']),
       ...idFilter('assessmentTypeId', query.assessmentTypeId),
       ...idFilter('subjectId', query.subjectId),
-      ...idFilter('levelId', query.levelId),
+      ...idFilter('classId', query.classId),
       ...idFilter('termId', query.termId),
       ...numberFilter('weekNumber', query.weekNumber),
       ...enumFilter('status', query.status, ['draft', 'published', 'archived']),
@@ -232,7 +244,7 @@ export class AssessmentSetupService {
           'assessmentTypeId',
         ),
         subjectId: requireText(input.subjectId, 'subjectId'),
-        levelId: requireText(input.levelId, 'levelId'),
+        classId: requireText(input.classId, 'classId'),
         termId: input.termId ? requireText(input.termId, 'termId') : null,
         weekNumber: input.weekNumber ?? null,
         title: requireText(input.title, 'title'),
@@ -286,8 +298,8 @@ export class AssessmentSetupService {
       if (input.subjectId !== undefined) {
         data.subjectId = requireText(input.subjectId, 'subjectId');
       }
-      if (input.levelId !== undefined) {
-        data.levelId = requireText(input.levelId, 'levelId');
+      if (input.classId !== undefined) {
+        data.classId = requireText(input.classId, 'classId');
       }
       if (input.termId !== undefined) {
         data.termId = input.termId ? requireText(input.termId, 'termId') : null;
@@ -383,13 +395,13 @@ export class AssessmentSetupService {
     }
   }
 
-  private async assertLevelCodeAvailable(code: string): Promise<void> {
-    const existing = await this.prisma.level.findUnique({
+  private async assertClassCodeAvailable(code: string): Promise<void> {
+    const existing = await this.prisma.class.findUnique({
       where: { code },
       select: { id: true },
     });
     if (existing) {
-      throw new ConflictException('Assessment level code already exists');
+      throw new ConflictException('Class code already exists');
     }
   }
 }

@@ -24,6 +24,8 @@ import { LiveClassesModule } from './live-classes/live-classes.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { CatalogModule } from './catalog/catalog.module';
+import { EntitlementsModule } from './entitlements/entitlements.module';
+import { BillingModule } from './billing/billing.module';
 import { LeadsModule } from './leads/leads.module';
 import { CommunicationModule } from './communication/communication.module';
 import { MakeupModule } from './makeup/makeup.module';
@@ -36,7 +38,6 @@ import { TimetableModule } from './timetable/timetable.module';
 import { GradebookModule } from './gradebook/gradebook.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { GamificationModule } from './gamification/gamification.module';
-import { MessagingModule } from './messaging/messaging.module';
 import { ParentModule } from './parent/parent.module';
 import { ApiEnvelopeInterceptor } from './common/http/api-envelope.interceptor';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
@@ -67,6 +68,8 @@ import { AuditModule } from './common/audit/audit.module';
     AssessmentsModule,
     LessonsModule,
     CatalogModule,
+    EntitlementsModule,
+    BillingModule,
     LeadsModule,
     CommunicationModule,
     MakeupModule,
@@ -79,7 +82,6 @@ import { AuditModule } from './common/audit/audit.module';
     GradebookModule,
     DashboardModule,
     GamificationModule,
-    MessagingModule,
     ParentModule,
   ],
   controllers: [AppController],

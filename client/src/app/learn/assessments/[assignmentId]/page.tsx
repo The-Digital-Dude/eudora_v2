@@ -292,7 +292,7 @@ export default function StudentAssessmentPlayerPage() {
           </div>
           <h1 className="text-2xl font-extrabold text-foreground mb-1">{assessment.title}</h1>
           <p className="text-xs text-muted-foreground">
-            Subject: {assessment.subject?.name} • Grade: {assessment.level?.name}
+            Subject: {assessment.subject?.name} • Grade: {assessment.class?.name}
           </p>
 
           <div className="grid grid-cols-3 gap-3 my-6">

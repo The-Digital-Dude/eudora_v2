@@ -1,9 +1,12 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   ForbiddenException,
   ConflictException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import type { Gender } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GuardianAccessService } from '../family/guardian-access.service';
 import { CatalogService } from '../catalog/catalog.service';
@@ -408,7 +411,9 @@ export class ParentService {
     ]);
     const enrolledIds = new Set(enrollments.map((e) => e.courseClassId));
     return classes
-      .filter((cls) => cls.capacity === null || cls._count.enrollments < cls.capacity)
+      .filter(
+        (cls) => cls.capacity === null || cls._count.enrollments < cls.capacity,
+      )
       .map((cls) => ({ ...cls, isEnrolled: enrolledIds.has(cls.id) }));
   }
 
@@ -451,7 +456,10 @@ export class ParentService {
       );
     }
 
-    if (target.capacity !== null && target._count.enrollments >= target.capacity) {
+    if (
+      target.capacity !== null &&
+      target._count.enrollments >= target.capacity
+    ) {
       throw new ForbiddenException('This class is full');
     }
 
@@ -469,5 +477,96 @@ export class ParentService {
       throw new NotFoundException('Enrollment not found');
     }
     return this.studentService.deleteEnrollment(enrollmentId);
+  }
+
+  // --- Adding a child -------------------------------------------------------
+
+  /**
+   * Creates a child under the calling guardian.
+   *
+   * This replaces link-by-email as the primary path. That flow required the
+   * child to already hold their own account *and* to have opened a lesson (the
+   * only non-admin way a `StudentProfile` came into existence), which is not
+   * something a parent buying a phonics course for a five-year-old can do.
+   *
+   * The child gets a `User` because `StudentProfile.userId` is required, but
+   * with no password and a non-deliverable address: they have no login of their
+   * own and reach content through the guardian's session. Giving them real
+   * credentials is deliberately deferred.
+   */
+  async createChild(
+    guardianUserId: string,
+    input: {
+      fullName: string;
+      birthDate: string;
+      classId?: string;
+      gender?: Gender;
+    },
+  ) {
+    const guardian = await this.prisma.guardianProfile.findUnique({
+      where: { userId: guardianUserId },
+      select: { id: true },
+    });
+    if (!guardian) {
+      throw new NotFoundException(
+        'Guardian profile not found. Complete your profile details first.',
+      );
+    }
+
+    const birthDate = new Date(input.birthDate);
+    if (Number.isNaN(birthDate.getTime())) {
+      throw new BadRequestException('birthDate is not a valid date');
+    }
+    if (birthDate > new Date()) {
+      throw new BadRequestException('birthDate cannot be in the future');
+    }
+
+    if (input.classId) {
+      const klass = await this.prisma.class.findUnique({
+        where: { id: input.classId },
+        select: { id: true },
+      });
+      if (!klass) throw new NotFoundException('Class not found');
+    }
+
+    const [firstName, ...rest] = input.fullName.trim().split(/\s+/);
+
+    return this.prisma.$transaction(async (tx) => {
+      const childUser = await tx.user.create({
+        data: {
+          // Unique, obviously synthetic, and on a reserved TLD so it can never
+          // collide with or accidentally deliver to a real inbox.
+          email: `child.${randomUUID()}@no-login.eudora.invalid`,
+          password: null,
+          firstName: firstName || input.fullName,
+          lastName: rest.join(' ') || '-',
+        },
+      });
+
+      const profile = await tx.studentProfile.create({
+        data: {
+          userId: childUser.id,
+          fullName: input.fullName.trim(),
+          birthDate,
+          gender: input.gender ?? 'OTHER',
+          classId: input.classId ?? null,
+        },
+        include: { class: { select: { id: true, name: true, slug: true } } },
+      });
+
+      await tx.guardianStudentRelationship.create({
+        data: {
+          guardianProfileId: guardian.id,
+          studentProfileId: profile.id,
+          relationshipType: 'GUARDIAN',
+          // First child added becomes the primary relationship.
+          isPrimary: false,
+          hasFinancialResponsibility: true,
+          hasAcademicAccess: true,
+        },
+      });
+
+      return profile;
+    });
   }
 }

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateModuleItemDto,
@@ -172,9 +176,7 @@ export class ModuleItemsService {
       select: { assessmentId: true },
     });
     if (!item || !item.assessmentId) {
-      throw new NotFoundException(
-        'This item is not linked to an assessment',
-      );
+      throw new NotFoundException('This item is not linked to an assessment');
     }
     const studentProfileId = await this.resolveStudentProfileId(userId);
     if (!studentProfileId) {

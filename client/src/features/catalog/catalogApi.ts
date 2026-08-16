@@ -21,10 +21,15 @@ export interface ModuleItem {
   title: string;
   sortOrder: number;
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  /** Null when the content is entitlement-locked — the server withholds the
+   * body but still returns the row so the outline stays visible. */
   videoUrl: string | null;
   videoDurationSeconds: number | null;
   readingContent: string | null;
   assessmentId: string | null;
+  isFreePreview: boolean;
+  /** True when this item's body was withheld for lack of an entitlement. */
+  isContentLocked: boolean;
   isDone: boolean;
 }
 
@@ -86,6 +91,21 @@ export interface CourseSummary {
 
 export interface CourseDetail extends Omit<CourseSummary, "_count"> {
   concepts: CourseConcept[];
+  /** Whether the viewer may consume this course's content. Staff always true. */
+  isEntitled: boolean;
+}
+
+// Deliberately narrower than CourseSummary — mirrors the exact fields the
+// public, unauthenticated /catalog/public/courses select returns.
+export interface PublicCourseSummary {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  estimatedHours: number | null;
+  gradeBand: string | null;
+  learningSubject: { id: string; name: string; code: string };
+  _count: { concepts: number };
 }
 
 export interface LearningPathSummary {
@@ -191,6 +211,102 @@ export const catalogApi = authApi.injectEndpoints({
         return `/catalog/courses${query ? `?${query}` : ""}`;
       },
       providesTags: ["Courses"],
+    } as any),
+
+    // Anonymous course search for the public marketing site (no auth cookie
+    // required — hits /catalog/public/courses, which only ever returns
+    // published courses with no pricing/internal fields).
+    getPublicCourses: builder.query<
+      { items: PublicCourseSummary[]; total: number; page: number; pageSize: number },
+      { search?: string; page?: number; limit?: number } | void
+    >({
+      query: (params: any) => {
+        const q = new URLSearchParams();
+        if (params?.search) q.set("search", params.search);
+        if (params?.page) q.set("page", String(params.page));
+        if (params?.limit) q.set("limit", String(params.limit));
+        const query = q.toString();
+        return `/catalog/public/courses${query ? `?${query}` : ""}`;
+      },
+    } as any),
+
+    // Course teaching staff — a plain many-to-many, which is all that
+    // "one course, many teachers" ever needed.
+    getCourseTeachers: builder.query<
+      Array<{
+        role: string;
+        assignedAt: string;
+        teacherProfile: {
+          id: string;
+          fullName: string;
+          specialization: string | null;
+          status: string;
+        };
+      }>,
+      string
+    >({
+      query: (courseId: any) => `/catalog/courses/${courseId}/teachers`,
+      providesTags: ["CourseDetail"],
+    } as any),
+
+    attachCourseTeacher: builder.mutation<
+      unknown,
+      { courseId: string; teacherProfileId: string; role?: string }
+    >({
+      query: ({ courseId, ...body }: any) => ({
+        url: `/catalog/courses/${courseId}/teachers`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["CourseDetail"],
+    } as any),
+
+    detachCourseTeacher: builder.mutation<
+      unknown,
+      { courseId: string; teacherProfileId: string }
+    >({
+      query: ({ courseId, teacherProfileId }: any) => ({
+        url: `/catalog/courses/${courseId}/teachers/${teacherProfileId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["CourseDetail"],
+    } as any),
+
+    // Slug -> id resolution for checkout. The public SKU pages link with a
+    // slug (it is the indexable URL), while the billing API keys off ids.
+    getPublicProgramBySlug: builder.query<
+      {
+        id: string;
+        name: string;
+        slug: string;
+        shortDescription: string | null;
+        priceOneTimeCents: number | null;
+        priceMonthlyCents: number | null;
+        installmentCount: number | null;
+        currency: string;
+        deliveryMode: string;
+        courses: Array<{ id: string; title: string }>;
+      },
+      string
+    >({
+      query: (slug: any) => `/catalog/public/programs/${slug}`,
+    } as any),
+
+    getPublicCourseBySlug: builder.query<
+      {
+        id: string;
+        title: string;
+        slug: string;
+        description: string | null;
+        priceOneTimeCents: number | null;
+        priceMonthlyCents: number | null;
+        installmentCount: number | null;
+        currency: string;
+        deliveryMode: string;
+      },
+      string
+    >({
+      query: (slug: any) => `/catalog/public/courses/${slug}`,
     } as any),
 
     getCourseDetail: builder.query<CourseDetail, string>({
@@ -344,6 +460,12 @@ export const {
   useGetLearningSubjectsQuery,
   useCreateLearningSubjectMutation,
   useGetCoursesQuery,
+  useGetPublicCoursesQuery,
+  useGetCourseTeachersQuery,
+  useAttachCourseTeacherMutation,
+  useDetachCourseTeacherMutation,
+  useGetPublicProgramBySlugQuery,
+  useGetPublicCourseBySlugQuery,
   useGetCourseDetailQuery,
   useCreateCourseMutation,
   useUpdateCourseMutation,

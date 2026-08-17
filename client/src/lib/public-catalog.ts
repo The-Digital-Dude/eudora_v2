@@ -122,18 +122,25 @@ export interface PublicClassSummary extends PublicClassRef {
 /**
  * Returns null on any failure rather than throwing. A build must not break
  * because the API was briefly unreachable — the page renders its not-found
- * state and ISR picks the content up on the next revalidation.
+ * state and ISR picks the content up on the next revalidation. Failures are
+ * still logged (server-side only) since a silent null here is otherwise
+ * indistinguishable from "nothing published yet".
  */
 async function getJson<T>(path: string): Promise<T | null> {
+  const url = `${API_URL}/api${path}`;
   try {
-    const res = await fetch(`${API_URL}/api${path}`, {
+    const res = await fetch(url, {
       next: { revalidate: CATALOG_REVALIDATE_SECONDS },
       headers: { accept: "application/json" },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`[public-catalog] ${url} -> HTTP ${res.status}`);
+      return null;
+    }
     const body = (await res.json()) as { data?: T };
     return body.data ?? null;
-  } catch {
+  } catch (err) {
+    console.error(`[public-catalog] fetch failed for ${url}:`, err);
     return null;
   }
 }

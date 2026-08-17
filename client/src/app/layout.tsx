@@ -79,7 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={fontVariables}>
       <body className="bg-background text-foreground min-h-screen font-sans antialiased">
         <StructuredData data={organizationJsonLd} />
-        <ThemeProvider defaultTheme="system" storageKey="eudora-admin-theme">
+        <ThemeProvider defaultTheme="light" storageKey="eudora-admin-theme">
           <ThemeSettingsProvider>
             <SidebarConfigProvider>
               <Providers>{children}</Providers>

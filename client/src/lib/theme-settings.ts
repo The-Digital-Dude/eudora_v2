@@ -68,30 +68,17 @@ const COLOR_VARS = [
   "warning-foreground",
 ];
 
+// Persistence is intentionally off: every load starts from
+// DEFAULT_THEME_SETTINGS (Eudora Professional, light) regardless of what a
+// prior session saved under STORAGE_KEY. The customizer still applies
+// changes live in-session via applyThemeSettings — they just don't survive
+// a reload. Restore the STORAGE_KEY read/write below to re-enable.
 export function loadThemeSettings(): ThemeSettings {
-  if (typeof window === "undefined") return DEFAULT_THEME_SETTINGS;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_THEME_SETTINGS;
-    const parsed = JSON.parse(raw) as Partial<ThemeSettings>;
-    return {
-      ...DEFAULT_THEME_SETTINGS,
-      ...parsed,
-      sidebar: { ...DEFAULT_THEME_SETTINGS.sidebar, ...(parsed.sidebar ?? {}) },
-      brandColors: { ...(parsed.brandColors ?? {}) },
-    };
-  } catch {
-    return DEFAULT_THEME_SETTINGS;
-  }
+  return DEFAULT_THEME_SETTINGS;
 }
 
-export function saveThemeSettings(settings: ThemeSettings): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  } catch {
-    // Storage full or unavailable — ignore; in-session styling still works.
-  }
+export function saveThemeSettings(_settings: ThemeSettings): void {
+  // No-op — see comment above.
 }
 
 /** Returns the resolved color palette (light or dark) for the active theme kind. */

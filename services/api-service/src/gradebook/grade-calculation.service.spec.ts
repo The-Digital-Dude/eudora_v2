@@ -17,7 +17,7 @@ describe('GradeCalculationService', () => {
       findFirst: jest.fn(),
       findMany: jest.fn(),
     },
-    courseClass: {
+    batch: {
       findUnique: jest.fn(),
     },
   };

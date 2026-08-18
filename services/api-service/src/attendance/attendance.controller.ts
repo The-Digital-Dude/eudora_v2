@@ -62,10 +62,10 @@ export class AttendanceController {
   /**
    * Get all sessions created for a course class.
    */
-  @Get('sessions/course-class/:courseClassId')
+  @Get('sessions/batch/:batchId')
   @RequirePermissions({ action: 'read', subject: 'Attendance' })
-  getSessions(@Param('courseClassId') courseClassId: string) {
-    return this.attendanceService.getSessionsForCourse(courseClassId);
+  getSessions(@Param('batchId') batchId: string) {
+    return this.attendanceService.getSessionsForCourse(batchId);
   }
 
   /**

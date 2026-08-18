@@ -26,7 +26,7 @@ import {
   usePublishAssessmentMutation,
 } from "@/features/assessments/assessmentsApi";
 import {
-  useGetLevelsQuery,
+  useGetClassesQuery,
   useGetSubjectsQuery,
 } from "@/features/assessments/questionsApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
@@ -39,8 +39,16 @@ export default function AssessmentsPage() {
   // Query filters, held in the URL so a filtered view can be linked or refreshed. `page` used to be
   // a useState whose setter was never destructured, pinning this list to page 1 despite the API
   // paginating properly behind it.
-  const { values, setValue } = useListQueryState(
-    { search: "", subjectId: "all", levelId: "all", status: "all", page: 1 },
+  const { values, setValue, setValues } = useListQueryState(
+    {
+      search: "",
+      subjectId: "all",
+      classId: "all",
+      status: "all",
+      page: 1,
+      sortBy: "",
+      sortOrder: "asc",
+    },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -51,18 +59,27 @@ export default function AssessmentsPage() {
   const { data: assessmentsData, isLoading } = useGetAssessmentsQuery({
     search: values.search || undefined,
     subjectId: values.subjectId === "all" ? undefined : values.subjectId,
-    levelId: values.levelId === "all" ? undefined : values.levelId,
+    classId: values.classId === "all" ? undefined : values.classId,
     status: values.status === "all" ? undefined : values.status,
     page: values.page,
     pageSize: PAGE_SIZE,
+    sortBy: values.sortBy || undefined,
+    sortOrder: values.sortOrder,
   });
 
+  // Cards, not table rows — the sort control is a select rather than a clickable column header.
+  const sortValue = values.sortBy ? `${values.sortBy}:${values.sortOrder}` : "createdAt:desc";
+  const handleSortChange = (next: string) => {
+    const [sortBy, sortOrder] = next.split(":");
+    setValues({ sortBy: sortBy === "createdAt" ? "" : sortBy, sortOrder });
+  };
+
   const { data: subjectsData } = useGetSubjectsQuery();
-  const { data: levelsData } = useGetLevelsQuery();
+  const { data: classesData } = useGetClassesQuery();
 
   const assessments = assessmentsData?.items || [];
   const subjects = subjectsData?.items || [];
-  const levels = levelsData?.items || [];
+  const classes = classesData?.items || [];
 
   // Mutations
   const [publishAssessment] = usePublishAssessmentMutation();
@@ -163,13 +180,13 @@ export default function AssessmentsPage() {
 
         {/* Level Filter */}
         <div className="w-[160px]">
-          <Select value={values.levelId} onValueChange={(next) => setValue("levelId", next)}>
+          <Select value={values.classId} onValueChange={(next) => setValue("classId", next)}>
             <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
               <SelectValue placeholder="All Levels" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="all">All Levels</SelectItem>
-              {levels.map((l) => (
+              {classes.map((l) => (
                 <SelectItem key={l.id} value={l.id}>
                   {l.name}
                 </SelectItem>
@@ -189,6 +206,23 @@ export default function AssessmentsPage() {
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="published">Published</SelectItem>
               <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Sort */}
+        <div className="w-[170px]">
+          <Select value={sortValue} onValueChange={handleSortChange}>
+            <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/30">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="createdAt:desc">Newest first</SelectItem>
+              <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+              <SelectItem value="title:asc">Title A–Z</SelectItem>
+              <SelectItem value="title:desc">Title Z–A</SelectItem>
+              <SelectItem value="totalMarks:desc">Most marks</SelectItem>
+              <SelectItem value="totalMarks:asc">Fewest marks</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -227,9 +261,9 @@ export default function AssessmentsPage() {
                       {item.subject.name}
                     </span>
                   )}
-                  {item.level && (
+                  {item.class && (
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">
-                      {item.level.name}
+                      {item.class.name}
                     </span>
                   )}
                 </div>

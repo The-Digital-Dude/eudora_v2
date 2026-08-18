@@ -23,10 +23,11 @@ export default function LearningPathDetailPage() {
   const { data: pathDetail, isLoading } = useGetLearningPathDetailQuery(pathId, {
     skip: !pathId,
   });
-  const { data: subjectCourses } = useGetCoursesQuery(
+  const { data: subjectCoursesData } = useGetCoursesQuery(
     pathDetail ? { subjectId: pathDetail.learningSubjectId } : undefined,
     { skip: !pathDetail },
   );
+  const subjectCourses = subjectCoursesData?.items;
 
   const [addCourseToPath, { isLoading: addingCourse }] = useAddCourseToPathMutation();
   const [removeCourseFromPath] = useRemoveCourseFromPathMutation();

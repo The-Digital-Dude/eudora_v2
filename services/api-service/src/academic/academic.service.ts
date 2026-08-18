@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import {
   CreateAcademicYearDto,
   UpdateAcademicYearDto,
@@ -15,10 +16,9 @@ import {
   CreateClassSectionDto,
   UpdateClassSectionDto,
 } from './dto/class-section.dto';
-import {
-  CreateCourseClassDto,
-  UpdateCourseClassDto,
-} from './dto/course-class.dto';
+import { CreateBatchDto, UpdateBatchDto } from './dto/batch.dto';
+
+const CLASS_SECTION_SORTABLE_FIELDS = ['name', 'code', 'status'] as const;
 
 @Injectable()
 export class AcademicService {
@@ -136,7 +136,7 @@ export class AcademicService {
         select: { id: true },
       });
       const termIds = terms.map((t) => t.id);
-      await tx.courseClass.updateMany({
+      await tx.batch.updateMany({
         where: { termId: { in: termIds }, deletedAt: null },
         data: { deletedAt: now },
       });
@@ -219,7 +219,7 @@ export class AcademicService {
   async findTermById(id: string) {
     const term = await this.prisma.term.findUnique({
       where: { id },
-      include: { academicYear: true, courseClasses: true },
+      include: { academicYear: true, batches: true },
     });
     if (!term) {
       throw new NotFoundException('Term not found');
@@ -320,6 +320,8 @@ export class AcademicService {
     programId?: string,
     learningSubjectId?: string,
     search?: string,
+    sortBy?: string,
+    sortOrder?: string,
   ) {
     const skip = (page - 1) * limit;
     const where: Prisma.ClassSectionWhereInput = {};
@@ -340,6 +342,13 @@ export class AcademicService {
       ];
     }
 
+    const orderBy = resolveSort(
+      sortBy,
+      sortOrder,
+      CLASS_SECTION_SORTABLE_FIELDS,
+      'name',
+    );
+
     const [sections, total] = await Promise.all([
       this.prisma.classSection.findMany({
         where,
@@ -350,7 +359,7 @@ export class AcademicService {
           program: true,
           learningSubject: { select: { id: true, name: true, code: true } },
         },
-        orderBy: { name: 'asc' },
+        orderBy,
       }),
       this.prisma.classSection.count({ where }),
     ]);
@@ -435,39 +444,81 @@ export class AcademicService {
 
   // --- Course Class Operations ---
 
-  async createCourseClass(dto: CreateCourseClassDto) {
-    const term = await this.prisma.term.findUnique({
-      where: { id: dto.termId },
-    });
-    if (!term) {
-      throw new NotFoundException('Term not found');
+  async createBatch(dto: CreateBatchDto) {
+    // A term is optional now: a rolling batch belongs to none. Still validated
+    // when supplied so a typo fails loudly rather than silently detaching.
+    if (dto.termId) {
+      const term = await this.prisma.term.findUnique({
+        where: { id: dto.termId },
+      });
+      if (!term) {
+        throw new NotFoundException('Term not found');
+      }
     }
 
-    const existingCode = await this.prisma.courseClass.findUnique({
+    if (dto.courseId) {
+      const course = await this.prisma.course.findFirst({
+        where: { id: dto.courseId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!course) {
+        throw new NotFoundException('Course not found');
+      }
+    }
+
+    if (dto.leadTeacherProfileId) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { id: dto.leadTeacherProfileId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!teacher) {
+        throw new NotFoundException('Lead teacher not found');
+      }
+    }
+
+    if (dto.startDate && dto.endDate && dto.endDate < dto.startDate) {
+      throw new BadRequestException('endDate cannot be before startDate');
+    }
+
+    const existingCode = await this.prisma.batch.findUnique({
       where: { code: dto.code },
     });
     if (existingCode) {
-      throw new ConflictException('Course class code already exists');
+      throw new ConflictException('Batch code already exists');
     }
 
-    return this.prisma.courseClass.create({
-      data: dto,
+    const { startDate, endDate, enrollmentDeadline, ...rest } = dto;
+
+    return this.prisma.batch.create({
+      data: {
+        ...rest,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        enrollmentDeadline: enrollmentDeadline
+          ? new Date(enrollmentDeadline)
+          : null,
+      },
     });
   }
 
-  async findAllCourseClasses(page = 1, limit = 10, termId?: string) {
+  async findAllBatches(page = 1, limit = 10, termId?: string) {
     const skip = (page - 1) * limit;
     const where = termId ? { termId } : {};
 
     const [classes, total] = await Promise.all([
-      this.prisma.courseClass.findMany({
+      this.prisma.batch.findMany({
         where,
         skip,
         take: limit,
-        include: { term: { include: { academicYear: true } } },
+        include: {
+          term: { include: { academicYear: true } },
+          course: { select: { id: true, title: true, deliveryMode: true } },
+          leadTeacher: { select: { id: true, fullName: true } },
+          _count: { select: { enrollments: true } },
+        },
         orderBy: { name: 'asc' },
       }),
-      this.prisma.courseClass.count({ where }),
+      this.prisma.batch.count({ where }),
     ]);
 
     return {
@@ -481,26 +532,28 @@ export class AcademicService {
     };
   }
 
-  async findCourseClassById(id: string) {
-    const cls = await this.prisma.courseClass.findUnique({
+  async findBatchById(id: string) {
+    const cls = await this.prisma.batch.findUnique({
       where: { id },
       include: {
         term: { include: { academicYear: true } },
+        course: { select: { id: true, title: true, deliveryMode: true } },
+        leadTeacher: { select: { id: true, fullName: true } },
         enrollments: { include: { studentProfile: true } },
       },
     });
     if (!cls) {
-      throw new NotFoundException('Course class not found');
+      throw new NotFoundException('Batch not found');
     }
     return cls;
   }
 
-  async updateCourseClass(id: string, dto: UpdateCourseClassDto) {
-    const cls = await this.prisma.courseClass.findUnique({
+  async updateBatch(id: string, dto: UpdateBatchDto) {
+    const cls = await this.prisma.batch.findUnique({
       where: { id },
     });
     if (!cls) {
-      throw new NotFoundException('Course class not found');
+      throw new NotFoundException('Batch not found');
     }
 
     if (dto.termId) {
@@ -513,33 +566,90 @@ export class AcademicService {
     }
 
     if (dto.code && dto.code !== cls.code) {
-      const existingCode = await this.prisma.courseClass.findUnique({
+      const existingCode = await this.prisma.batch.findUnique({
         where: { code: dto.code },
       });
       if (existingCode) {
-        throw new ConflictException('Course class code already exists');
+        throw new ConflictException('Batch code already exists');
       }
     }
 
-    return this.prisma.courseClass.update({
+    if (dto.courseId) {
+      const course = await this.prisma.course.findFirst({
+        where: { id: dto.courseId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!course) {
+        throw new NotFoundException('Course not found');
+      }
+    }
+
+    if (dto.leadTeacherProfileId) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { id: dto.leadTeacherProfileId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!teacher) {
+        throw new NotFoundException('Lead teacher not found');
+      }
+    }
+
+    // Compare against whatever the batch will actually end up with, not just
+    // the fields in this request — a partial update can otherwise invert them.
+    const nextStart = dto.startDate ? new Date(dto.startDate) : cls.startDate;
+    const nextEnd = dto.endDate ? new Date(dto.endDate) : cls.endDate;
+    if (nextStart && nextEnd && nextEnd < nextStart) {
+      throw new BadRequestException('endDate cannot be before startDate');
+    }
+
+    const { startDate, endDate, enrollmentDeadline, ...rest } = dto;
+
+    return this.prisma.batch.update({
       where: { id },
-      data: dto,
+      data: {
+        ...rest,
+        ...(startDate !== undefined
+          ? { startDate: startDate ? new Date(startDate) : null }
+          : {}),
+        ...(endDate !== undefined
+          ? { endDate: endDate ? new Date(endDate) : null }
+          : {}),
+        ...(enrollmentDeadline !== undefined
+          ? {
+              enrollmentDeadline: enrollmentDeadline
+                ? new Date(enrollmentDeadline)
+                : null,
+            }
+          : {}),
+      },
     });
   }
 
-  async deleteCourseClass(id: string) {
-    const cls = await this.prisma.courseClass.findUnique({
+  async deleteBatch(id: string) {
+    const cls = await this.prisma.batch.findUnique({
       where: { id },
     });
     if (!cls) {
-      throw new NotFoundException('Course class not found');
+      throw new NotFoundException('Batch not found');
     }
 
-    await this.prisma.courseClass.delete({
+    // `StudentCourseEnrollment.batch` cascades, so deleting a batch with
+    // seats in it silently destroys paid enrolments — and with them the
+    // gradebook and attendance rows that hang off those students. Refuse.
+    const enrolled = await this.prisma.studentCourseEnrollment.count({
+      where: { batchId: id },
+    });
+    if (enrolled > 0) {
+      throw new ConflictException(
+        `Cannot delete a batch with ${enrolled} enrolled student(s). Set it INACTIVE instead.`,
+      );
+    }
+
+    await this.prisma.batch.delete({
       where: { id },
     });
 
-    return { message: 'Course class deleted successfully' };
+    return { message: 'Batch deleted successfully' };
   }
 
   async getClassSectionRoster(classSectionId: string) {

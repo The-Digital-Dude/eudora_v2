@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import React from "react";
 
 import { useGetAssessmentQuery } from "@/features/assessments/assessmentsApi";
-import { useGetMyAssignmentForItemQuery } from "@/features/catalog/catalogApi";
 import type { ModuleItem } from "@/features/catalog/catalogApi";
+import { useGetMyAssignmentForItemQuery } from "@/features/catalog/catalogApi";
 
 interface AssessmentItemViewProps {
   item: ModuleItem;

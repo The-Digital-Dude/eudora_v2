@@ -15,8 +15,10 @@ export const lookupSelect = {
   updatedAt: true,
 };
 
-export const levelSelect = {
+export const classSelect = {
   ...lookupSelect,
+  slug: true,
+  description: true,
   sortOrder: true,
 };
 
@@ -24,7 +26,7 @@ export const assessmentSelect = {
   id: true,
   assessmentTypeId: true,
   subjectId: true,
-  levelId: true,
+  classId: true,
   termId: true,
   weekNumber: true,
   title: true,
@@ -39,7 +41,7 @@ export const assessmentSelect = {
   updatedAt: true,
   assessmentType: { select: { id: true, code: true, name: true } },
   subject: { select: { id: true, code: true, name: true } },
-  level: { select: { id: true, code: true, name: true } },
+  class: { select: { id: true, code: true, name: true } },
   term: { select: { id: true, name: true } },
   sections: {
     orderBy: { sortOrder: 'asc' as const },
@@ -83,7 +85,10 @@ export const assessmentSelect = {
 export const questionSelect = {
   id: true,
   subjectId: true,
-  levelId: true,
+  classId: true,
+  // The relation was never selected, so the questions list rendered
+  // "Unassigned" in its level column for every row regardless of the data.
+  class: { select: { id: true, code: true, name: true } },
   questionType: true,
   prompt: true,
   correctAnswer: true,
@@ -111,7 +116,6 @@ export const assignmentSelect = {
   id: true,
   assessmentId: true,
   studentProfileId: true,
-  classSectionId: true,
   lessonId: true,
   assignedByUserId: true,
   opensAt: true,
@@ -133,7 +137,6 @@ export const assignmentSelect = {
     },
   },
   studentProfile: { select: { id: true, fullName: true } },
-  classSection: { select: { id: true, code: true, name: true } },
 };
 
 /**
@@ -548,7 +551,7 @@ export function autoMarkResponse(
   // for this specific (assessmentAttempt, question) pair; fixed/legacy
   // questions resolve to their stored answer unchanged either way.
   const instance = generateWidgetInstance(
-    { ...question, widgetConfig: question.widgetConfig as unknown },
+    { ...question, widgetConfig: question.widgetConfig },
     seed,
   );
   const graded = gradeWidgetSubmission(instance.resolvedAnswer, {

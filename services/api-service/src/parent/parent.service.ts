@@ -1,12 +1,14 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   ForbiddenException,
   ConflictException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import type { Gender } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GuardianAccessService } from '../family/guardian-access.service';
-import { InstitutionService } from '../institution/institution.service';
 import { CatalogService } from '../catalog/catalog.service';
 import { StudentService } from '../student/student.service';
 
@@ -25,7 +27,6 @@ export class ParentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly guardianAccessService: GuardianAccessService,
-    private readonly institutionService: InstitutionService,
     private readonly catalogService: CatalogService,
     private readonly studentService: StudentService,
   ) {}
@@ -60,7 +61,7 @@ export class ParentService {
       const child = rel.studentProfile;
       const classSection =
         child.placements.find((p) => p.isActive)?.classSection || null;
-      const courseClassIds = child.enrollments.map((e) => e.courseClassId);
+      const batchIds = child.enrollments.map((e) => e.batchId);
 
       // 1. Calculate Attendance Rate
       const totalAttendance = await this.prisma.dailyAttendance.count({
@@ -79,9 +80,9 @@ export class ParentService {
 
       // 2. Calculate Pending Homework Count
       let pendingHomeworkCount = 0;
-      if (courseClassIds.length > 0) {
+      if (batchIds.length > 0) {
         const homework = await this.prisma.homework.findMany({
-          where: { courseClassId: { in: courseClassIds } },
+          where: { batchId: { in: batchIds } },
           include: {
             submissions: {
               where: { studentProfileId: child.id },
@@ -199,15 +200,15 @@ export class ParentService {
       throw new NotFoundException('Student profile not found');
     }
 
-    const courseClassIds = student.enrollments.map((e) => e.courseClassId);
-    if (courseClassIds.length === 0) {
+    const batchIds = student.enrollments.map((e) => e.batchId);
+    if (batchIds.length === 0) {
       return [];
     }
 
     const homework = await this.prisma.homework.findMany({
-      where: { courseClassId: { in: courseClassIds } },
+      where: { batchId: { in: batchIds } },
       include: {
-        courseClass: { select: { name: true } },
+        batch: { select: { name: true } },
         submissions: {
           where: { studentProfileId },
           select: {
@@ -227,7 +228,7 @@ export class ParentService {
       description: hw.description,
       dueDate: hw.dueDate,
       pointsPossible: hw.maxPoints,
-      courseName: hw.courseClass.name,
+      courseName: hw.batch.name,
       submission: hw.submissions[0] || null,
     }));
   }
@@ -239,7 +240,7 @@ export class ParentService {
         status: 'PUBLISHED',
       },
       include: {
-        courseClass: { select: { name: true } },
+        batch: { select: { name: true } },
         term: { select: { name: true } },
       },
       orderBy: { assessedAt: 'desc' },
@@ -313,22 +314,18 @@ export class ParentService {
   // assume the caller is already authorized for `studentProfileId`.
 
   /**
-   * Catalog courses this child's campus can see, each flagged with whether
-   * it's already in their learning plan. Reuses `CatalogService.listCourses`
-   * so the PUBLISHED + `CampusCourse` visibility rules stay in exactly one
-   * place rather than being re-implemented here.
+   * Catalog courses available to this child, each flagged with whether it's
+   * already in their learning plan. Reuses `CatalogService.listCourses` so the
+   * PUBLISHED visibility rule stays in exactly one place rather than being
+   * re-implemented here.
    */
   async getAvailableCourses(studentProfileId: string) {
-    const campusIds =
-      await this.institutionService.resolveCampusIdsForStudent(
-        studentProfileId,
-      );
-    return this.catalogService.listCourses(
+    const { items } = await this.catalogService.listCourses(
       undefined,
       false,
-      campusIds,
       studentProfileId,
     );
+    return items;
   }
 
   async getCourseAssignments(studentProfileId: string) {
@@ -345,20 +342,16 @@ export class ParentService {
     assignedByUserId: string,
   ) {
     // Re-resolve visibility server-side rather than trusting the courseId the
-    // client sent — otherwise a guardian could add a campus-restricted
-    // (e.g. plan-gated) course to their child's plan by guessing its id.
-    // Same "not found, not forbidden" response as `getCourseDetail`, so this
-    // doesn't confirm a restricted course's existence either.
-    const campusIds =
-      await this.institutionService.resolveCampusIdsForStudent(
-        studentProfileId,
-      );
-    const visible = await this.catalogService.listCourses(
-      undefined,
-      false,
-      campusIds,
-    );
-    if (!visible.some((course) => course.id === courseId)) {
+    // client sent — otherwise a guardian could add an unpublished course to
+    // their child's plan by guessing its id. Same "not found, not forbidden"
+    // response as `getCourseDetail`, so this doesn't confirm existence either.
+    // A direct existence check, not listCourses — that returns a bounded page
+    // of results, so checking membership against it would incorrectly 404 a
+    // real course sitting outside that page once the catalog grows past it.
+    const visibleCount = await this.prisma.course.count({
+      where: { id: courseId, deletedAt: null, status: 'PUBLISHED' },
+    });
+    if (visibleCount === 0) {
       throw new NotFoundException('Course not found');
     }
 
@@ -392,19 +385,12 @@ export class ParentService {
   // once staff has explicitly opted it in via `isOpenForEnrollment`; the
   // default-false migration made nothing self-enrollable by accident.
 
-  private async listOpenClassesForStudent(studentProfileId: string) {
-    const campusIds =
-      await this.institutionService.resolveCampusIdsForStudent(
-        studentProfileId,
-      );
-    if (campusIds.length === 0) return [];
-
-    return this.prisma.courseClass.findMany({
+  private async listOpenClassesForStudent() {
+    return this.prisma.batch.findMany({
       where: {
         deletedAt: null,
         status: 'ACTIVE',
         isOpenForEnrollment: true,
-        campusId: { in: campusIds },
         term: { status: 'ACTIVE' },
       },
       include: {
@@ -417,15 +403,17 @@ export class ParentService {
 
   async getAvailableClasses(studentProfileId: string) {
     const [classes, enrollments] = await Promise.all([
-      this.listOpenClassesForStudent(studentProfileId),
+      this.listOpenClassesForStudent(),
       this.prisma.studentCourseEnrollment.findMany({
         where: { studentProfileId },
-        select: { courseClassId: true },
+        select: { batchId: true },
       }),
     ]);
-    const enrolledIds = new Set(enrollments.map((e) => e.courseClassId));
+    const enrolledIds = new Set(enrollments.map((e) => e.batchId));
     return classes
-      .filter((cls) => cls.capacity === null || cls._count.enrollments < cls.capacity)
+      .filter(
+        (cls) => cls.capacity === null || cls._count.enrollments < cls.capacity,
+      )
       .map((cls) => ({ ...cls, isEnrolled: enrolledIds.has(cls.id) }));
   }
 
@@ -433,7 +421,7 @@ export class ParentService {
     return this.prisma.studentCourseEnrollment.findMany({
       where: { studentProfileId },
       include: {
-        courseClass: {
+        batch: {
           include: {
             term: { select: { id: true, name: true, endDate: true } },
           },
@@ -443,12 +431,12 @@ export class ParentService {
     });
   }
 
-  async enrollInClass(studentProfileId: string, courseClassId: string) {
+  async enrollInClass(studentProfileId: string, batchId: string) {
     // Re-run every condition server-side — the client's "available" list is
     // convenience, not the security/business-rule boundary. Same rationale
     // as `assignCourse` re-checking campus visibility above.
-    const open = await this.listOpenClassesForStudent(studentProfileId);
-    const target = open.find((cls) => cls.id === courseClassId);
+    const open = await this.listOpenClassesForStudent();
+    const target = open.find((cls) => cls.id === batchId);
     if (!target) {
       throw new NotFoundException('This class is not open for enrollment');
     }
@@ -459,7 +447,7 @@ export class ParentService {
     // as "class is full" instead of the actually-true "already enrolled".
     const existing = await this.prisma.studentCourseEnrollment.findUnique({
       where: {
-        studentProfileId_courseClassId: { studentProfileId, courseClassId },
+        studentProfileId_batchId: { studentProfileId, batchId },
       },
     });
     if (existing) {
@@ -468,13 +456,16 @@ export class ParentService {
       );
     }
 
-    if (target.capacity !== null && target._count.enrollments >= target.capacity) {
+    if (
+      target.capacity !== null &&
+      target._count.enrollments >= target.capacity
+    ) {
       throw new ForbiddenException('This class is full');
     }
 
     return this.studentService.createEnrollment({
       studentProfileId,
-      courseClassId,
+      batchId,
     });
   }
 
@@ -486,5 +477,96 @@ export class ParentService {
       throw new NotFoundException('Enrollment not found');
     }
     return this.studentService.deleteEnrollment(enrollmentId);
+  }
+
+  // --- Adding a child -------------------------------------------------------
+
+  /**
+   * Creates a child under the calling guardian.
+   *
+   * This replaces link-by-email as the primary path. That flow required the
+   * child to already hold their own account *and* to have opened a lesson (the
+   * only non-admin way a `StudentProfile` came into existence), which is not
+   * something a parent buying a phonics course for a five-year-old can do.
+   *
+   * The child gets a `User` because `StudentProfile.userId` is required, but
+   * with no password and a non-deliverable address: they have no login of their
+   * own and reach content through the guardian's session. Giving them real
+   * credentials is deliberately deferred.
+   */
+  async createChild(
+    guardianUserId: string,
+    input: {
+      fullName: string;
+      birthDate: string;
+      classId?: string;
+      gender?: Gender;
+    },
+  ) {
+    const guardian = await this.prisma.guardianProfile.findUnique({
+      where: { userId: guardianUserId },
+      select: { id: true },
+    });
+    if (!guardian) {
+      throw new NotFoundException(
+        'Guardian profile not found. Complete your profile details first.',
+      );
+    }
+
+    const birthDate = new Date(input.birthDate);
+    if (Number.isNaN(birthDate.getTime())) {
+      throw new BadRequestException('birthDate is not a valid date');
+    }
+    if (birthDate > new Date()) {
+      throw new BadRequestException('birthDate cannot be in the future');
+    }
+
+    if (input.classId) {
+      const klass = await this.prisma.class.findUnique({
+        where: { id: input.classId },
+        select: { id: true },
+      });
+      if (!klass) throw new NotFoundException('Class not found');
+    }
+
+    const [firstName, ...rest] = input.fullName.trim().split(/\s+/);
+
+    return this.prisma.$transaction(async (tx) => {
+      const childUser = await tx.user.create({
+        data: {
+          // Unique, obviously synthetic, and on a reserved TLD so it can never
+          // collide with or accidentally deliver to a real inbox.
+          email: `child.${randomUUID()}@no-login.eudora.invalid`,
+          password: null,
+          firstName: firstName || input.fullName,
+          lastName: rest.join(' ') || '-',
+        },
+      });
+
+      const profile = await tx.studentProfile.create({
+        data: {
+          userId: childUser.id,
+          fullName: input.fullName.trim(),
+          birthDate,
+          gender: input.gender ?? 'OTHER',
+          classId: input.classId ?? null,
+        },
+        include: { class: { select: { id: true, name: true, slug: true } } },
+      });
+
+      await tx.guardianStudentRelationship.create({
+        data: {
+          guardianProfileId: guardian.id,
+          studentProfileId: profile.id,
+          relationshipType: 'GUARDIAN',
+          // First child added becomes the primary relationship.
+          isPrimary: false,
+          hasFinancialResponsibility: true,
+          hasAcademicAccess: true,
+        },
+      });
+
+      return profile;
+    });
   }
 }

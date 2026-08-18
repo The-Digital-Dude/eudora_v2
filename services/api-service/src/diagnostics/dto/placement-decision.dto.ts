@@ -20,4 +20,19 @@ export class ListPlacementRecommendationsQueryDto {
   @IsOptional()
   @IsEnum(PlacementRecStatus)
   status?: PlacementRecStatus;
+
+  @IsOptional()
+  search?: string;
+
+  @IsOptional()
+  page?: string;
+
+  @IsOptional()
+  limit?: string;
+
+  @IsOptional()
+  sortBy?: string;
+
+  @IsOptional()
+  sortOrder?: string;
 }

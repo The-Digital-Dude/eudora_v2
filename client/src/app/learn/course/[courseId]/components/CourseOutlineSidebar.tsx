@@ -10,20 +10,22 @@ import {
   Lock,
   MessageSquare,
   PlayCircle,
+  Radio,
   Sparkles,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
 
-import { TodaysGoals } from "@/features/gamification/TodaysGoals";
 import type { CourseDetail, ModuleItem, ModuleItemKind } from "@/features/catalog/catalogApi";
+import { TodaysGoals } from "@/features/gamification/TodaysGoals";
 
 const kindIcon: Record<ModuleItemKind, React.ElementType> = {
   VIDEO: PlayCircle,
   READING: FileText,
   DISCUSSION: MessageSquare,
   ASSESSMENT: ClipboardList,
+  LIVE_CLASS: Radio,
 };
 
 interface CourseOutlineSidebarProps {
@@ -92,13 +94,23 @@ export function CourseOutlineSidebar({
                   {concept.items.map((item) => {
                     const Icon = kindIcon[item.kind];
                     const isSelected = item.id === selectedItemId;
-                    const locked = concept.isLocked;
+                    // Two unrelated reasons an item can be unavailable, and
+                    // they need different affordances: a progression lock
+                    // clears by finishing earlier work, an entitlement lock
+                    // only clears by enrolling.
+                    const progressionLocked = concept.isLocked;
+                    const locked = progressionLocked || item.isContentLocked;
 
                     return (
                       <button
                         key={item.id}
                         onClick={() => !locked && onSelectItem(item)}
                         disabled={locked}
+                        title={
+                          item.isContentLocked && !progressionLocked
+                            ? "Enrol to unlock this content"
+                            : undefined
+                        }
                         className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors ${
                           isSelected
                             ? "bg-primary/10 text-primary"
@@ -118,11 +130,17 @@ export function CourseOutlineSidebar({
                         <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
                           {item.title}
                         </span>
+                        {item.isFreePreview && !course.isEntitled && (
+                          <span className="shrink-0 rounded-full bg-success/10 px-1.5 py-0.5 text-[9px] font-bold text-success">
+                            FREE
+                          </span>
+                        )}
                       </button>
                     );
                   })}
 
-                  {concept.lessons.map((lesson) => (
+                  {concept.lessons.map((lesson) =>
+                    course.isEntitled ? (
                     <Link
                       key={lesson.id}
                       href={`/learn/${lesson.id}`}
@@ -136,7 +154,24 @@ export function CourseOutlineSidebar({
                         Practice
                       </span>
                     </Link>
-                  ))}
+                    ) : (
+                      // Rendered as a disabled row rather than hidden: the
+                      // learner should see what enrolling would buy them.
+                      <div
+                        key={lesson.id}
+                        title="Enrol to unlock this content"
+                        className="flex w-full cursor-not-allowed items-center gap-2 rounded-lg px-2 py-2 text-left opacity-50"
+                      >
+                        <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+                        <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
+                          {lesson.title}
+                        </span>
+                        <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
+                          Practice
+                        </span>
+                      </div>
+                    ),
+                  )}
 
                   {concept.items.length === 0 && concept.lessons.length === 0 && (
                     <p className="px-2 py-2 text-[10px] text-muted-foreground">

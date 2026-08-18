@@ -96,28 +96,67 @@ async function main() {
 
   // ─── Institution & Academic Structure ────────────────────────────────────────
   console.log('🌱 Seeding institution and academic structures...');
-  const campus = await prisma.campus.upsert({
-    where: { name: 'Main Campus' },
-    update: {},
-    create: { name: 'Main Campus', representative: 'Dr. Alan Turing', status: 'ACTIVE' },
-  });
+  // ─── Classes ────────────────────────────────────────────────────────────────
+  // Classes are the taxonomy master (Class -> Program -> Course). These rows
+  // were the old `Level` lookup, which only ever held grade levels. Seeded
+  // before Programs because Program.classId points at them.
+  const gradeLevel = await prisma.class.upsert({ where: { code: 'G10' }, update: {}, create: { code: 'G10', name: 'Grade 10', slug: 'grade-10', sortOrder: 10, status: 'PUBLISHED' } });
+  const grade11Level = await prisma.class.upsert({ where: { code: 'G11' }, update: {}, create: { code: 'G11', name: 'Grade 11', slug: 'grade-11', sortOrder: 11, status: 'PUBLISHED' } });
+  const kLevel = await prisma.class.upsert({ where: { code: 'K' }, update: {}, create: { code: 'K', name: 'Kindergarten', slug: 'kindergarten', sortOrder: 0, status: 'PUBLISHED' } });
+  const g1Level = await prisma.class.upsert({ where: { code: 'G1' }, update: {}, create: { code: 'G1', name: 'Grade 1', slug: 'grade-1', sortOrder: 1, status: 'PUBLISHED' } });
+  const g3Level = await prisma.class.upsert({ where: { code: 'G3' }, update: {}, create: { code: 'G3', name: 'Grade 3', slug: 'grade-3', sortOrder: 3, status: 'PUBLISHED' } });
+  const g5Level = await prisma.class.upsert({ where: { code: 'G5' }, update: {}, create: { code: 'G5', name: 'Grade 5', slug: 'grade-5', sortOrder: 5, status: 'PUBLISHED' } });
 
-  const northCampus = await prisma.campus.upsert({
-    where: { name: 'North Campus' },
-    update: {},
-    create: { name: 'North Campus', representative: 'Dr. Grace Hopper', status: 'ACTIVE' },
-  });
+  // Demo SKU pricing: $100 one-time, or 3 monthly installments. The even split
+  // leaves a 1-cent remainder that the final installment absorbs at checkout —
+  // 3333 + 3333 + 3334 = 10000.
+  // `update` mirrors `create` for the taxonomy/pricing fields so re-seeding an
+  // existing database converges on the demo SKU instead of leaving pre-migration
+  // rows priceless and defaulted.
+  const csProgramFields = {
+    classId: gradeLevel.id,
+    status: 'PUBLISHED' as const,
+    deliveryMode: 'LIVE' as const,
+    durationMonths: 3,
+    priceOneTimeCents: 10000,
+    priceMonthlyCents: 3333,
+    installmentCount: 3,
+  };
 
   const program = await prisma.program.upsert({
     where: { code: 'BSC-CS' },
-    update: {},
-    create: { campusId: campus.id, name: 'Bachelor of Science in Computer Science', code: 'BSC-CS', status: 'ACTIVE' },
+    update: csProgramFields,
+    create: {
+      name: 'Bachelor of Science in Computer Science',
+      code: 'BSC-CS',
+      slug: 'bsc-cs',
+      classId: gradeLevel.id,
+      shortDescription: 'A four-year computer science degree programme.',
+      status: 'PUBLISHED',
+      deliveryMode: 'LIVE',
+      durationMonths: 3,
+      priceOneTimeCents: 10000,
+      priceMonthlyCents: 3333,
+      installmentCount: 3,
+    },
   });
 
   const mathProgram = await prisma.program.upsert({
     where: { code: 'BSC-MATH' },
-    update: {},
-    create: { campusId: campus.id, name: 'Bachelor of Science in Mathematics', code: 'BSC-MATH', status: 'ACTIVE' },
+    update: csProgramFields,
+    create: {
+      name: 'Bachelor of Science in Mathematics',
+      code: 'BSC-MATH',
+      slug: 'bsc-math',
+      classId: gradeLevel.id,
+      shortDescription: 'A four-year mathematics degree programme.',
+      status: 'PUBLISHED',
+      deliveryMode: 'LIVE',
+      durationMonths: 3,
+      priceOneTimeCents: 10000,
+      priceMonthlyCents: 3333,
+      installmentCount: 3,
+    },
   });
 
   const academicYear = await prisma.academicYear.upsert({
@@ -160,19 +199,13 @@ async function main() {
   const csSubject = await prisma.subject.upsert({ where: { code: 'CS' }, update: {}, create: { code: 'CS', name: 'Computer Science' } });
   const engSubject = await prisma.subject.upsert({ where: { code: 'ENG' }, update: {}, create: { code: 'ENG', name: 'English' } });
 
-  const gradeLevel = await prisma.level.upsert({ where: { code: 'G10' }, update: {}, create: { code: 'G10', name: 'Grade 10', sortOrder: 10 } });
-  const grade11Level = await prisma.level.upsert({ where: { code: 'G11' }, update: {}, create: { code: 'G11', name: 'Grade 11', sortOrder: 11 } });
-  const kLevel = await prisma.level.upsert({ where: { code: 'K' }, update: {}, create: { code: 'K', name: 'Kindergarten', sortOrder: 0 } });
-  const g1Level = await prisma.level.upsert({ where: { code: 'G1' }, update: {}, create: { code: 'G1', name: 'Grade 1', sortOrder: 1 } });
-  const g3Level = await prisma.level.upsert({ where: { code: 'G3' }, update: {}, create: { code: 'G3', name: 'Grade 3', sortOrder: 3 } });
-  const g5Level = await prisma.level.upsert({ where: { code: 'G5' }, update: {}, create: { code: 'G5', name: 'Grade 5', sortOrder: 5 } });
 
   // ─── Course Classes ───────────────────────────────────────────────────────────
-  const dsaClass = await prisma.courseClass.upsert({ where: { code: 'CS-DSA-2026' }, update: {}, create: { termId: term.id, name: 'Algorithms & Data Structures', code: 'CS-DSA-2026', status: 'ACTIVE' } });
-  const algClass = await prisma.courseClass.upsert({ where: { code: 'CS-ALG-2026' }, update: {}, create: { termId: term.id, name: 'Introduction to Algorithms', code: 'CS-ALG-2026', status: 'ACTIVE' } });
-  const webClass = await prisma.courseClass.upsert({ where: { code: 'CS-WEB-2026' }, update: {}, create: { termId: term.id, name: 'Web Development Fundamentals', code: 'CS-WEB-2026', status: 'ACTIVE' } });
-  const calcClass = await prisma.courseClass.upsert({ where: { code: 'MATH-CALC-2026' }, update: {}, create: { termId: term.id, name: 'Calculus I', code: 'MATH-CALC-2026', status: 'ACTIVE' } });
-  const engClass = await prisma.courseClass.upsert({ where: { code: 'ENG-COMP-2026' }, update: {}, create: { termId: term.id, name: 'English Composition', code: 'ENG-COMP-2026', status: 'ACTIVE' } });
+  const dsaClass = await prisma.batch.upsert({ where: { code: 'CS-DSA-2026' }, update: {}, create: { termId: term.id, name: 'Algorithms & Data Structures', code: 'CS-DSA-2026', status: 'ACTIVE' } });
+  const algClass = await prisma.batch.upsert({ where: { code: 'CS-ALG-2026' }, update: {}, create: { termId: term.id, name: 'Introduction to Algorithms', code: 'CS-ALG-2026', status: 'ACTIVE' } });
+  const webClass = await prisma.batch.upsert({ where: { code: 'CS-WEB-2026' }, update: {}, create: { termId: term.id, name: 'Web Development Fundamentals', code: 'CS-WEB-2026', status: 'ACTIVE' } });
+  const calcClass = await prisma.batch.upsert({ where: { code: 'MATH-CALC-2026' }, update: {}, create: { termId: term.id, name: 'Calculus I', code: 'MATH-CALC-2026', status: 'ACTIVE' } });
+  const engClass = await prisma.batch.upsert({ where: { code: 'ENG-COMP-2026' }, update: {}, create: { termId: term.id, name: 'English Composition', code: 'ENG-COMP-2026', status: 'ACTIVE' } });
 
   console.log('✅ Seeded institution & academic structures');
 
@@ -225,30 +258,6 @@ async function main() {
   }
   console.log('✅ Seeded teachers');
 
-  // ─── Billing Plans ────────────────────────────────────────────────────────────
-  console.log('🌱 Seeding billing plans...');
-  const plansData = [
-    { name: 'Free', description: 'Free tier for small campuses', priceMonthly: 0, priceAnnual: 0, currency: 'USD', stripePriceIdMonthly: null, stripePriceIdAnnual: null, maxStudents: 50, maxCampuses: 1, maxPrograms: 5, features: [], isActive: true, isPublic: true },
-    { name: 'Starter', description: 'Starter tier for growing educational institutions', priceMonthly: 29, priceAnnual: 290, currency: 'USD', stripePriceIdMonthly: 'price_starter_monthly_placeholder', stripePriceIdAnnual: 'price_starter_annual_placeholder', maxStudents: 200, maxCampuses: 2, maxPrograms: 15, features: ['basic_analytics'], isActive: true, isPublic: true },
-    { name: 'Pro', description: 'Advanced features for established schools', priceMonthly: 79, priceAnnual: 790, currency: 'USD', stripePriceIdMonthly: 'price_pro_monthly_placeholder', stripePriceIdAnnual: 'price_pro_annual_placeholder', maxStudents: 1000, maxCampuses: 10, maxPrograms: 50, features: ['basic_analytics', 'advanced_reports', 'api_access'], isActive: true, isPublic: true },
-    { name: 'Enterprise', description: 'Custom limits and dedicated support for large networks', priceMonthly: 299, priceAnnual: 2990, currency: 'USD', stripePriceIdMonthly: 'price_enterprise_monthly_placeholder', stripePriceIdAnnual: 'price_enterprise_annual_placeholder', maxStudents: null, maxCampuses: null, maxPrograms: null, features: ['basic_analytics', 'advanced_reports', 'api_access', 'dedicated_support'], isActive: true, isPublic: true },
-  ];
-  const plans: Record<string, any> = {};
-  for (const p of plansData) {
-    plans[p.name] = await prisma.plan.upsert({
-      where: { name: p.name },
-      update: { description: p.description, priceMonthly: p.priceMonthly, priceAnnual: p.priceAnnual, stripePriceIdMonthly: p.stripePriceIdMonthly, stripePriceIdAnnual: p.stripePriceIdAnnual, maxStudents: p.maxStudents, maxCampuses: p.maxCampuses, maxPrograms: p.maxPrograms, features: p.features, isActive: p.isActive, isPublic: p.isPublic },
-      create: p,
-    });
-  }
-
-  const existingSub = await prisma.subscription.findUnique({ where: { campusId: campus.id } });
-  if (!existingSub) {
-    const end = new Date(); end.setFullYear(end.getFullYear() + 100);
-    await prisma.subscription.create({ data: { campusId: campus.id, planId: plans['Free'].id, status: 'ACTIVE', interval: 'MONTHLY', currentPeriodStart: new Date(), currentPeriodEnd: end } });
-  }
-  console.log('✅ Seeded billing plans');
-
   // ─── Concepts, Competencies, Lessons ─────────────────────────────────────────
   console.log('🌱 Seeding curriculum...');
 
@@ -271,9 +280,9 @@ async function main() {
   let lesson1 = await prisma.lesson.findFirst({ where: { title: 'Intro to Comparing Fractions' } });
   if (!lesson1) {
     lesson1 = await prisma.lesson.create({ data: { conceptId: fractionsConc.id, title: 'Intro to Comparing Fractions', description: 'Visualizing and understanding how different fractions compare.', sortOrder: 1, xpReward: 50 } });
-    const q1 = await prisma.question.create({ data: { subjectId: mathSubject.id, levelId: gradeLevel.id, questionType: 'interactive', prompt: 'Slide the dial to increase the numerator and see how the shaded area changes.', correctAnswer: '5', widgetType: 'SLIDER_MANIPULATIVE', isGraded: false, explanation: 'As the numerator increases, you shade more parts of the whole.', hints: ['Try moving the slider all the way to 5 parts.'], widgetConfig: { min: 1, max: 10, step: 1, defaultValue: 2, targetValue: 5, tolerance: 0.1, displayFormula: '{val} / 10', visualizationType: 'scale_balance' } } });
+    const q1 = await prisma.question.create({ data: { subjectId: mathSubject.id, classId: gradeLevel.id, questionType: 'interactive', prompt: 'Slide the dial to increase the numerator and see how the shaded area changes.', correctAnswer: '5', widgetType: 'SLIDER_MANIPULATIVE', isGraded: false, explanation: 'As the numerator increases, you shade more parts of the whole.', hints: ['Try moving the slider all the way to 5 parts.'], widgetConfig: { min: 1, max: 10, step: 1, defaultValue: 2, targetValue: 5, tolerance: 0.1, displayFormula: '{val} / 10', visualizationType: 'scale_balance' } } });
     await prisma.card.create({ data: { lessonId: lesson1.id, title: 'Shading the Whole', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Fractions represent parts of a whole. Let us visualize $$\\frac{x}{10}$$ dynamically.', questionId: q1.id } });
-    const q2 = await prisma.question.create({ data: { subjectId: mathSubject.id, levelId: gradeLevel.id, questionType: 'mcq', prompt: 'Which fraction is larger: $$\\frac{3}{5}$$ or $$\\frac{3}{7}$$?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'When numerators are equal, the fraction with the smaller denominator is larger.', hints: ['Think about sharing a pizza with 5 people versus 7 people.'] } });
+    const q2 = await prisma.question.create({ data: { subjectId: mathSubject.id, classId: gradeLevel.id, questionType: 'mcq', prompt: 'Which fraction is larger: $$\\frac{3}{5}$$ or $$\\frac{3}{7}$$?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'When numerators are equal, the fraction with the smaller denominator is larger.', hints: ['Think about sharing a pizza with 5 people versus 7 people.'] } });
     await prisma.questionOption.create({ data: { questionId: q2.id, optionLabel: 'A', optionText: '$$\\frac{3}{5}$$', isCorrect: true } });
     await prisma.questionOption.create({ data: { questionId: q2.id, optionLabel: 'B', optionText: '$$\\frac{3}{7}$$', isCorrect: false } });
     await prisma.card.create({ data: { lessonId: lesson1.id, title: 'Comparing Equal Numerators', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Now compare two fractions with the same numerator but different denominators.', questionId: q2.id } });
@@ -282,7 +291,7 @@ async function main() {
   let lesson2 = await prisma.lesson.findFirst({ where: { title: 'Adding Fractions with Like Denominators' } });
   if (!lesson2) {
     lesson2 = await prisma.lesson.create({ data: { conceptId: fractionsConc.id, title: 'Adding Fractions with Like Denominators', description: 'Learn to add fractions that share a common denominator.', sortOrder: 2, xpReward: 60 } });
-    const q3 = await prisma.question.create({ data: { subjectId: mathSubject.id, levelId: gradeLevel.id, questionType: 'mcq', prompt: 'What is $$\\frac{2}{7} + \\frac{3}{7}$$?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'Add the numerators and keep the denominator the same.', hints: ['Keep the denominator. Add the numerators.'] } });
+    const q3 = await prisma.question.create({ data: { subjectId: mathSubject.id, classId: gradeLevel.id, questionType: 'mcq', prompt: 'What is $$\\frac{2}{7} + \\frac{3}{7}$$?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'Add the numerators and keep the denominator the same.', hints: ['Keep the denominator. Add the numerators.'] } });
     await prisma.questionOption.create({ data: { questionId: q3.id, optionLabel: 'A', optionText: '$$\\frac{5}{7}$$', isCorrect: true } });
     await prisma.questionOption.create({ data: { questionId: q3.id, optionLabel: 'B', optionText: '$$\\frac{5}{14}$$', isCorrect: false } });
     await prisma.questionOption.create({ data: { questionId: q3.id, optionLabel: 'C', optionText: '$$\\frac{6}{7}$$', isCorrect: false } });
@@ -292,7 +301,7 @@ async function main() {
   let lesson3 = await prisma.lesson.findFirst({ where: { title: 'Variables and Expressions' } });
   if (!lesson3) {
     lesson3 = await prisma.lesson.create({ data: { conceptId: algebraConc.id, title: 'Variables and Expressions', description: 'Introduction to algebraic variables and forming expressions.', sortOrder: 1, xpReward: 55 } });
-    const q4 = await prisma.question.create({ data: { subjectId: mathSubject.id, levelId: gradeLevel.id, questionType: 'mcq', prompt: 'If x = 4, what is the value of 3x + 2?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'Substitute x = 4: 3(4) + 2 = 12 + 2 = 14.', hints: ['Replace x with 4.'] } });
+    const q4 = await prisma.question.create({ data: { subjectId: mathSubject.id, classId: gradeLevel.id, questionType: 'mcq', prompt: 'If x = 4, what is the value of 3x + 2?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'Substitute x = 4: 3(4) + 2 = 12 + 2 = 14.', hints: ['Replace x with 4.'] } });
     await prisma.questionOption.create({ data: { questionId: q4.id, optionLabel: 'A', optionText: '14', isCorrect: true } });
     await prisma.questionOption.create({ data: { questionId: q4.id, optionLabel: 'B', optionText: '12', isCorrect: false } });
     await prisma.questionOption.create({ data: { questionId: q4.id, optionLabel: 'C', optionText: '9', isCorrect: false } });
@@ -302,7 +311,7 @@ async function main() {
   let lesson4 = await prisma.lesson.findFirst({ where: { title: 'Bubble Sort Step by Step' } });
   if (!lesson4) {
     lesson4 = await prisma.lesson.create({ data: { conceptId: sortingConc.id, title: 'Bubble Sort Step by Step', description: 'Trace through the bubble sort algorithm and understand its complexity.', sortOrder: 1, xpReward: 75 } });
-    const q5 = await prisma.question.create({ data: { subjectId: csSubject.id, levelId: gradeLevel.id, questionType: 'mcq', prompt: 'What is the time complexity of Bubble Sort in the worst case?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'Bubble Sort compares each pair of adjacent elements, resulting in O(n²) operations in the worst case.', hints: ['Think about nested loops.'] } });
+    const q5 = await prisma.question.create({ data: { subjectId: csSubject.id, classId: gradeLevel.id, questionType: 'mcq', prompt: 'What is the time complexity of Bubble Sort in the worst case?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'Bubble Sort compares each pair of adjacent elements, resulting in O(n²) operations in the worst case.', hints: ['Think about nested loops.'] } });
     await prisma.questionOption.create({ data: { questionId: q5.id, optionLabel: 'A', optionText: 'O(n²)', isCorrect: true } });
     await prisma.questionOption.create({ data: { questionId: q5.id, optionLabel: 'B', optionText: 'O(n log n)', isCorrect: false } });
     await prisma.questionOption.create({ data: { questionId: q5.id, optionLabel: 'C', optionText: 'O(n)', isCorrect: false } });
@@ -334,10 +343,10 @@ async function main() {
   await prisma.assessmentType.upsert({ where: { code: 'DIAGNOSTIC' }, update: {}, create: { code: 'DIAGNOSTIC', name: 'Diagnostic Assessment' } });
 
   // Questions for assessments
-  const makeQ = async (subjectId: string, levelId: string, prompt: string, options: { label: string; text: string; correct: boolean }[], explanation: string) => {
+  const makeQ = async (subjectId: string, classId: string, prompt: string, options: { label: string; text: string; correct: boolean }[], explanation: string) => {
     const existing = await prisma.question.findFirst({ where: { prompt } });
     if (existing) return existing;
-    const q = await prisma.question.create({ data: { subjectId, levelId, questionType: 'mcq', prompt, widgetType: 'STANDARD_MCQ', isGraded: true, explanation, hints: [] } });
+    const q = await prisma.question.create({ data: { subjectId, classId, questionType: 'mcq', prompt, widgetType: 'STANDARD_MCQ', isGraded: true, explanation, hints: [] } });
     for (const o of options) {
       await prisma.questionOption.create({ data: { questionId: q.id, optionLabel: o.label, optionText: o.text, isCorrect: o.correct } });
     }
@@ -352,14 +361,14 @@ async function main() {
   const csQ3 = await makeQ(csSubject.id, gradeLevel.id, 'What is the output of: console.log(typeof null)?', [{ label: 'A', text: '"object"', correct: true }, { label: 'B', text: '"null"', correct: false }, { label: 'C', text: '"undefined"', correct: false }], 'This is a long-standing JavaScript quirk: typeof null returns "object".');
 
   // Create assessments
-  const createAssessment = async (typeId: string, subjectId: string, levelId: string, tId: string, title: string, totalMarks: number, status: string, weekNumber: number | null) => {
+  const createAssessment = async (typeId: string, subjectId: string, classId: string, tId: string, title: string, totalMarks: number, status: string, weekNumber: number | null) => {
     const existing = await prisma.assessment.findFirst({ where: { title } });
     if (existing) {
       const existingSection = await prisma.assessmentSection.findFirstOrThrow({ where: { assessmentId: existing.id } });
       return { assessment: existing, section: existingSection };
     }
     const a = await prisma.assessment.create({
-      data: { assessmentTypeId: typeId, subjectId, levelId, termId: tId, title, totalMarks, estimatedDurationMinutes: 30, status, weekNumber, publishedAt: status === 'published' ? new Date() : null },
+      data: { assessmentTypeId: typeId, subjectId, classId, termId: tId, title, totalMarks, estimatedDurationMinutes: 30, status, weekNumber, publishedAt: status === 'published' ? new Date() : null },
     });
     const section = await prisma.assessmentSection.create({ data: { assessmentId: a.id, title: 'Section 1', sortOrder: 1 } });
     return { assessment: a, section };
@@ -426,9 +435,9 @@ async function main() {
     // Enroll in course classes
     for (const cc of [dsaClass, algClass, webClass, calcClass, engClass]) {
       await prisma.studentCourseEnrollment.upsert({
-        where: { studentProfileId_courseClassId: { studentProfileId: profile.id, courseClassId: cc.id } },
+        where: { studentProfileId_batchId: { studentProfileId: profile.id, batchId: cc.id } },
         update: {},
-        create: { studentProfileId: profile.id, courseClassId: cc.id, status: 'ENROLLED' },
+        create: { studentProfileId: profile.id, batchId: cc.id, status: 'ENROLLED' },
       });
     }
 
@@ -516,30 +525,30 @@ async function main() {
   // startTimeMinutes: 480 = 8:00am, 540 = 9:00am, 600 = 10:00am, 660 = 11:00am, 750 = 12:30pm, 810 = 13:30pm
   const slotDefinitions = [
     // MONDAY
-    { day: 'MONDAY', period: 1, start: 480, end: 540, room: 'Lab 1', courseClassId: dsaClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'MONDAY', period: 2, start: 540, end: 620, room: 'Room 101', courseClassId: algClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'MONDAY', period: 3, start: 640, end: 720, room: 'Lab 2', courseClassId: webClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'MONDAY', period: 4, start: 750, end: 830, room: 'Room 201', courseClassId: calcClass.id, teacherCode: 'EMP-EULER' },
+    { day: 'MONDAY', period: 1, start: 480, end: 540, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'MONDAY', period: 2, start: 540, end: 620, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
+    { day: 'MONDAY', period: 3, start: 640, end: 720, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'MONDAY', period: 4, start: 750, end: 830, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
     // TUESDAY
-    { day: 'TUESDAY', period: 1, start: 480, end: 540, room: 'Room 103', courseClassId: engClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'TUESDAY', period: 2, start: 540, end: 620, room: 'Lab 1', courseClassId: dsaClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'TUESDAY', period: 3, start: 640, end: 720, room: 'Room 101', courseClassId: algClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'TUESDAY', period: 4, start: 750, end: 830, room: 'Lab 2', courseClassId: webClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'TUESDAY', period: 1, start: 480, end: 540, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-HOPPER' },
+    { day: 'TUESDAY', period: 2, start: 540, end: 620, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'TUESDAY', period: 3, start: 640, end: 720, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
+    { day: 'TUESDAY', period: 4, start: 750, end: 830, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
     // WEDNESDAY
-    { day: 'WEDNESDAY', period: 1, start: 480, end: 540, room: 'Room 201', courseClassId: calcClass.id, teacherCode: 'EMP-EULER' },
-    { day: 'WEDNESDAY', period: 2, start: 540, end: 620, room: 'Room 103', courseClassId: engClass.id, teacherCode: 'EMP-LOVELACE' },
-    { day: 'WEDNESDAY', period: 3, start: 640, end: 720, room: 'Lab 1', courseClassId: dsaClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'WEDNESDAY', period: 4, start: 750, end: 830, room: 'Room 101', courseClassId: algClass.id, teacherCode: 'EMP-HOPPER' },
+    { day: 'WEDNESDAY', period: 1, start: 480, end: 540, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
+    { day: 'WEDNESDAY', period: 2, start: 540, end: 620, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-LOVELACE' },
+    { day: 'WEDNESDAY', period: 3, start: 640, end: 720, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'WEDNESDAY', period: 4, start: 750, end: 830, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
     // THURSDAY
-    { day: 'THURSDAY', period: 1, start: 480, end: 540, room: 'Lab 2', courseClassId: webClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'THURSDAY', period: 2, start: 540, end: 620, room: 'Room 201', courseClassId: calcClass.id, teacherCode: 'EMP-EULER' },
-    { day: 'THURSDAY', period: 3, start: 640, end: 720, room: 'Room 103', courseClassId: engClass.id, teacherCode: 'EMP-LOVELACE' },
-    { day: 'THURSDAY', period: 4, start: 750, end: 830, room: 'Lab 1', courseClassId: dsaClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'THURSDAY', period: 1, start: 480, end: 540, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'THURSDAY', period: 2, start: 540, end: 620, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
+    { day: 'THURSDAY', period: 3, start: 640, end: 720, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-LOVELACE' },
+    { day: 'THURSDAY', period: 4, start: 750, end: 830, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
     // FRIDAY
-    { day: 'FRIDAY', period: 1, start: 480, end: 540, room: 'Room 101', courseClassId: algClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'FRIDAY', period: 2, start: 540, end: 620, room: 'Lab 2', courseClassId: webClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'FRIDAY', period: 3, start: 640, end: 720, room: 'Room 201', courseClassId: calcClass.id, teacherCode: 'EMP-EULER' },
-    { day: 'FRIDAY', period: 4, start: 750, end: 830, room: 'Room 103', courseClassId: engClass.id, teacherCode: 'EMP-LOVELACE' },
+    { day: 'FRIDAY', period: 1, start: 480, end: 540, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
+    { day: 'FRIDAY', period: 2, start: 540, end: 620, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'FRIDAY', period: 3, start: 640, end: 720, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
+    { day: 'FRIDAY', period: 4, start: 750, end: 830, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-LOVELACE' },
   ] as const;
 
   for (const s of slotDefinitions) {
@@ -554,7 +563,7 @@ async function main() {
           endTimeMinutes: s.end,
           room: s.room,
           classSectionId: sectionA.id,
-          courseClassId: s.courseClassId,
+          batchId: s.batchId,
           teacherProfileId: teacherProfiles[s.teacherCode].id,
           status: 'ACTIVE',
         },
@@ -568,25 +577,25 @@ async function main() {
   const turingUser = teacherUsers['EMP-TURING'];
 
   const hw1 = await prisma.homework.upsert({
-    where: { id: (await prisma.homework.findFirst({ where: { title: 'DSA Problem Set 1', courseClassId: dsaClass.id } }))?.id ?? 'nonexistent-id' },
+    where: { id: (await prisma.homework.findFirst({ where: { title: 'DSA Problem Set 1', batchId: dsaClass.id } }))?.id ?? 'nonexistent-id' },
     update: {},
-    create: { courseClassId: dsaClass.id, title: 'DSA Problem Set 1', description: 'Implement a linked list with insert, delete, and search operations.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: turingUser.id },
+    create: { batchId: dsaClass.id, title: 'DSA Problem Set 1', description: 'Implement a linked list with insert, delete, and search operations.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: turingUser.id },
   }).catch(async () => {
-    const existing = await prisma.homework.findFirst({ where: { title: 'DSA Problem Set 1', courseClassId: dsaClass.id } });
+    const existing = await prisma.homework.findFirst({ where: { title: 'DSA Problem Set 1', batchId: dsaClass.id } });
     if (existing) return existing;
-    return prisma.homework.create({ data: { courseClassId: dsaClass.id, title: 'DSA Problem Set 1', description: 'Implement a linked list with insert, delete, and search operations.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: turingUser.id } });
+    return prisma.homework.create({ data: { batchId: dsaClass.id, title: 'DSA Problem Set 1', description: 'Implement a linked list with insert, delete, and search operations.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: turingUser.id } });
   });
 
   const hw2 = await (async () => {
-    const existing = await prisma.homework.findFirst({ where: { title: 'Web Dev Project 1', courseClassId: webClass.id } });
+    const existing = await prisma.homework.findFirst({ where: { title: 'Web Dev Project 1', batchId: webClass.id } });
     if (existing) return existing;
-    return prisma.homework.create({ data: { courseClassId: webClass.id, title: 'Web Dev Project 1', description: 'Build a responsive landing page using HTML and CSS.', dueDate: new Date('2026-09-30'), maxPoints: 100, recordedById: turingUser.id } });
+    return prisma.homework.create({ data: { batchId: webClass.id, title: 'Web Dev Project 1', description: 'Build a responsive landing page using HTML and CSS.', dueDate: new Date('2026-09-30'), maxPoints: 100, recordedById: turingUser.id } });
   })();
 
   const hw3 = await (async () => {
-    const existing = await prisma.homework.findFirst({ where: { title: 'Calculus Assignment 1', courseClassId: calcClass.id } });
+    const existing = await prisma.homework.findFirst({ where: { title: 'Calculus Assignment 1', batchId: calcClass.id } });
     if (existing) return existing;
-    return prisma.homework.create({ data: { courseClassId: calcClass.id, title: 'Calculus Assignment 1', description: 'Solve limits and derivatives from Chapter 2.', dueDate: new Date('2026-09-22'), maxPoints: 50, recordedById: superAdminUser.id } });
+    return prisma.homework.create({ data: { batchId: calcClass.id, title: 'Calculus Assignment 1', description: 'Solve limits and derivatives from Chapter 2.', dueDate: new Date('2026-09-22'), maxPoints: 50, recordedById: superAdminUser.id } });
   })();
 
   // Homework submissions
@@ -639,7 +648,7 @@ async function main() {
       let assignment = existingAssignment;
       if (!assignment) {
         assignment = await prisma.assessmentAssignment.create({
-          data: { assessmentId, studentProfileId: profile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' },
+          data: { assessmentId, studentProfileId: profile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' },
         });
       }
       const existingAttempt = await prisma.assessmentAttempt.findFirst({ where: { assessmentAssignmentId: assignment.id, studentProfileId: profile.id } });
@@ -676,7 +685,7 @@ async function main() {
       const existing = await prisma.gradeBookEntry.findFirst({ where: { studentProfileId: profile.id, sourceType: e.srcType, sourceId: e.srcId } });
       if (!existing) {
         await prisma.gradeBookEntry.create({
-          data: { studentProfileId: profile.id, classSectionId: sectionA.id, courseClassId: dsaClass.id, termId: term.id, sourceType: e.srcType, sourceId: e.srcId, title: e.title, category: e.category, pointsEarned: e.points, pointsPossible: e.possible, percentage: e.points, weight: 1.0, status: 'PUBLISHED', assessedAt: new Date('2026-09-16'), publishedAt: new Date(), createdById: superAdminUser.id },
+          data: { studentProfileId: profile.id, batchId: dsaClass.id, termId: term.id, sourceType: e.srcType, sourceId: e.srcId, title: e.title, category: e.category, pointsEarned: e.points, pointsPossible: e.possible, percentage: e.points, weight: 1.0, status: 'PUBLISHED', assessedAt: new Date('2026-09-16'), publishedAt: new Date(), createdById: superAdminUser.id },
         });
       }
     }
@@ -773,10 +782,10 @@ async function main() {
   const elijahP = studentProfiles.find(p => p.firstName === 'Elijah');
   const noahP = studentProfiles.find(p => p.firstName === 'Noah');
 
-  if (charlotteP) await prisma.makeupRequest.create({ data: { studentProfileId: charlotteP.id, courseClassId: dsaClass.id, originalDate: new Date('2026-06-12'), reason: 'Medical Leave', status: 'Awaiting Action' } });
-  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, courseClassId: dsaClass.id, originalDate: new Date('2026-06-16'), reason: 'Family Event', status: 'Scheduled', scheduledDate: new Date('2026-06-25') } });
-  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, courseClassId: algClass.id, originalDate: new Date('2026-06-17'), reason: 'Family Event', status: 'Awaiting Action' } });
-  if (noahP) await prisma.makeupRequest.create({ data: { studentProfileId: noahP.id, courseClassId: webClass.id, originalDate: new Date('2026-06-10'), reason: 'Doctor appointment', status: 'Declined' } });
+  if (charlotteP) await prisma.makeupRequest.create({ data: { studentProfileId: charlotteP.id, batchId: dsaClass.id, originalDate: new Date('2026-06-12'), reason: 'Medical Leave', status: 'Awaiting Action' } });
+  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, batchId: dsaClass.id, originalDate: new Date('2026-06-16'), reason: 'Family Event', status: 'Scheduled', scheduledDate: new Date('2026-06-25') } });
+  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, batchId: algClass.id, originalDate: new Date('2026-06-17'), reason: 'Family Event', status: 'Awaiting Action' } });
+  if (noahP) await prisma.makeupRequest.create({ data: { studentProfileId: noahP.id, batchId: webClass.id, originalDate: new Date('2026-06-10'), reason: 'Doctor appointment', status: 'Declined' } });
   console.log('✅ Seeded makeup requests');
 
   // ─── Notifications ────────────────────────────────────────────────────────────
@@ -797,36 +806,36 @@ async function main() {
   // ─── Course Class Sessions & Session Attendance ─────────────────────────────
   console.log('🌱 Seeding course class sessions...');
   const sessionDefs = [
-    { courseClassId: dsaClass.id, date: '2026-09-15', topic: 'Introduction to Linked Lists', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-09-18', topic: 'Stacks and Queues', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-09-22', topic: 'Binary Trees', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-09-25', topic: 'Tree Traversal Algorithms', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-09-29', topic: 'Hash Tables', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-10-02', topic: 'Graph Representation', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-10-06', topic: 'BFS and DFS', start: '08:00', end: '09:00' },
-    { courseClassId: dsaClass.id, date: '2026-10-09', topic: 'Dynamic Programming Introduction', start: '08:00', end: '09:00' },
-    { courseClassId: algClass.id, date: '2026-09-15', topic: 'Big-O Notation', start: '09:10', end: '10:20' },
-    { courseClassId: algClass.id, date: '2026-09-18', topic: 'Divide and Conquer', start: '09:10', end: '10:20' },
-    { courseClassId: algClass.id, date: '2026-09-22', topic: 'Sorting Algorithms', start: '09:10', end: '10:20' },
-    { courseClassId: algClass.id, date: '2026-09-25', topic: 'Merge Sort & Quick Sort', start: '09:10', end: '10:20' },
-    { courseClassId: webClass.id, date: '2026-09-15', topic: 'HTML Structure & Semantics', start: '10:40', end: '12:00' },
-    { courseClassId: webClass.id, date: '2026-09-18', topic: 'CSS Selectors & Box Model', start: '10:40', end: '12:00' },
-    { courseClassId: webClass.id, date: '2026-09-22', topic: 'Responsive Design', start: '10:40', end: '12:00' },
-    { courseClassId: calcClass.id, date: '2026-09-15', topic: 'Limits and Continuity', start: '12:30', end: '13:50' },
-    { courseClassId: calcClass.id, date: '2026-09-18', topic: 'Introduction to Derivatives', start: '12:30', end: '13:50' },
-    { courseClassId: calcClass.id, date: '2026-09-22', topic: 'Chain Rule', start: '12:30', end: '13:50' },
-    { courseClassId: engClass.id, date: '2026-09-15', topic: 'Paragraph Structure', start: '14:00', end: '15:00' },
-    { courseClassId: engClass.id, date: '2026-09-18', topic: 'Thesis Statements', start: '14:00', end: '15:00' },
-    { courseClassId: engClass.id, date: '2026-09-22', topic: 'Evidence & Citations', start: '14:00', end: '15:00' },
+    { batchId: dsaClass.id, date: '2026-09-15', topic: 'Introduction to Linked Lists', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-18', topic: 'Stacks and Queues', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-22', topic: 'Binary Trees', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-25', topic: 'Tree Traversal Algorithms', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-29', topic: 'Hash Tables', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-10-02', topic: 'Graph Representation', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-10-06', topic: 'BFS and DFS', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-10-09', topic: 'Dynamic Programming Introduction', start: '08:00', end: '09:00' },
+    { batchId: algClass.id, date: '2026-09-15', topic: 'Big-O Notation', start: '09:10', end: '10:20' },
+    { batchId: algClass.id, date: '2026-09-18', topic: 'Divide and Conquer', start: '09:10', end: '10:20' },
+    { batchId: algClass.id, date: '2026-09-22', topic: 'Sorting Algorithms', start: '09:10', end: '10:20' },
+    { batchId: algClass.id, date: '2026-09-25', topic: 'Merge Sort & Quick Sort', start: '09:10', end: '10:20' },
+    { batchId: webClass.id, date: '2026-09-15', topic: 'HTML Structure & Semantics', start: '10:40', end: '12:00' },
+    { batchId: webClass.id, date: '2026-09-18', topic: 'CSS Selectors & Box Model', start: '10:40', end: '12:00' },
+    { batchId: webClass.id, date: '2026-09-22', topic: 'Responsive Design', start: '10:40', end: '12:00' },
+    { batchId: calcClass.id, date: '2026-09-15', topic: 'Limits and Continuity', start: '12:30', end: '13:50' },
+    { batchId: calcClass.id, date: '2026-09-18', topic: 'Introduction to Derivatives', start: '12:30', end: '13:50' },
+    { batchId: calcClass.id, date: '2026-09-22', topic: 'Chain Rule', start: '12:30', end: '13:50' },
+    { batchId: engClass.id, date: '2026-09-15', topic: 'Paragraph Structure', start: '14:00', end: '15:00' },
+    { batchId: engClass.id, date: '2026-09-18', topic: 'Thesis Statements', start: '14:00', end: '15:00' },
+    { batchId: engClass.id, date: '2026-09-22', topic: 'Evidence & Citations', start: '14:00', end: '15:00' },
   ];
 
   const sessions: any[] = [];
   for (const sd of sessionDefs) {
     const d = new Date(sd.date);
-    const existing = await prisma.courseClassSession.findFirst({ where: { courseClassId: sd.courseClassId, date: d } });
-    const session = existing ?? await prisma.courseClassSession.create({
+    const existing = await prisma.batchSession.findFirst({ where: { batchId: sd.batchId, date: d } });
+    const session = existing ?? await prisma.batchSession.create({
       data: {
-        courseClassId: sd.courseClassId,
+        batchId: sd.batchId,
         date: d,
         startTime: new Date(`${sd.date}T${sd.start}:00.000Z`),
         endTime: new Date(`${sd.date}T${sd.end}:00.000Z`),
@@ -847,14 +856,14 @@ async function main() {
     'Noah': ['2026-10-02'],
   };
   for (const session of sessions) {
-    if (session.courseClassId !== dsaClass.id) continue; // only seed DSA session attendance
+    if (session.batchId !== dsaClass.id) continue; // only seed DSA session attendance
     const dateStr = (session.date instanceof Date ? session.date : new Date(session.date)).toISOString().slice(0, 10);
     for (const profile of sectionAAll) {
       const isAbsent = sessionAbsences[profile.firstName]?.includes(dateStr);
       const isLate = !isAbsent && sessionLate[profile.firstName]?.includes(dateStr);
-      const existing = await prisma.courseClassAttendance.findFirst({ where: { studentProfileId: profile.id, sessionId: session.id } });
+      const existing = await prisma.batchAttendance.findFirst({ where: { studentProfileId: profile.id, sessionId: session.id } });
       if (!existing) {
-        await prisma.courseClassAttendance.create({
+        await prisma.batchAttendance.create({
           data: {
             studentProfileId: profile.id,
             sessionId: session.id,
@@ -1119,67 +1128,9 @@ async function main() {
   }
   console.log('✅ Seeded family invoices & payments');
 
-  // ─── Subscription Invoice & Payment ──────────────────────────────────────────
-  console.log('🌱 Seeding subscription invoice...');
-  const subscription = await prisma.subscription.findUnique({ where: { campusId: campus.id } });
-  if (subscription) {
-    const existInv = await prisma.invoice.findFirst({ where: { subscriptionId: subscription.id } });
-    if (!existInv) {
-      const inv = await prisma.invoice.create({ data: { subscriptionId: subscription.id, amount: 0, currency: 'USD', status: 'PAID', dueDate: new Date('2026-10-01'), paidAt: new Date('2026-09-28') } });
-      await prisma.payment.create({ data: { invoiceId: inv.id, amount: 0, currency: 'USD', status: 'SUCCEEDED', paymentMethod: 'card', metadata: { note: 'Free plan billing — $0 charge' } } });
-    }
-  }
-  console.log('✅ Seeded subscription invoice');
-
-  // ─── Message Threads & Messages ──────────────────────────────────────────────
-  console.log('🌱 Seeding message threads...');
+  // Teacher shortcuts used below for audit-log and notification seeding.
   const turingU = teacherUsers['EMP-TURING'];
   const lovelaceU = teacherUsers['EMP-LOVELACE'];
-  const hopperU = teacherUsers['EMP-HOPPER'];
-
-  // Thread 1: Harris guardian ↔ Turing — Charlotte absence
-  const t1Exists = await prisma.messageThread.findFirst({ where: { guardianUserId: guardian1User.id, teacherUserId: turingU.id } });
-  if (!t1Exists && charlotteProfile) {
-    const t1 = await prisma.messageThread.create({ data: { subject: "Charlotte's Absence — June 12", studentProfileId: charlotteProfile.id, guardianUserId: guardian1User.id, teacherUserId: turingU.id, status: 'OPEN', lastMessageAt: new Date('2026-06-13T10:30:00') } });
-    await prisma.message.create({ data: { threadId: t1.id, senderUserId: guardian1User.id, body: "Hello Prof. Turing, Charlotte was absent on June 12 due to a medical appointment. I've attached the doctor's note.", readAt: new Date('2026-06-13T09:00:00'), createdAt: new Date('2026-06-12T18:00:00') } });
-    await prisma.message.create({ data: { threadId: t1.id, senderUserId: turingU.id, body: "Thank you, Robert. The absence is noted as excused. Charlotte can complete the missed work by June 20.", readAt: null, createdAt: new Date('2026-06-13T10:30:00') } });
-    await prisma.message.create({ data: { threadId: t1.id, senderUserId: guardian1User.id, body: "Thank you for understanding. She'll have the makeup work done by then.", readAt: null, createdAt: new Date('2026-06-13T11:00:00') } });
-  }
-
-  // Thread 2: Harris guardian ↔ Lovelace — midterm topics
-  const t2Exists = await prisma.messageThread.findFirst({ where: { guardianUserId: guardian1User.id, teacherUserId: lovelaceU.id } });
-  if (!t2Exists && charlotteProfile) {
-    const t2 = await prisma.messageThread.create({ data: { subject: 'Upcoming Fall Midterm — Topics', studentProfileId: charlotteProfile.id, guardianUserId: guardian1User.id, teacherUserId: lovelaceU.id, status: 'OPEN', lastMessageAt: new Date('2026-09-10T14:00:00') } });
-    await prisma.message.create({ data: { threadId: t2.id, senderUserId: guardian1User.id, body: "Dear Prof. Lovelace, could you share the topics that will be covered in the Fall Midterm?", readAt: new Date('2026-09-10T11:00:00'), createdAt: new Date('2026-09-09T20:00:00') } });
-    await prisma.message.create({ data: { threadId: t2.id, senderUserId: lovelaceU.id, body: "Good morning! The midterm covers Chapters 1–6: Fractions, Basic Algebra, Ratios, Percentages, Geometry basics, and Data interpretation.", readAt: new Date('2026-09-10T14:00:00'), createdAt: new Date('2026-09-10T11:00:00') } });
-    await prisma.message.create({ data: { threadId: t2.id, senderUserId: guardian1User.id, body: "Perfect, thank you! Any practice resources you'd recommend?", readAt: null, createdAt: new Date('2026-09-10T14:00:00') } });
-    await prisma.message.create({ data: { threadId: t2.id, senderUserId: lovelaceU.id, body: "Yes! Khan Academy's Algebra Foundations track is excellent. Also check the student portal for the past-paper pack I uploaded.", readAt: null, createdAt: new Date('2026-09-10T15:30:00') } });
-  }
-
-  // Thread 3: Watson guardian ↔ Turing — Aria's performance
-  const t3Exists = await prisma.messageThread.findFirst({ where: { guardianUserId: guardian2User.id, teacherUserId: turingU.id } });
-  if (!t3Exists && ariaProfile) {
-    const t3 = await prisma.messageThread.create({ data: { subject: "Aria's Outstanding Quiz Performance", studentProfileId: ariaProfile.id, guardianUserId: guardian2User.id, teacherUserId: turingU.id, status: 'OPEN', lastMessageAt: new Date('2026-09-20T14:00:00') } });
-    await prisma.message.create({ data: { threadId: t3.id, senderUserId: turingU.id, body: "Dear Mrs. Watson, I wanted to let you know Aria scored 100% on her Week 1 Math Quiz. She is an exceptional student.", readAt: new Date('2026-09-20T14:00:00'), createdAt: new Date('2026-09-19T16:00:00') } });
-    await prisma.message.create({ data: { threadId: t3.id, senderUserId: guardian2User.id, body: "Thank you so much! Aria has been working very hard. We're very proud of her.", readAt: null, createdAt: new Date('2026-09-20T14:00:00') } });
-  }
-
-  // Thread 4: Johnson guardian ↔ Turing — Noah's progress
-  const t4Exists = await prisma.messageThread.findFirst({ where: { guardianUserId: guardian3User.id, teacherUserId: turingU.id } });
-  if (!t4Exists && noahProfile) {
-    const t4 = await prisma.messageThread.create({ data: { subject: "Noah's Mid-Semester Progress", studentProfileId: noahProfile.id, guardianUserId: guardian3User.id, teacherUserId: turingU.id, status: 'OPEN', lastMessageAt: new Date('2026-10-05T09:00:00') } });
-    await prisma.message.create({ data: { threadId: t4.id, senderUserId: guardian3User.id, body: "Hi Prof. Turing, how is Noah doing so far this semester? We want to make sure he stays on track.", readAt: new Date('2026-10-05T09:00:00'), createdAt: new Date('2026-10-04T19:00:00') } });
-    await prisma.message.create({ data: { threadId: t4.id, senderUserId: turingU.id, body: "Hello David! Noah is doing well — scoring above 80% on all assessments. He's engaged in class and participates actively. Keep encouraging him!", readAt: null, createdAt: new Date('2026-10-05T09:00:00') } });
-  }
-
-  // Thread 5: Brooks guardian ↔ Hopper — Lucas in Section B
-  const t5Exists = await prisma.messageThread.findFirst({ where: { guardianUserId: guardian4User.id, teacherUserId: hopperU.id } });
-  if (!t5Exists && lucasProfile) {
-    const t5 = await prisma.messageThread.create({ data: { subject: 'Lucas — Homework Submission Concerns', studentProfileId: lucasProfile.id, guardianUserId: guardian4User.id, teacherUserId: hopperU.id, status: 'ARCHIVED', lastMessageAt: new Date('2026-09-28T12:00:00') } });
-    await prisma.message.create({ data: { threadId: t5.id, senderUserId: guardian4User.id, body: "Dear Prof. Hopper, Lucas mentioned he's finding the DSA assignments challenging. Is there additional support available?", readAt: new Date('2026-09-28T12:00:00'), createdAt: new Date('2026-09-27T20:00:00') } });
-    await prisma.message.create({ data: { threadId: t5.id, senderUserId: hopperU.id, body: "Hi Sandra, absolutely. We offer peer tutoring sessions every Thursday after school. I've also created supplementary notes — available in the student portal.", readAt: null, createdAt: new Date('2026-09-28T12:00:00') } });
-  }
-  console.log('✅ Seeded message threads');
 
   // ─── Section B Timetable & Attendance ────────────────────────────────────────
   console.log('🌱 Seeding Section B timetable & attendance...');
@@ -1201,7 +1152,7 @@ async function main() {
       { day: 'FRIDAY',    period: 2, start: 640,  end: 720,  room: 'Room 103', ccId: engClass.id,  tc: 'EMP-LOVELACE' },
     ] as const;
     for (const s of bSlots) {
-      await prisma.timetableSlot.create({ data: { timetableId: timetableB.id, dayOfWeek: s.day, periodIndex: s.period, startTimeMinutes: s.start, endTimeMinutes: s.end, room: s.room, classSectionId: sectionB.id, courseClassId: s.ccId, teacherProfileId: teacherProfiles[s.tc].id, status: 'ACTIVE' } });
+      await prisma.timetableSlot.create({ data: { timetableId: timetableB.id, dayOfWeek: s.day, periodIndex: s.period, startTimeMinutes: s.start, endTimeMinutes: s.end, room: s.room, classSectionId: sectionB.id, batchId: s.ccId, teacherProfileId: teacherProfiles[s.tc].id, status: 'ACTIVE' } });
     }
   }
 
@@ -1254,7 +1205,7 @@ async function main() {
     for (const e of entries) {
       const exists = await prisma.gradeBookEntry.findFirst({ where: { studentProfileId: profile.id, sourceType: e.srcType, sourceId: e.srcId } });
       if (!exists) {
-        await prisma.gradeBookEntry.create({ data: { studentProfileId: profile.id, classSectionId: sectionB.id, termId: term.id, sourceType: e.srcType, sourceId: e.srcId, title: e.title, category: e.cat, pointsEarned: e.pts, pointsPossible: 100, percentage: e.pts, weight: 1.0, status: 'PUBLISHED', assessedAt: new Date('2026-09-16'), publishedAt: new Date(), createdById: superAdminUser.id } });
+        await prisma.gradeBookEntry.create({ data: { studentProfileId: profile.id, termId: term.id, sourceType: e.srcType, sourceId: e.srcId, title: e.title, category: e.cat, pointsEarned: e.pts, pointsPossible: 100, percentage: e.pts, weight: 1.0, status: 'PUBLISHED', assessedAt: new Date('2026-09-16'), publishedAt: new Date(), createdById: superAdminUser.id } });
       }
     }
   }
@@ -1264,19 +1215,16 @@ async function main() {
   console.log('🌱 Seeding audit logs...');
   await prisma.auditLog.createMany({
     data: [
-      { actorUserId: superAdminUser.id, event: 'CAMPUS_CREATED', targetType: 'Campus', targetId: campus.id, ipAddress: '127.0.0.1', metadata: { name: 'Main Campus' } },
       { actorUserId: superAdminUser.id, event: 'TIMETABLE_PUBLISHED', targetType: 'Timetable', targetId: timetable.id, ipAddress: '127.0.0.1', metadata: { name: 'Fall 2026 — CS Section A' } },
       { actorUserId: superAdminUser.id, event: 'ASSESSMENT_PUBLISHED', targetType: 'Assessment', targetId: mathQuiz1.id, ipAddress: '127.0.0.1', metadata: { title: 'Week 1 Math Quiz — Fractions' } },
       { actorUserId: superAdminUser.id, event: 'ASSESSMENT_PUBLISHED', targetType: 'Assessment', targetId: csQuiz1.id, ipAddress: '127.0.0.1', metadata: { title: 'Week 2 CS Quiz — Data Structures' } },
       { actorUserId: superAdminUser.id, event: 'STUDENT_ENROLLED', targetType: 'StudentProfile', targetId: studentProfiles[0]?.id, ipAddress: '127.0.0.1', metadata: { name: 'Charlotte Harris', section: 'CS Section A' } },
       { actorUserId: superAdminUser.id, event: 'STUDENT_ENROLLED', targetType: 'StudentProfile', targetId: studentProfiles[4]?.id, ipAddress: '127.0.0.1', metadata: { name: 'Noah Johnson', section: 'CS Section A' } },
-      { actorUserId: superAdminUser.id, event: 'PLAN_SUBSCRIBED', targetType: 'Subscription', targetId: campus.id, ipAddress: '127.0.0.1', metadata: { plan: 'Free' } },
       { actorUserId: turingU.id, event: 'HOMEWORK_CREATED', targetType: 'Homework', targetId: hw1.id, ipAddress: '10.0.0.1', metadata: { title: 'DSA Problem Set 1' } },
       { actorUserId: turingU.id, event: 'GRADE_PUBLISHED', targetType: 'GradeBookEntry', targetId: null, ipAddress: '10.0.0.1', metadata: { assessment: 'Week 1 Math Quiz', studentCount: 5 } },
-      { actorUserId: turingU.id, event: 'SESSION_CREATED', targetType: 'CourseClassSession', targetId: sessions[0]?.id ?? null, ipAddress: '10.0.0.1', metadata: { topic: 'Introduction to Linked Lists' } },
+      { actorUserId: turingU.id, event: 'SESSION_CREATED', targetType: 'BatchSession', targetId: sessions[0]?.id ?? null, ipAddress: '10.0.0.1', metadata: { topic: 'Introduction to Linked Lists' } },
       { actorUserId: teacherUsers['EMP-LOVELACE'].id, event: 'HOMEWORK_GRADED', targetType: 'Homework', targetId: hw3.id, ipAddress: '10.0.0.2', metadata: { title: 'Calculus Assignment 1' } },
       { actorUserId: teacherUsers['EMP-HOPPER'].id, event: 'TIMETABLE_PUBLISHED', targetType: 'Timetable', targetId: null, ipAddress: '10.0.0.3', metadata: { name: 'Fall 2026 — CS Section B' } },
-      { actorUserId: guardian1User.id, event: 'MESSAGE_SENT', targetType: 'MessageThread', targetId: null, ipAddress: '203.0.113.1', metadata: { subject: "Charlotte's Absence — June 12" } },
       { actorUserId: superAdminUser.id, event: 'ATTENDANCE_RECORDED', targetType: 'DailyAttendance', targetId: null, ipAddress: '127.0.0.1', metadata: { date: '2026-06-23', sections: ['CS-2026-A', 'CS-2026-B'], totalRecords: 11 } },
       { actorUserId: superAdminUser.id, event: 'RUBRIC_ASSESSMENT_CREATED', targetType: 'RubricAssessment', targetId: null, ipAddress: '127.0.0.1', metadata: { rubricName: 'Comparing Fractions Rubric', evaluatedCount: 4 } },
     ],
@@ -1352,7 +1300,7 @@ async function main() {
   if (!linearEquationsLesson) {
     linearEquationsLesson = await prisma.lesson.create({ data: { conceptId: linearEquationsChapter.id, title: 'Solving for X', description: 'Isolating the variable to solve a simple linear equation.', sortOrder: 1, xpReward: 60 } });
     await prisma.card.create({ data: { lessonId: linearEquationsLesson.id, title: 'Balancing the Equation', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Whatever you do to one side of an equation, you must do to the other to keep it balanced.' } });
-    const linEqQ = await prisma.question.create({ data: { subjectId: mathSubject.id, levelId: gradeLevel.id, questionType: 'mcq', prompt: 'Solve: $$x + 5 = 12$$. What is $$x$$?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'Subtract 5 from both sides: x = 12 - 5 = 7.', hints: ['Subtract 5 from both sides.'] } });
+    const linEqQ = await prisma.question.create({ data: { subjectId: mathSubject.id, classId: gradeLevel.id, questionType: 'mcq', prompt: 'Solve: $$x + 5 = 12$$. What is $$x$$?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'Subtract 5 from both sides: x = 12 - 5 = 7.', hints: ['Subtract 5 from both sides.'] } });
     await prisma.questionOption.create({ data: { questionId: linEqQ.id, optionLabel: 'A', optionText: '7', isCorrect: true } });
     await prisma.questionOption.create({ data: { questionId: linEqQ.id, optionLabel: 'B', optionText: '17', isCorrect: false } });
     await prisma.questionOption.create({ data: { questionId: linEqQ.id, optionLabel: 'C', optionText: '5', isCorrect: false } });
@@ -1402,7 +1350,7 @@ async function main() {
       data: {
         assessmentTypeId: quizType.id,
         subjectId: mathSubject.id,
-        levelId: gradeLevel.id,
+        classId: gradeLevel.id,
         termId: term.id,
         title: 'Practice Quiz — Solving for X',
         description: 'Low-stakes practice before the graded check-in. Attempt as many times as you like within the cap.',
@@ -1437,7 +1385,7 @@ async function main() {
       data: {
         assessmentTypeId: quizType.id,
         subjectId: mathSubject.id,
-        levelId: gradeLevel.id,
+        classId: gradeLevel.id,
         termId: term.id,
         title: 'Graded Check-In — Solving for X',
         description: 'One graded attempt to confirm you can solve linear equations on your own.',
@@ -1619,7 +1567,6 @@ async function main() {
           data: {
             assessmentId: assessment.id,
             studentProfileId: profile.id,
-            classSectionId: sectionA.id,
             assignedByUserId: superAdminUser.id,
             opensAt,
             dueAt,
@@ -1777,7 +1724,7 @@ async function main() {
   const fracQuizQ = await makeQ(mathSubject.id, gradeLevel.id, 'What is 1/3 + 1/6?', [{ label: 'A', text: '1/2', correct: true }, { label: 'B', text: '2/9', correct: false }, { label: 'C', text: '1/9', correct: false }], 'Rewrite 1/3 as 2/6. Then 2/6 + 1/6 = 3/6 = 1/2.');
   let fracQuiz = await prisma.assessment.findFirst({ where: { title: 'Practice Quiz — Fractions & Algebra' } });
   if (!fracQuiz) {
-    fracQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: mathSubject.id, levelId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Fractions & Algebra', description: 'Low-stakes practice on fractions and basic algebra.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 2, publishedAt: new Date() } });
+    fracQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: mathSubject.id, classId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Fractions & Algebra', description: 'Low-stakes practice on fractions and basic algebra.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 2, publishedAt: new Date() } });
     const fracSection = await prisma.assessmentSection.create({ data: { assessmentId: fracQuiz.id, title: 'Section 1', sortOrder: 1 } });
     await prisma.assessmentQuestion.create({ data: { assessmentId: fracQuiz.id, sectionId: fracSection.id, questionId: fracQuizQ.id, questionNumber: 1, marksAvailable: 10 } });
   }
@@ -1788,7 +1735,7 @@ async function main() {
   if (charlotteProfile) {
     const existingFracAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: fracQuiz.id, studentProfileId: charlotteProfile.id } });
     if (!existingFracAssignment) {
-      await prisma.assessmentAssignment.create({ data: { assessmentId: fracQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+      await prisma.assessmentAssignment.create({ data: { assessmentId: fracQuiz.id, studentProfileId: charlotteProfile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
     }
   }
 
@@ -1839,7 +1786,7 @@ async function main() {
     const gridQ = await prisma.question.create({
       data: {
         subjectId: csSubject.id,
-        levelId: gradeLevel.id,
+        classId: gradeLevel.id,
         questionType: 'interactive',
         prompt: 'Match each algorithm to its worst-case time complexity.',
         correctAnswer: null,
@@ -1902,7 +1849,7 @@ async function main() {
   const algoQuizQ = await makeQ(csSubject.id, gradeLevel.id, 'What is the time complexity of Binary Search in the worst case?', [{ label: 'A', text: 'O(log n)', correct: true }, { label: 'B', text: 'O(n)', correct: false }, { label: 'C', text: 'O(n²)', correct: false }], 'Binary Search halves the search space every step, so the number of steps grows logarithmically with n.');
   let algoQuiz = await prisma.assessment.findFirst({ where: { title: 'Practice Quiz — Intro to Algorithms' } });
   if (!algoQuiz) {
-    algoQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: csSubject.id, levelId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Intro to Algorithms', description: 'Low-stakes practice on sorting and complexity.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 2, publishedAt: new Date() } });
+    algoQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: csSubject.id, classId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Intro to Algorithms', description: 'Low-stakes practice on sorting and complexity.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 2, publishedAt: new Date() } });
     const algoSection = await prisma.assessmentSection.create({ data: { assessmentId: algoQuiz.id, title: 'Section 1', sortOrder: 1 } });
     await prisma.assessmentQuestion.create({ data: { assessmentId: algoQuiz.id, sectionId: algoSection.id, questionId: algoQuizQ.id, questionNumber: 1, marksAvailable: 10 } });
   }
@@ -1913,7 +1860,7 @@ async function main() {
   if (charlotteProfile) {
     const existingAlgoAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: algoQuiz.id, studentProfileId: charlotteProfile.id } });
     if (!existingAlgoAssignment) {
-      await prisma.assessmentAssignment.create({ data: { assessmentId: algoQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+      await prisma.assessmentAssignment.create({ data: { assessmentId: algoQuiz.id, studentProfileId: charlotteProfile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
     }
   }
 
@@ -1977,7 +1924,7 @@ async function main() {
     const sliderQ = await prisma.question.create({
       data: {
         subjectId: mathSubject.id,
-        levelId: gradeLevel.id,
+        classId: gradeLevel.id,
         questionType: 'interactive',
         prompt: 'A shirt is on sale for 30% off. Slide to show 30%.',
         correctAnswer: '30',
@@ -2012,7 +1959,7 @@ async function main() {
     const ratioMatchQ = await prisma.question.create({
       data: {
         subjectId: mathSubject.id,
-        levelId: gradeLevel.id,
+        classId: gradeLevel.id,
         questionType: 'interactive',
         prompt: 'Match each ratio to its simplest form.',
         correctAnswer: null,
@@ -2072,7 +2019,7 @@ async function main() {
   const percentQuizQ = await makeQ(mathSubject.id, gradeLevel.id, 'What is 50% of 40?', [{ label: 'A', text: '20', correct: true }, { label: 'B', text: '25', correct: false }, { label: 'C', text: '10', correct: false }], '50% is half. 40 ÷ 2 = 20.');
   let percentQuiz = await prisma.assessment.findFirst({ where: { title: 'Practice Quiz — Percentages & Ratios' } });
   if (!percentQuiz) {
-    percentQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: mathSubject.id, levelId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Percentages & Ratios', description: 'Low-stakes practice on percentages and ratios.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 3, publishedAt: new Date() } });
+    percentQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: mathSubject.id, classId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Percentages & Ratios', description: 'Low-stakes practice on percentages and ratios.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 3, publishedAt: new Date() } });
     const percentSection = await prisma.assessmentSection.create({ data: { assessmentId: percentQuiz.id, title: 'Section 1', sortOrder: 1 } });
     await prisma.assessmentQuestion.create({ data: { assessmentId: percentQuiz.id, sectionId: percentSection.id, questionId: percentQuizQ.id, questionNumber: 1, marksAvailable: 10 } });
   }
@@ -2083,7 +2030,7 @@ async function main() {
   if (charlotteProfile) {
     const existingPercentAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: percentQuiz.id, studentProfileId: charlotteProfile.id } });
     if (!existingPercentAssignment) {
-      await prisma.assessmentAssignment.create({ data: { assessmentId: percentQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+      await prisma.assessmentAssignment.create({ data: { assessmentId: percentQuiz.id, studentProfileId: charlotteProfile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
     }
   }
 
@@ -2159,7 +2106,7 @@ async function main() {
     const dsMatchQ = await prisma.question.create({
       data: {
         subjectId: csSubject.id,
-        levelId: gradeLevel.id,
+        classId: gradeLevel.id,
         questionType: 'interactive',
         prompt: 'Match each data structure to its real-world example.',
         correctAnswer: null,
@@ -2219,7 +2166,7 @@ async function main() {
   const dsQuizQ = await makeQ(csSubject.id, gradeLevel.id, 'Which operation adds an item to the top of a Stack?', [{ label: 'A', text: 'Push', correct: true }, { label: 'B', text: 'Pull', correct: false }, { label: 'C', text: 'Enqueue', correct: false }], '"Push" adds an item to the top of a Stack; "Pop" removes the top item.');
   let dsQuiz = await prisma.assessment.findFirst({ where: { title: 'Practice Quiz — Data Structures Basics' } });
   if (!dsQuiz) {
-    dsQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: csSubject.id, levelId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Data Structures Basics', description: 'Low-stakes practice on arrays, stacks, and queues.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 3, publishedAt: new Date() } });
+    dsQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: csSubject.id, classId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Data Structures Basics', description: 'Low-stakes practice on arrays, stacks, and queues.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 3, publishedAt: new Date() } });
     const dsSection = await prisma.assessmentSection.create({ data: { assessmentId: dsQuiz.id, title: 'Section 1', sortOrder: 1 } });
     await prisma.assessmentQuestion.create({ data: { assessmentId: dsQuiz.id, sectionId: dsSection.id, questionId: dsQuizQ.id, questionNumber: 1, marksAvailable: 10 } });
   }
@@ -2230,7 +2177,7 @@ async function main() {
   if (charlotteProfile) {
     const existingDsAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: dsQuiz.id, studentProfileId: charlotteProfile.id } });
     if (!existingDsAssignment) {
-      await prisma.assessmentAssignment.create({ data: { assessmentId: dsQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+      await prisma.assessmentAssignment.create({ data: { assessmentId: dsQuiz.id, studentProfileId: charlotteProfile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
     }
   }
 
@@ -2334,7 +2281,7 @@ async function main() {
     const matchQ = await prisma.question.create({
       data: {
         subjectId: engSubject.id,
-        levelId: kLevel.id,
+        classId: kLevel.id,
         questionType: 'interactive',
         prompt: 'Match each letter to the sound it makes.',
         correctAnswer: null,
@@ -2451,7 +2398,7 @@ async function main() {
     const matchShapesQ = await prisma.question.create({
       data: {
         subjectId: mathSubject.id,
-        levelId: kLevel.id,
+        classId: kLevel.id,
         questionType: 'interactive',
         prompt: 'Match each shape to its name.',
         correctAnswer: null,
@@ -2655,7 +2602,7 @@ async function main() {
     const matchPunctQ = await prisma.question.create({
       data: {
         subjectId: engSubject.id,
-        levelId: g1Level.id,
+        classId: g1Level.id,
         questionType: 'interactive',
         prompt: 'Match each sentence to the punctuation mark it needs.',
         correctAnswer: null,
@@ -2882,7 +2829,7 @@ async function main() {
     const matchSpeechQ = await prisma.question.create({
       data: {
         subjectId: engSubject.id,
-        levelId: g3Level.id,
+        classId: g3Level.id,
         questionType: 'interactive',
         prompt: 'Match each word to its part of speech.',
         correctAnswer: null,
@@ -3024,7 +2971,7 @@ async function main() {
     const matchParagraphQ = await prisma.question.create({
       data: {
         subjectId: engSubject.id,
-        levelId: g5Level.id,
+        classId: g5Level.id,
         questionType: 'interactive',
         prompt: 'Match each paragraph type to its job in an essay.',
         correctAnswer: null,
@@ -3106,7 +3053,7 @@ async function main() {
     const plotterQ = await prisma.question.create({
       data: {
         subjectId: mathSubject.id,
-        levelId: gradeLevel.id,
+        classId: gradeLevel.id,
         questionType: 'interactive',
         prompt: 'Plot the points (2, 2), (-2, 2), and (0, -2) to form a triangle.',
         correctAnswer: null,
@@ -3143,7 +3090,7 @@ async function main() {
     const barQ = await prisma.question.create({
       data: {
         subjectId: mathSubject.id,
-        levelId: gradeLevel.id,
+        classId: gradeLevel.id,
         questionType: 'interactive',
         prompt: 'Color 2/4 of the bar.',
         correctAnswer: null,
@@ -3170,7 +3117,7 @@ async function main() {
     const hexQ = await prisma.question.create({
       data: {
         subjectId: mathSubject.id,
-        levelId: gradeLevel.id,
+        classId: gradeLevel.id,
         questionType: 'interactive',
         prompt: 'Color 1/2 of the hexagon.',
         correctAnswer: null,
@@ -3254,14 +3201,14 @@ async function main() {
     // the actual submission flow with. One per class she doesn't already
     // have a homework in, so the "Due" list has real variety to tap into.
     const pendingHomeworkSpecs = [
-      { title: 'DSA Problem Set 2', courseClass: dsaClass, description: 'Implement a binary search tree with insert, delete, and in-order traversal.', dueDate: new Date('2026-08-20'), maxPoints: 100 },
-      { title: 'Algorithms Quiz Prep', courseClass: algClass, description: 'Write pseudocode for binary search and bubble sort, and note each one’s worst-case complexity.', dueDate: new Date('2026-08-13'), maxPoints: 50 },
-      { title: 'Essay: Persuasive Writing', courseClass: engClass, description: 'Write a 500-word persuasive essay on a topic of your choice.', dueDate: new Date('2026-08-18'), maxPoints: 100 },
+      { title: 'DSA Problem Set 2', batch: dsaClass, description: 'Implement a binary search tree with insert, delete, and in-order traversal.', dueDate: new Date('2026-08-20'), maxPoints: 100 },
+      { title: 'Algorithms Quiz Prep', batch: algClass, description: 'Write pseudocode for binary search and bubble sort, and note each one’s worst-case complexity.', dueDate: new Date('2026-08-13'), maxPoints: 50 },
+      { title: 'Essay: Persuasive Writing', batch: engClass, description: 'Write a 500-word persuasive essay on a topic of your choice.', dueDate: new Date('2026-08-18'), maxPoints: 100 },
     ];
     for (const spec of pendingHomeworkSpecs) {
-      const existingHw = await prisma.homework.findFirst({ where: { title: spec.title, courseClassId: spec.courseClass.id } });
+      const existingHw = await prisma.homework.findFirst({ where: { title: spec.title, batchId: spec.batch.id } });
       if (!existingHw) {
-        await prisma.homework.create({ data: { courseClassId: spec.courseClass.id, title: spec.title, description: spec.description, dueDate: spec.dueDate, maxPoints: spec.maxPoints, recordedById: turingUser.id } });
+        await prisma.homework.create({ data: { batchId: spec.batch.id, title: spec.title, description: spec.description, dueDate: spec.dueDate, maxPoints: spec.maxPoints, recordedById: turingUser.id } });
       }
     }
 
@@ -3299,18 +3246,206 @@ async function main() {
     if (!existingCharlottePay) {
       await prisma.familyPayment.create({ data: { familyId: charlotteFamily.id, invoiceId: charlotteInvoice.id, amount: 800, currency: 'USD', paymentDate: new Date('2026-08-28'), method: 'BANK_TRANSFER', reference: 'TXN-TEST-CHARLOTTE-001', notes: 'Test guardian-view payment.' } });
     }
-
-    if (ariaProfile) {
-      const existingThread = await prisma.messageThread.findFirst({ where: { subject: "Aria's Progress Check-In", studentProfileId: ariaProfile.id, guardianUserId: charlotteProfile.userId } });
-      if (!existingThread) {
-        const t = await prisma.messageThread.create({ data: { subject: "Aria's Progress Check-In", studentProfileId: ariaProfile.id, guardianUserId: charlotteProfile.userId, teacherUserId: turingU.id, status: 'OPEN', lastMessageAt: new Date('2026-10-15T10:00:00') } });
-        await prisma.message.create({ data: { threadId: t.id, senderUserId: charlotteProfile.userId, body: 'Hi Prof. Turing, just checking in on how Aria is doing this term.', readAt: new Date('2026-10-15T10:00:00'), createdAt: new Date('2026-10-14T18:00:00') } });
-        await prisma.message.create({ data: { threadId: t.id, senderUserId: turingU.id, body: "She's doing great — consistently scoring above 90% on assessments.", readAt: null, createdAt: new Date('2026-10-15T10:00:00') } });
-      }
-    }
   }
 
   console.log('✅ Seeded fully-unlocked test account');
+
+  // ─── Program <-> Course wiring ──────────────────────────────────────────────
+  // Exercises both shapes the taxonomy supports: an academic Program hanging
+  // off a Class, and a standalone bundle with `classId: null` that sits outside
+  // the Class tree entirely (the K-6 micro-course packs).
+  const linkProgramCourse = async (
+    programId: string,
+    courseId: string,
+    sortOrder: number,
+  ) => {
+    await prisma.programCourse.upsert({
+      where: { programId_courseId: { programId, courseId } },
+      update: { sortOrder },
+      create: { programId, courseId, sortOrder, isRequired: true },
+    });
+  };
+
+  // Class 10 -> BSc Computer Science -> 3 courses
+  await linkProgramCourse(program.id, algorithmsCourse.id, 0);
+  await linkProgramCourse(program.id, dsCourse.id, 1);
+  await linkProgramCourse(program.id, algebraCourse.id, 2);
+
+  // Class 10 -> BSc Mathematics -> 2 courses. `fractionsCourse` is deliberately
+  // shared with no other program here, but the join exists precisely so a
+  // course CAN sit in several programs without being duplicated.
+  await linkProgramCourse(mathProgram.id, fractionsCourse.id, 0);
+  await linkProgramCourse(mathProgram.id, percentCourse.id, 1);
+
+  // Standalone one-time bundle: no Class, priced above the $9 sellable floor
+  // and below the a-la-carte sum of its parts.
+  const g12Bundle = await prisma.program.upsert({
+    where: { code: 'KIDS-G1-2' },
+    update: {
+      classId: null,
+      status: 'PUBLISHED',
+      deliveryMode: 'SELF_PACED',
+      priceOneTimeCents: 4900,
+    },
+    create: {
+      name: 'Grade 1-2 Complete',
+      code: 'KIDS-G1-2',
+      slug: 'grade-1-2-complete',
+      classId: null,
+      shortDescription:
+        'Every Grade 1-2 maths and reading course in one one-time purchase.',
+      status: 'PUBLISHED',
+      deliveryMode: 'SELF_PACED',
+      priceOneTimeCents: 4900,
+    },
+  });
+  await linkProgramCourse(g12Bundle.id, g12MathCourse.id, 0);
+  await linkProgramCourse(g12Bundle.id, g12LaCourse.id, 1);
+
+  // The same courses stay individually sellable at the $19 standalone floor,
+  // so the bundle is the obviously better deal.
+  for (const c of [g12MathCourse, g12LaCourse]) {
+    await prisma.course.update({
+      where: { id: c.id },
+      data: { priceOneTimeCents: 1900 },
+    });
+  }
+
+  console.log('✅ Seeded program/course taxonomy links');
+
+  // ─── Batches & teaching staff ───────────────────────────────────────────────
+  // A LIVE course is unsellable without an open cohort, so the demo needs one.
+  // `courseId` here is the weld that finally joins the catalogue tree to the
+  // operational one — before it, Batch pointed only at a Term.
+  const liveCourse = algorithmsCourse;
+  await prisma.course.update({
+    where: { id: liveCourse.id },
+    data: { deliveryMode: 'LIVE', priceOneTimeCents: 4900 },
+  });
+
+  const batchStart = new Date();
+  batchStart.setDate(batchStart.getDate() + 14);
+  const batchEnd = new Date(batchStart);
+  batchEnd.setMonth(batchEnd.getMonth() + 3);
+  const batchDeadline = new Date(batchStart);
+  batchDeadline.setDate(batchDeadline.getDate() - 1);
+
+  const leadTeacher = await prisma.teacherProfile.findFirst({
+    where: { deletedAt: null },
+    select: { id: true },
+  });
+
+  await prisma.batch.upsert({
+    where: { code: 'ALGO-BATCH-1' },
+    update: {
+      courseId: liveCourse.id,
+      startDate: batchStart,
+      endDate: batchEnd,
+      enrollmentDeadline: batchDeadline,
+      capacity: 20,
+      isOpenForEnrollment: true,
+      leadTeacherProfileId: leadTeacher?.id ?? null,
+    },
+    create: {
+      courseId: liveCourse.id,
+      termId: null,
+      name: 'Intro to Algorithms — Spring Batch',
+      code: 'ALGO-BATCH-1',
+      description: 'Live cohort with weekly sessions.',
+      capacity: 20,
+      isOpenForEnrollment: true,
+      startDate: batchStart,
+      endDate: batchEnd,
+      enrollmentDeadline: batchDeadline,
+      leadTeacherProfileId: leadTeacher?.id ?? null,
+    },
+  });
+
+  // "One course, many teachers" — a join table, which is all it ever needed.
+  const allTeachers = await prisma.teacherProfile.findMany({
+    where: { deletedAt: null },
+    take: 2,
+    select: { id: true },
+  });
+  for (const [index, t] of allTeachers.entries()) {
+    await prisma.courseTeacher.upsert({
+      where: {
+        courseId_teacherProfileId: {
+          courseId: liveCourse.id,
+          teacherProfileId: t.id,
+        },
+      },
+      update: {},
+      create: {
+        courseId: liveCourse.id,
+        teacherProfileId: t.id,
+        role: index === 0 ? 'LEAD' : 'ASSISTANT',
+      },
+    });
+  }
+  console.log(`✅ Seeded a live batch and ${allTeachers.length} course teachers`);
+
+  // ─── Free previews ──────────────────────────────────────────────────────────
+  // The first item of each course is given away. A course page with nothing
+  // playable converts badly and gives search engines nothing to index.
+  // Scans every concept in the course, not just the first: module items are
+  // concentrated in the later "... in Practice" concepts, so looking only at
+  // concept #1 would silently mark nothing.
+  const coursesWithConcepts = await prisma.course.findMany({
+    where: { deletedAt: null, concepts: { some: {} } },
+    select: {
+      id: true,
+      concepts: { orderBy: { sortOrder: 'asc' }, select: { id: true } },
+    },
+  });
+
+  let previewCount = 0;
+  for (const course of coursesWithConcepts) {
+    const firstItem = await prisma.moduleItem.findFirst({
+      where: {
+        conceptId: { in: course.concepts.map((c) => c.id) },
+        deletedAt: null,
+      },
+      orderBy: [{ concept: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
+      select: { id: true },
+    });
+    if (firstItem) {
+      await prisma.moduleItem.update({
+        where: { id: firstItem.id },
+        data: { isFreePreview: true },
+      });
+      previewCount += 1;
+    }
+  }
+  console.log(`✅ Marked ${previewCount} free-preview items`);
+
+  // ─── Entitlements ───────────────────────────────────────────────────────────
+  // Content is entitlement-gated from Phase 1 onward, so the demo needs at
+  // least one entitled student. Charlotte (the fully-unlocked test account)
+  // gets granted access; the other seeded students are deliberately left
+  // WITHOUT entitlements so the locked state is demoable too.
+  if (charlotteProfile) {
+    for (const p of [program, g12Bundle]) {
+      const existing = await prisma.entitlement.findFirst({
+        where: { studentProfileId: charlotteProfile.id, programId: p.id },
+        select: { id: true },
+      });
+      if (!existing) {
+        await prisma.entitlement.create({
+          data: {
+            studentProfileId: charlotteProfile.id,
+            programId: p.id,
+            source: 'ADMIN_GRANT',
+            status: 'ACTIVE',
+            // Null expiry = permanent, matching a fully-paid self-paced purchase.
+            accessExpiresAt: null,
+            note: 'Seeded demo entitlement',
+          },
+        });
+      }
+    }
+    console.log('✅ Seeded entitlements for Charlotte');
+  }
 
   console.log('🎉 Seeding completed successfully!');
 }

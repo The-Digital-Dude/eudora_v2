@@ -69,13 +69,13 @@ export class GradebookController {
     return this.gradebookService.bulkUpsertGrades(dto, user.id);
   }
 
-  @Get('course-class/:courseClassId')
+  @Get('batch/:batchId')
   @RequirePermissions({ action: 'read', subject: 'Gradebook' })
   getGradebookForClass(
-    @Param('courseClassId') courseClassId: string,
+    @Param('batchId') batchId: string,
     @Query('termId') termId?: string,
   ) {
-    return this.gradebookService.getGradebookForClass(courseClassId, termId);
+    return this.gradebookService.getGradebookForClass(batchId, termId);
   }
 
   @Get('class-section/:classSectionId')
@@ -121,14 +121,14 @@ export class GradebookController {
     );
   }
 
-  @Get('course-class/:courseClassId/summary')
+  @Get('batch/:batchId/summary')
   @RequirePermissions({ action: 'read', subject: 'Gradebook' })
   getClassSummary(
-    @Param('courseClassId') courseClassId: string,
+    @Param('batchId') batchId: string,
     @Query('termId') termId?: string,
   ) {
     return this.gradeCalculationService.getClassGradebookSummary(
-      courseClassId,
+      batchId,
       termId,
     );
   }

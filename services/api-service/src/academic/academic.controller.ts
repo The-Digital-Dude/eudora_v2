@@ -19,10 +19,7 @@ import {
   CreateClassSectionDto,
   UpdateClassSectionDto,
 } from './dto/class-section.dto';
-import {
-  CreateCourseClassDto,
-  UpdateCourseClassDto,
-} from './dto/course-class.dto';
+import { CreateBatchDto, UpdateBatchDto } from './dto/batch.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
@@ -114,6 +111,7 @@ export class AcademicController {
   }
 
   @Get('class-sections')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   async findAllClassSections(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -121,6 +119,8 @@ export class AcademicController {
     @Query('programId') programId?: string,
     @Query('learningSubjectId') learningSubjectId?: string,
     @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
@@ -131,10 +131,13 @@ export class AcademicController {
       programId,
       learningSubjectId,
       search,
+      sortBy,
+      sortOrder,
     );
   }
 
   @Get('class-sections/:id')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   async findClassSectionById(@Param('id') id: string) {
     return this.academicService.findClassSectionById(id);
   }
@@ -162,40 +165,37 @@ export class AcademicController {
 
   // --- Course Class Endpoints ---
 
-  @Post('course-classes')
+  @Post('batches')
   @Roles('ADMIN', 'SUPER_ADMIN')
-  async createCourseClass(@Body() dto: CreateCourseClassDto) {
-    return this.academicService.createCourseClass(dto);
+  async createBatch(@Body() dto: CreateBatchDto) {
+    return this.academicService.createBatch(dto);
   }
 
-  @Get('course-classes')
-  async findAllCourseClasses(
+  @Get('batches')
+  async findAllBatches(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('termId') termId?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.academicService.findAllCourseClasses(pageNum, limitNum, termId);
+    return this.academicService.findAllBatches(pageNum, limitNum, termId);
   }
 
-  @Get('course-classes/:id')
-  async findCourseClassById(@Param('id') id: string) {
-    return this.academicService.findCourseClassById(id);
+  @Get('batches/:id')
+  async findBatchById(@Param('id') id: string) {
+    return this.academicService.findBatchById(id);
   }
 
-  @Patch('course-classes/:id')
+  @Patch('batches/:id')
   @Roles('ADMIN', 'SUPER_ADMIN')
-  async updateCourseClass(
-    @Param('id') id: string,
-    @Body() dto: UpdateCourseClassDto,
-  ) {
-    return this.academicService.updateCourseClass(id, dto);
+  async updateBatch(@Param('id') id: string, @Body() dto: UpdateBatchDto) {
+    return this.academicService.updateBatch(id, dto);
   }
 
-  @Delete('course-classes/:id')
+  @Delete('batches/:id')
   @Roles('ADMIN', 'SUPER_ADMIN')
-  async deleteCourseClass(@Param('id') id: string) {
-    return this.academicService.deleteCourseClass(id);
+  async deleteBatch(@Param('id') id: string) {
+    return this.academicService.deleteBatch(id);
   }
 }

@@ -241,16 +241,19 @@ export default function AttendancePage() {
 
   // 1. STUDENT OR GUARDIAN VIEW
   if (isStudent || isGuardian) {
-    const dailyStats = studentSummary?.dailyStats || {
+    const emptyStats = {
       total: 0,
-      attendanceRate: 100,
+      attendanceRate: 0,
       breakdown: { PRESENT: 0, ABSENT: 0, LATE: 0, EXCUSED: 0 },
     };
-    const subjectStats = studentSummary?.subjectStats || {
-      total: 0,
-      attendanceRate: 100,
-      breakdown: { PRESENT: 0, ABSENT: 0, LATE: 0, EXCUSED: 0 },
-    };
+    const dailyStats = studentSummary?.dailyStats || emptyStats;
+    const subjectStats = studentSummary?.subjectStats || emptyStats;
+
+    // A student sits on one spine or the other: a ClassSection roster produces
+    // DailyAttendance, a batch produces BatchAttendance. Showing an empty card
+    // for the spine they are not on reads as a bad record, not a blank one.
+    const hasDaily = dailyStats.total > 0;
+    const hasSession = subjectStats.total > 0;
 
     return (
       <div className="space-y-6">
@@ -262,7 +265,7 @@ export default function AttendancePage() {
             </h1>
             <p className="text-xs font-medium text-muted-foreground">
               {isStudent
-                ? "Track your daily and subject-wise classroom attendance."
+                ? "Your attendance record across every class and session."
                 : "Monitor attendance records and statistics for linked students."}
             </p>
           </div>
@@ -288,8 +291,16 @@ export default function AttendancePage() {
             Loading student attendance summaries...
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Daily Attendance Overview Card */}
+          <div
+            className={`grid grid-cols-1 gap-6 ${
+              hasDaily && hasSession ? "md:grid-cols-2" : ""
+            }`}
+          >
+            {/* Daily Attendance Overview Card — only for students who are
+                actually on a ClassSection roster. A course bought through
+                checkout produces no DailyAttendance at all, and rendering the
+                card anyway showed a prominent 0% next to a real figure. */}
+            {hasDaily && (
             <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-sm">
               <CardHeader className="border-b border-border">
                 <CardTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
@@ -297,7 +308,7 @@ export default function AttendancePage() {
                   Homeroom Daily Attendance
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Summary stats for total school operational days.
+                  Attendance taken once per day against your class roster.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6 p-6">
@@ -359,16 +370,18 @@ export default function AttendancePage() {
                 </div>
               </CardContent>
             </Card>
+            )}
 
-            {/* Subject Attendance Card */}
+            {/* Session attendance — the batch spine. */}
+            {hasSession && (
             <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-sm">
               <CardHeader className="border-b border-border">
                 <CardTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
                   <GraduationCap className="h-4 w-4 text-primary" />
-                  Subject Class Sessions Attendance
+                  Class Session Attendance
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Summary stats for subject-level lecture schedules.
+                  Attendance taken per session for the batches you are enrolled in.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6 p-6">
@@ -386,7 +399,7 @@ export default function AttendancePage() {
                   <div className="grid flex-1 grid-cols-2 gap-4">
                     <div className="rounded-xl bg-muted/50 p-3">
                       <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                        Total Lectures
+                        Total Sessions
                       </span>
                       <p className="text-lg font-black text-foreground">
                         {subjectStats.total}
@@ -430,6 +443,14 @@ export default function AttendancePage() {
                 </div>
               </CardContent>
             </Card>
+            )}
+            {!hasDaily && !hasSession && (
+              <div className="rounded-3xl border border-dashed border-border p-8 text-center">
+                <p className="text-xs text-muted-foreground">
+                  No attendance has been recorded yet.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

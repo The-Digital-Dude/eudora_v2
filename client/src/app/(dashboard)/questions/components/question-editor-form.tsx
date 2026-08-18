@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Question,
   useCreateQuestionMutation,
-  useGetLevelsQuery,
+  useGetClassesQuery,
   useGetSubjectsQuery,
   useUpdateQuestionMutation,
 } from "@/features/assessments/questionsApi";
@@ -30,16 +30,16 @@ interface QuestionEditorFormProps {
 export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEditorFormProps) {
   const router = useRouter();
   const { data: subjectsData } = useGetSubjectsQuery();
-  const { data: levelsData } = useGetLevelsQuery();
+  const { data: classesData } = useGetClassesQuery();
 
   const subjects = React.useMemo(() => subjectsData?.items ?? [], [subjectsData]);
-  const levels = React.useMemo(() => levelsData?.items ?? [], [levelsData]);
+  const classes = React.useMemo(() => classesData?.items ?? [], [classesData]);
 
   const [createQuestion, { isLoading: isCreating }] = useCreateQuestionMutation();
   const [updateQuestion, { isLoading: isUpdating }] = useUpdateQuestionMutation();
 
   const [subjectId, setSubjectId] = useState<string>("");
-  const [levelId, setLevelId] = useState<string>("");
+  const [classId, setClassId] = useState<string>("");
   const [questionType, setQuestionType] = useState<string>("mcq");
   const [difficulty, setDifficulty] = useState<string>("medium");
   const [status, setStatus] = useState<string>("draft");
@@ -56,7 +56,7 @@ export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEdit
   useEffect(() => {
     if (questionId && initialQuestion) {
       setSubjectId(initialQuestion.subjectId || "");
-      setLevelId(initialQuestion.levelId || "");
+      setClassId(initialQuestion.classId || "");
       setQuestionType(initialQuestion.questionType || "mcq");
       setDifficulty(initialQuestion.difficulty || "medium");
       setStatus(initialQuestion.status || "draft");
@@ -69,7 +69,7 @@ export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEdit
       setWidgetConfig(initialQuestion.widgetConfig || null);
     } else {
       setSubjectId(subjects[0]?.id || "");
-      setLevelId(levels[0]?.id || "");
+      setClassId(classes[0]?.id || "");
       setOptions([
         { optionLabel: "A", optionText: "", isCorrect: false },
         { optionLabel: "B", optionText: "", isCorrect: false },
@@ -77,7 +77,7 @@ export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEdit
     }
     // Only re-seed when the identity of the record being edited changes, or once subjects/levels
     // arrive for the create-mode defaults — not on every keystroke of the fields above.
-  }, [questionId, initialQuestion, subjects, levels]);
+  }, [questionId, initialQuestion, subjects, classes]);
 
   const handleWidgetTypeChange = (value: string) => {
     const type = value === "none" ? "" : value;
@@ -123,7 +123,7 @@ export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEdit
     e.preventDefault();
 
     if (!subjectId) return toast.error("Please select a subject.");
-    if (!levelId) return toast.error("Please select a level.");
+    if (!classId) return toast.error("Please select a level.");
     if (!prompt.trim()) return toast.error("Prompt cannot be empty.");
 
     const isParameterizedMcq = questionType === "mcq" && widgetType === "STANDARD_MCQ";
@@ -141,7 +141,7 @@ export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEdit
 
     const payload: Partial<Question> = {
       subjectId,
-      levelId,
+      classId,
       questionType: questionType as any,
       prompt,
       correctAnswer: questionType === "mcq" ? null : correctAnswer,
@@ -234,12 +234,12 @@ export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEdit
               <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                 Grade Level
               </Label>
-              <Select value={levelId} onValueChange={setLevelId}>
+              <Select value={classId} onValueChange={setClassId}>
                 <SelectTrigger className="h-10 rounded-xl bg-muted/50 text-xs">
                   <SelectValue placeholder="Select level..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  {levels.map((lvl) => (
+                  {classes.map((lvl) => (
                     <SelectItem key={lvl.id} value={lvl.id}>
                       {lvl.name}
                     </SelectItem>

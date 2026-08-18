@@ -1,89 +1,239 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import Stripe from 'stripe';
-import type { StripeClient } from './stripe.types';
+import type { StripeCheckoutSession, StripeEvent } from './stripe-types';
+import { PrismaService } from '../../prisma/prisma.service';
 
 /**
- * Single shared Stripe client for the whole billing module.
+ * Thin wrapper over the Stripe SDK plus product/price synchronisation.
  *
- * Previously each service constructed its own client typed as `any`, which
- * silently disabled type checking against the SDK. This exposes a properly
- * typed `Stripe` instance so schema drift surfaces at build time.
+ * Deliberately degrades instead of throwing at construction: the repo has no
+ * Stripe keys configured, and a missing key must not stop the whole API from
+ * booting. `isConfigured` is false in that case and every call that needs
+ * Stripe raises a 503 with an actionable message.
  */
 @Injectable()
-export class StripeService implements OnModuleInit {
+export class StripeService {
   private readonly logger = new Logger(StripeService.name);
-  readonly client: StripeClient;
+  private readonly client: InstanceType<typeof Stripe> | null;
+  readonly webhookSecret: string | undefined;
 
-  /** Whether a usable secret key was supplied. */
-  readonly isConfigured: boolean;
+  constructor(private readonly prisma: PrismaService) {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    this.webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  constructor(private readonly config: ConfigService) {
-    const secretKey = this.config.get<string>('STRIPE_SECRET_KEY') ?? '';
+    if (!secretKey) {
+      this.logger.warn(
+        'STRIPE_SECRET_KEY is not set — checkout and webhooks are disabled. ' +
+          'Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to enable billing.',
+      );
+      this.client = null;
+      return;
+    }
 
-    // A placeholder like "sk_test" (no body) is treated as unconfigured — a
-    // real key is `sk_test_`/`sk_live_` followed by the key material.
-    this.isConfigured = /^sk_(test|live)_.+/.test(secretKey);
+    this.client = new Stripe(secretKey);
+  }
 
-    // Stripe v22 throws during construction when given an empty key. Keep an
-    // inert client available for injected billing dependencies while the
-    // explicit isConfigured guards disable every paid operation. The dummy
-    // key is never used for a request in this mode.
-    this.client = new Stripe(this.isConfigured ? secretKey : 'sk_test_disabled', {
-      apiVersion: '2026-05-27.dahlia',
-      appInfo: { name: 'eudora-api-service' },
+  get isConfigured(): boolean {
+    return this.client !== null;
+  }
+
+  private require(): InstanceType<typeof Stripe> {
+    if (!this.client) {
+      throw new ServiceUnavailableException(
+        'Billing is not configured on this server',
+      );
+    }
+    return this.client;
+  }
+
+  // --- Product / price synchronisation --------------------------------------
+  // Created lazily on the transition to PUBLISHED rather than on every save:
+  // a 50-course catalogue would otherwise churn 150+ Stripe objects on each
+  // admin edit.
+
+  /**
+   * Ensures a Stripe Product and its Prices exist for a Program, storing the
+   * ids back. Idempotent — safe to call on every publish.
+   */
+  async syncProgram(programId: string): Promise<void> {
+    const stripe = this.require();
+    const program = await this.prisma.program.findUnique({
+      where: { id: programId },
+    });
+    if (!program) return;
+
+    let productId: string | null = program.stripeProductId;
+    if (!productId) {
+      const product = await stripe.products.create({
+        name: program.name,
+        description: program.shortDescription ?? undefined,
+        metadata: { programId: program.id, slug: program.slug },
+      });
+      productId = product.id;
+    }
+
+    const data: {
+      stripeProductId: string;
+      stripePriceOneTimeId?: string;
+      stripePriceMonthlyId?: string;
+    } = { stripeProductId: productId };
+
+    if (program.priceOneTimeCents && !program.stripePriceOneTimeId) {
+      const price = await stripe.prices.create({
+        product: productId,
+        currency: program.currency.toLowerCase(),
+        unit_amount: program.priceOneTimeCents,
+      });
+      data.stripePriceOneTimeId = price.id;
+    }
+
+    if (program.priceMonthlyCents && !program.stripePriceMonthlyId) {
+      const price = await stripe.prices.create({
+        product: productId,
+        currency: program.currency.toLowerCase(),
+        unit_amount: program.priceMonthlyCents,
+        recurring: { interval: 'month' },
+      });
+      data.stripePriceMonthlyId = price.id;
+    }
+
+    await this.prisma.program.update({ where: { id: programId }, data });
+  }
+
+  /** Same contract as `syncProgram`, for a-la-carte Courses. */
+  async syncCourse(courseId: string): Promise<void> {
+    const stripe = this.require();
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+    });
+    if (!course) return;
+
+    let productId: string | null = course.stripeProductId;
+    if (!productId) {
+      const product = await stripe.products.create({
+        name: course.title,
+        description: course.description ?? undefined,
+        metadata: { courseId: course.id, slug: course.slug },
+      });
+      productId = product.id;
+    }
+
+    const data: {
+      stripeProductId: string;
+      stripePriceOneTimeId?: string;
+      stripePriceMonthlyId?: string;
+    } = { stripeProductId: productId };
+
+    if (course.priceOneTimeCents && !course.stripePriceOneTimeId) {
+      const price = await stripe.prices.create({
+        product: productId,
+        currency: course.currency.toLowerCase(),
+        unit_amount: course.priceOneTimeCents,
+      });
+      data.stripePriceOneTimeId = price.id;
+    }
+
+    if (course.priceMonthlyCents && !course.stripePriceMonthlyId) {
+      const price = await stripe.prices.create({
+        product: productId,
+        currency: course.currency.toLowerCase(),
+        unit_amount: course.priceMonthlyCents,
+        recurring: { interval: 'month' },
+      });
+      data.stripePriceMonthlyId = price.id;
+    }
+
+    await this.prisma.course.update({ where: { id: courseId }, data });
+  }
+
+  // --- Checkout -------------------------------------------------------------
+
+  /**
+   * Hosted Checkout, not Elements: it handles SCA, 3DS and wallets out of the
+   * box and keeps this server out of PCI scope.
+   */
+  async createCheckoutSession(params: {
+    mode: 'payment' | 'subscription';
+    priceCents: number;
+    currency: string;
+    productName: string;
+    quantity?: number;
+    customerEmail?: string;
+    successUrl: string;
+    cancelUrl: string;
+    metadata: Record<string, string>;
+    /** Set for installments so the plan self-terminates after the final charge. */
+    cancelAt?: Date;
+  }): Promise<StripeCheckoutSession> {
+    const stripe = this.require();
+
+    return stripe.checkout.sessions.create({
+      mode: params.mode,
+      line_items: [
+        {
+          quantity: params.quantity ?? 1,
+          price_data: {
+            currency: params.currency.toLowerCase(),
+            unit_amount: params.priceCents,
+            product_data: { name: params.productName },
+            ...(params.mode === 'subscription'
+              ? { recurring: { interval: 'month' as const } }
+              : {}),
+          },
+        },
+      ],
+      customer_email: params.customerEmail,
+      success_url: params.successUrl,
+      cancel_url: params.cancelUrl,
+      metadata: params.metadata,
+      ...(params.mode === 'subscription'
+        ? {
+            subscription_data: {
+              metadata: params.metadata,
+              ...(params.cancelAt
+                ? { cancel_at: Math.floor(params.cancelAt.getTime() / 1000) }
+                : {}),
+            },
+          }
+        : {}),
     });
   }
 
-  onModuleInit() {
-    if (!this.isConfigured) {
-      this.logger.warn(
-        'STRIPE_SECRET_KEY is missing or malformed. Paid plans are disabled; ' +
-          'free plans still work. Set a real sk_test_/sk_live_ key to enable payments.',
-      );
-    }
+  /**
+   * Hosted Billing Portal session.
+   *
+   * Card management, invoice history and instalment cancellation all live in
+   * Stripe's own UI. Rebuilding any of that here would mean handling card
+   * details, which is exactly what hosted Checkout was chosen to avoid.
+   */
+  async createBillingPortalSession(customerId: string, returnUrl: string) {
+    const stripe = this.require();
+    return stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl,
+    });
+  }
+
+  /**
+   * Verifies the signature over the RAW request body. `rawBody` is already
+   * enabled in main.ts, and the response-envelope filter already exempts this
+   * path — without both, the signature check would fail on a re-serialised body.
+   */
+  constructWebhookEvent(rawBody: Buffer, signature: string): StripeEvent {
+    const stripe = this.require();
     if (!this.webhookSecret) {
-      this.logger.warn(
-        'STRIPE_WEBHOOK_SECRET is missing or malformed. Incoming webhooks ' +
-          'will be rejected until it is set.',
+      throw new ServiceUnavailableException(
+        'STRIPE_WEBHOOK_SECRET is not configured',
       );
     }
-
-    // A well-formed key can still be a dummy value, which the format check
-    // above cannot detect. Verify it against Stripe so a bad key surfaces at
-    // boot rather than at the first customer's checkout. Fire-and-forget: this
-    // must never block or fail startup.
-    if (this.isConfigured) {
-      void this.verifyCredentials();
-    }
-  }
-
-  private async verifyCredentials(): Promise<void> {
-    try {
-      // Cheapest authenticated call that proves the key is accepted.
-      const balance = await this.client.balance.retrieve();
-      this.logger.log(
-        `Stripe credentials OK (livemode=${balance.livemode})`,
-      );
-    } catch (err) {
-      this.logger.error(
-        `Stripe rejected STRIPE_SECRET_KEY: ${(err as Error).message}. ` +
-          'Paid plans will fail until a valid key is configured.',
-      );
-    }
-  }
-
-  /** Configured webhook signing secret, or empty string if unset/placeholder. */
-  get webhookSecret(): string {
-    const secret = this.config.get<string>('STRIPE_WEBHOOK_SECRET') ?? '';
-    return /^whsec_.+/.test(secret) ? secret : '';
-  }
-
-  /** Base URL of the frontend, used to build Checkout return URLs. */
-  get appUrl(): string {
-    return (
-      this.config.get<string>('APP_URL')?.replace(/\/$/, '') ??
-      'http://localhost:3000'
+    return stripe.webhooks.constructEvent(
+      rawBody,
+      signature,
+      this.webhookSecret,
     );
   }
 }

@@ -21,6 +21,15 @@ describe('TeacherService', () => {
       create: jest.fn(),
       update: jest.fn(),
     },
+    courseTeacher: {
+      findMany: jest.fn(),
+    },
+    batch: {
+      findMany: jest.fn(),
+    },
+    batchSession: {
+      findMany: jest.fn(),
+    },
     role: {
       findUnique: jest.fn(),
     },
@@ -344,6 +353,147 @@ describe('TeacherService', () => {
       const result = await service.removeClass('profile-1', 'sec-1');
       expect(result.message).toContain('removed successfully');
       expect(mockPrismaService.classTeacher.delete).toHaveBeenCalled();
+    });
+  });
+
+  describe('getMyBatches', () => {
+    const teacher = { id: 'teacher-1', classAssignments: [] };
+
+    beforeEach(() => {
+      mockPrismaService.teacherProfile.findFirst.mockResolvedValue(teacher);
+    });
+
+    it('returns an empty list without querying sessions when nothing is assigned', async () => {
+      mockPrismaService.courseTeacher.findMany.mockResolvedValue([]);
+      mockPrismaService.batch.findMany.mockResolvedValue([]);
+
+      const result = await service.getMyBatches('user-1');
+
+      expect(result).toEqual([]);
+      expect(mockPrismaService.batchSession.findMany).not.toHaveBeenCalled();
+    });
+
+    it('matches batches led directly and batches reached through CourseTeacher', async () => {
+      mockPrismaService.courseTeacher.findMany.mockResolvedValue([
+        { courseId: 'course-1' },
+      ]);
+      mockPrismaService.batch.findMany.mockResolvedValue([]);
+
+      await service.getMyBatches('user-1');
+
+      expect(mockPrismaService.batch.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            OR: [
+              { leadTeacherProfileId: 'teacher-1' },
+              { courseId: { in: ['course-1'] } },
+            ],
+          },
+        }),
+      );
+    });
+
+    it('omits the courseId branch entirely when the teacher owns no courses', async () => {
+      mockPrismaService.courseTeacher.findMany.mockResolvedValue([]);
+      mockPrismaService.batch.findMany.mockResolvedValue([]);
+
+      await service.getMyBatches('user-1');
+
+      expect(mockPrismaService.batch.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { OR: [{ leadTeacherProfileId: 'teacher-1' }] },
+        }),
+      );
+    });
+
+    it('reports LEAD when the teacher leads the cohort, COURSE_TEACHER otherwise', async () => {
+      mockPrismaService.courseTeacher.findMany.mockResolvedValue([]);
+      mockPrismaService.batch.findMany.mockResolvedValue([
+        {
+          id: 'b1',
+          name: 'Led',
+          code: 'L1',
+          status: 'ACTIVE',
+          startDate: null,
+          endDate: null,
+          leadTeacherProfileId: 'teacher-1',
+          course: null,
+          _count: { enrollments: 3 },
+        },
+        {
+          id: 'b2',
+          name: 'Taught',
+          code: 'T1',
+          status: 'ACTIVE',
+          startDate: null,
+          endDate: null,
+          leadTeacherProfileId: 'someone-else',
+          course: null,
+          _count: { enrollments: 5 },
+        },
+      ]);
+      mockPrismaService.batchSession.findMany.mockResolvedValue([]);
+
+      const result = await service.getMyBatches('user-1');
+
+      expect(result[0]).toMatchObject({
+        batchId: 'b1',
+        role: 'LEAD',
+        enrolledCount: 3,
+      });
+      expect(result[1]).toMatchObject({
+        batchId: 'b2',
+        role: 'COURSE_TEACHER',
+        enrolledCount: 5,
+      });
+    });
+
+    it('attaches only the earliest upcoming session to each batch', async () => {
+      mockPrismaService.courseTeacher.findMany.mockResolvedValue([]);
+      mockPrismaService.batch.findMany.mockResolvedValue([
+        {
+          id: 'b1',
+          name: 'B',
+          code: 'B',
+          status: 'ACTIVE',
+          startDate: null,
+          endDate: null,
+          leadTeacherProfileId: 'teacher-1',
+          course: null,
+          _count: { enrollments: 0 },
+        },
+      ]);
+      // Returned in date order by the query; only the first should surface.
+      mockPrismaService.batchSession.findMany.mockResolvedValue([
+        { id: 's1', batchId: 'b1', topic: 'First' },
+        { id: 's2', batchId: 'b1', topic: 'Later' },
+      ]);
+
+      const result = await service.getMyBatches('user-1');
+
+      expect(result[0].nextSession).toMatchObject({ id: 's1' });
+    });
+
+    it('reports null rather than a stale session when nothing is upcoming', async () => {
+      mockPrismaService.courseTeacher.findMany.mockResolvedValue([]);
+      mockPrismaService.batch.findMany.mockResolvedValue([
+        {
+          id: 'b1',
+          name: 'B',
+          code: 'B',
+          status: 'ACTIVE',
+          startDate: null,
+          endDate: null,
+          leadTeacherProfileId: 'teacher-1',
+          course: null,
+          _count: { enrollments: 0 },
+        },
+      ]);
+      mockPrismaService.batchSession.findMany.mockResolvedValue([]);
+
+      const result = await service.getMyBatches('user-1');
+
+      expect(result[0].nextSession).toBeNull();
     });
   });
 });

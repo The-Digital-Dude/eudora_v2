@@ -1,15 +1,15 @@
 ﻿"use client";
 
 import { format, isValid } from "date-fns";
-import { BookOpen, Calendar, ClipboardCheck, ExternalLink,Loader2, MessageSquare } from "lucide-react";
+import { BookOpen, Calendar, ClipboardCheck, ExternalLink,Loader2 } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect,useState } from "react";
 
 import { useGetDashboardSnapshotQuery } from "@/features/dashboard/dashboardApi";
-import { MessagingCenter } from "@/features/messaging/components/MessagingCenter";
-import { useGetTeacherClassesQuery } from "@/features/teacher/teacherPortalApi";
+import { useGetTeacherBatchesQuery,useGetTeacherClassesQuery } from "@/features/teacher/teacherPortalApi";
 import { useAppSelector } from "@/store/hooks";
 
+import { BatchesOverview } from "./components/batches-overview";
 import { ClassesOverview } from "./components/classes-overview";
 import { PerformanceAlerts } from "./components/performance-alerts";
 import { QuickAttendance } from "./components/quick-attendance";
@@ -17,13 +17,15 @@ import { QuickAttendance } from "./components/quick-attendance";
 export default function TeacherPage() {
   const auth = useAppSelector((state) => state.auth);
   const user = auth.user as any;
-  const currentUserId = user?.id;
 
-  const [activeSection, setActiveSection] = useState<"attendance" | "grading" | "messages">("attendance");
+  const [activeSection, setActiveSection] = useState<"attendance" | "grading">("attendance");
   const [activeClassId, setActiveClassId] = useState<string>("");
 
   // Query assigned classes
   const { data: classes = [], isLoading: isClassesLoading, refetch: refetchClasses } = useGetTeacherClassesQuery();
+
+  // Cohorts on the commerce spine — a teacher may have these, sections, or both.
+  const { data: batches = [], isLoading: isBatchesLoading, refetch: refetchBatches } = useGetTeacherBatchesQuery();
 
   // Query snapshot (schedule, grading tasks)
   const { data: snapshot, isLoading: isSnapshotLoading, refetch: refetchSnapshot } = useGetDashboardSnapshotQuery();
@@ -52,6 +54,7 @@ export default function TeacherPage() {
   const handleAttendanceSuccess = () => {
     // Refresh assigned classes so marked status updates instantly
     refetchClasses();
+    refetchBatches();
     refetchSnapshot();
   };
 
@@ -92,17 +95,6 @@ export default function TeacherPage() {
             <BookOpen className="h-4 w-4" />
             Grading & Schedule
           </button>
-          <button
-            onClick={() => setActiveSection("messages")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeSection === "messages"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <MessageSquare className="h-4 w-4" />
-            Parent Messages
-          </button>
         </div>
       </div>
 
@@ -119,6 +111,13 @@ export default function TeacherPage() {
               onSelectClass={setActiveClassId}
               isLoading={isClassesLoading}
             />
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
+              My Batches
+            </h3>
+            <BatchesOverview batches={batches} isLoading={isBatchesLoading} />
           </div>
 
           {/* Quick roll-call selector */}
@@ -162,7 +161,7 @@ export default function TeacherPage() {
                     >
                       <div>
                         <h4 className="font-extrabold text-xs text-foreground">
-                          {slot.courseClass?.name}
+                          {slot.batch?.name}
                         </h4>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
                           Roster: {slot.classSection?.name}
@@ -243,20 +242,6 @@ export default function TeacherPage() {
             </h3>
             <PerformanceAlerts />
           </div>
-        </div>
-      )}
-
-      {activeSection === "messages" && (
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">
-              Parent Messaging Center
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Reply to incoming communications from parents and guardians of your students.
-            </p>
-          </div>
-          <MessagingCenter currentUserId={currentUserId} isGuardian={false} />
         </div>
       )}
     </div>

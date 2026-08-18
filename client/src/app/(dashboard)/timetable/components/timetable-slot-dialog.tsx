@@ -30,8 +30,8 @@ import {
   useUpdateTimetableSlotMutation,
 } from "@/features/academic/timetableApi";
 import {
+  useGetBatchesQuery,
   useGetClassSectionsQuery,
-  useGetCourseClassesQuery,
   useGetTeacherProfilesQuery,
 } from "@/features/dashboard/dashboardApi";
 
@@ -59,11 +59,11 @@ export function TimetableSlotDialog({
   const [deleteSlot, { isLoading: isDeleting }] = useDeleteTimetableSlotMutation();
 
   const { data: classSectionsData } = useGetClassSectionsQuery();
-  const { data: courseClassesData } = useGetCourseClassesQuery();
+  const { data: batchesData } = useGetBatchesQuery();
   const { data: teachersData } = useGetTeacherProfilesQuery();
 
   const classSections = classSectionsData?.items || [];
-  const courseClasses = courseClassesData?.items || [];
+  const batches = batchesData?.items || [];
   const teachers = teachersData?.items || [];
 
   // Form states
@@ -72,7 +72,7 @@ export function TimetableSlotDialog({
   const [startTime, setStartTime] = React.useState<string>("09:00");
   const [endTime, setEndTime] = React.useState<string>("10:00");
   const [classSectionId, setClassSectionId] = React.useState<string>("");
-  const [courseClassId, setCourseClassId] = React.useState<string>("none");
+  const [batchId, setBatchId] = React.useState<string>("none");
   const [teacherProfileId, setTeacherProfileId] = React.useState<string>("none");
   const [room, setRoom] = React.useState<string>("");
   const [notes, setNotes] = React.useState<string>("");
@@ -99,7 +99,7 @@ export function TimetableSlotDialog({
       setStartTime(minutesToTime(slot.startTimeMinutes));
       setEndTime(minutesToTime(slot.endTimeMinutes));
       setClassSectionId(slot.classSectionId);
-      setCourseClassId(slot.courseClassId || "none");
+      setBatchId(slot.batchId || "none");
       setTeacherProfileId(slot.teacherProfileId || "none");
       setRoom(slot.room || "");
       setNotes(slot.notes || "");
@@ -109,7 +109,7 @@ export function TimetableSlotDialog({
       setStartTime("09:00");
       setEndTime("10:00");
       setClassSectionId(defaultClassSectionId || "");
-      setCourseClassId("none");
+      setBatchId("none");
       setTeacherProfileId("none");
       setRoom("");
       setNotes("");
@@ -140,7 +140,7 @@ export function TimetableSlotDialog({
       startTimeMinutes: startMinutes,
       endTimeMinutes: endMinutes,
       classSectionId,
-      courseClassId: courseClassId === "none" ? undefined : courseClassId,
+      batchId: batchId === "none" ? undefined : batchId,
       teacherProfileId: teacherProfileId === "none" ? undefined : teacherProfileId,
       room: room || undefined,
       notes: notes || undefined,
@@ -297,13 +297,13 @@ export function TimetableSlotDialog({
             <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
               Course Subject (Course Class)
             </Label>
-            <Select value={courseClassId} onValueChange={setCourseClassId}>
+            <Select value={batchId} onValueChange={setBatchId}>
               <SelectTrigger className="h-10 rounded-xl border-border bg-muted/30 text-xs">
                 <SelectValue placeholder="Select Course" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 <SelectItem value="none">None (Homeroom / Break / Study Hall)</SelectItem>
-                {courseClasses.map((c) => (
+                {batches.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name} ({c.code})
                   </SelectItem>

@@ -1,25 +1,25 @@
 "use client";
 
+import { type ColumnDef } from "@tanstack/react-table";
 import { Briefcase, Mail, Plus, Search, Trash2, Users2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { ListPagination } from "@/components/list-pagination";
+import { DataTable, SortableHeader } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  type TeacherProfile,
   useDeleteTeacherProfileMutation,
   useGetTeacherProfilesQuery,
 } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
-const PAGE_SIZE = 20;
-
 export default function TeachersPage() {
   const router = useRouter();
-  const { values, setValue } = useListQueryState(
-    { search: "", status: "all", page: 1 },
+  const { values, setValue, setValues } = useListQueryState(
+    { search: "", status: "all", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
     { pageKey: "page" },
   );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
@@ -32,9 +32,11 @@ export default function TeachersPage() {
   // invisible, with no pagination control to hint that anything had been left out.
   const { data: teachersData, isLoading: teachersLoading } = useGetTeacherProfilesQuery({
     page: values.page,
-    limit: PAGE_SIZE,
+    limit: values.pageSize,
     search: values.search || undefined,
     status: values.status === "all" ? undefined : values.status,
+    sortBy: values.sortBy || undefined,
+    sortOrder: values.sortOrder,
   });
 
   // Registry-wide metrics, deliberately independent of the current page and filter — the cards
@@ -64,6 +66,126 @@ export default function TeachersPage() {
   const totalCount = allTeachersMeta?.total ?? 0;
   const activeCount = activeTeachersMeta?.total ?? 0;
   const leaveCount = leaveTeachersMeta?.total ?? 0;
+
+  const columns: ColumnDef<TeacherProfile, any>[] = [
+    {
+      accessorKey: "fullName",
+      header: ({ column }) => <SortableHeader column={column} label="Teacher Profile" />,
+      cell: ({ row }) => {
+        const teacher = row.original;
+        const initials = teacher.fullName
+          ? teacher.fullName
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase()
+              .slice(0, 2)
+          : "T";
+        return (
+          <div className="flex items-center gap-3">
+            <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-foreground text-xs font-bold text-background">
+              {initials}
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground">{teacher.fullName}</p>
+              <p className="mt-0.5 flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                <Mail className="h-3 w-3 text-muted-foreground" /> {teacher.user?.email}
+              </p>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "employeeCode",
+      header: ({ column }) => <SortableHeader column={column} label="Employee Code" />,
+      cell: ({ row }) => (
+        <span className="font-mono text-xs text-muted-foreground">
+          {row.original.employeeCode || "N/A"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "specialization",
+      header: ({ column }) => <SortableHeader column={column} label="Specialization" />,
+      cell: ({ row }) =>
+        row.original.specialization ? (
+          <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-semibold text-foreground">
+            <Briefcase className="h-3 w-3 text-muted-foreground" /> {row.original.specialization}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">Not specified</span>
+        ),
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => <SortableHeader column={column} label="Status" />,
+      cell: ({ row }) => {
+        const status = row.original.status;
+        return (
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+              status === "ACTIVE"
+                ? "border border-success/20 bg-success/10 text-success"
+                : status === "ON_LEAVE"
+                  ? "border border-warning/20 bg-warning/10 text-warning"
+                  : "border border-border bg-muted text-muted-foreground"
+            }`}
+          >
+            {status}
+          </span>
+        );
+      },
+    },
+    {
+      id: "assignedSections",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Assigned Sections
+        </span>
+      ),
+      cell: ({ row }) => (
+        <div className="flex max-w-[220px] flex-wrap gap-1">
+          {row.original.classAssignments && row.original.classAssignments.length > 0 ? (
+            row.original.classAssignments.map((a) => (
+              <span
+                key={a.classSectionId}
+                className="inline-flex items-center rounded-md border border-success/10 bg-success/10 px-2 py-0.5 text-[9px] font-semibold text-success"
+              >
+                {a.classSection?.name} ({a.role})
+              </span>
+            ))
+          ) : (
+            <span className="text-[9px] font-medium text-muted-foreground">Unassigned</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Actions
+        </span>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteProfile(row.original.id);
+            }}
+            variant="outline"
+            className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -162,164 +284,26 @@ export default function TeachersPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">
-                  Teacher Profile
-                </th>
-                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">
-                  Employee Code
-                </th>
-                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">
-                  Specialization
-                </th>
-                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">Status</th>
-                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">
-                  Assigned Sections
-                </th>
-                <th className="pb-3 text-right text-[10px] font-bold text-muted-foreground uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {teachersLoading ? (
-                [...Array(3)].map((_, i) => (
-                  <tr key={i} className="border-b border-border/30">
-                    <td className="py-4">
-                      <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="h-4 w-20 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="h-4 w-16 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="h-4 w-24 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="ml-auto h-4 w-20 animate-pulse rounded bg-muted" />
-                    </td>
-                  </tr>
-                ))
-              ) : filteredTeachers.length > 0 ? (
-                filteredTeachers.map((teacher: any) => {
-                  const initials = teacher.fullName
-                    ? teacher.fullName
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .toUpperCase()
-                        .slice(0, 2)
-                    : "T";
-
-                  return (
-                    <tr
-                      key={teacher.id}
-                      onClick={() => router.push(`/teachers/${teacher.id}`)}
-                      className="cursor-pointer border-b border-border/30 transition-colors last:border-0 hover:bg-muted/50"
-                    >
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-foreground text-xs font-bold text-background">
-                            {initials}
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-foreground">
-                              {teacher.fullName}
-                            </p>
-                            <p className="mt-0.5 flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                              <Mail className="h-3 w-3 text-muted-foreground" /> {teacher.user?.email}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 font-mono text-xs text-muted-foreground">
-                        {teacher.employeeCode || "N/A"}
-                      </td>
-                      <td className="py-4 text-xs font-medium text-foreground">
-                        {teacher.specialization ? (
-                          <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-semibold text-foreground">
-                            <Briefcase className="h-3 w-3 text-muted-foreground" />{" "}
-                            {teacher.specialization}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">Not specified</span>
-                        )}
-                      </td>
-                      <td className="py-4 text-xs">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            teacher.status === "ACTIVE"
-                              ? "border border-success/20 bg-success/10 text-success"
-                              : teacher.status === "ON_LEAVE"
-                                ? "border border-warning/20 bg-warning/10 text-warning"
-                                : "border border-border bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {teacher.status}
-                        </span>
-                      </td>
-                      <td className="py-4">
-                        <div className="flex max-w-[220px] flex-wrap gap-1">
-                          {teacher.classAssignments && teacher.classAssignments.length > 0 ? (
-                            teacher.classAssignments.map((a: any) => (
-                              <span
-                                key={a.classSectionId}
-                                className="inline-flex items-center rounded-md border border-success/10 bg-success/10 px-2 py-0.5 text-[9px] font-semibold text-success"
-                              >
-                                {a.classSection?.name} ({a.role})
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-[9px] font-medium text-muted-foreground">
-                              Unassigned
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteProfile(teacher.id);
-                            }}
-                            variant="outline"
-                            className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-xs font-medium text-muted-foreground">
-                    {isFiltered
-                      ? "No teachers match these filters."
-                      : "No teacher profiles listed. Add a new teacher profile to get started."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <ListPagination
+        <DataTable
+          columns={columns}
+          data={filteredTeachers}
+          isLoading={teachersLoading}
           page={values.page}
-          pageSize={PAGE_SIZE}
+          pageSize={values.pageSize}
           total={totalMatching}
           onPageChange={(next) => setValue("page", next)}
-          label="teacher"
+          onPageSizeChange={(size) => setValue("pageSize", size)}
+          paginationLabel="teacher"
+          sortBy={values.sortBy}
+          sortOrder={values.sortOrder as "asc" | "desc"}
+          onSortChange={(sortBy, sortOrder) => setValues({ sortBy, sortOrder })}
+          onRowClick={(teacher) => router.push(`/teachers/${teacher.id}`)}
+          emptyTitle={isFiltered ? "No matching teachers" : "No teacher profiles listed"}
+          emptyDescription={
+            isFiltered
+              ? "No teachers match these filters."
+              : "Add a new teacher profile to get started."
+          }
         />
       </Card>
     </div>

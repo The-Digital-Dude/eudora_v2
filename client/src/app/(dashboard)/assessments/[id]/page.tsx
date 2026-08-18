@@ -70,12 +70,12 @@ export default function AssessmentBuilderPage() {
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject] = useState("");
-  const [selectedLevel] = useState("");
+  const [selectedClass] = useState("");
 
   const { data: questionsData } = useGetQuestionsQuery({
     search: searchQuery || undefined,
     subjectId: selectedSubject || undefined,
-    levelId: selectedLevel || undefined,
+    classId: selectedClass || undefined,
     pageSize: 50,
   });
   const questionsBank = questionsData?.items || [];
@@ -387,7 +387,7 @@ export default function AssessmentBuilderPage() {
               </span>
             </h1>
             <p className="text-[10px] text-muted-foreground font-medium">
-              Subject: {assessment.subject?.name} • Grade: {assessment.level?.name}
+              Subject: {assessment.subject?.name} • Grade: {assessment.class?.name}
             </p>
           </div>
         </div>

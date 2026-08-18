@@ -18,11 +18,11 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = React.useState<Theme>(
-    () =>
-      (typeof window !== "undefined" && (localStorage.getItem(storageKey) as Theme)) ||
-      defaultTheme,
-  );
+  // Persistence intentionally off: every load starts from `defaultTheme`
+  // (currently "light", set at the call site) regardless of what a prior
+  // session left behind. Swap the initializer back to read `storageKey`
+  // here to re-enable.
+  const [theme, setTheme] = React.useState<Theme>(defaultTheme);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -45,12 +45,9 @@ export function ThemeProvider({
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      if (typeof window !== "undefined") {
-        localStorage.setItem(storageKey, theme);
-      }
-      setTheme(theme);
-    },
+    // Persistence intentionally off — see the initializer above. `storageKey`
+    // is kept as a prop (unused for now) so re-enabling is a one-line diff.
+    setTheme,
   };
 
   return (

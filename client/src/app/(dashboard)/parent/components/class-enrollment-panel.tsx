@@ -39,11 +39,11 @@ export function ClassEnrollmentPanel({ studentProfileId, childName }: ClassEnrol
 
   const enrollable = available.filter((cls) => !cls.isEnrolled);
 
-  const handleEnroll = async (courseClassId: string) => {
+  const handleEnroll = async (batchId: string) => {
     setError("");
-    setPendingClassId(courseClassId);
+    setPendingClassId(batchId);
     try {
-      await enrollInClass({ studentProfileId, courseClassId }).unwrap();
+      await enrollInClass({ studentProfileId, batchId }).unwrap();
     } catch (err: any) {
       setError(err?.data?.message || "Failed to enroll in this class.");
     } finally {
@@ -100,10 +100,10 @@ export function ClassEnrollmentPanel({ studentProfileId, childName }: ClassEnrol
                   >
                     <div className="min-w-0">
                       <p className="truncate text-xs font-semibold text-foreground">
-                        {enrollment.courseClass.name}
+                        {enrollment.batch.name}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
-                        {enrollment.courseClass.term.name}
+                        {enrollment.batch.term.name}
                       </p>
                     </div>
                     <Button

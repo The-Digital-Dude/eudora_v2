@@ -16,12 +16,11 @@ describe('Education OS Administrative Modules (e2e)', () => {
   let regularUserId: string;
 
   // Academic/Institution ID trackers
-  let campusId: string;
   let programId: string;
   let academicYearId: string;
   let termId: string;
   let classSectionId: string;
-  let courseClassId: string;
+  let batchId: string;
 
   // Profiles and relationship trackers
   let studentUserId: string;
@@ -132,9 +131,9 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .delete({ where: { id: guardianUserId } })
         .catch(() => {});
     }
-    if (courseClassId) {
-      await prisma.courseClass
-        .delete({ where: { id: courseClassId } })
+    if (batchId) {
+      await prisma.batch
+        .delete({ where: { id: batchId } })
         .catch(() => {});
     }
     if (classSectionId) {
@@ -153,9 +152,6 @@ describe('Education OS Administrative Modules (e2e)', () => {
     if (programId) {
       await prisma.program.delete({ where: { id: programId } }).catch(() => {});
     }
-    if (campusId) {
-      await prisma.campus.delete({ where: { id: campusId } }).catch(() => {});
-    }
     if (regularUserId) {
       await prisma.userRole
         .deleteMany({ where: { userId: regularUserId } })
@@ -169,49 +165,11 @@ describe('Education OS Administrative Modules (e2e)', () => {
   });
 
   describe('Institution Module & RBAC', () => {
-    it('should deny a regular user from creating a campus', async () => {
-      await request(app.getHttpServer())
-        .post('/api/campuses')
-        .set('Authorization', `Bearer ${regularUserToken}`)
-        .send({
-          name: 'Regular Denied Campus',
-        })
-        .expect(403);
-    });
-
-    it('should allow super admin to create a campus', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/api/campuses')
-        .set('Authorization', `Bearer ${superAdminToken}`)
-        .send({
-          name: 'Greenwood Campus',
-          representative: 'Dr. Jane Smith',
-        })
-        .expect(201);
-
-      const body = res.body as { data: { id: string; name: string } };
-      expect(body.data).toHaveProperty('id');
-      expect(body.data.name).toBe('Greenwood Campus');
-      campusId = body.data.id;
-    });
-
-    it('should allow all authenticated users to read campuses', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/api/campuses')
-        .set('Authorization', `Bearer ${regularUserToken}`)
-        .expect(200);
-
-      const body = res.body as { data: { data: unknown[] } };
-      expect(body).toHaveProperty('data');
-      expect(body.data.data.length).toBeGreaterThan(0);
-    });
-
     it('should deny a regular user from creating a program', async () => {
       await request(app.getHttpServer())
         .post('/api/programs')
         .set('Authorization', `Bearer ${regularUserToken}`)
         .send({
-          campusId,
           name: 'Computer Science',
           code: 'CS101',
         })
@@ -223,7 +181,6 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .post('/api/programs')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          campusId,
           name: 'Software Engineering',
           code: 'SE-BSC',
         })
@@ -304,7 +261,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
 
     it('should allow admin to create a course class under a term', async () => {
       const res = await request(app.getHttpServer())
-        .post('/api/course-classes')
+        .post('/api/batches')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
           termId,
@@ -314,8 +271,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .expect(201);
 
       const body = res.body as { data: { id: string } };
-      courseClassId = body.data.id;
-      expect(courseClassId).toBeDefined();
+      batchId = body.data.id;
+      expect(batchId).toBeDefined();
     });
   });
 
@@ -381,16 +338,16 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
           studentProfileId,
-          courseClassId,
+          batchId,
           status: 'ENROLLED',
         })
         .expect(201);
 
       const body = res.body as {
-        data: { studentProfileId: string; courseClassId: string };
+        data: { studentProfileId: string; batchId: string };
       };
       expect(body.data.studentProfileId).toBe(studentProfileId);
-      expect(body.data.courseClassId).toBe(courseClassId);
+      expect(body.data.batchId).toBe(batchId);
     });
   });
 

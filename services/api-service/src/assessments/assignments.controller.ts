@@ -100,15 +100,15 @@ export class AssignmentsController {
     });
   }
 
-  @Get('classes/:id/assignments')
+  @Get('batches/:id/assignments')
   @RequirePermissions({ action: 'read', subject: 'Assessment' })
-  async listClassAssignments(
+  async listBatchAssignments(
     @Param('id') id: string,
     @Query() query: ListAssignmentsQueryDto,
   ) {
     return this.assignmentsService.listAssignments({
       ...query,
-      classSectionId: id,
+      batchId: id,
     });
   }
 }

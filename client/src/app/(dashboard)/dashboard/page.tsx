@@ -10,7 +10,6 @@ import {
   CreditCard,
   FileText,
   Plus,
-  School,
   Sparkles,
   TrendingUp,
   UserCheck,
@@ -22,13 +21,11 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  useGetCampusesQuery,
   useGetDashboardSnapshotQuery,
   useGetProgramsQuery,
 } from "@/features/dashboard/dashboardApi";
 
 import { ChartAreaInteractive } from "./components/chart-area-interactive";
-import { ChartBarEnrollment } from "./components/chart-bar-enrollment";
 import { ChartBarHomework } from "./components/chart-bar-homework";
 import { ChartDonutAttendance } from "./components/chart-donut-attendance";
 
@@ -39,14 +36,12 @@ export default function DashboardOverview() {
   );
 
   // Queries
-  const { data: campusesData } = useGetCampusesQuery();
   const { data: programsData } = useGetProgramsQuery();
 
   const { data: snapshot, isLoading: isLoadingSnapshot } = useGetDashboardSnapshotQuery(
     selectedDate ? { date: selectedDate } : undefined,
   );
 
-  const totalCampuses = campusesData?.total ?? campusesData?.items?.length ?? 24;
   const totalPrograms = programsData?.total ?? programsData?.items?.length ?? 0;
 
   // Loading skeleton
@@ -89,9 +84,9 @@ export default function DashboardOverview() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/campuses">
+          <Link href="/programs/create">
             <Button className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-foreground/90 active:scale-98">
-              <Plus className="h-4 w-4" /> Add Campus
+              <Plus className="h-4 w-4" /> Add Program
             </Button>
           </Link>
         </div>
@@ -192,28 +187,6 @@ export default function DashboardOverview() {
 
       {/* Admin Central static Metrics Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Centers / Campuses */}
-        <Card className="overflow-hidden rounded-2xl border border-border/60 shadow-[0_2px_8px_rgba(0,0,0,0.015)] transition-all hover:shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div className="space-y-1">
-              <CardDescription className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                Centers / Campuses
-              </CardDescription>
-              <CardTitle className="font-display text-2xl font-bold text-foreground">
-                {totalCampuses} Active
-              </CardTitle>
-            </div>
-            <div className="rounded-xl bg-muted p-3 text-foreground">
-              <School className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="flex items-center gap-1 text-[11px] font-semibold text-success">
-              <TrendingUp className="h-3.5 w-3.5" /> +1 new this month
-            </p>
-          </CardContent>
-        </Card>
-
         {/* Students */}
         <Card className="overflow-hidden rounded-2xl border border-border/60 shadow-[0_2px_8px_rgba(0,0,0,0.015)] transition-all hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -292,9 +265,6 @@ export default function DashboardOverview() {
           <ChartBarHomework />
         </div>
         <ChartDonutAttendance />
-        <div className="md:col-span-2 lg:col-span-3">
-          <ChartBarEnrollment />
-        </div>
       </div>
 
       {/* Admin Dashboard Operations items */}

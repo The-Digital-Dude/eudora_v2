@@ -1,21 +1,23 @@
-﻿"use client";
+"use client";
 
+import { type ColumnDef } from "@tanstack/react-table";
 import { Mail, Phone, Plus, Search, Trash2, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { ListPagination } from "@/components/list-pagination";
+import { DataTable, SortableHeader } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useDeleteLeadMutation, useGetLeadsQuery } from "@/features/dashboard/dashboardApi";
+import { type Lead, useDeleteLeadMutation, useGetLeadsQuery } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
-
-const PAGE_SIZE = 20;
 
 export default function LeadsPage() {
   const router = useRouter();
-  const { values, setValue } = useListQueryState({ search: "", page: 1 }, { pageKey: "page" });
+  const { values, setValue, setValues } = useListQueryState(
+    { search: "", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
+    { pageKey: "page" },
+  );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
     setValue("search", next),
   );
@@ -23,8 +25,10 @@ export default function LeadsPage() {
   // RTK Queries & Mutations
   const { data: leadsData, isLoading } = useGetLeadsQuery({
     page: values.page,
-    limit: PAGE_SIZE,
+    limit: values.pageSize,
     search: values.search || undefined,
+    sortBy: values.sortBy || undefined,
+    sortOrder: values.sortOrder,
   });
 
   // Pipeline metrics describe the whole funnel, so they're counted server-side rather than derived
@@ -53,9 +57,83 @@ export default function LeadsPage() {
   const enrolledCount = enrolledLeadsMeta?.total ?? 0;
   const conversionRate = totalLeads > 0 ? Math.round((enrolledCount / totalLeads) * 100) : 0;
 
-  // Rows for the current page — the server has already applied the search.
+  // Rows for the current page — the server has already applied search, sort, and pagination.
   const filteredLeads = leadsData?.items || [];
   const totalMatching = leadsData?.total ?? 0;
+
+  const columns: ColumnDef<Lead, any>[] = [
+    {
+      accessorKey: "name",
+      header: ({ column }) => <SortableHeader column={column} label="Name" />,
+      cell: ({ row }) => (
+        <div>
+          <p className="text-xs font-semibold text-foreground">{row.original.name}</p>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-0.5">
+              <Mail className="h-3 w-3" /> {row.original.email}
+            </span>
+            {row.original.phone && (
+              <span className="flex items-center gap-0.5">
+                | <Phone className="h-3 w-3" /> {row.original.phone}
+              </span>
+            )}
+          </p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "source",
+      header: ({ column }) => <SortableHeader column={column} label="Source" />,
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">{row.original.source}</span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => <SortableHeader column={column} label="Status" />,
+      cell: ({ row }) => {
+        const status = row.original.status;
+        return (
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+              status === "Enrolled"
+                ? "border border-success/20 bg-success/10 text-success"
+                : status === "New"
+                  ? "border border-primary/20 bg-primary/10 text-primary"
+                  : status === "Diagnostic Scheduled"
+                    ? "border border-warning/20 bg-warning/10 text-warning"
+                    : "border border-border bg-muted text-muted-foreground"
+            }`}
+          >
+            {status}
+          </span>
+        );
+      },
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Actions
+        </span>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteLead(row.original.id);
+            }}
+            variant="outline"
+            className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -133,107 +211,22 @@ export default function LeadsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">Name</th>
-                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">Source</th>
-                <th className="pb-3 text-[10px] font-bold text-muted-foreground uppercase">Status</th>
-                <th className="pb-3 text-right text-[10px] font-bold text-muted-foreground uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                [...Array(3)].map((_, i) => (
-                  <tr key={i} className="border-b border-border/30">
-                    <td className="py-3">
-                      <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-3">
-                      <div className="h-4 w-16 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-3">
-                      <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-3">
-                      <div className="ml-auto h-4 w-10 animate-pulse rounded bg-muted" />
-                    </td>
-                  </tr>
-                ))
-              ) : filteredLeads.length > 0 ? (
-                filteredLeads.map((lead: any) => (
-                  <tr
-                    key={lead.id}
-                    onClick={() => router.push(`/leads/${lead.id}`)}
-                    className="cursor-pointer border-b border-border/30 transition-colors last:border-0 hover:bg-muted/50"
-                  >
-                    <td className="py-3">
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">{lead.name}</p>
-                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
-                          <span className="flex items-center gap-0.5">
-                            <Mail className="h-3 w-3" /> {lead.email}
-                          </span>
-                          {lead.phone && (
-                            <span className="flex items-center gap-0.5">
-                              | <Phone className="h-3 w-3" /> {lead.phone}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="py-3 text-xs text-muted-foreground">{lead.source}</td>
-                    <td className="py-3 text-xs">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          lead.status === "Enrolled"
-                            ? "border border-success/20 bg-success/10 text-success"
-                            : lead.status === "New"
-                              ? "border border-primary/20 bg-primary/10 text-primary"
-                              : lead.status === "Diagnostic Scheduled"
-                                ? "border border-warning/20 bg-warning/10 text-warning"
-                                : "border border-border bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {lead.status}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteLead(lead.id);
-                          }}
-                          variant="outline"
-                          className="h-8 rounded-lg border-destructive/20 p-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="py-8 text-center text-xs font-medium text-muted-foreground">
-                    No leads listed. Click &quot;Add Lead&quot; to register prospective interests.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <ListPagination
+        <DataTable
+          columns={columns}
+          data={filteredLeads}
+          isLoading={isLoading}
           page={values.page}
-          pageSize={PAGE_SIZE}
+          pageSize={values.pageSize}
           total={totalMatching}
           onPageChange={(next) => setValue("page", next)}
-          label="lead"
+          onPageSizeChange={(size) => setValue("pageSize", size)}
+          paginationLabel="lead"
+          sortBy={values.sortBy}
+          sortOrder={values.sortOrder as "asc" | "desc"}
+          onSortChange={(sortBy, sortOrder) => setValues({ sortBy, sortOrder })}
+          onRowClick={(lead) => router.push(`/leads/${lead.id}`)}
+          emptyTitle="No leads listed"
+          emptyDescription='Click "Add Lead" to register prospective interests.'
         />
       </Card>
     </div>

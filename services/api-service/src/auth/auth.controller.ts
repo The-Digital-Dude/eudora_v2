@@ -42,7 +42,7 @@ export class AuthController {
   ) {
     const result = await this.authService.register(dto);
     setAuthCookies(res, result.tokens);
-    return result.user;
+    return { ...result.user, csrfToken: result.tokens.csrfToken };
   }
 
   @Public()
@@ -57,7 +57,7 @@ export class AuthController {
     const ipAddress = req.ip || null;
     const result = await this.authService.login(dto, userAgent, ipAddress);
     setAuthCookies(res, result.tokens);
-    return result.user;
+    return { ...result.user, csrfToken: result.tokens.csrfToken };
   }
 
   @Public()
@@ -76,7 +76,7 @@ export class AuthController {
       ipAddress,
     );
     setAuthCookies(res, result.tokens);
-    return result.user;
+    return { ...result.user, csrfToken: result.tokens.csrfToken };
   }
 
   /**
@@ -162,7 +162,7 @@ export class AuthController {
       ipAddress,
     );
     setAuthCookies(res, result.tokens);
-    return result.user;
+    return { ...result.user, csrfToken: result.tokens.csrfToken };
   }
 
   @Public()

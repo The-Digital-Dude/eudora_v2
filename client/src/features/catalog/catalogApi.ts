@@ -1,5 +1,27 @@
 import { authApi } from "../auth/authApi";
 
+export interface MyLiveSession {
+  id: string;
+  batchId: string;
+  moduleItemId: string | null;
+  topic: string | null;
+  date: string;
+  startTime: string | null;
+  endTime: string | null;
+  status: "SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED";
+  provider: "NONE" | "ZOOM";
+  joinUrl: string | null;
+  cancelledAt: string | null;
+  batch?: { id: string; name: string; code: string };
+  teacher?: { id: string; firstName: string; lastName: string } | null;
+}
+
+/** Why there is no session to show, when `session` is null. */
+export type MyLiveSessionReason =
+  | "NOT_A_STUDENT"
+  | "NOT_IN_A_BATCH"
+  | "NOT_SCHEDULED";
+
 // ─── Type Definitions ─────────────────────────────────────────────────────────
 
 export interface LearningSubject {
@@ -12,7 +34,13 @@ export interface LearningSubject {
   status: string;
 }
 
-export type ModuleItemKind = "VIDEO" | "READING" | "DISCUSSION" | "ASSESSMENT";
+export type ModuleItemKind =
+  | "VIDEO"
+  | "READING"
+  | "DISCUSSION"
+  | "ASSESSMENT"
+  /** Curriculum slot for a live session; the meeting itself is a BatchSession. */
+  | "LIVE_CLASS";
 
 export interface ModuleItem {
   id: string;
@@ -21,10 +49,15 @@ export interface ModuleItem {
   title: string;
   sortOrder: number;
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  /** Null when the content is entitlement-locked — the server withholds the
+   * body but still returns the row so the outline stays visible. */
   videoUrl: string | null;
   videoDurationSeconds: number | null;
   readingContent: string | null;
   assessmentId: string | null;
+  isFreePreview: boolean;
+  /** True when this item's body was withheld for lack of an entitlement. */
+  isContentLocked: boolean;
   isDone: boolean;
 }
 
@@ -86,6 +119,21 @@ export interface CourseSummary {
 
 export interface CourseDetail extends Omit<CourseSummary, "_count"> {
   concepts: CourseConcept[];
+  /** Whether the viewer may consume this course's content. Staff always true. */
+  isEntitled: boolean;
+}
+
+// Deliberately narrower than CourseSummary — mirrors the exact fields the
+// public, unauthenticated /catalog/public/courses select returns.
+export interface PublicCourseSummary {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  estimatedHours: number | null;
+  gradeBand: string | null;
+  learningSubject: { id: string; name: string; code: string };
+  _count: { concepts: number };
 }
 
 export interface LearningPathSummary {
@@ -165,12 +213,128 @@ export const catalogApi = authApi.injectEndpoints({
     } as any),
 
     // Courses (content groupings of chapters/concepts)
-    getCourses: builder.query<CourseSummary[], { subjectId?: string } | void>({
+    getCourses: builder.query<
+      { items: CourseSummary[]; total: number },
+      | {
+          subjectId?: string;
+          page?: number;
+          limit?: number;
+          search?: string;
+          sortBy?: string;
+          sortOrder?: string;
+        }
+      | void
+    >({
       query: (params: any) => {
-        const q = params?.subjectId ? `?subjectId=${params.subjectId}` : "";
-        return `/catalog/courses${q}`;
+        const q = new URLSearchParams();
+        if (params?.subjectId) q.set("subjectId", params.subjectId);
+        if (params?.page) q.set("page", String(params.page));
+        if (params?.limit) q.set("limit", String(params.limit));
+        if (params?.search) q.set("search", params.search);
+        if (params?.sortBy) {
+          q.set("sortBy", params.sortBy);
+          q.set("sortOrder", params.sortOrder ?? "asc");
+        }
+        const query = q.toString();
+        return `/catalog/courses${query ? `?${query}` : ""}`;
       },
       providesTags: ["Courses"],
+    } as any),
+
+    // Anonymous course search for the public marketing site (no auth cookie
+    // required — hits /catalog/public/courses, which only ever returns
+    // published courses with no pricing/internal fields).
+    getPublicCourses: builder.query<
+      { items: PublicCourseSummary[]; total: number; page: number; pageSize: number },
+      { search?: string; page?: number; limit?: number } | void
+    >({
+      query: (params: any) => {
+        const q = new URLSearchParams();
+        if (params?.search) q.set("search", params.search);
+        if (params?.page) q.set("page", String(params.page));
+        if (params?.limit) q.set("limit", String(params.limit));
+        const query = q.toString();
+        return `/catalog/public/courses${query ? `?${query}` : ""}`;
+      },
+    } as any),
+
+    // Course teaching staff — a plain many-to-many, which is all that
+    // "one course, many teachers" ever needed.
+    getCourseTeachers: builder.query<
+      Array<{
+        role: string;
+        assignedAt: string;
+        teacherProfile: {
+          id: string;
+          fullName: string;
+          specialization: string | null;
+          status: string;
+        };
+      }>,
+      string
+    >({
+      query: (courseId: any) => `/catalog/courses/${courseId}/teachers`,
+      providesTags: ["CourseDetail"],
+    } as any),
+
+    attachCourseTeacher: builder.mutation<
+      unknown,
+      { courseId: string; teacherProfileId: string; role?: string }
+    >({
+      query: ({ courseId, ...body }: any) => ({
+        url: `/catalog/courses/${courseId}/teachers`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["CourseDetail"],
+    } as any),
+
+    detachCourseTeacher: builder.mutation<
+      unknown,
+      { courseId: string; teacherProfileId: string }
+    >({
+      query: ({ courseId, teacherProfileId }: any) => ({
+        url: `/catalog/courses/${courseId}/teachers/${teacherProfileId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["CourseDetail"],
+    } as any),
+
+    // Slug -> id resolution for checkout. The public SKU pages link with a
+    // slug (it is the indexable URL), while the billing API keys off ids.
+    getPublicProgramBySlug: builder.query<
+      {
+        id: string;
+        name: string;
+        slug: string;
+        shortDescription: string | null;
+        priceOneTimeCents: number | null;
+        priceMonthlyCents: number | null;
+        installmentCount: number | null;
+        currency: string;
+        deliveryMode: string;
+        courses: Array<{ id: string; title: string }>;
+      },
+      string
+    >({
+      query: (slug: any) => `/catalog/public/programs/${slug}`,
+    } as any),
+
+    getPublicCourseBySlug: builder.query<
+      {
+        id: string;
+        title: string;
+        slug: string;
+        description: string | null;
+        priceOneTimeCents: number | null;
+        priceMonthlyCents: number | null;
+        installmentCount: number | null;
+        currency: string;
+        deliveryMode: string;
+      },
+      string
+    >({
+      query: (slug: any) => `/catalog/public/courses/${slug}`,
     } as any),
 
     getCourseDetail: builder.query<CourseDetail, string>({
@@ -302,6 +466,13 @@ export const catalogApi = authApi.injectEndpoints({
       query: (moduleItemId: string) => `/catalog/module-items/${moduleItemId}/my-assignment`,
     } as any),
 
+    getMySessionForItem: builder.query<
+      { session: MyLiveSession | null; reason: MyLiveSessionReason | null },
+      string
+    >({
+      query: (moduleItemId: string) => `/catalog/module-items/${moduleItemId}/my-session`,
+    } as any),
+
     getDiscussion: builder.query<DiscussionThread, string>({
       query: (moduleItemId: string) => `/catalog/module-items/${moduleItemId}/discussion`,
       providesTags: (_result: any, _err: any, id: any) => [{ type: "Discussion" as any, id }],
@@ -324,6 +495,12 @@ export const {
   useGetLearningSubjectsQuery,
   useCreateLearningSubjectMutation,
   useGetCoursesQuery,
+  useGetPublicCoursesQuery,
+  useGetCourseTeachersQuery,
+  useAttachCourseTeacherMutation,
+  useDetachCourseTeacherMutation,
+  useGetPublicProgramBySlugQuery,
+  useGetPublicCourseBySlugQuery,
   useGetCourseDetailQuery,
   useCreateCourseMutation,
   useUpdateCourseMutation,
@@ -338,6 +515,7 @@ export const {
   useDeleteModuleItemMutation,
   useUpdateModuleItemProgressMutation,
   useGetMyAssignmentForItemQuery,
+  useGetMySessionForItemQuery,
   useGetDiscussionQuery,
   useAddDiscussionPostMutation,
 } = catalogApi;

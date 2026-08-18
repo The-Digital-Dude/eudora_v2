@@ -30,7 +30,7 @@ export class ListAssessmentsQueryDto {
 
   @IsOptional()
   @IsUUID()
-  levelId?: string;
+  classId?: string;
 
   @IsOptional()
   @IsUUID()
@@ -51,6 +51,14 @@ export class ListAssessmentsQueryDto {
   @IsOptional()
   @IsString()
   pageSize?: string;
+
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @IsOptional()
+  @IsString()
+  sortOrder?: string;
 }
 
 export class LookupQueryDto {
@@ -114,7 +122,7 @@ export class CreateAssessmentDto {
   subjectId: string;
 
   @IsUUID()
-  levelId: string;
+  classId: string;
 
   @IsOptional()
   @IsUUID()
@@ -163,7 +171,7 @@ export class UpdateAssessmentDto {
 
   @IsOptional()
   @IsUUID()
-  levelId?: string;
+  classId?: string;
 
   @IsOptional()
   @IsUUID()
@@ -226,7 +234,7 @@ export class ListQuestionsQueryDto {
 
   @IsOptional()
   @IsUUID()
-  levelId?: string;
+  classId?: string;
 
   @IsOptional()
   @IsEnum(['mcq', 'short_answer', 'numeric', 'written'])
@@ -247,6 +255,14 @@ export class ListQuestionsQueryDto {
   @IsOptional()
   @IsString()
   pageSize?: string;
+
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @IsOptional()
+  @IsString()
+  sortOrder?: string;
 }
 
 export class CreateQuestionDto {
@@ -256,7 +272,7 @@ export class CreateQuestionDto {
 
   @IsOptional()
   @IsUUID()
-  levelId?: string | null;
+  classId?: string | null;
 
   @IsEnum(['mcq', 'short_answer', 'numeric', 'written'])
   questionType: string;
@@ -308,7 +324,7 @@ export class UpdateQuestionDto {
 
   @IsOptional()
   @IsUUID()
-  levelId?: string | null;
+  classId?: string | null;
 
   @IsOptional()
   @IsEnum(['mcq', 'short_answer', 'numeric', 'written'])
@@ -382,9 +398,10 @@ export class ListAssignmentsQueryDto {
   @IsUUID()
   studentProfileId?: string;
 
+  /** Matches assignments held by anyone enrolled in this batch. */
   @IsOptional()
   @IsUUID()
-  classSectionId?: string;
+  batchId?: string;
 
   @IsOptional()
   @IsEnum([
@@ -414,9 +431,10 @@ export class CreateAssignmentDto {
   @IsUUID()
   studentProfileId?: string | null;
 
+  /** Bulk-assign target: every actively enrolled student in this batch. */
   @IsOptional()
   @IsUUID()
-  classSectionId?: string | null;
+  batchId?: string | null;
 
   @IsOptional()
   @IsUUID()

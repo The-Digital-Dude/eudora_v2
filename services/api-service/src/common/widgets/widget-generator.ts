@@ -248,6 +248,11 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
     };
   }
 
+  // Retired widget types — intentionally unimplemented, not an oversight. Both
+  // enum values are kept (in Prisma and in the DTO) so existing rows stay
+  // readable, but neither has a generator or a grader: the server always
+  // resolves them to UNSUPPORTED, and widget-grader.ts scores UNSUPPORTED as
+  // ungraded. Don't wire these up without deciding the product question first.
   if (widgetType === 'DRAG_AND_DROP_LABELS' || widgetType === 'CODE_PLAYGROUND') {
     return { displayConfig: rawConfig, resolvedAnswer: { widgetType: 'UNSUPPORTED' } };
   }

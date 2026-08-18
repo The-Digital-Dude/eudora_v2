@@ -1,6 +1,7 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import {
   CreateAssessmentDto,
   CreateLookupDto,
@@ -16,12 +17,10 @@ import {
   enumFilter,
   enumValue,
   idFilter,
-  levelSelect,
   lookupSelect,
   normalizeCode,
   normalizePagination,
   normalizeSections,
-  nullableNumber,
   numberFilter,
   requireRecord,
   requireText,
@@ -29,6 +28,13 @@ import {
   toPage,
   audit,
 } from './assessments.common';
+
+const ASSESSMENT_SORTABLE_FIELDS = [
+  'title',
+  'status',
+  'totalMarks',
+  'createdAt',
+] as const;
 
 @Injectable()
 export class AssessmentSetupService {
@@ -102,92 +108,29 @@ export class AssessmentSetupService {
     return record;
   }
 
-  async listLevels(query: LookupQueryDto = {}) {
-    const pagination = normalizePagination(query);
-    const where = {
-      ...searchFilter(query.search, ['code', 'name']),
-      ...enumFilter('status', query.status, ['active', 'inactive', 'archived']),
-    };
-    const [items, total] = await Promise.all([
-      this.prisma.level.findMany({
-        where,
-        orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
-        skip: pagination.skip,
-        take: pagination.pageSize,
-        select: levelSelect,
-      }),
-      this.prisma.level.count({ where }),
-    ]);
-
-    return toPage(items, total, pagination);
-  }
-
-  async createLevel(input: CreateLookupDto, actorUserId: string) {
-    const code = normalizeCode(input.code);
-    await this.assertLevelCodeAvailable(code);
-    const record = await this.prisma.level.create({
-      data: {
-        code,
-        name: requireText(input.name, 'name'),
-        sortOrder: input.sortOrder ?? 0,
-      },
-      select: levelSelect,
-    });
-    await audit(
-      this.prisma,
-      actorUserId,
-      'assessments.level.created',
-      'level',
-      record.id,
-    );
-    return record;
-  }
-
-  async updateLevel(id: string, input: UpdateLookupDto, actorUserId: string) {
-    const data: Prisma.LevelUpdateInput = {};
-    if (input.name !== undefined) {
-      data.name = requireText(input.name, 'name');
-    }
-    if (input.status !== undefined) {
-      data.status = enumValue(
-        input.status,
-        ['active', 'inactive', 'archived'],
-        'status',
-      );
-    }
-    if (input.sortOrder !== undefined) {
-      data.sortOrder = nullableNumber(input.sortOrder, 'sortOrder') ?? 0;
-    }
-    const record = await this.prisma.level.update({
-      where: { id },
-      data,
-      select: levelSelect,
-    });
-    await audit(
-      this.prisma,
-      actorUserId,
-      'assessments.level.updated',
-      'level',
-      record.id,
-    );
-    return record;
-  }
-
   async listAssessments(query: ListAssessmentsQueryDto = {}) {
     const pagination = normalizePagination(query);
     const where = {
       ...searchFilter(query.search, ['title']),
       ...idFilter('assessmentTypeId', query.assessmentTypeId),
       ...idFilter('subjectId', query.subjectId),
-      ...idFilter('levelId', query.levelId),
+      ...idFilter('classId', query.classId),
       ...idFilter('termId', query.termId),
       ...numberFilter('weekNumber', query.weekNumber),
       ...enumFilter('status', query.status, ['draft', 'published', 'archived']),
     };
+    const orderBy = resolveSort(
+      query.sortBy,
+      query.sortOrder,
+      ASSESSMENT_SORTABLE_FIELDS,
+      'createdAt',
+      'desc',
+    );
+
     const [items, total] = await Promise.all([
       this.prisma.assessment.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: pagination.skip,
         take: pagination.pageSize,
         select: assessmentSelect,
@@ -221,7 +164,7 @@ export class AssessmentSetupService {
           'assessmentTypeId',
         ),
         subjectId: requireText(input.subjectId, 'subjectId'),
-        levelId: requireText(input.levelId, 'levelId'),
+        classId: requireText(input.classId, 'classId'),
         termId: input.termId ? requireText(input.termId, 'termId') : null,
         weekNumber: input.weekNumber ?? null,
         title: requireText(input.title, 'title'),
@@ -275,8 +218,8 @@ export class AssessmentSetupService {
       if (input.subjectId !== undefined) {
         data.subjectId = requireText(input.subjectId, 'subjectId');
       }
-      if (input.levelId !== undefined) {
-        data.levelId = requireText(input.levelId, 'levelId');
+      if (input.classId !== undefined) {
+        data.classId = requireText(input.classId, 'classId');
       }
       if (input.termId !== undefined) {
         data.termId = input.termId ? requireText(input.termId, 'termId') : null;
@@ -369,16 +312,6 @@ export class AssessmentSetupService {
     });
     if (existing) {
       throw new ConflictException('Assessment type code already exists');
-    }
-  }
-
-  private async assertLevelCodeAvailable(code: string): Promise<void> {
-    const existing = await this.prisma.level.findUnique({
-      where: { code },
-      select: { id: true },
-    });
-    if (existing) {
-      throw new ConflictException('Assessment level code already exists');
     }
   }
 }

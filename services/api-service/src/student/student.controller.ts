@@ -22,8 +22,6 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
-import { PlanLimitGuard } from '../billing/guards/plan-limit.guard';
-import { CheckPlanLimit } from '../billing/decorators/check-plan-limit.decorator';
 
 @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
 @Controller()
@@ -64,6 +62,8 @@ export class StudentController {
     @Query('status') status?: string,
     @Query('includeArchived') includeArchived?: string,
     @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
@@ -73,6 +73,8 @@ export class StudentController {
       status,
       includeArchived === 'true',
       search,
+      sortBy,
+      sortOrder,
     );
   }
 
@@ -111,8 +113,6 @@ export class StudentController {
   @Post('student-placements')
   @Roles('ADMIN', 'SUPER_ADMIN')
   @RequirePermissions({ action: 'manage', subject: 'Student' })
-  @UseGuards(PlanLimitGuard)
-  @CheckPlanLimit('students')
   async createPlacement(@Body() dto: CreatePlacementDto) {
     return this.studentService.createPlacement(dto);
   }
@@ -189,7 +189,7 @@ export class StudentController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('studentProfileId') studentProfileId?: string,
-    @Query('courseClassId') courseClassId?: string,
+    @Query('batchId') batchId?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
@@ -197,7 +197,7 @@ export class StudentController {
       pageNum,
       limitNum,
       studentProfileId,
-      courseClassId,
+      batchId,
     );
   }
 

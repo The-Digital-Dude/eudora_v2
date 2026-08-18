@@ -3,33 +3,25 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { LocalStorageService } from './local-storage.service';
-import { S3StorageService } from './s3-storage.service';
 import { StorageProvider } from './storage.provider';
 import * as path from 'path';
 import * as fs from 'fs';
 
 @Injectable()
 export class UploadsService {
+  // Local disk is the only storage backend. An S3 provider used to be selected
+  // here via STORAGE_PROVIDER, but it never uploaded anything — the AWS SDK was
+  // never installed and the service returned a fabricated URL.
+  private readonly providerType = 'LOCAL';
   private readonly storageProvider: StorageProvider;
-  private readonly providerType: string;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
     private readonly localStorageService: LocalStorageService,
-    private readonly s3StorageService: S3StorageService,
   ) {
-    this.providerType = this.configService
-      .get<string>('STORAGE_PROVIDER', 'LOCAL')
-      .toUpperCase();
-    if (this.providerType === 'S3') {
-      this.storageProvider = this.s3StorageService;
-    } else {
-      this.storageProvider = this.localStorageService;
-    }
+    this.storageProvider = this.localStorageService;
   }
 
   async uploadFile(file: any, userId: string) {
@@ -75,15 +67,10 @@ export class UploadsService {
       throw new ForbiddenException('Not authorized to delete this file');
     }
 
-    // Delete from storage provider
-    if (fileUpload.provider === 'S3') {
-      await this.s3StorageService.deleteFile(
-        fileUpload.key,
-        fileUpload.bucket || undefined,
-      );
-    } else {
-      await this.localStorageService.deleteFile(fileUpload.key);
-    }
+    // Delete from storage provider. Rows written under the old 'S3' provider
+    // point at files that were never actually uploaded, so this is a no-op for
+    // them — deleteFile skips keys with no file on disk.
+    await this.localStorageService.deleteFile(fileUpload.key);
 
     // Delete from db
     await this.prisma.fileUpload.delete({

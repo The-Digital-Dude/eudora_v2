@@ -580,36 +580,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/course-classes": {
+    "/api/batches": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["AcademicController_findAllCourseClasses"];
+        get: operations["AcademicController_findAllBatches"];
         put?: never;
-        post: operations["AcademicController_createCourseClass"];
+        post: operations["AcademicController_createBatch"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/course-classes/{id}": {
+    "/api/batches/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["AcademicController_findCourseClassById"];
+        get: operations["AcademicController_findBatchById"];
         put?: never;
         post?: never;
-        delete: operations["AcademicController_deleteCourseClass"];
+        delete: operations["AcademicController_deleteBatch"];
         options?: never;
         head?: never;
-        patch: operations["AcademicController_updateCourseClass"];
+        patch: operations["AcademicController_updateBatch"];
         trace?: never;
     };
     "/api/student-profiles/me": {
@@ -1124,7 +1124,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/attendance/sessions/course-class/{courseClassId}": {
+    "/api/attendance/sessions/batch/{batchId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1300,7 +1300,7 @@ export interface paths {
         patch: operations["HomeworkController_update"];
         trace?: never;
     };
-    "/api/homework/course-class/{courseClassId}": {
+    "/api/homework/batch/{batchId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1460,7 +1460,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/gradebook/course-class/{courseClassId}": {
+    "/api/gradebook/batch/{batchId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1524,7 +1524,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/gradebook/course-class/{courseClassId}/summary": {
+    "/api/gradebook/batch/{batchId}/summary": {
         parameters: {
             query?: never;
             header?: never;
@@ -3743,14 +3743,14 @@ export interface components {
             /** @enum {string} */
             status?: "ACTIVE" | "INACTIVE";
         };
-        CreateCourseClassDto: {
+        CreateBatchDto: {
             termId: string;
             name: string;
             code: string;
             /** @enum {string} */
             status?: "ACTIVE" | "INACTIVE";
         };
-        UpdateCourseClassDto: {
+        UpdateBatchDto: {
             termId?: string;
             name?: string;
             code?: string;
@@ -3803,7 +3803,7 @@ export interface components {
             /** Format: uuid */
             studentProfileId: string;
             /** Format: uuid */
-            courseClassId: string;
+            batchId: string;
             enrollmentDate?: string;
             /** @enum {string} */
             status?: "COMPLETED" | "ENROLLED" | "DROPPED";
@@ -3927,7 +3927,7 @@ export interface components {
             records: components["schemas"]["SingleDailyAttendanceDto"][];
         };
         CreateSessionDto: {
-            courseClassId: string;
+            batchId: string;
             date: string;
             startTime?: string;
             endTime?: string;
@@ -3944,7 +3944,7 @@ export interface components {
             records: components["schemas"]["SingleSessionAttendanceDto"][];
         };
         CreateHomeworkDto: {
-            courseClassId: string;
+            batchId: string;
             title: string;
             description?: string;
             dueDate: string;
@@ -3969,7 +3969,7 @@ export interface components {
         };
         CreateManualGradeDto: {
             studentProfileId: string;
-            courseClassId?: string;
+            batchId?: string;
             classSectionId?: string;
             termId?: string;
             title: string;
@@ -3992,7 +3992,7 @@ export interface components {
         };
         BulkUpsertGradeEntryDto: {
             studentProfileId: string;
-            courseClassId?: string;
+            batchId?: string;
             classSectionId?: string;
             termId?: string;
             title: string;
@@ -4432,7 +4432,7 @@ export interface components {
             /** Format: uuid */
             studentProfileId: string;
             /** Format: uuid */
-            courseClassId: string;
+            batchId: string;
             originalDate: string;
             reason?: string;
         };
@@ -4502,7 +4502,7 @@ export interface components {
             endTimeMinutes: number;
             room?: string;
             classSectionId: string;
-            courseClassId?: string;
+            batchId?: string;
             teacherProfileId?: string;
             notes?: string;
         };
@@ -4514,7 +4514,7 @@ export interface components {
             endTimeMinutes?: number;
             room?: string;
             classSectionId?: string;
-            courseClassId?: string;
+            batchId?: string;
             teacherProfileId?: string;
             /** @enum {string} */
             status?: "ACTIVE" | "CANCELLED";
@@ -4529,7 +4529,7 @@ export interface components {
             endTimeMinutes: number;
             room?: string;
             classSectionId: string;
-            courseClassId?: string;
+            batchId?: string;
             teacherProfileId?: string;
             notes?: string;
         };
@@ -5701,7 +5701,7 @@ export interface operations {
             };
         };
     };
-    AcademicController_findAllCourseClasses: {
+    AcademicController_findAllBatches: {
         parameters: {
             query?: {
                 page?: string;
@@ -5722,7 +5722,7 @@ export interface operations {
             };
         };
     };
-    AcademicController_createCourseClass: {
+    AcademicController_createBatch: {
         parameters: {
             query?: never;
             header?: never;
@@ -5731,7 +5731,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateCourseClassDto"];
+                "application/json": components["schemas"]["CreateBatchDto"];
             };
         };
         responses: {
@@ -5743,7 +5743,7 @@ export interface operations {
             };
         };
     };
-    AcademicController_findCourseClassById: {
+    AcademicController_findBatchById: {
         parameters: {
             query?: never;
             header?: never;
@@ -5764,7 +5764,7 @@ export interface operations {
             };
         };
     };
-    AcademicController_deleteCourseClass: {
+    AcademicController_deleteBatch: {
         parameters: {
             query?: never;
             header?: never;
@@ -5783,7 +5783,7 @@ export interface operations {
             };
         };
     };
-    AcademicController_updateCourseClass: {
+    AcademicController_updateBatch: {
         parameters: {
             query?: never;
             header?: never;
@@ -5794,7 +5794,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateCourseClassDto"];
+                "application/json": components["schemas"]["UpdateBatchDto"];
             };
         };
         responses: {
@@ -6068,7 +6068,7 @@ export interface operations {
                 page?: string;
                 limit?: string;
                 studentProfileId?: string;
-                courseClassId?: string;
+                batchId?: string;
             };
             header?: never;
             path?: never;
@@ -6941,7 +6941,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                courseClassId: string;
+                batchId: string;
             };
             cookie?: never;
         };
@@ -7174,7 +7174,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                courseClassId: string;
+                batchId: string;
             };
             cookie?: never;
         };
@@ -7405,7 +7405,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                courseClassId: string;
+                batchId: string;
             };
             cookie?: never;
         };
@@ -7489,7 +7489,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                courseClassId: string;
+                batchId: string;
             };
             cookie?: never;
         };

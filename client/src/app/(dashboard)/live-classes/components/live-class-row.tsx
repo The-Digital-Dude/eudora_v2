@@ -55,9 +55,11 @@ export function LiveClassRow({ session, onReschedule }: LiveClassRowProps) {
   return (
     <tr className="border-b border-border/30 transition-colors last:border-0 hover:bg-muted/50">
       <td className="py-3">
-        <p className="text-xs font-semibold text-foreground">{session.title}</p>
+        <p className="text-xs font-semibold text-foreground">
+          {session.topic ?? session.moduleItem?.title ?? "Untitled session"}
+        </p>
         <p className="text-[10px] text-muted-foreground">
-          {session.classSection?.name} ({session.classSection?.code})
+          {session.batch?.name} ({session.batch?.code})
         </p>
       </td>
       <td className="py-3">
@@ -69,19 +71,23 @@ export function LiveClassRow({ session, onReschedule }: LiveClassRowProps) {
       <td className="py-3 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1">
           <Calendar className="h-3 w-3" />
-          {new Date(session.scheduledStartAt).toLocaleDateString()}
+          {new Date(session.date).toLocaleDateString()}
         </span>
         <span className="mt-0.5 flex items-center gap-1">
           <Clock className="h-3 w-3" />
-          {new Date(session.scheduledStartAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          {session.startTime
+            ? new Date(session.startTime).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "—"}
           {" – "}
-          {new Date(session.scheduledEndAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          {session.endTime
+            ? new Date(session.endTime).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "—"}
         </span>
       </td>
       <td className="py-3">

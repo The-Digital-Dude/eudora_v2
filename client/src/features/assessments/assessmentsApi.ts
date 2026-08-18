@@ -31,7 +31,7 @@ export interface Assessment {
   id: string;
   assessmentTypeId: string;
   subjectId: string;
-  levelId: string;
+  classId: string;
   termId?: string | null;
   weekNumber?: number | null;
   title: string;
@@ -46,7 +46,7 @@ export interface Assessment {
   updatedAt: string;
   assessmentType?: { id: string; code: string; name: string };
   subject?: { id: string; code: string; name: string };
-  level?: { id: string; code: string; name: string };
+  class?: { id: string; code: string; name: string };
   term?: { id: string; name: string } | null;
   sections?: AssessmentSection[];
   questions?: AssessmentQuestion[];
@@ -113,10 +113,12 @@ export interface Attempt {
 export interface ListAssessmentsParams {
   search?: string;
   subjectId?: string;
-  levelId?: string;
+  classId?: string;
   status?: string;
   page?: number;
   pageSize?: number;
+  sortBy?: string;
+  sortOrder?: string;
 }
 
 export interface ListAssessmentsResponse {
@@ -129,7 +131,8 @@ export interface ListAssessmentsResponse {
 export interface CreateAssignmentPayload {
   assessmentId: string;
   studentProfileId?: string | null;
-  classSectionId?: string | null;
+  /** Bulk-assign: fans out to every actively enrolled student in the batch. */
+  batchId?: string | null;
   opensAt?: string;
   dueAt?: string;
 }
@@ -306,8 +309,15 @@ export const assessmentsApi = authApi.injectEndpoints({
       }),
       invalidatesTags: ["Attempts" as any],
     }),
-    getClassSections: builder.query<{ items: any[] }, void>({
-      query: () => "/class-sections?limit=100",
+    /**
+     * Bulk-assign target. Assignments are per-student; a batch is just the
+     * roster the fan-out reads from, via StudentCourseEnrollment.
+     */
+    getBatches: builder.query<{ items: any[] }, void>({
+      query: () => "/batches?limit=100",
+      transformResponse: (response: any) => ({
+        items: response?.data ?? response?.items ?? [],
+      }),
     }),
     getStudents: builder.query<{ items: any[] }, void>({
       query: () => "/student-profiles?limit=500",
@@ -342,7 +352,7 @@ export const {
   useSubmitAttemptMutation,
   useMarkAttemptMutation,
   useMarkStudentResponseMutation,
-  useGetClassSectionsQuery,
+  useGetBatchesQuery,
   useGetStudentsQuery,
   useGetTermsQuery,
   useGetAssignmentQuery,

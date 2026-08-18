@@ -2,16 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { LiveClassesService } from './live-classes.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { LiveClassStatus } from '@prisma/client';
+import { LiveClassStatus, ModuleItemKind } from '@prisma/client';
 
 describe('LiveClassesService', () => {
   let service: LiveClassesService;
 
   const mockPrismaService = {
-    classSection: {
+    batch: {
       findUnique: jest.fn(),
     },
-    liveClassSession: {
+    moduleItem: {
+      findUnique: jest.fn(),
+    },
+    batchSession: {
       create: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
@@ -21,11 +24,13 @@ describe('LiveClassesService', () => {
 
   const baseSession = {
     id: 'session-1',
-    classSectionId: 'section-1',
+    batchId: 'batch-1',
+    moduleItemId: null,
     teacherUserId: 'teacher-1',
-    title: 'Fractions Review',
-    scheduledStartAt: new Date('2026-07-08T10:00:00.000Z'),
-    scheduledEndAt: new Date('2026-07-08T11:00:00.000Z'),
+    topic: 'Fractions Review',
+    date: new Date('2026-07-08T00:00:00.000Z'),
+    startTime: new Date('2026-07-08T10:00:00.000Z'),
+    endTime: new Date('2026-07-08T11:00:00.000Z'),
     status: LiveClassStatus.SCHEDULED,
     provider: 'NONE',
     cancelledAt: null,
@@ -44,34 +49,35 @@ describe('LiveClassesService', () => {
   });
 
   describe('scheduleLiveClass', () => {
-    it('throws NotFoundException if the class section does not exist', async () => {
-      mockPrismaService.classSection.findUnique.mockResolvedValue(null);
+    it('throws NotFoundException if the batch does not exist', async () => {
+      mockPrismaService.batch.findUnique.mockResolvedValue(null);
 
       await expect(
         service.scheduleLiveClass(
           {
-            classSectionId: 'missing',
-            title: 'Test',
-            scheduledStartAt: '2026-07-08T10:00:00.000Z',
-            scheduledEndAt: '2026-07-08T11:00:00.000Z',
+            batchId: 'missing',
+            topic: 'Test',
+            startTime: '2026-07-08T10:00:00.000Z',
+            endTime: '2026-07-08T11:00:00.000Z',
           },
           'teacher-1',
         ),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('throws BadRequestException if scheduledEndAt is not after scheduledStartAt', async () => {
-      mockPrismaService.classSection.findUnique.mockResolvedValue({
-        id: 'section-1',
+    it('throws BadRequestException if endTime is not after startTime', async () => {
+      mockPrismaService.batch.findUnique.mockResolvedValue({
+        id: 'batch-1',
+        courseId: 'course-1',
       });
 
       await expect(
         service.scheduleLiveClass(
           {
-            classSectionId: 'section-1',
-            title: 'Test',
-            scheduledStartAt: '2026-07-08T11:00:00.000Z',
-            scheduledEndAt: '2026-07-08T10:00:00.000Z',
+            batchId: 'batch-1',
+            topic: 'Test',
+            startTime: '2026-07-08T11:00:00.000Z',
+            endTime: '2026-07-08T10:00:00.000Z',
           },
           'teacher-1',
         ),
@@ -79,39 +85,129 @@ describe('LiveClassesService', () => {
     });
 
     it('creates a SCHEDULED session with the given teacher as host', async () => {
-      mockPrismaService.classSection.findUnique.mockResolvedValue({
-        id: 'section-1',
+      mockPrismaService.batch.findUnique.mockResolvedValue({
+        id: 'batch-1',
+        courseId: 'course-1',
       });
-      mockPrismaService.liveClassSession.create.mockResolvedValue(
-        baseSession,
-      );
+      mockPrismaService.batchSession.create.mockResolvedValue(baseSession);
 
       const result = await service.scheduleLiveClass(
         {
-          classSectionId: 'section-1',
-          title: 'Fractions Review',
-          scheduledStartAt: '2026-07-08T10:00:00.000Z',
-          scheduledEndAt: '2026-07-08T11:00:00.000Z',
+          batchId: 'batch-1',
+          topic: 'Fractions Review',
+          startTime: '2026-07-08T10:00:00.000Z',
+          endTime: '2026-07-08T11:00:00.000Z',
         },
         'teacher-1',
       );
 
-      expect(mockPrismaService.liveClassSession.create).toHaveBeenCalledWith(
+      expect(mockPrismaService.batchSession.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            classSectionId: 'section-1',
+            batchId: 'batch-1',
             teacherUserId: 'teacher-1',
-            title: 'Fractions Review',
+            topic: 'Fractions Review',
+            // The DATE column is the day the meeting falls on, derived from
+            // the start instant.
+            date: new Date('2026-07-08T00:00:00.000Z'),
+            startTime: new Date('2026-07-08T10:00:00.000Z'),
+            endTime: new Date('2026-07-08T11:00:00.000Z'),
           }),
         }),
       );
       expect(result).toEqual(baseSession);
     });
+
+    it('rejects a module item that is not a LIVE_CLASS', async () => {
+      mockPrismaService.batch.findUnique.mockResolvedValue({
+        id: 'batch-1',
+        courseId: 'course-1',
+      });
+      mockPrismaService.moduleItem.findUnique.mockResolvedValue({
+        id: 'item-1',
+        kind: ModuleItemKind.VIDEO,
+        title: 'A video',
+        deletedAt: null,
+        concept: { courseId: 'course-1' },
+      });
+
+      await expect(
+        service.scheduleLiveClass(
+          {
+            batchId: 'batch-1',
+            moduleItemId: 'item-1',
+            startTime: '2026-07-08T10:00:00.000Z',
+            endTime: '2026-07-08T11:00:00.000Z',
+          },
+          'teacher-1',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects a module item belonging to a different course than the batch', async () => {
+      mockPrismaService.batch.findUnique.mockResolvedValue({
+        id: 'batch-1',
+        courseId: 'course-1',
+      });
+      mockPrismaService.moduleItem.findUnique.mockResolvedValue({
+        id: 'item-1',
+        kind: ModuleItemKind.LIVE_CLASS,
+        title: 'Plot a Triangle',
+        deletedAt: null,
+        concept: { courseId: 'course-2' },
+      });
+
+      await expect(
+        service.scheduleLiveClass(
+          {
+            batchId: 'batch-1',
+            moduleItemId: 'item-1',
+            startTime: '2026-07-08T10:00:00.000Z',
+            endTime: '2026-07-08T11:00:00.000Z',
+          },
+          'teacher-1',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("falls back to the module item's title when no topic is given", async () => {
+      mockPrismaService.batch.findUnique.mockResolvedValue({
+        id: 'batch-1',
+        courseId: 'course-1',
+      });
+      mockPrismaService.moduleItem.findUnique.mockResolvedValue({
+        id: 'item-1',
+        kind: ModuleItemKind.LIVE_CLASS,
+        title: 'Plot a Triangle',
+        deletedAt: null,
+        concept: { courseId: 'course-1' },
+      });
+      mockPrismaService.batchSession.create.mockResolvedValue(baseSession);
+
+      await service.scheduleLiveClass(
+        {
+          batchId: 'batch-1',
+          moduleItemId: 'item-1',
+          startTime: '2026-07-08T10:00:00.000Z',
+          endTime: '2026-07-08T11:00:00.000Z',
+        },
+        'teacher-1',
+      );
+
+      expect(mockPrismaService.batchSession.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            moduleItemId: 'item-1',
+            topic: 'Plot a Triangle',
+          }),
+        }),
+      );
+    });
   });
 
   describe('getLiveClassById', () => {
     it('throws NotFoundException if the session does not exist', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue(null);
+      mockPrismaService.batchSession.findUnique.mockResolvedValue(null);
 
       await expect(service.getLiveClassById('missing')).rejects.toThrow(
         NotFoundException,
@@ -121,61 +217,75 @@ describe('LiveClassesService', () => {
 
   describe('rescheduleLiveClass', () => {
     it('throws BadRequestException if the session is already CANCELLED', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue({
+      mockPrismaService.batchSession.findUnique.mockResolvedValue({
         ...baseSession,
         status: LiveClassStatus.CANCELLED,
       });
 
       await expect(
-        service.rescheduleLiveClass('session-1', { title: 'New title' }),
+        service.rescheduleLiveClass('session-1', { topic: 'New topic' }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException if the session is already ENDED', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue({
+      mockPrismaService.batchSession.findUnique.mockResolvedValue({
         ...baseSession,
         status: LiveClassStatus.ENDED,
       });
 
       await expect(
-        service.rescheduleLiveClass('session-1', { title: 'New title' }),
+        service.rescheduleLiveClass('session-1', { topic: 'New topic' }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException if the new window is invalid', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue(
-        baseSession,
-      );
+      mockPrismaService.batchSession.findUnique.mockResolvedValue(baseSession);
 
       await expect(
         service.rescheduleLiveClass('session-1', {
-          scheduledStartAt: '2026-07-08T12:00:00.000Z',
-          scheduledEndAt: '2026-07-08T11:00:00.000Z',
+          startTime: '2026-07-08T12:00:00.000Z',
+          endTime: '2026-07-08T11:00:00.000Z',
         }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('updates the session when SCHEDULED and the window is valid', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue(
-        baseSession,
-      );
-      mockPrismaService.liveClassSession.update.mockResolvedValue({
+      mockPrismaService.batchSession.findUnique.mockResolvedValue(baseSession);
+      mockPrismaService.batchSession.update.mockResolvedValue({
         ...baseSession,
-        title: 'Updated title',
+        topic: 'Updated topic',
       });
 
       const result = await service.rescheduleLiveClass('session-1', {
-        title: 'Updated title',
+        topic: 'Updated topic',
       });
 
-      expect(mockPrismaService.liveClassSession.update).toHaveBeenCalled();
-      expect(result.title).toBe('Updated title');
+      expect(mockPrismaService.batchSession.update).toHaveBeenCalled();
+      expect(result.topic).toBe('Updated topic');
+    });
+
+    it('moves the DATE column when the start instant moves to another day', async () => {
+      mockPrismaService.batchSession.findUnique.mockResolvedValue(baseSession);
+      mockPrismaService.batchSession.update.mockResolvedValue(baseSession);
+
+      await service.rescheduleLiveClass('session-1', {
+        startTime: '2026-07-09T10:00:00.000Z',
+        endTime: '2026-07-09T11:00:00.000Z',
+      });
+
+      expect(mockPrismaService.batchSession.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            date: new Date('2026-07-09T00:00:00.000Z'),
+          }),
+        }),
+      );
     });
   });
 
   describe('cancelLiveClass', () => {
     it('throws BadRequestException if already CANCELLED or ENDED', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue({
+      mockPrismaService.batchSession.findUnique.mockResolvedValue({
         ...baseSession,
         status: LiveClassStatus.ENDED,
       });
@@ -186,10 +296,8 @@ describe('LiveClassesService', () => {
     });
 
     it('sets status to CANCELLED and stamps cancelledAt', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue(
-        baseSession,
-      );
-      mockPrismaService.liveClassSession.update.mockResolvedValue({
+      mockPrismaService.batchSession.findUnique.mockResolvedValue(baseSession);
+      mockPrismaService.batchSession.update.mockResolvedValue({
         ...baseSession,
         status: LiveClassStatus.CANCELLED,
         cancelledAt: new Date(),
@@ -197,7 +305,7 @@ describe('LiveClassesService', () => {
 
       const result = await service.cancelLiveClass('session-1');
 
-      expect(mockPrismaService.liveClassSession.update).toHaveBeenCalledWith(
+      expect(mockPrismaService.batchSession.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             status: LiveClassStatus.CANCELLED,
@@ -210,7 +318,7 @@ describe('LiveClassesService', () => {
 
   describe('startLiveClass', () => {
     it('throws BadRequestException if the session is already LIVE (no double-start)', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue({
+      mockPrismaService.batchSession.findUnique.mockResolvedValue({
         ...baseSession,
         status: LiveClassStatus.LIVE,
       });
@@ -221,7 +329,7 @@ describe('LiveClassesService', () => {
     });
 
     it('throws BadRequestException if the session is CANCELLED', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue({
+      mockPrismaService.batchSession.findUnique.mockResolvedValue({
         ...baseSession,
         status: LiveClassStatus.CANCELLED,
       });
@@ -232,10 +340,8 @@ describe('LiveClassesService', () => {
     });
 
     it('sets status to LIVE when currently SCHEDULED', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue(
-        baseSession,
-      );
-      mockPrismaService.liveClassSession.update.mockResolvedValue({
+      mockPrismaService.batchSession.findUnique.mockResolvedValue(baseSession);
+      mockPrismaService.batchSession.update.mockResolvedValue({
         ...baseSession,
         status: LiveClassStatus.LIVE,
       });
@@ -248,9 +354,7 @@ describe('LiveClassesService', () => {
 
   describe('endLiveClass', () => {
     it('throws BadRequestException if the session is not LIVE', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue(
-        baseSession,
-      );
+      mockPrismaService.batchSession.findUnique.mockResolvedValue(baseSession);
 
       await expect(service.endLiveClass('session-1')).rejects.toThrow(
         BadRequestException,
@@ -258,11 +362,11 @@ describe('LiveClassesService', () => {
     });
 
     it('sets status to ENDED when currently LIVE', async () => {
-      mockPrismaService.liveClassSession.findUnique.mockResolvedValue({
+      mockPrismaService.batchSession.findUnique.mockResolvedValue({
         ...baseSession,
         status: LiveClassStatus.LIVE,
       });
-      mockPrismaService.liveClassSession.update.mockResolvedValue({
+      mockPrismaService.batchSession.update.mockResolvedValue({
         ...baseSession,
         status: LiveClassStatus.ENDED,
       });

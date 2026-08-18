@@ -9,6 +9,11 @@ auditConfig:
 
 allowBuilds:
   '@prisma/engines': true
-  '@scarf/scarf': set this to true or false
+  # Analytics/telemetry package pulled in transitively — it has no build output
+  # we need, so its install script stays off. This was left as an unanswered
+  # placeholder, which made `pnpm install` abort; that in turn meant
+  # `unrs-resolver`'s postinstall never ran, and without its native binding
+  # jest-resolve returns null for every module, breaking the whole test suite.
+  '@scarf/scarf': false
   prisma: true
   unrs-resolver: true

@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -18,6 +19,8 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class GradebookService {
+  private readonly logger = new Logger(GradebookService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async createManualGrade(
@@ -26,8 +29,7 @@ export class GradebookService {
   ): Promise<GradeBookEntry> {
     const {
       studentProfileId,
-      courseClassId,
-      classSectionId,
+      batchId,
       termId,
       title,
       category,
@@ -70,8 +72,7 @@ export class GradebookService {
       },
       create: {
         studentProfileId,
-        courseClassId,
-        classSectionId,
+        batchId,
         termId,
         sourceType: GradeSourceType.MANUAL,
         sourceId: finalSourceId,
@@ -87,8 +88,7 @@ export class GradebookService {
         assessedAt: new Date(),
       },
       update: {
-        courseClassId,
-        classSectionId,
+        batchId,
         termId,
         title,
         category: category || 'GENERAL',
@@ -168,8 +168,7 @@ export class GradebookService {
       for (const entry of dto.entries) {
         const {
           studentProfileId,
-          courseClassId,
-          classSectionId,
+          batchId,
           termId,
           title,
           category,
@@ -204,8 +203,7 @@ export class GradebookService {
           },
           create: {
             studentProfileId,
-            courseClassId,
-            classSectionId,
+            batchId,
             termId,
             sourceType: GradeSourceType.MANUAL,
             sourceId: finalSourceId,
@@ -221,8 +219,7 @@ export class GradebookService {
             assessedAt: new Date(),
           },
           update: {
-            courseClassId,
-            classSectionId,
+            batchId,
             termId,
             title,
             category: category || 'GENERAL',
@@ -253,7 +250,7 @@ export class GradebookService {
       include: {
         homework: {
           include: {
-            courseClass: true,
+            batch: true,
           },
         },
       },
@@ -265,11 +262,8 @@ export class GradebookService {
 
     const percentage = maxPoints > 0 ? (pointsEarned / maxPoints) * 100 : null;
 
-    const placement = await this.prisma.studentClassPlacement.findFirst({
-      where: { studentProfileId: submission.studentProfileId, isActive: true },
-      select: { classSectionId: true },
-    });
-
+    // The ClassSection placement lookup that used to sit here existed only to
+    // stamp `classSectionId`. The batch comes straight off the homework.
     return this.prisma.gradeBookEntry.upsert({
       where: {
         studentProfileId_sourceType_sourceId: {
@@ -280,9 +274,8 @@ export class GradebookService {
       },
       create: {
         studentProfileId: submission.studentProfileId,
-        courseClassId: submission.homework.courseClassId,
-        classSectionId: placement?.classSectionId || null,
-        termId: submission.homework.courseClass.termId,
+        batchId: submission.homework.batchId,
+        termId: submission.homework.batch.termId,
         sourceType: GradeSourceType.HOMEWORK_SUBMISSION,
         sourceId: submissionId,
         title: submission.homework.title,
@@ -295,9 +288,8 @@ export class GradebookService {
         assessedAt,
       },
       update: {
-        courseClassId: submission.homework.courseClassId,
-        classSectionId: placement?.classSectionId || null,
-        termId: submission.homework.courseClass.termId,
+        batchId: submission.homework.batchId,
+        termId: submission.homework.batch.termId,
         title: submission.homework.title,
         pointsEarned,
         pointsPossible: maxPoints,
@@ -341,8 +333,9 @@ export class GradebookService {
       },
       create: {
         studentProfileId: attempt.studentProfileId,
-        courseClassId: null,
-        classSectionId: attempt.assignment.classSectionId,
+        // An assessment attempt has no cohort of its own — the assignment
+        // names a student, not a batch.
+        batchId: null,
         termId: attempt.assignment.assessment.termId,
         sourceType: GradeSourceType.ASSESSMENT_ATTEMPT,
         sourceId: attemptId,
@@ -356,7 +349,6 @@ export class GradebookService {
         assessedAt,
       },
       update: {
-        classSectionId: attempt.assignment.classSectionId,
         termId: attempt.assignment.assessment.termId,
         title: attempt.assignment.assessment.title,
         pointsEarned,
@@ -368,14 +360,14 @@ export class GradebookService {
     });
   }
 
-  async getGradebookForClass(courseClassId: string, termId?: string) {
-    const where: any = { courseClassId };
+  async getGradebookForClass(batchId: string, termId?: string) {
+    const where: any = { batchId };
     if (termId) {
       where.termId = termId;
     }
 
-    const classInfo = await this.prisma.courseClass.findUnique({
-      where: { id: courseClassId },
+    const classInfo = await this.prisma.batch.findUnique({
+      where: { id: batchId },
       include: {
         enrollments: {
           include: {
@@ -460,7 +452,7 @@ export class GradebookService {
         );
         homeworkSyncCount++;
       } catch (err) {
-        console.error(`Failed to sync homework submission ${sub.id}:`, err);
+        this.logger.error(`Failed to sync homework submission ${sub.id}`, err);
       }
     }
 
@@ -483,7 +475,7 @@ export class GradebookService {
         );
         assessmentSyncCount++;
       } catch (err) {
-        console.error(`Failed to sync assessment attempt ${att.id}:`, err);
+        this.logger.error(`Failed to sync assessment attempt ${att.id}`, err);
       }
     }
 

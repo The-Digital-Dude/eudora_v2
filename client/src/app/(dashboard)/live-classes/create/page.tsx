@@ -22,17 +22,17 @@ export default function CreateLiveClassPage() {
     e.preventDefault();
     setError(null);
 
-    if (!values.classSectionId || !values.title || !values.startAt || !values.endAt) {
+    if (!values.batchId || !values.title || !values.startAt || !values.endAt) {
       setError("All fields are required.");
       return;
     }
 
     try {
       await scheduleLiveClass({
-        classSectionId: values.classSectionId,
-        title: values.title,
-        scheduledStartAt: new Date(values.startAt).toISOString(),
-        scheduledEndAt: new Date(values.endAt).toISOString(),
+        batchId: values.batchId,
+        topic: values.title,
+        startTime: new Date(values.startAt).toISOString(),
+        endTime: new Date(values.endAt).toISOString(),
       }).unwrap();
       toast.success("Live class scheduled.");
       router.push("/live-classes");
@@ -55,7 +55,7 @@ export default function CreateLiveClassPage() {
           Schedule Live Class
         </h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          Set up a live session for a class section. Video hosting isn&apos;t wired up yet — this
+          Set up a live session for a batch. Video hosting isn&apos;t wired up yet — this
           schedules the session record.
         </p>
       </div>

@@ -58,30 +58,9 @@ export class AssessmentSetupController {
     return this.assessmentSetupService.updateAssessmentType(id, body, user.id);
   }
 
-  @Get('levels')
-  @RequirePermissions({ action: 'read', subject: 'Assessment' })
-  async listLevels(@Query() query: LookupQueryDto) {
-    return this.assessmentSetupService.listLevels(query);
-  }
-
-  @Post('levels')
-  @RequirePermissions({ action: 'manage', subject: 'Assessment' })
-  async createLevel(
-    @Body() body: CreateLookupDto,
-    @CurrentUser() user: CurrentUserDto,
-  ) {
-    return this.assessmentSetupService.createLevel(body, user.id);
-  }
-
-  @Put('levels/:id')
-  @RequirePermissions({ action: 'manage', subject: 'Assessment' })
-  async updateLevel(
-    @Param('id') id: string,
-    @Body() body: UpdateLookupDto,
-    @CurrentUser() user: CurrentUserDto,
-  ) {
-    return this.assessmentSetupService.updateLevel(id, body, user.id);
-  }
+  // Class (grade level) CRUD used to live here, back when it was the `Level`
+  // lookup that only assessments used. It is now the taxonomy master and has
+  // its own module at /api/classes.
 
   @Get()
   @RequirePermissions({ action: 'read', subject: 'Assessment' })

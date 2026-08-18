@@ -20,14 +20,16 @@ describe('Assessment flow: author -> assign -> attempt -> mark -> gradebook (e2e
   let studentUser: TestUser;
   let studentProfileId: string;
   let subjectId: string;
-  let levelId: string;
+  let classId: string;
   let typeId: string;
   let questionId: string;
   let correctOptionId: string;
   let assessmentId: string;
   let assignmentId: string;
   let attemptId: string;
-  const tag = `AF${Date.now()}`;
+  // Class.code is capped at 20 chars (@MaxLength(20)) — "E2E-CLS-" alone is
+  // 8, so tag must stay short even though other E2E tags here don't need to.
+  const tag = `AF${Date.now().toString().slice(-8)}`;
 
   const http = () => request(ctx.app.getHttpServer());
   const asAdmin = () => csrfHeaders(admin);
@@ -74,8 +76,8 @@ describe('Assessment flow: author -> assign -> attempt -> mark -> gradebook (e2e
     await prisma.subject
       .deleteMany({ where: { code: `E2E-SUB-${tag}` } })
       .catch(() => undefined);
-    await prisma.level
-      .deleteMany({ where: { code: `E2E-LVL-${tag}` } })
+    await prisma.class
+      .deleteMany({ where: { code: `E2E-CLS-${tag}` } })
       .catch(() => undefined);
     await prisma.assessmentType
       .deleteMany({ where: { code: `E2E-TYP-${tag}` } })
@@ -84,7 +86,7 @@ describe('Assessment flow: author -> assign -> attempt -> mark -> gradebook (e2e
     await ctx.app.close();
   });
 
-  it('creates the assessment lookups: subject, level, type', async () => {
+  it('creates the assessment lookups: subject, class, type', async () => {
     const subjectRes = await http()
       .post('/api/subjects')
       .set(asAdmin())
@@ -92,12 +94,12 @@ describe('Assessment flow: author -> assign -> attempt -> mark -> gradebook (e2e
       .expect(201);
     subjectId = unwrap<{ id: string }>(subjectRes).id;
 
-    const levelRes = await http()
-      .post('/api/assessments/levels')
+    const classRes = await http()
+      .post('/api/classes')
       .set(asAdmin())
-      .send({ code: `E2E-LVL-${tag}`, name: `E2E Level ${tag}` })
+      .send({ code: `E2E-CLS-${tag}`, name: `E2E Class ${tag}` })
       .expect(201);
-    levelId = unwrap<{ id: string }>(levelRes).id;
+    classId = unwrap<{ id: string }>(classRes).id;
 
     const typeRes = await http()
       .post('/api/assessments/types')
@@ -113,7 +115,7 @@ describe('Assessment flow: author -> assign -> attempt -> mark -> gradebook (e2e
       .set(asAdmin())
       .send({
         subjectId,
-        levelId,
+        classId,
         questionType: 'mcq',
         prompt: 'What is 2 + 2?',
         difficulty: 'easy',
@@ -140,7 +142,7 @@ describe('Assessment flow: author -> assign -> attempt -> mark -> gradebook (e2e
       .send({
         assessmentTypeId: typeId,
         subjectId,
-        levelId,
+        classId,
         title: `E2E Assessment ${tag}`,
         totalMarks: 10,
         // sectionId is mandatory when attaching questions (service-level
@@ -248,7 +250,7 @@ describe('Assessment flow: author -> assign -> attempt -> mark -> gradebook (e2e
       .send({
         assessmentTypeId: typeId,
         subjectId,
-        levelId,
+        classId,
         title: `E2E Illegal ${tag}`,
         totalMarks: 5,
       })

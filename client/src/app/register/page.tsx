@@ -1,7 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Eye, EyeOff, Lock, Mail, Sparkles, User } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -21,6 +22,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useRegisterMutation } from "@/features/auth/authApi";
 import { login } from "@/features/auth/authSlice";
+import { getRoleHome } from "@/lib/access-control";
+import { readNextParam, withNext } from "@/lib/safe-next";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 const registerSchema = z
@@ -50,6 +53,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const user = useAppSelector((state) => state.auth.user) as any;
   const [registerMutation, { isLoading: loading }] = useRegisterMutation();
 
   const form = useForm<RegisterFormValues>({
@@ -63,12 +67,17 @@ export default function RegisterPage() {
     },
   });
 
+  // Carries the checkout destination through registration, so a first-time
+  // buyer who signs up mid-purchase is not dumped on a dashboard.
+  const [nextParam, setNextParam] = useState<string | null>(null);
+  useEffect(() => setNextParam(readNextParam()), []);
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/dashboard");
+      router.push(readNextParam() ?? getRoleHome(user));
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   const handleRegister = async (values: RegisterFormValues) => {
     const nameParts = values.name.trim().split(/\s+/);
@@ -84,9 +93,11 @@ export default function RegisterPage() {
       }).unwrap();
 
       // Automatically sign in locally on register success
-      dispatch(login({ user, token: null }));
+      dispatch(login({ user, csrfToken: user.csrfToken }));
       toast.success("Account created successfully!");
-      router.push("/login");
+      // Registration creates a plain USER; the guardian profile and first
+      // child are collected next, so the destination has to survive that hop.
+      router.push(withNext("/login", readNextParam()));
     } catch (err: any) {
       console.error(err);
       const errMsg = err?.data?.message || "An error occurred. Please try again.";
@@ -99,16 +110,10 @@ export default function RegisterPage() {
       {/* Slide-up entrance animated container */}
       <div className="animate-fade-in-up w-full max-w-[440px] space-y-8">
         {/* Brand Logo and Title */}
-        <div className="flex flex-col items-center space-y-3">
-          <Link
-            href="/"
-            className="bg-foreground text-background flex items-center justify-center rounded-xl p-2.5 shadow-sm transition-transform hover:scale-105"
-          >
-            <Sparkles className="h-5 w-5" />
+        <div className="flex flex-col items-center">
+          <Link href="/" className="transition-transform hover:scale-105">
+            <Image src="/landing/eudora_logo.png" alt="Eudora" width={218} height={72} className="h-11 w-auto" />
           </Link>
-          <span className="font-display text-foreground text-xl font-bold tracking-tight">
-            Eudora
-          </span>
         </div>
 
         {/* Clean Cupertino Card */}
@@ -389,7 +394,7 @@ export default function RegisterPage() {
         <div className="text-muted-foreground text-center text-xs">
           Already have an account?{" "}
           <Link
-            href="/login"
+            href={withNext("/login", nextParam)}
             className="text-foreground font-semibold transition-colors hover:underline"
           >
             Sign in

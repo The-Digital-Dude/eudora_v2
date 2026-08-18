@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import {
   AddAssessmentQuestionDto,
   CreateQuestionDto,
@@ -26,6 +27,14 @@ import {
   toPage,
   audit,
 } from './assessments.common';
+
+const QUESTION_SORTABLE_FIELDS = [
+  'prompt',
+  'questionType',
+  'difficulty',
+  'status',
+  'createdAt',
+] as const;
 
 @Injectable()
 export class QuestionsService {
@@ -54,7 +63,7 @@ export class QuestionsService {
     const where = {
       ...searchFilter(query.search, ['prompt', 'correctAnswer']),
       ...idFilter('subjectId', query.subjectId),
-      ...idFilter('levelId', query.levelId),
+      ...idFilter('classId', query.classId),
       ...enumFilter('questionType', query.questionType, [
         'mcq',
         'short_answer',
@@ -69,10 +78,18 @@ export class QuestionsService {
       ]),
       ...enumFilter('status', query.status, ['draft', 'active', 'archived']),
     };
+    const orderBy = resolveSort(
+      query.sortBy,
+      query.sortOrder,
+      QUESTION_SORTABLE_FIELDS,
+      'createdAt',
+      'desc',
+    );
+
     const [items, total] = await Promise.all([
       this.prisma.question.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: pagination.skip,
         take: pagination.pageSize,
         select: questionSelect,
@@ -108,7 +125,7 @@ export class QuestionsService {
     const question = await this.prisma.question.create({
       data: {
         subjectId: emptyToNull(input.subjectId),
-        levelId: emptyToNull(input.levelId),
+        classId: emptyToNull(input.classId),
         questionType,
         prompt: requireText(input.prompt, 'prompt'),
         correctAnswer: emptyToNull(input.correctAnswer),
@@ -172,8 +189,8 @@ export class QuestionsService {
           ...(input.subjectId !== undefined
             ? { subjectId: emptyToNull(input.subjectId) }
             : {}),
-          ...(input.levelId !== undefined
-            ? { levelId: emptyToNull(input.levelId) }
+          ...(input.classId !== undefined
+            ? { classId: emptyToNull(input.classId) }
             : {}),
           ...(questionType !== undefined ? { questionType } : {}),
           ...(input.prompt !== undefined

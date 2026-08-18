@@ -1,28 +1,47 @@
 import { authApi } from "../auth/authApi";
 
-export interface Campus {
+export type DeliveryMode = "SELF_PACED" | "LIVE" | "HYBRID";
+export type CatalogStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+export interface ProgramCourseLink {
   id: string;
-  name: string;
-  code: string;
-  description?: string;
-  address?: string;
-  phoneNumber?: string;
-  email?: string;
-  website?: string;
-  status: "ACTIVE" | "INACTIVE";
-  createdAt: string;
-  updatedAt: string;
+  sortOrder: number;
+  isRequired: boolean;
+  course: {
+    id: string;
+    title: string;
+    slug: string;
+    status: CatalogStatus;
+    gradeBand: "PRE_K_K" | "G1_2" | "G3_4" | "G5_6" | null;
+    estimatedHours: number | null;
+  };
 }
 
+/**
+ * The primary sellable SKU. Prices are integer minor units (cents) — never
+ * floats — because Stripe works in the smallest currency unit.
+ */
 export interface Program {
   id: string;
   name: string;
   code: string;
-  description?: string;
-  durationYears: number;
-  campusId: string;
-  campus?: Campus;
-  status: "ACTIVE" | "INACTIVE";
+  slug: string;
+  /** Null for a standalone bundle that sits outside the Class -> Program tree. */
+  classId: string | null;
+  class?: { id: string; code: string; name: string; slug: string } | null;
+  shortDescription?: string | null;
+  description?: string | null;
+  thumbnailUrl?: string | null;
+  outcomes: string[];
+  syllabusFileId?: string | null;
+  deliveryMode: DeliveryMode;
+  durationMonths: number | null;
+  priceOneTimeCents: number | null;
+  priceMonthlyCents: number | null;
+  installmentCount: number | null;
+  currency: string;
+  status: CatalogStatus;
+  programCourses?: ProgramCourseLink[];
   createdAt: string;
   updatedAt: string;
 }
@@ -31,16 +50,6 @@ export interface Role {
   id: string;
   name: string;
   description?: string;
-}
-
-export interface CampusCourseAssignment {
-  id: string;
-  campusId: string;
-  courseId: string;
-  enabled: boolean;
-  createdAt: string;
-  updatedAt: string;
-  course: { id: string; title: string; slug: string; status: string };
 }
 
 export interface User {
@@ -58,44 +67,6 @@ export interface User {
   }[];
 }
 
-export interface BillingPlan {
-  id: string;
-  name: string;
-  description?: string;
-  // Prisma Decimal fields serialize as strings over JSON — coerce with Number() before doing math.
-  priceMonthly: number | string;
-  priceAnnual: number | string;
-  currency: string;
-  isActive: boolean;
-  isPublic: boolean;
-  features: string[];
-  stripeProductId?: string;
-  stripePriceIdMonthly?: string;
-  stripePriceIdAnnual?: string;
-  maxStudents?: number | null;
-  maxCampuses?: number | null;
-  maxPrograms?: number | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CampusSubscription {
-  id: string;
-  campusId: string;
-  planId: string;
-  plan?: BillingPlan;
-  stripeCustomerId?: string | null;
-  stripeSubscriptionId?: string | null;
-  status: "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED" | "UNPAID";
-  interval: "MONTHLY" | "ANNUAL";
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
-  trialEndsAt?: string | null;
-  canceledAt?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface Lead {
   id: string;
   name: string;
@@ -108,15 +79,24 @@ export interface Lead {
   updatedAt: string;
 }
 
-export interface CourseClass {
+export interface Batch {
   id: string;
-  termId: string;
+  termId: string | null;
+  courseId: string | null;
   name: string;
   code: string;
   status: "ACTIVE" | "INACTIVE";
   description: string | null;
-  campusId: string | null;
   capacity: number | null;
+  startDate: string | null;
+  /** What a LIVE purchase's access expiry tracks. */
+  endDate: string | null;
+  /** After this the batch stops taking seats even if capacity remains. */
+  enrollmentDeadline: string | null;
+  leadTeacherProfileId: string | null;
+  course?: { id: string; title: string; deliveryMode: string } | null;
+  leadTeacher?: { id: string; fullName: string } | null;
+  _count?: { enrollments: number };
   /** Default false — a class only becomes guardian-self-enrollable once staff opts it in. */
   isOpenForEnrollment: boolean;
   createdAt: string;
@@ -129,6 +109,21 @@ export interface CourseClass {
       name: string;
     };
   };
+}
+
+export interface BatchPayload {
+  name: string;
+  code: string;
+  courseId?: string | null;
+  termId?: string | null;
+  status?: "ACTIVE" | "INACTIVE";
+  description?: string | null;
+  capacity?: number | null;
+  isOpenForEnrollment?: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+  enrollmentDeadline?: string | null;
+  leadTeacherProfileId?: string | null;
 }
 
 export interface ClassSection {
@@ -151,7 +146,7 @@ export interface ClassSection {
 export interface MakeupRequest {
   id: string;
   studentProfileId: string;
-  courseClassId: string;
+  batchId: string;
   originalDate: string;
   reason?: string;
   status: string;
@@ -162,7 +157,7 @@ export interface MakeupRequest {
     id: string;
     fullName: string;
   };
-  courseClass?: {
+  batch?: {
     id: string;
     name: string;
   };
@@ -235,8 +230,8 @@ export interface StudentProfile {
   }[];
   enrollments?: {
     id: string;
-    courseClassId: string;
-    courseClass?: {
+    batchId: string;
+    batch?: {
       id: string;
       name: string;
       code: string;
@@ -256,7 +251,7 @@ export interface StudentPlacement {
 export interface StudentEnrollment {
   id: string;
   studentProfileId: string;
-  courseClassId: string;
+  batchId: string;
   enrollmentDate: string;
   status: "ENROLLED" | "COMPLETED" | "DROPPED";
 }
@@ -314,63 +309,15 @@ export interface FileUpload {
 export const dashboardApi = authApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
-    getCampuses: builder.query<
-      { items: Campus[]; total: number },
-      { page?: number; limit?: number; search?: string; status?: string } | void
-    >({
-      query: (params: any) => {
-        const page = params?.page ?? 1;
-        // Default stays high: the dashboard layout's campus switcher calls this with no arguments
-        // and expects the full list, not a page of it.
-        const limit = params?.limit ?? 100;
-        const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
-        const statusQuery = params?.status ? `&status=${params.status}` : "";
-        return `/campuses?page=${page}&limit=${limit}${searchQuery}${statusQuery}`;
-      },
-      transformResponse: (response: any) => ({
-        items: response.data || [],
-        total: response.meta?.total ?? response.data?.length ?? 0,
-      }),
-      providesTags: ["Campuses"],
-    } as any),
-    getCampus: builder.query<Campus, string>({
-      query: (id: string) => `/campuses/${id}`,
-      providesTags: ["Campuses"],
-    } as any),
-    createCampus: builder.mutation<Campus, Partial<Campus>>({
-      query: (body: any) => ({
-        url: "/campuses",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["Campuses"],
-    } as any),
-    updateCampus: builder.mutation<Campus, { id: string; body: Partial<Campus> }>({
-      query: ({ id, body }: any) => ({
-        url: `/campuses/${id}`,
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: ["Campuses"],
-    } as any),
-    deleteCampus: builder.mutation<void, string>({
-      query: (id: any) => ({
-        url: `/campuses/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Campuses"],
-    } as any),
-
     getPrograms: builder.query<
       { items: Program[]; total: number },
-      { page?: number; limit?: number; campusId?: string; search?: string } | void
+      { page?: number; limit?: number; search?: string } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
-        const campusQuery = params?.campusId ? `&campusId=${params.campusId}` : "";
         const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
-        return `/programs?page=${page}&limit=${limit}${campusQuery}${searchQuery}`;
+        return `/programs?page=${page}&limit=${limit}${searchQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -405,17 +352,50 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       invalidatesTags: ["Programs"],
     } as any),
+    // Program <-> Course wiring. Courses are reusable across programs, so these
+    // manage a join rather than a field on Course.
+    attachProgramCourse: builder.mutation<
+      unknown,
+      { programId: string; courseId: string; isRequired?: boolean }
+    >({
+      query: ({ programId, ...body }: any) => ({
+        url: `/programs/${programId}/courses`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Programs"],
+    } as any),
+    detachProgramCourse: builder.mutation<
+      unknown,
+      { programId: string; courseId: string }
+    >({
+      query: ({ programId, courseId }: any) => ({
+        url: `/programs/${programId}/courses/${courseId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Programs"],
+    } as any),
 
     getUsers: builder.query<
       { items: User[]; total: number },
-      { page?: number; limit?: number; search?: string; role?: string } | void
+      {
+        page?: number;
+        limit?: number;
+        search?: string;
+        role?: string;
+        sortBy?: string;
+        sortOrder?: string;
+      } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
         const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
         const roleQuery = params?.role ? `&role=${encodeURIComponent(params.role)}` : "";
-        return `/users?page=${page}&limit=${limit}${searchQuery}${roleQuery}`;
+        const sortQuery = params?.sortBy
+          ? `&sortBy=${encodeURIComponent(params.sortBy)}&sortOrder=${params.sortOrder ?? "asc"}`
+          : "";
+        return `/users?page=${page}&limit=${limit}${searchQuery}${roleQuery}${sortQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -454,100 +434,26 @@ export const dashboardApi = authApi.injectEndpoints({
       providesTags: ["Roles"],
     } as any),
 
-    getBillingPlans: builder.query<BillingPlan[], void>({
-      query: () => "/billing/plans",
-      providesTags: ["BillingPlans"],
-    } as any),
-    /**
-     * Public, unauthenticated pricing feed — used by the marketing /pricing page.
-     * Only returns plans marked isActive + isPublic (see plan.controller.ts).
-     */
-    getPublicPlans: builder.query<BillingPlan[], void>({
-      query: () => "/billing/plans/public",
-      providesTags: ["BillingPlans"],
-    } as any),
-    getBillingPlan: builder.query<BillingPlan, string>({
-      query: (id: string) => `/billing/plans/${id}`,
-      providesTags: ["BillingPlans"],
-    } as any),
-    createBillingPlan: builder.mutation<BillingPlan, Partial<BillingPlan>>({
-      query: (body: any) => ({
-        url: "/billing/plans",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["BillingPlans"],
-    } as any),
-    updateBillingPlan: builder.mutation<BillingPlan, { id: string; body: Partial<BillingPlan> }>({
-      query: ({ id, body }: any) => ({
-        url: `/billing/plans/${id}`,
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: ["BillingPlans"],
-    } as any),
-    /** Soft-delete — archives the plan (isActive: false) rather than removing the row. */
-    deleteBillingPlan: builder.mutation<BillingPlan, string>({
-      query: (id: string) => ({
-        url: `/billing/plans/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["BillingPlans"],
-    } as any),
-
-    /**
-     * Create or refresh the Stripe Product/Price for a plan. Runs automatically
-     * on create/update; this is the manual retry when that sync failed.
-     */
-    syncBillingPlanToStripe: builder.mutation<BillingPlan, string>({
-      query: (id: string) => ({
-        url: `/billing/plans/${id}/sync-stripe`,
-        method: "POST",
-      }),
-      invalidatesTags: ["BillingPlans"],
-    } as any),
-
-    /**
-     * Start a Stripe Checkout session for a paid plan.
-     * Returns a hosted Checkout URL — redirect the browser to it.
-     */
-    createCheckoutSession: builder.mutation<
-      { sessionId: string; url: string | null },
-      { campusId: string; planId: string; interval?: "MONTHLY" | "ANNUAL" }
-    >({
-      query: (body: any) => ({
-        url: "/billing/subscriptions/checkout-session",
-        method: "POST",
-        body,
-      }),
-    } as any),
-
-    /**
-     * Open the Stripe Billing Portal (update card, invoices, cancel).
-     * Returns a hosted portal URL — redirect the browser to it.
-     */
-    createBillingPortalSession: builder.mutation<{ url: string }, string>({
-      query: (campusId: string) => ({
-        url: `/billing/subscriptions/campus/${campusId}/portal-session`,
-        method: "POST",
-      }),
-    } as any),
-
-    getCampusSubscription: builder.query<CampusSubscription, string>({
-      query: (campusId: string) => `/billing/subscriptions/campus/${campusId}`,
-      providesTags: ["CampusSubscription"],
-    } as any),
-
     getLeads: builder.query<
       { items: Lead[]; total: number },
-      { page?: number; limit?: number; search?: string; status?: string } | void
+      {
+        page?: number;
+        limit?: number;
+        search?: string;
+        status?: string;
+        sortBy?: string;
+        sortOrder?: string;
+      } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
         const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
         const statusQuery = params?.status ? `&status=${encodeURIComponent(params.status)}` : "";
-        return `/leads?page=${page}&limit=${limit}${searchQuery}${statusQuery}`;
+        const sortQuery = params?.sortBy
+          ? `&sortBy=${encodeURIComponent(params.sortBy)}&sortOrder=${params.sortOrder ?? "asc"}`
+          : "";
+        return `/leads?page=${page}&limit=${limit}${searchQuery}${statusQuery}${sortQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -583,31 +489,46 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["Leads"],
     } as any),
 
-    getCourseClasses: builder.query<
-      { items: CourseClass[]; total: number },
+    getBatches: builder.query<
+      { items: Batch[]; total: number },
       { page?: number; limit?: number } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 100;
-        return `/course-classes?page=${page}&limit=${limit}`;
+        return `/batches?page=${page}&limit=${limit}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
         total: response.meta?.total ?? response.data?.length ?? 0,
       }),
-      providesTags: ["CourseClasses"],
+      providesTags: ["Batches"],
     } as any),
-    updateCourseClass: builder.mutation<
-      CourseClass,
-      { id: string; body: Partial<Pick<CourseClass, "description" | "campusId" | "capacity" | "isOpenForEnrollment">> }
+    createBatch: builder.mutation<Batch, BatchPayload>({
+      query: (body: any) => ({
+        url: "/batches",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Batches"],
+    } as any),
+    deleteBatch: builder.mutation<{ message: string }, string>({
+      query: (id: any) => ({
+        url: `/batches/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Batches"],
+    } as any),
+    updateBatch: builder.mutation<
+      Batch,
+      { id: string; body: Partial<BatchPayload> }
     >({
       query: ({ id, body }: any) => ({
-        url: `/course-classes/${id}`,
+        url: `/batches/${id}`,
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["CourseClasses"],
+      invalidatesTags: ["Batches"],
     } as any),
 
     getClassSections: builder.query<
@@ -618,6 +539,8 @@ export const dashboardApi = authApi.injectEndpoints({
           /** Pass "none" to list only sections that have no subject tagged yet. */
           learningSubjectId?: string;
           search?: string;
+          sortBy?: string;
+          sortOrder?: string;
         }
       | void
     >({
@@ -628,7 +551,10 @@ export const dashboardApi = authApi.injectEndpoints({
           ? `&learningSubjectId=${encodeURIComponent(params.learningSubjectId)}`
           : "";
         const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
-        return `/class-sections?page=${page}&limit=${limit}${subjectQuery}${searchQuery}`;
+        const sortQuery = params?.sortBy
+          ? `&sortBy=${encodeURIComponent(params.sortBy)}&sortOrder=${params.sortOrder ?? "asc"}`
+          : "";
+        return `/class-sections?page=${page}&limit=${limit}${subjectQuery}${searchQuery}${sortQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -763,6 +689,8 @@ export const dashboardApi = authApi.injectEndpoints({
           status?: string;
           includeArchived?: boolean;
           search?: string;
+          sortBy?: string;
+          sortOrder?: string;
         }
       | void
     >({
@@ -774,7 +702,10 @@ export const dashboardApi = authApi.injectEndpoints({
           ? "&includeArchived=true"
           : "";
         const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
-        return `/student-profiles?page=${page}&limit=${limit}${statusQuery}${archivedQuery}${searchQuery}`;
+        const sortQuery = params?.sortBy
+          ? `&sortBy=${encodeURIComponent(params.sortBy)}&sortOrder=${params.sortOrder ?? "asc"}`
+          : "";
+        return `/student-profiles?page=${page}&limit=${limit}${statusQuery}${archivedQuery}${searchQuery}${sortQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -848,7 +779,7 @@ export const dashboardApi = authApi.injectEndpoints({
 
     createStudentEnrollment: builder.mutation<
       StudentEnrollment,
-      { studentProfileId: string; courseClassId: string }
+      { studentProfileId: string; batchId: string }
     >({
       query: (body: any) => ({
         url: "/student-enrollments",
@@ -884,14 +815,24 @@ export const dashboardApi = authApi.injectEndpoints({
 
     getTeacherProfiles: builder.query<
       { items: TeacherProfile[]; total: number },
-      { page?: number; limit?: number; status?: string; search?: string } | void
+      {
+        page?: number;
+        limit?: number;
+        status?: string;
+        search?: string;
+        sortBy?: string;
+        sortOrder?: string;
+      } | void
     >({
       query: (params: any) => {
         const page = params?.page ?? 1;
         const limit = params?.limit ?? 10;
         const statusQuery = params?.status ? `&status=${params.status}` : "";
         const searchQuery = params?.search ? `&search=${encodeURIComponent(params.search)}` : "";
-        return `/teacher-profiles?page=${page}&limit=${limit}${statusQuery}${searchQuery}`;
+        const sortQuery = params?.sortBy
+          ? `&sortBy=${encodeURIComponent(params.sortBy)}&sortOrder=${params.sortOrder ?? "asc"}`
+          : "";
+        return `/teacher-profiles?page=${page}&limit=${limit}${statusQuery}${searchQuery}${sortQuery}`;
       },
       transformResponse: (response: any) => ({
         items: response.data || [],
@@ -948,39 +889,6 @@ export const dashboardApi = authApi.injectEndpoints({
       invalidatesTags: ["Teachers"],
     } as any),
 
-    getCampusCourses: builder.query<CampusCourseAssignment[], string>({
-      query: (campusId: string) => `/campuses/${campusId}/courses`,
-      providesTags: ["CampusCourses"],
-    } as any),
-    assignCourseToCampus: builder.mutation<
-      CampusCourseAssignment,
-      { campusId: string; courseId: string; enabled?: boolean }
-    >({
-      query: ({ campusId, courseId, enabled }: any) => ({
-        url: `/campuses/${campusId}/courses`,
-        method: "POST",
-        body: { courseId, enabled },
-      }),
-      invalidatesTags: ["CampusCourses"],
-    } as any),
-    updateCampusCourse: builder.mutation<
-      CampusCourseAssignment,
-      { campusId: string; courseId: string; enabled: boolean }
-    >({
-      query: ({ campusId, courseId, enabled }: any) => ({
-        url: `/campuses/${campusId}/courses/${courseId}`,
-        method: "PATCH",
-        body: { enabled },
-      }),
-      invalidatesTags: ["CampusCourses"],
-    } as any),
-    removeCampusCourse: builder.mutation<void, { campusId: string; courseId: string }>({
-      query: ({ campusId, courseId }: any) => ({
-        url: `/campuses/${campusId}/courses/${courseId}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["CampusCourses"],
-    } as any),
 
     getNotifications: builder.query<any[], void>({
       query: () => "/notifications",
@@ -1028,38 +936,27 @@ export const dashboardApi = authApi.injectEndpoints({
 });
 
 export const {
-  useGetCampusesQuery,
-  useGetCampusQuery,
-  useCreateCampusMutation,
-  useUpdateCampusMutation,
-  useDeleteCampusMutation,
   useGetProgramsQuery,
   useGetProgramQuery,
   useCreateProgramMutation,
   useUpdateProgramMutation,
   useDeleteProgramMutation,
+  useAttachProgramCourseMutation,
+  useDetachProgramCourseMutation,
   useGetUsersQuery,
   useUpdateUserMutation,
   useAssignUserRoleMutation,
   useRemoveUserRoleMutation,
   useGetRolesQuery,
-  useGetBillingPlansQuery,
-  useGetPublicPlansQuery,
-  useGetBillingPlanQuery,
-  useCreateBillingPlanMutation,
-  useUpdateBillingPlanMutation,
-  useDeleteBillingPlanMutation,
-  useSyncBillingPlanToStripeMutation,
-  useCreateCheckoutSessionMutation,
-  useCreateBillingPortalSessionMutation,
-  useGetCampusSubscriptionQuery,
   useGetLeadsQuery,
   useGetLeadQuery,
   useCreateLeadMutation,
   useUpdateLeadMutation,
   useDeleteLeadMutation,
-  useGetCourseClassesQuery,
-  useUpdateCourseClassMutation,
+  useGetBatchesQuery,
+  useCreateBatchMutation,
+  useDeleteBatchMutation,
+  useUpdateBatchMutation,
   useGetClassSectionsQuery,
   useGetClassSectionQuery,
   useCreateClassSectionMutation,
@@ -1090,10 +987,6 @@ export const {
   useDeleteTeacherProfileMutation,
   useAssignTeacherClassMutation,
   useRemoveTeacherClassMutation,
-  useGetCampusCoursesQuery,
-  useAssignCourseToCampusMutation,
-  useUpdateCampusCourseMutation,
-  useRemoveCampusCourseMutation,
   useGetNotificationsQuery,
   useGetUnreadNotificationsCountQuery,
   useMarkNotificationAsReadMutation,

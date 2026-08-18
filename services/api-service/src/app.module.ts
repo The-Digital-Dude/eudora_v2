@@ -16,7 +16,6 @@ import { InstitutionModule } from './institution/institution.module';
 import { AcademicModule } from './academic/academic.module';
 import { StudentModule } from './student/student.module';
 import { FamilyModule } from './family/family.module';
-import { BillingModule } from './billing/billing.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { HomeworkModule } from './homework/homework.module';
 import { EvaluationModule } from './evaluation/evaluation.module';
@@ -25,6 +24,9 @@ import { LiveClassesModule } from './live-classes/live-classes.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { CatalogModule } from './catalog/catalog.module';
+import { ClassesModule } from './classes/classes.module';
+import { EntitlementsModule } from './entitlements/entitlements.module';
+import { BillingModule } from './billing/billing.module';
 import { LeadsModule } from './leads/leads.module';
 import { CommunicationModule } from './communication/communication.module';
 import { MakeupModule } from './makeup/makeup.module';
@@ -37,7 +39,6 @@ import { TimetableModule } from './timetable/timetable.module';
 import { GradebookModule } from './gradebook/gradebook.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { GamificationModule } from './gamification/gamification.module';
-import { MessagingModule } from './messaging/messaging.module';
 import { ParentModule } from './parent/parent.module';
 import { ApiEnvelopeInterceptor } from './common/http/api-envelope.interceptor';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
@@ -60,7 +61,6 @@ import { AuditModule } from './common/audit/audit.module';
     AcademicModule,
     StudentModule,
     FamilyModule,
-    BillingModule,
     AttendanceModule,
     HomeworkModule,
     EvaluationModule,
@@ -69,6 +69,9 @@ import { AuditModule } from './common/audit/audit.module';
     AssessmentsModule,
     LessonsModule,
     CatalogModule,
+    ClassesModule,
+    EntitlementsModule,
+    BillingModule,
     LeadsModule,
     CommunicationModule,
     MakeupModule,
@@ -81,7 +84,6 @@ import { AuditModule } from './common/audit/audit.module';
     GradebookModule,
     DashboardModule,
     GamificationModule,
-    MessagingModule,
     ParentModule,
   ],
   controllers: [AppController],

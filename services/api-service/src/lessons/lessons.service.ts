@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import {
   CreateLessonDto,
   CreateCardDto,
@@ -13,6 +14,12 @@ import { generateWidgetInstance } from '../common/widgets/widget-generator';
 import { gradeWidgetSubmission } from '../common/widgets/widget-grader';
 import { ProgressionService } from '../progression/progression.service';
 
+// 'sortOrder' is also a real Lesson column (manual curation position), so it's
+// deliberately excluded below from the user-choosable allowlist to avoid
+// confusing it with the sort *direction* of the same name — it remains the
+// fallback field, reproducing the original hardcoded default.
+const LESSON_SORTABLE_FIELDS = ['title', 'xpReward', 'createdAt'] as const;
+
 @Injectable()
 export class LessonsService {
   constructor(
@@ -20,17 +27,47 @@ export class LessonsService {
     private readonly progression: ProgressionService,
   ) {}
 
-  async listLessons(conceptId?: string) {
-    const where = conceptId ? { conceptId } : {};
-    return this.prisma.lesson.findMany({
-      where,
-      orderBy: { sortOrder: 'asc' },
-      include: {
-        concept: {
-          select: { name: true },
+  async listLessons(
+    conceptId?: string,
+    page = 1,
+    // 500 comfortably covers "give me everything" for callers that don't
+    // paginate (the student learning hub, the lesson-authoring picker)
+    // without an unbounded query.
+    limit = 500,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: string,
+  ) {
+    const where = {
+      ...(conceptId ? { conceptId } : {}),
+      ...(search
+        ? { title: { contains: search, mode: 'insensitive' as const } }
+        : {}),
+    };
+    const orderBy = resolveSort(
+      sortBy,
+      sortOrder,
+      LESSON_SORTABLE_FIELDS,
+      'sortOrder',
+      'asc',
+    );
+
+    const [items, total] = await Promise.all([
+      this.prisma.lesson.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          concept: {
+            select: { name: true },
+          },
         },
-      },
-    });
+      }),
+      this.prisma.lesson.count({ where }),
+    ]);
+
+    return { items, total, page, pageSize: limit };
   }
 
   private async getOrCreateStudentProfile(userId: string) {
@@ -124,7 +161,10 @@ export class LessonsService {
   // always regenerates the same instance, so this stays stable across
   // refreshes and retries within one attempt.
   private enrichCardsForAttempt<
-    T extends { id: string; question: Parameters<typeof generateWidgetInstance>[0] | null },
+    T extends {
+      id: string;
+      question: Parameters<typeof generateWidgetInstance>[0] | null;
+    },
   >(cards: T[], attemptId: string): T[] {
     return cards.map((card) => {
       if (!card.question) {
@@ -141,6 +181,21 @@ export class LessonsService {
         },
       };
     });
+  }
+
+  /**
+   * Resolves the owning lesson so the controller can run the entitlement gate
+   * before any grading or XP award happens.
+   */
+  async getLessonIdForCard(cardId: string): Promise<string> {
+    const card = await this.prisma.card.findUnique({
+      where: { id: cardId },
+      select: { lessonId: true },
+    });
+    if (!card) {
+      throw new NotFoundException('Card not found');
+    }
+    return card.lessonId;
   }
 
   async submitCardResponse(

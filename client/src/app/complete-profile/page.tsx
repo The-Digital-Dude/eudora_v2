@@ -1,7 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Heart, Mail, Phone, ShieldCheck, Sparkles, User } from "lucide-react";
+import { ArrowRight, Heart, Mail, Phone, ShieldCheck, User } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -25,6 +26,7 @@ import {
   useSelfLinkGuardianMutation,
 } from "@/features/dashboard/dashboardApi";
 import { getRoleHome } from "@/lib/access-control";
+import { readNextParam, withNext } from "@/lib/safe-next";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 const step1Schema = z.object({
@@ -93,7 +95,7 @@ export default function CompleteProfilePage() {
   // Protect route - ensure user is authenticated as a Guardian
   useEffect(() => {
     if (!isAuthenticated || !user) {
-      router.push("/login");
+      router.push(withNext("/login", readNextParam()));
       return;
     }
 
@@ -138,14 +140,18 @@ export default function CompleteProfilePage() {
       // Refresh auth state in redux
       const { data: updatedUser } = await refetchMe();
       if (updatedUser) {
-        dispatch(login({ user: updatedUser, token: null }));
+        dispatch(login({ user: updatedUser, csrfToken: updatedUser.csrfToken }));
       }
 
       // Send them to their own role's home, not /dashboard — that route is
       // ADMIN_ROLES-only, so a freshly-onboarded guardian landed on the
       // "Access Denied" card instead of the portal they just set up.
+      //
+      // Unless they arrived mid-purchase: `next` returns them to the checkout
+      // they abandoned to set this up, which is the whole point of carrying it.
+      const next = readNextParam();
       setTimeout(() => {
-        router.push(getRoleHome(updatedUser ?? user));
+        router.push(next ?? getRoleHome(updatedUser ?? user));
       }, 1500);
     } catch (err: any) {
       console.error(err);
@@ -160,13 +166,8 @@ export default function CompleteProfilePage() {
       {/* Centered wizard container */}
       <div className="animate-fade-in-up w-full max-w-[480px] space-y-8">
         {/* Brand Header */}
-        <div className="flex flex-col items-center space-y-3">
-          <div className="bg-foreground rounded-xl p-2.5 text-background shadow-sm">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <span className="font-display text-foreground text-xl font-bold tracking-tight">
-            Eudora
-          </span>
+        <div className="flex flex-col items-center">
+          <Image src="/landing/eudora_logo.png" alt="Eudora" width={218} height={72} className="h-11 w-auto" />
         </div>
 
         {/* Wizard Card */}

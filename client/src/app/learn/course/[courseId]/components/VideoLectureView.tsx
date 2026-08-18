@@ -4,8 +4,8 @@ import { NotebookPen } from "lucide-react";
 import React, { useRef, useState } from "react";
 import ReactPlayer from "react-player";
 
-import { useUpdateModuleItemProgressMutation } from "@/features/catalog/catalogApi";
 import type { ModuleItem } from "@/features/catalog/catalogApi";
+import { useUpdateModuleItemProgressMutation } from "@/features/catalog/catalogApi";
 
 interface VideoLectureViewProps {
   item: ModuleItem;

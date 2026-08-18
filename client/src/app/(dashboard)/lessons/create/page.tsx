@@ -14,7 +14,8 @@ import { useCreateLessonMutation, useGetConceptsQuery, useGetLessonsQuery } from
 
 export default function CreateLessonPage() {
   const router = useRouter();
-  const { data: lessons } = useGetLessonsQuery();
+  const { data: lessonsData } = useGetLessonsQuery();
+  const lessons = lessonsData?.items;
   const { data: concepts, isLoading: conceptsLoading } = useGetConceptsQuery();
   const [createLesson, { isLoading: creatingLesson }] = useCreateLessonMutation();
 

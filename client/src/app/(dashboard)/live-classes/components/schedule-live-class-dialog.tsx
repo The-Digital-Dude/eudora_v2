@@ -40,10 +40,10 @@ export function RescheduleLiveClassDialog({
   React.useEffect(() => {
     if (!open || !session) return;
     setValues({
-      classSectionId: session.classSectionId,
-      title: session.title,
-      startAt: toDatetimeLocalValue(session.scheduledStartAt),
-      endAt: toDatetimeLocalValue(session.scheduledEndAt),
+      batchId: session.batchId,
+      title: session.topic ?? "",
+      startAt: session.startTime ? toDatetimeLocalValue(session.startTime) : "",
+      endAt: session.endTime ? toDatetimeLocalValue(session.endTime) : "",
     });
     setError(null);
   }, [open, session]);
@@ -62,9 +62,9 @@ export function RescheduleLiveClassDialog({
       await rescheduleLiveClass({
         id: session.id,
         body: {
-          title: values.title,
-          scheduledStartAt: new Date(values.startAt).toISOString(),
-          scheduledEndAt: new Date(values.endAt).toISOString(),
+          topic: values.title,
+          startTime: new Date(values.startAt).toISOString(),
+          endTime: new Date(values.endAt).toISOString(),
         },
       }).unwrap();
       toast.success("Live class rescheduled.");
@@ -91,7 +91,7 @@ export function RescheduleLiveClassDialog({
           isSaving={isLoading}
           submitLabel="Save changes"
           error={error}
-          lockClassSection
+          lockBatch
         />
       </DialogContent>
     </Dialog>

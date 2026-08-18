@@ -1,10 +1,13 @@
 "use client";
 
-import { AlertCircle, BookPlus, FolderPlus, GraduationCap, Search } from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
+import { AlertCircle, BookPlus, ChevronRight, FolderPlus, GraduationCap, Search } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { toast } from "sonner";
 
+import { DataTable, SortableHeader } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,19 +20,26 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  type CourseSummary,
   useCreateLearningSubjectMutation,
   useGetCoursesQuery,
   useGetLearningSubjectsQuery,
 } from "@/features/catalog/catalogApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
-import { CourseTable } from "./components/course-table";
+const statusColors: Record<string, string> = {
+  PUBLISHED: "bg-success/10 text-success",
+  DRAFT: "bg-muted text-muted-foreground",
+  ARCHIVED: "bg-destructive/10 text-destructive",
+};
 
 export default function CoursesPage() {
-  // Subject and search live in the URL so a filtered catalogue view can be shared. Search stays a
-  // client-side pass on purpose: listCourses returns every matching course unpaginated, so there's
-  // nothing for a server-side search to protect against here.
-  const { values, setValue } = useListQueryState({ search: "", subjectId: "all" });
+  const router = useRouter();
+  // Subject, search, sort and page all live in the URL so a filtered catalogue view can be shared.
+  const { values, setValue, setValues } = useListQueryState(
+    { search: "", subjectId: "all", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
+    { pageKey: "page" },
+  );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
     setValue("search", next),
   );
@@ -42,20 +52,94 @@ export default function CoursesPage() {
   const [newSubjectDescription, setNewSubjectDescription] = useState("");
 
   const { data: subjects } = useGetLearningSubjectsQuery();
-  const { data: courses, isLoading } = useGetCoursesQuery(
-    subjectId === "all" ? undefined : { subjectId },
-  );
+  const { data: coursesData, isLoading } = useGetCoursesQuery({
+    subjectId: subjectId === "all" ? undefined : subjectId,
+    search: values.search || undefined,
+    page: values.page,
+    limit: values.pageSize,
+    sortBy: values.sortBy || undefined,
+    sortOrder: values.sortOrder,
+  });
+  const courses = coursesData?.items ?? [];
+  const total = coursesData?.total ?? 0;
 
   const [createLearningSubject, { isLoading: creatingSubject }] =
     useCreateLearningSubjectMutation();
 
-  const filteredCourses = (courses ?? []).filter((course) => {
-    const query = values.search.toLowerCase();
-    return (
-      course.title.toLowerCase().includes(query) ||
-      course.learningSubject.name.toLowerCase().includes(query)
-    );
-  });
+  const columns: ColumnDef<CourseSummary, any>[] = [
+    {
+      accessorKey: "title",
+      header: ({ column }) => <SortableHeader column={column} label="Course" />,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary">
+            <GraduationCap className="h-4.5 w-4.5" />
+          </div>
+          <span className="max-w-[240px] truncate text-xs font-semibold text-foreground">
+            {row.original.title}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: "subject",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Subject
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="text-xs font-semibold text-muted-foreground">
+          {row.original.learningSubject.name}
+        </span>
+      ),
+    },
+    {
+      id: "estimatedHours",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Est. Hours
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="text-xs font-semibold text-muted-foreground">
+          {row.original.estimatedHours ? `${row.original.estimatedHours}h` : "—"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => <SortableHeader column={column} label="Status" />,
+      cell: ({ row }) => (
+        <span
+          className={`inline-flex items-center rounded-lg px-2.5 py-0.5 text-[10px] font-bold capitalize ${
+            statusColors[row.original.status] || ""
+          }`}
+        >
+          {row.original.status.toLowerCase()}
+        </span>
+      ),
+    },
+    {
+      id: "concepts",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Chapters
+        </span>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end gap-2">
+          <span className="text-[10px] font-bold text-muted-foreground">
+            {row.original._count.concepts}
+          </span>
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+        </div>
+      ),
+    },
+  ];
 
   const handleOpenSubjectDialog = () => {
     setSubjectFormError("");
@@ -123,7 +207,7 @@ export default function CoursesPage() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search courses by title or subject..."
+            placeholder="Search courses by title..."
             value={searchDraft}
             onChange={(e) => setSearchDraft(e.target.value)}
             className="h-10 rounded-xl border-border bg-muted/50 pl-10 text-xs"
@@ -144,7 +228,23 @@ export default function CoursesPage() {
       </div>
 
       {/* Course Directory Table */}
-      <CourseTable courses={filteredCourses} isLoading={isLoading} />
+      <DataTable
+        columns={columns}
+        data={courses}
+        isLoading={isLoading}
+        page={values.page}
+        pageSize={values.pageSize}
+        total={total}
+        onPageChange={(next) => setValue("page", next)}
+        onPageSizeChange={(size) => setValue("pageSize", size)}
+        paginationLabel="course"
+        sortBy={values.sortBy}
+        sortOrder={values.sortOrder as "asc" | "desc"}
+        onSortChange={(sortBy, sortOrder) => setValues({ sortBy, sortOrder })}
+        onRowClick={(course) => router.push(`/courses/${course.id}`)}
+        emptyTitle="No courses found"
+        emptyDescription="Try adjusting your search, or author a course to populate the catalog."
+      />
 
       {/* Create Subject Modal */}
       <Dialog open={isSubjectDialogOpen} onOpenChange={setIsSubjectDialogOpen}>

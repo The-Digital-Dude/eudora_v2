@@ -18,12 +18,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useGetCourseClassesQuery } from "@/features/dashboard/dashboardApi";
+import { useGetBatchesQuery } from "@/features/dashboard/dashboardApi";
 import { useAppSelector } from "@/store/hooks";
 
 import {
   useCreateHomeworkMutation,
-  useGetCourseClassByIdQuery,
+  useGetBatchByIdQuery,
   useGetHomeworkForClassQuery,
   useGetHomeworkSubmissionsQuery,
 } from "../homeworkApi";
@@ -70,15 +70,15 @@ export function TeacherHomeworkView() {
   const [gradeFeedback, setGradeFeedback] = React.useState<string>("");
 
   // Queries
-  const { data: courseClassesData, isLoading: isLoadingClasses } = useGetCourseClassesQuery();
-  const courseClasses = React.useMemo(() => courseClassesData?.items ?? [], [courseClassesData]);
+  const { data: batchesData, isLoading: isLoadingClasses } = useGetBatchesQuery();
+  const batches = React.useMemo(() => batchesData?.items ?? [], [batchesData]);
 
   // Set default class if empty
   React.useEffect(() => {
-    if (courseClasses.length > 0 && !selectedClassId) {
-      setSelectedClassId(courseClasses[0].id);
+    if (batches.length > 0 && !selectedClassId) {
+      setSelectedClassId(batches[0].id);
     }
-  }, [courseClasses, selectedClassId]);
+  }, [batches, selectedClassId]);
 
   // Load Homework List
   const { data: homeworkList, isLoading: isLoadingHomework } = useGetHomeworkForClassQuery(
@@ -87,10 +87,10 @@ export function TeacherHomeworkView() {
   );
 
   // Load Course Class details for roster
-  const { data: courseClassDetails } = useGetCourseClassByIdQuery(selectedClassId, {
+  const { data: batchDetails } = useGetBatchByIdQuery(selectedClassId, {
     skip: !selectedClassId || (!isAdmin && !isTeacher),
   });
-  const enrolledStudents = courseClassDetails?.enrollments || [];
+  const enrolledStudents = batchDetails?.enrollments || [];
 
   // Load Submissions List for selected homework
   const { data: submissions, refetch: refetchSubmissions } = useGetHomeworkSubmissionsQuery(
@@ -116,7 +116,7 @@ export function TeacherHomeworkView() {
 
     try {
       await createHomework({
-        courseClassId: selectedClassId,
+        batchId: selectedClassId,
         title: newTitle,
         description: newDescription || undefined,
         dueDate: new Date(newDueDate).toISOString(),
@@ -183,7 +183,7 @@ export function TeacherHomeworkView() {
             {isLoadingClasses ? (
               <option>Loading course classes...</option>
             ) : (
-              courseClasses.map((c) => (
+              batches.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name} ({c.code})
                 </option>

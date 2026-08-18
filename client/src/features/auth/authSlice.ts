@@ -2,7 +2,10 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   user: null,
-  token: null,
+  // The double-submit CSRF value for the current session — cross-origin, the
+  // client can't read the csrf_token cookie itself, so this is populated from
+  // the response body on login/refresh/session-restore instead.
+  csrfToken: null,
   isAuthenticated: false,
 };
 
@@ -12,13 +15,13 @@ const authSlice = createSlice({
   reducers: {
     login: (state, action) => {
       state.user = action.payload.user;
-      state.token = action.payload.token;
+      state.csrfToken = action.payload.csrfToken;
       state.isAuthenticated = true;
     },
 
     logout: (state) => {
       state.user = null;
-      state.token = null;
+      state.csrfToken = null;
       state.isAuthenticated = false;
     },
   },

@@ -1,6 +1,8 @@
 import {
   Controller,
+  ForbiddenException,
   Get,
+  Headers,
   Post,
   Patch,
   Delete,
@@ -9,6 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ModuleItemsService } from './module-items.service';
+import { ACTING_STUDENT_HEADER } from '../entitlements/acting-student.service';
+import { EntitlementsService } from '../entitlements/entitlements.service';
 import {
   CreateModuleItemDto,
   UpdateModuleItemDto,
@@ -24,7 +28,10 @@ import { CurrentUserDto } from '../auth/dto/current-user.dto';
 @Controller('catalog/module-items')
 @UseGuards(RolesGuard)
 export class ModuleItemsController {
-  constructor(private readonly moduleItemsService: ModuleItemsService) {}
+  constructor(
+    private readonly moduleItemsService: ModuleItemsService,
+    private readonly entitlements: EntitlementsService,
+  ) {}
 
   @Post()
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
@@ -44,34 +51,80 @@ export class ModuleItemsController {
     return this.moduleItemsService.deleteModuleItem(id);
   }
 
+  // Consumption routes below are entitlement-gated. Authoring routes above are
+  // already staff-only, so they intentionally are not.
+
   @Post(':id/progress')
-  updateProgress(
+  async updateProgress(
     @Param('id') id: string,
     @Body() dto: UpdateModuleItemProgressDto,
     @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
+    await this.assertItemAccess(id, user, actingStudentId);
     return this.moduleItemsService.upsertProgress(id, user.id, dto);
   }
 
-  @Get(':id/my-assignment')
-  getMyAssignmentForItem(
+  @Get(':id/my-session')
+  async getMySessionForItem(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
+    await this.assertItemAccess(id, user, actingStudentId);
+    return this.moduleItemsService.getMySessionForItem(
+      id,
+      user.id,
+      actingStudentId,
+    );
+  }
+
+  @Get(':id/my-assignment')
+  async getMyAssignmentForItem(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
+  ) {
+    await this.assertItemAccess(id, user, actingStudentId);
     return this.moduleItemsService.getMyAssignmentForItem(id, user.id);
   }
 
   @Get(':id/discussion')
-  getDiscussion(@Param('id') id: string) {
+  async getDiscussion(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
+  ) {
+    await this.assertItemAccess(id, user, actingStudentId);
     return this.moduleItemsService.getDiscussion(id);
   }
 
   @Post(':id/discussion/posts')
-  addDiscussionPost(
+  async addDiscussionPost(
     @Param('id') id: string,
     @Body() dto: CreateDiscussionPostDto,
     @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
+    await this.assertItemAccess(id, user, actingStudentId);
     return this.moduleItemsService.addDiscussionPost(id, user.id, dto);
+  }
+
+  private async assertItemAccess(
+    id: string,
+    user: CurrentUserDto,
+    actingStudentId?: string | null,
+  ) {
+    const allowed = await this.entitlements.canAccessModuleItem(
+      user.id,
+      user.roles,
+      id,
+      actingStudentId ?? null,
+    );
+    if (!allowed) {
+      throw new ForbiddenException(
+        'This content requires an active enrollment',
+      );
+    }
   }
 }

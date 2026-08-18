@@ -64,4 +64,5 @@ export class CurrentUserDto {
   permissions: Permission[];
   guardianProfile: GuardianProfile | null;
   studentProfile: StudentProfile | null;
+  csrfToken: string;
 }

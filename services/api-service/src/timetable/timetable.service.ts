@@ -60,7 +60,7 @@ export class TimetableService {
       include: {
         slots: {
           include: {
-            courseClass: true,
+            batch: true,
             teacherProfile: true,
           },
         },
@@ -75,7 +75,7 @@ export class TimetableService {
       include: {
         slots: {
           include: {
-            courseClass: true,
+            batch: true,
             teacherProfile: true,
           },
         },
@@ -133,7 +133,7 @@ export class TimetableService {
         endTimeMinutes: s.endTimeMinutes,
         room: s.room || undefined,
         classSectionId: s.classSectionId,
-        courseClassId: s.courseClassId || undefined,
+        batchId: s.batchId || undefined,
         teacherProfileId: s.teacherProfileId || undefined,
         notes: s.notes || undefined,
       })),
@@ -169,7 +169,7 @@ export class TimetableService {
         endTimeMinutes: dto.endTimeMinutes,
         room: dto.room,
         classSectionId: dto.classSectionId,
-        courseClassId: dto.courseClassId,
+        batchId: dto.batchId,
         teacherProfileId: dto.teacherProfileId,
         notes: dto.notes,
       },
@@ -191,7 +191,7 @@ export class TimetableService {
         endTimeMinutes: dto.endTimeMinutes,
         room: dto.room || null,
         classSectionId: dto.classSectionId,
-        courseClassId: dto.courseClassId || null,
+        batchId: dto.batchId || null,
         teacherProfileId: dto.teacherProfileId || null,
         notes: dto.notes || null,
         status: TimetableSlotStatus.ACTIVE,
@@ -225,10 +225,10 @@ export class TimetableService {
       endTimeMinutes: dto.endTimeMinutes ?? slot.endTimeMinutes,
       room: dto.room !== undefined ? dto.room : slot.room || undefined,
       classSectionId: dto.classSectionId ?? slot.classSectionId,
-      courseClassId:
-        dto.courseClassId !== undefined
-          ? dto.courseClassId
-          : slot.courseClassId || undefined,
+      batchId:
+        dto.batchId !== undefined
+          ? dto.batchId
+          : slot.batchId || undefined,
       teacherProfileId:
         dto.teacherProfileId !== undefined
           ? dto.teacherProfileId
@@ -263,8 +263,8 @@ export class TimetableService {
         }),
         ...(dto.room !== undefined && { room: dto.room || null }),
         ...(dto.classSectionId && { classSectionId: dto.classSectionId }),
-        ...(dto.courseClassId !== undefined && {
-          courseClassId: dto.courseClassId || null,
+        ...(dto.batchId !== undefined && {
+          batchId: dto.batchId || null,
         }),
         ...(dto.teacherProfileId !== undefined && {
           teacherProfileId: dto.teacherProfileId || null,
@@ -324,7 +324,7 @@ export class TimetableService {
               endTimeMinutes: slotDto.endTimeMinutes,
               room: slotDto.room || null,
               classSectionId: slotDto.classSectionId,
-              courseClassId: slotDto.courseClassId || null,
+              batchId: slotDto.batchId || null,
               teacherProfileId: slotDto.teacherProfileId || null,
               notes: slotDto.notes || null,
             },
@@ -340,7 +340,7 @@ export class TimetableService {
               endTimeMinutes: slotDto.endTimeMinutes,
               room: slotDto.room || null,
               classSectionId: slotDto.classSectionId,
-              courseClassId: slotDto.courseClassId || null,
+              batchId: slotDto.batchId || null,
               teacherProfileId: slotDto.teacherProfileId || null,
               notes: slotDto.notes || null,
               status: TimetableSlotStatus.ACTIVE,
@@ -379,7 +379,7 @@ export class TimetableService {
       },
     });
 
-    const courseClassIds = enrollments.map((e) => e.courseClassId);
+    const batchIds = enrollments.map((e) => e.batchId);
 
     // 3. Query all published timetable slots for these class sections
     return this.prisma.timetableSlot.findMany({
@@ -393,13 +393,13 @@ export class TimetableService {
         // - It has no course class (e.g. homeroom / study period)
         // - OR the student is enrolled in the course class
         OR: [
-          { courseClassId: null },
-          { courseClassId: { in: courseClassIds } },
+          { batchId: null },
+          { batchId: { in: batchIds } },
         ],
       },
       include: {
         timetable: true,
-        courseClass: true,
+        batch: true,
         teacherProfile: true,
       },
       orderBy: [{ dayOfWeek: 'asc' }, { startTimeMinutes: 'asc' }],
@@ -417,7 +417,7 @@ export class TimetableService {
       },
       include: {
         timetable: true,
-        courseClass: true,
+        batch: true,
         classSection: true,
       },
       orderBy: [{ dayOfWeek: 'asc' }, { startTimeMinutes: 'asc' }],
@@ -435,7 +435,7 @@ export class TimetableService {
       },
       include: {
         timetable: true,
-        courseClass: true,
+        batch: true,
         teacherProfile: true,
       },
       orderBy: [{ dayOfWeek: 'asc' }, { startTimeMinutes: 'asc' }],

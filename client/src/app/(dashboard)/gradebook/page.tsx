@@ -35,7 +35,7 @@ import {
   useSyncGradesMutation,
 } from "@/features/academic/gradebookApi";
 import { useGetTermsQuery } from "@/features/academic/timetableApi";
-import { useGetCourseClassesQuery } from "@/features/dashboard/dashboardApi";
+import { useGetBatchesQuery } from "@/features/dashboard/dashboardApi";
 import { useGetChildrenQuery } from "@/features/parent/parentApi";
 import { useAppSelector } from "@/store/hooks";
 
@@ -97,18 +97,18 @@ export default function GradebookPage() {
   }, [linkedStudents, selectedStudentId]);
 
   // Queries
-  const { data: courseClassesData, isLoading: isLoadingClasses } = useGetCourseClassesQuery();
-  const courseClasses = React.useMemo(() => courseClassesData?.items ?? [], [courseClassesData]);
+  const { data: batchesData, isLoading: isLoadingClasses } = useGetBatchesQuery();
+  const batches = React.useMemo(() => batchesData?.items ?? [], [batchesData]);
 
   const { data: termsData } = useGetTermsQuery({ page: 1, limit: 100 });
   const termsList = React.useMemo(() => termsData?.items ?? [], [termsData]);
 
   // Default selections
   React.useEffect(() => {
-    if (courseClasses.length > 0 && !selectedClassId) {
-      setSelectedClassId(courseClasses[0].id);
+    if (batches.length > 0 && !selectedClassId) {
+      setSelectedClassId(batches[0].id);
     }
-  }, [courseClasses, selectedClassId]);
+  }, [batches, selectedClassId]);
 
   React.useEffect(() => {
     if (termsList.length > 0 && !selectedTermId) {
@@ -118,7 +118,7 @@ export default function GradebookPage() {
 
   // Load Gradebook Sheet Data (Teacher/Admin view)
   const { data: gradebookData, isLoading: isLoadingGradebook } = useGetGradebookForClassQuery(
-    { courseClassId: selectedClassId, termId: selectedTermId },
+    { batchId: selectedClassId, termId: selectedTermId },
     { skip: !selectedClassId || !selectedTermId || (!isAdmin && !isTeacher) },
   );
 
@@ -246,8 +246,7 @@ export default function GradebookPage() {
 
           entriesToSave.push({
             studentProfileId: student.id,
-            courseClassId: selectedClassId,
-            classSectionId: dbEntry?.classSectionId || null,
+            batchId: selectedClassId,
             termId: selectedTermId,
             title: col.title,
             category: col.category,
@@ -611,7 +610,7 @@ export default function GradebookPage() {
             {isLoadingClasses ? (
               <option>Loading course classes...</option>
             ) : (
-              courseClasses.map((c) => (
+              batches.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name} ({c.code})
                 </option>

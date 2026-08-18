@@ -43,7 +43,7 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (user) {
-      dispatch(login({ user, token: null }));
+      dispatch(login({ user, csrfToken: (user as any).csrfToken }));
     } else if (error) {
       dispatch(logout());
     }

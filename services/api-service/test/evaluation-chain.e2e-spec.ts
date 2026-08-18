@@ -7,20 +7,15 @@ import {
   createStudent,
   cleanupWorld,
   unwrap,
-  SUPER_ADMIN_CREDENTIALS,
 } from './helpers/fixtures';
 
 /**
  * The differentiator chain: concept -> competency -> rubric -> evidence ->
- * rubric assessment -> mastery recalculation -> gap -> next action.
- * Gap CREATION is seeded via Prisma because the detection rule engine is
- * intentionally unbuilt (gap.service.detectGaps throws); when it lands, the
- * seeding step here should switch to the detection API.
+ * rubric assessment -> mastery recalculation.
  */
-describe('Evaluation chain: evidence -> mastery -> gap -> next action (e2e)', () => {
+describe('Evaluation chain: evidence -> mastery (e2e)', () => {
   let ctx: TestContext;
   let adminToken: string;
-  let adminUserId: string;
   let studentUser: TestUser;
   let studentProfileId: string;
   let conceptId: string;
@@ -28,8 +23,6 @@ describe('Evaluation chain: evidence -> mastery -> gap -> next action (e2e)', ()
   let rubricId: string;
   let criterionIds: string[] = [];
   let firstMasteryScore: number;
-  let gapId: string;
-  let nextActionId: string;
   const tag = `EV${Date.now()}`;
 
   const http = () => request(ctx.app.getHttpServer());
@@ -80,10 +73,6 @@ describe('Evaluation chain: evidence -> mastery -> gap -> next action (e2e)', ()
   beforeAll(async () => {
     ctx = await createTestApp();
     adminToken = await loginAsSuperAdmin(ctx.app);
-    const admin = await ctx.prisma.user.findUnique({
-      where: { email: SUPER_ADMIN_CREDENTIALS.email },
-    });
-    adminUserId = admin!.id;
 
     const student = await createStudent(ctx, adminToken, `E2E Eval ${tag}`);
     studentUser = student.user;
@@ -161,77 +150,11 @@ describe('Evaluation chain: evidence -> mastery -> gap -> next action (e2e)', ()
     expect(mastery.masteryScore).toBeGreaterThan(firstMasteryScore);
   });
 
-  it('exposes a learning gap through the gaps API', async () => {
-    // Seeded directly until the detection engine exists (see suite docblock).
-    const gap = await ctx.prisma.learningGap.create({
-      data: {
-        studentProfileId,
-        competencyId,
-        severity: 'HIGH',
-        rootCause: 'Struggles to apply the concept under time pressure',
-        detectedFrom: 'RUBRIC',
-      },
-    });
-    gapId = gap.id;
-
-    const res = await http()
-      .get(`/api/gaps?studentProfileId=${studentProfileId}`)
-      .set(asAdmin())
-      .expect(200);
-    const gaps = unwrap<Array<{ id: string; status: string }>>(res);
-    const found = gaps.find((g) => g.id === gapId);
-    expect(found).toBeDefined();
-    expect(found!.status).toBe('OPEN');
-  });
-
-  it('moves the gap to ADDRESSING', async () => {
-    const res = await http()
-      .patch(`/api/gaps/${gapId}`)
-      .set(asAdmin())
-      .send({ status: 'ADDRESSING' })
-      .expect(200);
-    expect(unwrap<{ status: string }>(res).status).toBe('ADDRESSING');
-  });
-
-  it('creates a next action linked to the gap', async () => {
-    const res = await http()
-      .post('/api/next-actions')
-      .set(asAdmin())
-      .send({
-        gapId,
-        studentProfileId,
-        competencyId,
-        actionType: 'REVIEW',
-        reason: 'Review the concept with worked examples',
-        ownerUserId: adminUserId,
-        dueDate: '2026-08-01T00:00:00.000Z',
-      })
-      .expect(201);
-    nextActionId = unwrap<{ id: string; status: string }>(res).id;
-    expect(nextActionId).toBeTruthy();
-  });
-
-  it('completes the next action', async () => {
-    const res = await http()
-      .patch(`/api/next-actions/${nextActionId}`)
-      .set(asAdmin())
-      .send({ status: 'DONE' })
-      .expect(200);
-    expect(unwrap<{ status: string }>(res).status).toBe('DONE');
-  });
-
   it('denies curriculum authoring to a student (403)', async () => {
     await http()
       .post('/api/evaluation/concepts')
       .set('Authorization', `Bearer ${studentUser.token}`)
       .send({ name: `E2E Illegal Concept ${tag}` })
-      .expect(403);
-  });
-
-  it('denies the gaps list to a student (403)', async () => {
-    await http()
-      .get('/api/gaps')
-      .set('Authorization', `Bearer ${studentUser.token}`)
       .expect(403);
   });
 });

@@ -1,17 +1,14 @@
 import {
-  AlertTriangle,
   BookOpen,
   CalendarCheck,
   CalendarRange,
   ClipboardCheck,
   ClipboardList,
-  CreditCard,
   GraduationCap,
   HeartHandshake,
   Layers,
   LayoutDashboard,
   Library,
-  ListChecks,
   type LucideIcon,
   MessageSquare,
   NotebookPen,
@@ -20,8 +17,8 @@ import {
   Radio,
   Route,
   School,
+  ShieldCheck,
   Sparkles,
-  SquareStack,
   Stethoscope,
   UserCog,
   UserPlus,
@@ -184,6 +181,16 @@ export const navGroups: NavGroup[] = [
             hidden: true,
           },
           {
+            // The `Class` taxonomy master. Still titled "Grade Levels"
+            // rather than "Classes": the ClassSection admin pages are gone,
+            // but the model itself survives behind attendance and timetable,
+            // so the word stays ambiguous in the codebase.
+            title: "Grade Levels",
+            url: "/grade-levels",
+            icon: GraduationCap,
+            requirement: { type: "roles", roles: ADMIN_ROLES },
+          },
+          {
             title: "Courses",
             url: "/courses",
             icon: BookOpen,
@@ -198,32 +205,15 @@ export const navGroups: NavGroup[] = [
         ],
       },
       {
-        title: "Student Insights",
-        icon: ListChecks,
-        children: [
-          {
-            title: "Learning Gaps",
-            url: "/learning-gaps",
-            icon: AlertTriangle,
-            requirement: { type: "permission", action: "read", subject: "LearningGap" },
-          },
-          {
-            title: "Next Actions",
-            url: "/next-actions",
-            icon: ListChecks,
-            requirement: { type: "permission", action: "read", subject: "NextAction" },
-          },
-          {
-            title: "Placement",
-            url: "/placement",
-            icon: Layers,
-            requirement: { type: "permission", action: "read", subject: "Placement" },
-            // Descoped alongside Diagnostics: Placement's recommendation-generation path also throws
-            // NotImplementedException, and it depends on Diagnostics to ever feed it new records,
-            // so on its own it could only ever show stale seed data.
-            hidden: true,
-          },
-        ],
+        // Learning Gaps and Next Actions (Student Insights' other two children) were removed
+        // entirely — nothing ever created a LearningGap row, the detection engine was never built.
+        // Placement is kept as a route (still reachable directly) but stays out of the nav: it's
+        // hidden for the same "depends on Diagnostics, which is also unbuilt" reason as before.
+        title: "Placement",
+        url: "/placement",
+        icon: Layers,
+        requirement: { type: "permission", action: "read", subject: "Placement" },
+        hidden: true,
       },
     ],
   },
@@ -243,20 +233,31 @@ export const navGroups: NavGroup[] = [
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
       {
+        // Support tooling for access: refunds, comps, and "I paid but I
+        // can't see it" tickets all get resolved here.
+        title: "Entitlements",
+        url: "/entitlements",
+        icon: ShieldCheck,
+        requirement: { type: "roles", roles: ADMIN_ROLES },
+      },
+      {
         title: "Teachers",
         url: "/teachers",
         icon: Users2,
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
       {
-        title: "Classes & Attendance",
-        url: "/classes",
-        icon: SquareStack,
+        // The cohort a LIVE course is actually sold as a seat in. Had no
+        // admin surface at all until now — batches could only be created by
+        // calling the API directly.
+        title: "Batches",
+        url: "/batches",
+        icon: Layers,
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
       {
-        title: "Campuses & Programs",
-        url: "/campuses",
+        title: "Academic Programs",
+        url: "/programs",
         icon: School,
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
@@ -275,12 +276,6 @@ export const navGroups: NavGroup[] = [
         title: "Communication",
         url: "/communication",
         icon: MessageSquare,
-        requirement: { type: "roles", roles: ADMIN_ROLES },
-      },
-      {
-        title: "Billing & Plans",
-        url: "/plans",
-        icon: CreditCard,
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
     ],

@@ -16,6 +16,7 @@ import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { GuardianScopeGuard } from '../auth/guards/guardian-scope.guard';
 import { CreateCourseAssignmentDto } from './dto/course-assignment.dto';
 import { CreateClassEnrollmentDto } from './dto/class-enrollment.dto';
+import { CreateChildDto } from './dto/create-child.dto';
 
 @Controller('parent')
 @UseGuards(RolesGuard)
@@ -109,7 +110,7 @@ export class ParentController {
   }
 
   // --- Class enrollment ------------------------------------------------------
-  // Separate from the learning-plan routes above: a `CourseClass` carries
+  // Separate from the learning-plan routes above: a `Batch` carries
   // real academic weight (gradebook, attendance, homework, capacity), so
   // this only ever touches classes staff explicitly opted in via
   // `isOpenForEnrollment` — never the admin-only `POST /student-enrollments`.
@@ -138,7 +139,7 @@ export class ParentController {
   ) {
     return this.parentService.enrollInClass(
       studentProfileId,
-      dto.courseClassId,
+      dto.batchId,
     );
   }
 
@@ -152,6 +153,19 @@ export class ParentController {
       studentProfileId,
       enrollmentId,
     );
+  }
+
+  /**
+   * Creates a child under the calling guardian. This is the path that makes
+   * self-service purchase possible — link-by-email required the child to
+   * already have their own account.
+   */
+  @Post('children')
+  async createChild(
+    @Body() dto: CreateChildDto,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
+    return this.parentService.createChild(user.id, dto);
   }
 
   @Get('billing/invoices')

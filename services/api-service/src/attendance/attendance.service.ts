@@ -109,10 +109,10 @@ export class AttendanceService {
   // ─── Course Session Operations ──────────────────────────────────────────────
 
   async createSession(dto: CreateSessionDto) {
-    const courseClass = await this.prisma.courseClass.findUnique({
-      where: { id: dto.courseClassId },
+    const batch = await this.prisma.batch.findUnique({
+      where: { id: dto.batchId },
     });
-    if (!courseClass) {
+    if (!batch) {
       throw new NotFoundException('Course class not found');
     }
 
@@ -142,9 +142,9 @@ export class AttendanceService {
       throw new BadRequestException('Start time cannot be after end time');
     }
 
-    return this.prisma.courseClassSession.create({
+    return this.prisma.batchSession.create({
       data: {
-        courseClassId: dto.courseClassId,
+        batchId: dto.batchId,
         date: sessionDate,
         startTime: start,
         endTime: end,
@@ -153,16 +153,16 @@ export class AttendanceService {
     });
   }
 
-  async getSessionsForCourse(courseClassId: string) {
-    const courseClass = await this.prisma.courseClass.findUnique({
-      where: { id: courseClassId },
+  async getSessionsForCourse(batchId: string) {
+    const batch = await this.prisma.batch.findUnique({
+      where: { id: batchId },
     });
-    if (!courseClass) {
+    if (!batch) {
       throw new NotFoundException('Course class not found');
     }
 
-    return this.prisma.courseClassSession.findMany({
-      where: { courseClassId },
+    return this.prisma.batchSession.findMany({
+      where: { batchId },
       orderBy: { date: 'desc' },
     });
   }
@@ -173,10 +173,10 @@ export class AttendanceService {
     dto: RecordSessionAttendanceDto,
     recordedByUserId?: string,
   ) {
-    const session = await this.prisma.courseClassSession.findUnique({
+    const session = await this.prisma.batchSession.findUnique({
       where: { id: dto.sessionId },
       include: {
-        courseClass: {
+        batch: {
           include: { enrollments: true },
         },
       },
@@ -186,7 +186,7 @@ export class AttendanceService {
     }
 
     const validStudentIds = new Set(
-      session.courseClass.enrollments.map((e) => e.studentProfileId),
+      session.batch.enrollments.map((e) => e.studentProfileId),
     );
 
     return this.prisma.$transaction(async (tx) => {
@@ -194,11 +194,11 @@ export class AttendanceService {
       for (const record of dto.records) {
         if (!validStudentIds.has(record.studentProfileId)) {
           throw new BadRequestException(
-            `Student with ID ${record.studentProfileId} is not enrolled in Course Class ${session.courseClassId}`,
+            `Student with ID ${record.studentProfileId} is not enrolled in Course Class ${session.batchId}`,
           );
         }
 
-        const upserted = await tx.courseClassAttendance.upsert({
+        const upserted = await tx.batchAttendance.upsert({
           where: {
             studentProfileId_sessionId: {
               studentProfileId: record.studentProfileId,
@@ -225,14 +225,14 @@ export class AttendanceService {
   }
 
   async getSessionAttendance(sessionId: string) {
-    const session = await this.prisma.courseClassSession.findUnique({
+    const session = await this.prisma.batchSession.findUnique({
       where: { id: sessionId },
     });
     if (!session) {
       throw new NotFoundException('Course session not found');
     }
 
-    return this.prisma.courseClassAttendance.findMany({
+    return this.prisma.batchAttendance.findMany({
       where: { sessionId },
       include: {
         studentProfile: true,
@@ -273,7 +273,7 @@ export class AttendanceService {
 
     const [dailyRecords, courseRecords] = await Promise.all([
       this.prisma.dailyAttendance.findMany({ where: whereDaily }),
-      this.prisma.courseClassAttendance.findMany({ where: whereCourse }),
+      this.prisma.batchAttendance.findMany({ where: whereCourse }),
     ]);
 
     const calculateStats = (records: Array<{ status: AttendanceStatus }>) => {

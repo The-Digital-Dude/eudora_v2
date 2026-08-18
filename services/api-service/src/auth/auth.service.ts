@@ -647,11 +647,18 @@ export class AuthService {
 
     const roles = session.user.roles.map((ur: any) => ur.role.name);
 
+    // Minted before accessPayload so it can travel as a claim on the access
+    // token itself — the client (cross-origin) cannot read the csrf_token
+    // cookie directly via document.cookie, so /auth/me and every refresh
+    // response reflect this claim back in the JSON body instead.
+    const newCsrfToken = crypto.randomBytes(32).toString('base64url');
+
     const accessPayload = {
       sub: session.user.id,
       email: session.user.email,
       roles,
       typ: 'access',
+      csrf: newCsrfToken,
     };
 
     const refreshPayload = {
@@ -673,7 +680,6 @@ export class AuthService {
       expiresIn: refreshTokenExpiresInSeconds,
     });
 
-    const newCsrfToken = crypto.randomBytes(32).toString('base64url');
     const newRefreshTokenHash = crypto
       .createHash('sha256')
       .update(newRefreshToken)
@@ -841,11 +847,16 @@ export class AuthService {
   ) {
     const roles = user.roles.map((ur: any) => ur.role.name);
 
+    // See refreshSession for why this rides along as a JWT claim rather than
+    // only living in the csrf_token cookie.
+    const csrfToken = crypto.randomBytes(32).toString('base64url');
+
     const accessPayload = {
       sub: user.id,
       email: user.email,
       roles,
       typ: 'access',
+      csrf: csrfToken,
     };
 
     const refreshPayload = {
@@ -866,7 +877,6 @@ export class AuthService {
       expiresIn: refreshTokenExpiresInSeconds,
     });
 
-    const csrfToken = crypto.randomBytes(32).toString('base64url');
     const refreshTokenHash = crypto
       .createHash('sha256')
       .update(refreshToken)

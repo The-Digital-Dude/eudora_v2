@@ -12,7 +12,7 @@ import { AttendanceStatus } from '@prisma/client';
 export class CreateSessionDto {
   @IsString()
   @IsNotEmpty()
-  courseClassId: string;
+  batchId: string;
 
   @IsString()
   @IsNotEmpty()

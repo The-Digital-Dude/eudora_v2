@@ -1,5 +1,6 @@
-﻿"use client";
+"use client";
 
+import { type ColumnDef } from "@tanstack/react-table";
 import {
   AlertCircle,
   Clock,
@@ -10,7 +11,7 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 
-import { ListPagination } from "@/components/list-pagination";
+import { DataTable, SortableHeader } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -27,15 +28,17 @@ import {
   useAssignUserRoleMutation,
   useGetRolesQuery,
   useGetUsersQuery,
+  type User,
   useRemoveUserRoleMutation,
   useUpdateUserMutation,
 } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
-const PAGE_SIZE = 20;
-
 export default function UsersPage() {
-  const { values, setValue } = useListQueryState({ search: "", page: 1 }, { pageKey: "page" });
+  const { values, setValue, setValues } = useListQueryState(
+    { search: "", page: 1, pageSize: 10, sortBy: "", sortOrder: "asc" },
+    { pageKey: "page" },
+  );
   const [searchDraft, setSearchDraft] = useDebouncedQueryInput(values.search, (next) =>
     setValue("search", next),
   );
@@ -43,8 +46,10 @@ export default function UsersPage() {
   // Queries & Mutations
   const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
     page: values.page,
-    limit: PAGE_SIZE,
+    limit: values.pageSize,
     search: values.search || undefined,
+    sortBy: values.sortBy || undefined,
+    sortOrder: values.sortOrder,
   });
   const { data: rolesData } = useGetRolesQuery();
   const [updateUser, { isLoading: updatingUser }] = useUpdateUserMutation();
@@ -117,6 +122,104 @@ export default function UsersPage() {
   const filteredUsers = usersData?.items || [];
   const totalMatching = usersData?.total ?? 0;
 
+  const columns: ColumnDef<User, any>[] = [
+    {
+      accessorKey: "email",
+      header: ({ column }) => <SortableHeader column={column} label="User" />,
+      cell: ({ row }) => {
+        const user = row.original as any;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="font-display flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-xs font-bold text-background">
+              {getUserName(user) ? getUserName(user)[0].toUpperCase() : "U"}
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground">{getUserName(user)}</p>
+              <p className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Mail className="h-3 w-3" /> {user.email}
+              </p>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: "role",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Role
+        </span>
+      ),
+      cell: ({ row }) => {
+        const user = row.original as any;
+        const displayRoles =
+          user.roles && user.roles.length > 0
+            ? user.roles.map((r: any) => r.role?.name).join(", ")
+            : "No Role";
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground">
+            <Shield className="h-3 w-3 text-muted-foreground" />
+            {displayRoles}
+          </span>
+        );
+      },
+    },
+    {
+      id: "status",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Status
+        </span>
+      ),
+      cell: ({ row }) => {
+        const status = (row.original as any).status;
+        return (
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+              status === "ACTIVE"
+                ? "border border-success/20 bg-success/10 text-success"
+                : "border border-border bg-muted text-muted-foreground"
+            }`}
+          >
+            {status}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => <SortableHeader column={column} label="Joined Date" />,
+      cell: ({ row }) => (
+        <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+          <Clock className="h-3 w-3" />
+          {new Date(row.original.createdAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      header: () => (
+        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Actions
+        </span>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <Button
+            onClick={() => handleOpenEditDialog(row.original)}
+            variant="outline"
+            className="h-8 rounded-lg border-border px-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:hover:text-foreground"
+          >
+            <Edit2 className="mr-1 h-3.5 w-3.5" /> Edit
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="animate-fade-in space-y-6 text-foreground">
       {/* Header */}
@@ -148,132 +251,20 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* Users Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="pb-3 text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  User
-                </th>
-                <th className="pb-3 text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Role
-                </th>
-                <th className="pb-3 text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Status
-                </th>
-                <th className="pb-3 text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Joined Date
-                </th>
-                <th className="pb-3 text-right text-[10px] font-bold tracking-wider text-muted-foreground uppercase0">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {usersLoading ? (
-                [...Array(3)].map((_, i) => (
-                  <tr
-                    key={i}
-                    className="border-b border-border/30 last:border-0/40"
-                  >
-                    <td className="py-4">
-                      <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="h-4 w-16 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="h-4 w-20 animate-pulse rounded bg-muted" />
-                    </td>
-                    <td className="py-4">
-                      <div className="ml-auto h-4 w-10 animate-pulse rounded bg-muted" />
-                    </td>
-                  </tr>
-                ))
-              ) : filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => {
-                  // Determine roles
-                  const displayRoles =
-                    user.roles && user.roles.length > 0
-                      ? user.roles.map((r: any) => r.role?.name).join(", ")
-                      : "No Role";
-
-                  return (
-                    <tr
-                      key={user.id}
-                      className="border-b border-border/30 transition-colors last:border-0 hover:bg-muted/50/50/30"
-                    >
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="font-display flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-xs font-bold text-background">
-                            {getUserName(user) ? getUserName(user)[0].toUpperCase() : "U"}
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-foreground">
-                              {getUserName(user)}
-                            </p>
-                            <p className=" mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <Mail className="h-3 w-3" /> {user.email}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground">
-                          <Shield className="h-3 w-3 text-muted-foreground" />
-                          {displayRoles}
-                        </span>
-                      </td>
-                      <td className="py-4 text-xs">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            user.status === "ACTIVE"
-                              ? "border border-success/20 bg-success/10 text-success"
-                              : "border border-border bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {user.status}
-                        </span>
-                      </td>
-                      <td className="py-4 text-[10px] font-medium text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </span>
-                      </td>
-                      <td className="py-4 text-right">
-                        <Button
-                          onClick={() => handleOpenEditDialog(user)}
-                          variant="outline"
-                          className="h-8 rounded-lg border-border px-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:hover:text-foreground"
-                        >
-                          <Edit2 className="mr-1 h-3.5 w-3.5" /> Edit
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-xs font-medium text-muted-foreground">
-                    No users matching criteria.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <ListPagination
+        <DataTable
+          columns={columns}
+          data={filteredUsers}
+          isLoading={usersLoading}
           page={values.page}
-          pageSize={PAGE_SIZE}
+          pageSize={values.pageSize}
           total={totalMatching}
           onPageChange={(next) => setValue("page", next)}
-          label="user"
+          onPageSizeChange={(size) => setValue("pageSize", size)}
+          paginationLabel="user"
+          sortBy={values.sortBy}
+          sortOrder={values.sortOrder as "asc" | "desc"}
+          onSortChange={(sortBy, sortOrder) => setValues({ sortBy, sortOrder })}
+          emptyTitle="No users matching criteria"
         />
       </Card>
 

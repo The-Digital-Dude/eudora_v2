@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CoordinatePlotterWidget } from "@/features/clio/widgets/CoordinatePlotterWidget";
 import { usePreviewWidgetInstanceMutation } from "@/features/assessments/questionsApi";
+import { CoordinatePlotterWidget } from "@/features/clio/widgets/CoordinatePlotterWidget";
 
 // Shared "Generate Preview" control for parameterized widgets — hits the
 // stateless preview endpoint so authors can sanity-check a sample instance

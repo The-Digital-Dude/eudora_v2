@@ -182,6 +182,13 @@
   --warning-foreground: oklch(0.15 0 0);
 }
 
+/* Scoped to the marketing landing page only — overrides the app-wide font
+   customizer so the rest of the product keeps its own font choice. */
+.font-landing {
+  --font-sans: var(--font-fredoka);
+  --font-display: var(--font-fredoka);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

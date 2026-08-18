@@ -83,6 +83,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       permissions,
       guardianProfile: user.guardianProfile,
       studentProfile: user.studentProfile,
+      // Reflects the csrf claim minted onto this access token back to the
+      // client — cross-origin, the client cannot read the csrf_token cookie
+      // itself via document.cookie, so /auth/me is how it recovers the value
+      // on every page load, not just at login.
+      csrfToken: payload.csrf,
     };
   }
 }

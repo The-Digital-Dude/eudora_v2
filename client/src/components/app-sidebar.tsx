@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
@@ -24,7 +25,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { isNavParent,type NavGroup, navGroups } from "@/config/nav-config";
-import { getRoleHome, getShellBrand, hasAccess } from "@/lib/access-control";
+import { getRoleHome, hasAccess } from "@/lib/access-control";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: {
@@ -71,26 +72,24 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
 
   return (
     <Sidebar {...props}>
-      <SidebarHeader className="border-sidebar-border/50 border-b">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href={getRoleHome(user)}>
-                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Logo size={18} className="text-current" />
-                </div>
-                <div className="grid flex-1 text-left text-xs leading-tight">
-                  <span className="truncate font-bold text-sidebar-foreground">
-                    {getShellBrand(user).title}
-                  </span>
-                  <span className="truncate text-[10px] font-semibold tracking-wider text-sidebar-foreground/50 uppercase">
-                    {getShellBrand(user).subtitle}
-                  </span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="border-sidebar-border/50 border-b p-0">
+        <Link
+          href={getRoleHome(user)}
+          className="flex items-center justify-center py-3 group-data-[collapsible=icon]:py-3"
+        >
+          {/* Icon-only mark, shown when the sidebar is collapsed to icon width */}
+          <div className="hidden aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground group-data-[collapsible=icon]:flex">
+            <Logo size={18} className="text-current" />
+          </div>
+          {/* Full-width wordmark, shown when the sidebar is expanded — spans the panel width, with a cap so it doesn't dominate the header */}
+          <Image
+            src="/landing/eudora_logo.png"
+            alt="Eudora"
+            width={218}
+            height={72}
+            className="h-auto w-full max-w-[130px] group-data-[collapsible=icon]:hidden"
+          />
+        </Link>
       </SidebarHeader>
 
       <SidebarContent className="py-4">
@@ -141,10 +140,10 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                                         </Badge>
                                       </span>
                                     ) : (
-                                      <SidebarMenuSubButton asChild isActive={isActive}>
+                                      <SidebarMenuSubButton asChild size="sm" isActive={isActive}>
                                         <Link href={child.url} aria-current={isActive ? "page" : undefined}>
                                           <ChildIcon className="h-3.5 w-3.5" />
-                                          <span>{child.title}</span>
+                                          <span className="truncate">{child.title}</span>
                                         </Link>
                                       </SidebarMenuSubButton>
                                     )}

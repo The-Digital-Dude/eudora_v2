@@ -1,27 +1,32 @@
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+import { getActingChildId } from "@/lib/acting-child";
+
 import { login, logout } from "./authSlice";
 
-// Helper to extract a cookie value from the browser on client-side
-export function getCookie(name: string): string {
-  if (typeof document === "undefined") return "";
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return parts.pop()?.split(";").shift() || "";
-  }
-  return "";
-}
+// The API is a separate origin from the client, so this can never be a
+// relative path — there is no Next.js proxy rewriting /api/* anymore.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: "/api",
+  baseUrl: `${API_URL}/api`,
   credentials: "include",
-  prepareHeaders: (headers) => {
-    // Append CSRF Token header for all unsafe methods
-    const csrfToken = getCookie("csrf_token");
+  prepareHeaders: (headers, { getState }) => {
+    // The API and client are cross-origin, so the browser can never read the
+    // csrf_token cookie via document.cookie (that's a same-origin-only
+    // restriction, independent of SameSite) — the value is instead captured
+    // into Redux at login/refresh/session-restore time and read back here.
+    const csrfToken = (getState() as any).auth?.csrfToken;
     if (csrfToken) {
       headers.set("x-csrf-token", csrfToken);
+    }
+    // Tells the API which child a guardian is acting for. Purely a hint — the
+    // server re-checks the guardian-child link on every request, and ignores
+    // this entirely for callers who are themselves students.
+    const actingChildId = getActingChildId();
+    if (actingChildId) {
+      headers.set("x-acting-student-id", actingChildId);
     }
     return headers;
   },
@@ -58,7 +63,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
       if (refreshResult.data) {
         // Rotated successfully, store new user session details in Redux state
         const user = (refreshResult.data as any).data ?? refreshResult.data;
-        api.dispatch(login({ user, token: null }));
+        api.dispatch(login({ user, csrfToken: user.csrfToken }));
 
         // Retry the original request
         result = await baseQuery(args, api, extraOptions);
@@ -80,7 +85,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   if (result.data && typeof result.data === "object" && "success" in result.data) {
     const envelope = result.data as any;
     if (Array.isArray(envelope.data) && envelope.meta?.pagination) {
-      const total = envelope.meta.pagination.total ?? envelope.data.length;
+      const total = envelope.meta.pagination.totalItems ?? envelope.data.length;
       result.data = {
         items: envelope.data,
         data: envelope.data,
@@ -99,15 +104,11 @@ export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: baseQueryWithReauth,
   tagTypes: [
-    "Campuses",
     "Programs",
-    "CampusCourses",
     "Users",
     "Roles",
-    "BillingPlans",
-    "CampusSubscription",
     "Leads",
-    "CourseClasses",
+    "Batches",
     "ClassSections",
     "MakeupRequests",
     "Attempts",
@@ -136,15 +137,14 @@ export const authApi = createApi({
     "Questions",
     "Assessments",
     "Assignments",
-    "Messages",
     "ParentPortal",
     "Gamification",
     "Leaderboard",
     "TeacherPortal",
     "LiveClasses",
-    "LearningGaps",
-    "NextActions",
     "PlacementRecommendations",
+    "Entitlements",
+    "Classes",
   ],
   endpoints: (builder) => ({
     login: builder.mutation({

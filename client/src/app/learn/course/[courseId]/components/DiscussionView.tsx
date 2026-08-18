@@ -3,12 +3,12 @@
 import { MessageSquare, Send } from "lucide-react";
 import React, { useState } from "react";
 
+import type { ModuleItem } from "@/features/catalog/catalogApi";
 import {
   useAddDiscussionPostMutation,
   useGetDiscussionQuery,
   useUpdateModuleItemProgressMutation,
 } from "@/features/catalog/catalogApi";
-import type { ModuleItem } from "@/features/catalog/catalogApi";
 
 interface DiscussionViewProps {
   item: ModuleItem;

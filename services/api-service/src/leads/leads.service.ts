@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto';
+
+const LEAD_SORTABLE_FIELDS = ['name', 'email', 'status', 'source', 'createdAt'] as const;
 
 @Injectable()
 export class LeadsService {
@@ -12,7 +15,14 @@ export class LeadsService {
     });
   }
 
-  async findAll(page = 1, limit = 10, status?: string, search?: string) {
+  async findAll(
+    page = 1,
+    limit = 10,
+    status?: string,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: string,
+  ) {
     const skip = (page - 1) * limit;
     const where: any = {};
 
@@ -27,12 +37,14 @@ export class LeadsService {
       ];
     }
 
+    const orderBy = resolveSort(sortBy, sortOrder, LEAD_SORTABLE_FIELDS, 'createdAt', 'desc');
+
     const [leads, total] = await Promise.all([
       this.prisma.lead.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       this.prisma.lead.count({ where }),
     ]);

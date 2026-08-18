@@ -21,7 +21,7 @@ describe('GradebookService', () => {
       findFirst: jest.fn(),
       findMany: jest.fn(),
     },
-    courseClass: {
+    batch: {
       findUnique: jest.fn(),
     },
     homeworkSubmission: {
@@ -118,9 +118,9 @@ describe('GradebookService', () => {
         id: 'sub-1',
         studentProfileId: 'student-1',
         homework: {
-          courseClassId: 'class-1',
+          batchId: 'class-1',
           title: 'Homework 1',
-          courseClass: { termId: 'term-1' },
+          batch: { termId: 'term-1' },
         },
       };
       mockPrismaService.homeworkSubmission.findUnique.mockResolvedValue(

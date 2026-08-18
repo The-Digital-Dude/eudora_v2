@@ -1,9 +1,8 @@
 ﻿"use client";
 
-import { BookOpen, CreditCard, GraduationCap, Loader2, MessageSquare, ShieldAlert } from "lucide-react";
+import { BookOpen, CreditCard, GraduationCap, Loader2, ShieldAlert } from "lucide-react";
 import React, { useEffect,useState } from "react";
 
-import { MessagingCenter } from "@/features/messaging/components/MessagingCenter";
 import { useGetChildAttendanceQuery, useGetChildGradesQuery,useGetChildHomeworkQuery, useGetChildrenQuery } from "@/features/parent/parentApi";
 import { useAppSelector } from "@/store/hooks";
 
@@ -14,15 +13,15 @@ import { ClassEnrollmentPanel } from "./components/class-enrollment-panel";
 import { CoursePlanPanel } from "./components/course-plan-panel";
 import { HomeworkGradesPanel } from "./components/homework-grades-panel";
 import { LearningPanel } from "./components/learning-panel";
+import { PurchasesPanel } from "./components/purchases-panel";
 
 export default function ParentPage() {
   const auth = useAppSelector((state) => state.auth);
   const user = auth.user as any;
-  const currentUserId = user?.id;
 
   const { data: children = [], isLoading: isChildrenLoading } = useGetChildrenQuery();
   const [activeStudentId, setActiveStudentId] = useState<string>("");
-  const [activeSection, setActiveSection] = useState<"academics" | "courses" | "billing" | "messages">("academics");
+  const [activeSection, setActiveSection] = useState<"academics" | "courses" | "billing">("academics");
 
   // Automatically select the first child
   useEffect(() => {
@@ -114,17 +113,6 @@ export default function ParentPage() {
           >
             <CreditCard className="h-4 w-4" />
             Billing
-          </button>
-          <button
-            onClick={() => setActiveSection("messages")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeSection === "messages"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <MessageSquare className="h-4 w-4" />
-            Messages
           </button>
         </div>
       </div>
@@ -219,22 +207,14 @@ export default function ParentPage() {
       )}
 
       {activeSection === "billing" && (
-        <div className="max-w-4xl mx-auto">
-          <BillingHistoryPanel />
-        </div>
-      )}
-
-      {activeSection === "messages" && (
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">
-              Message Center
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Send messages directly to the teachers of your children&apos;s classes.
-            </p>
+        <div className="max-w-4xl mx-auto space-y-10">
+          {/* Stripe purchases first — that is what a guardian actually bought.
+              The invoice ledger below is staff-entered offline billing, a
+              separate system that predates checkout. */}
+          <PurchasesPanel />
+          <div className="border-t border-border pt-8">
+            <BillingHistoryPanel />
           </div>
-          <MessagingCenter currentUserId={currentUserId} isGuardian={true} />
         </div>
       )}
     </div>

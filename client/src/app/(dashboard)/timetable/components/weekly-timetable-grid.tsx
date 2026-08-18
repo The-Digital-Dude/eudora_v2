@@ -131,7 +131,7 @@ export function WeeklyTimetableGrid({
                             <div className="space-y-2">
                               {cellSlots.map((slot) => {
                                 const title =
-                                  slot.courseClass?.name || slot.notes || "Homeroom/Unscheduled";
+                                  slot.batch?.name || slot.notes || "Homeroom/Unscheduled";
                                 const colors = getColors(title);
 
                                 return (
@@ -160,9 +160,9 @@ export function WeeklyTimetableGrid({
                                     </div>
 
                                     {/* Class name / Subject code */}
-                                    {slot.courseClass && (
+                                    {slot.batch && (
                                       <p className="text-[10px] font-bold opacity-85">
-                                        {slot.courseClass.code}
+                                        {slot.batch.code}
                                       </p>
                                     )}
 

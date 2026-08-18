@@ -51,10 +51,10 @@ export class HomeworkController {
    * Get all homework assignments for a course class.
    */
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
-  @Get('course-class/:courseClassId')
+  @Get('batch/:batchId')
   @RequirePermissions({ action: 'read', subject: 'Homework' })
-  getHomeworkForClass(@Param('courseClassId') courseClassId: string) {
-    return this.homeworkService.getHomeworkForClass(courseClassId);
+  getHomeworkForClass(@Param('batchId') batchId: string) {
+    return this.homeworkService.getHomeworkForClass(batchId);
   }
 
   /**

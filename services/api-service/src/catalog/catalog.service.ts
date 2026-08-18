@@ -2,8 +2,11 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
+import { DeliveryMode, ModuleItemKind } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSort } from '../common/sort.util';
 import {
   CreateLearningSubjectDto,
   UpdateLearningSubjectDto,
@@ -15,12 +18,16 @@ import {
   ReorderPathCoursesDto,
 } from './dto/catalog.dto';
 import { ProgressionService } from '../progression/progression.service';
+import { EntitlementsService } from '../entitlements/entitlements.service';
+
+const COURSE_SORTABLE_FIELDS = ['title', 'status', 'createdAt'] as const;
 
 @Injectable()
 export class CatalogService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly progression: ProgressionService,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   // ─── Learning Subjects ───────────────────────────────────────────────────
@@ -100,26 +107,6 @@ export class CatalogService {
     });
   }
 
-  // Prisma `OR` clause implementing the `CampusCourse` opt-in-restriction
-  // model (see schema.prisma): a course with zero assignment rows is global
-  // (visible to every campus); a course with at least one row is visible
-  // only to campuses with an enabled row. `visibleCampusIds` is the caller's
-  // resolved campus list — `null` bypasses this filter entirely (staff), an
-  // empty array matches nothing but courses that are still fully global.
-  private campusVisibilityFilter(visibleCampusIds: string[] | null) {
-    if (visibleCampusIds === null) return {};
-    return {
-      OR: [
-        { campusAssignments: { none: {} } },
-        {
-          campusAssignments: {
-            some: { campusId: { in: visibleCampusIds }, enabled: true },
-          },
-        },
-      ],
-    };
-  }
-
   // `listCourses`/`getCourseDetail` are shared by every role (`CatalogController`
   // is `@Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')`) — staff
   // need to see DRAFT courses to author them, students/guardians never should.
@@ -128,28 +115,58 @@ export class CatalogService {
   async listCourses(
     learningSubjectId?: string,
     includeUnpublished = false,
-    visibleCampusIds: string[] | null = null,
     // When set, each row is annotated with `isAssigned` — whether the course
     // is in that student's guardian-curated learning plan. Annotation only;
     // it never filters, because an assignment is a recommendation, not an
     // access grant (catalog content is open to any authenticated student).
     annotateForStudentProfileId: string | null = null,
+    page = 1,
+    // 500 comfortably covers "give me the whole catalog" for callers that
+    // don't paginate (pickers, guardian course-plan browsing) without an
+    // unbounded query — a real school's catalog isn't going to clear that.
+    limit = 500,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: string,
   ) {
-    const courses = await this.prisma.course.findMany({
-      where: {
-        deletedAt: null,
-        ...(includeUnpublished ? {} : { status: 'PUBLISHED' }),
-        ...(learningSubjectId ? { learningSubjectId } : {}),
-        ...this.campusVisibilityFilter(visibleCampusIds),
-      },
-      orderBy: { sortOrder: 'asc' },
-      include: {
-        learningSubject: { select: { id: true, name: true, code: true } },
-        _count: { select: { concepts: true } },
-      },
-    });
+    const where = {
+      deletedAt: null,
+      ...(includeUnpublished ? {} : { status: 'PUBLISHED' as const }),
+      ...(learningSubjectId ? { learningSubjectId } : {}),
+      ...(search
+        ? { title: { contains: search, mode: 'insensitive' as const } }
+        : {}),
+    };
 
-    if (!annotateForStudentProfileId) return courses;
+    // 'sortOrder' is also a real Course column (manual curation position),
+    // so it's deliberately excluded from the user-choosable allowlist below
+    // to avoid confusing it with the sort *direction* of the same name — it
+    // remains the fallback field, reproducing the original hardcoded default.
+    const orderBy = resolveSort(
+      sortBy,
+      sortOrder,
+      COURSE_SORTABLE_FIELDS,
+      'sortOrder',
+      'asc',
+    );
+
+    const [courses, total] = await Promise.all([
+      this.prisma.course.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          learningSubject: { select: { id: true, name: true, code: true } },
+          _count: { select: { concepts: true } },
+        },
+      }),
+      this.prisma.course.count({ where }),
+    ]);
+
+    if (!annotateForStudentProfileId) {
+      return { items: courses, total, page, pageSize: limit };
+    }
 
     const assignments = await this.prisma.studentCourseAssignment.findMany({
       where: {
@@ -159,17 +176,328 @@ export class CatalogService {
       select: { courseId: true },
     });
     const assignedIds = new Set(assignments.map((a) => a.courseId));
-    return courses.map((course) => ({
-      ...course,
-      isAssigned: assignedIds.has(course.id),
-    }));
+    return {
+      items: courses.map((course) => ({
+        ...course,
+        isAssigned: assignedIds.has(course.id),
+      })),
+      total,
+      page,
+      pageSize: limit,
+    };
+  }
+
+  /**
+   * Anonymous, unauthenticated course search for the marketing site. Returns
+   * only what a visitor deciding whether to sign up needs — never price,
+   * Stripe ids, or any other field a logged-out stranger shouldn't see, and
+   * never a DRAFT/ARCHIVED row regardless of what the search term matches.
+   */
+  async listPublicCourses(search?: string, page = 1, limit = 12) {
+    const where = {
+      status: 'PUBLISHED' as const,
+      deletedAt: null,
+      ...(search
+        ? { title: { contains: search, mode: 'insensitive' as const } }
+        : {}),
+    };
+
+    const [courses, total] = await Promise.all([
+      this.prisma.course.findMany({
+        where,
+        orderBy: { sortOrder: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true,
+          estimatedHours: true,
+          gradeBand: true,
+          learningSubject: { select: { id: true, name: true, code: true } },
+          _count: { select: { concepts: true } },
+        },
+      }),
+      this.prisma.course.count({ where }),
+    ]);
+
+    return { items: courses, total, page, pageSize: limit };
+  }
+
+  // ─── Course teaching staff ───────────────────────────────────────────────
+  // A plain many-to-many. "One course, many teachers" never needed a cohort
+  // system — `Batch` is a cohort and exists for live delivery instead.
+
+  async listCourseTeachers(courseId: string) {
+    return this.prisma.courseTeacher.findMany({
+      where: { courseId },
+      orderBy: [{ role: 'asc' }, { assignedAt: 'asc' }],
+      select: {
+        role: true,
+        assignedAt: true,
+        teacherProfile: {
+          select: {
+            id: true,
+            fullName: true,
+            specialization: true,
+            status: true,
+          },
+        },
+      },
+    });
+  }
+
+  async attachCourseTeacher(
+    courseId: string,
+    teacherProfileId: string,
+    role = 'LEAD',
+  ) {
+    const [course, teacher] = await Promise.all([
+      this.prisma.course.findFirst({
+        where: { id: courseId, deletedAt: null },
+        select: { id: true },
+      }),
+      this.prisma.teacherProfile.findFirst({
+        where: { id: teacherProfileId, deletedAt: null },
+        select: { id: true },
+      }),
+    ]);
+    if (!course) throw new NotFoundException('Course not found');
+    if (!teacher) throw new NotFoundException('Teacher not found');
+
+    // Upsert rather than create: re-adding an existing teacher should change
+    // their role, not fail with a duplicate-key error.
+    return this.prisma.courseTeacher.upsert({
+      where: { courseId_teacherProfileId: { courseId, teacherProfileId } },
+      create: { courseId, teacherProfileId, role },
+      update: { role },
+    });
+  }
+
+  async detachCourseTeacher(courseId: string, teacherProfileId: string) {
+    const existing = await this.prisma.courseTeacher.findUnique({
+      where: { courseId_teacherProfileId: { courseId, teacherProfileId } },
+    });
+    if (!existing) {
+      throw new NotFoundException(
+        'That teacher is not assigned to this course',
+      );
+    }
+    await this.prisma.courseTeacher.delete({
+      where: { courseId_teacherProfileId: { courseId, teacherProfileId } },
+    });
+    return { message: 'Teacher removed from course' };
+  }
+
+  // ─── Public SKU surface ──────────────────────────────────────────────────
+  // Separate from `listPublicCourses` above in one important way: these DO
+  // expose price, because a programme page that cannot show what it costs
+  // cannot sell. Stripe ids are never exposed, and only PUBLISHED rows are
+  // ever returned regardless of what was asked for.
+
+  private static readonly PUBLIC_PROGRAM_FIELDS = {
+    id: true,
+    name: true,
+    slug: true,
+    shortDescription: true,
+    description: true,
+    thumbnailUrl: true,
+    outcomes: true,
+    deliveryMode: true,
+    durationMonths: true,
+    priceOneTimeCents: true,
+    priceMonthlyCents: true,
+    installmentCount: true,
+    currency: true,
+    class: { select: { id: true, name: true, slug: true, code: true } },
+  } as const;
+
+  async listPublicPrograms(classSlug?: string, limit = 50) {
+    return this.prisma.program.findMany({
+      where: {
+        status: 'PUBLISHED',
+        deletedAt: null,
+        ...(classSlug ? { class: { slug: classSlug } } : {}),
+      },
+      orderBy: [{ class: { sortOrder: 'asc' } }, { name: 'asc' }],
+      take: limit,
+      select: {
+        ...CatalogService.PUBLIC_PROGRAM_FIELDS,
+        _count: { select: { programCourses: true } },
+      },
+    });
+  }
+
+  async listPublicClasses() {
+    return this.prisma.class.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { sortOrder: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        code: true,
+        description: true,
+        _count: { select: { programs: true } },
+      },
+    });
+  }
+
+  /**
+   * Programme detail for the public SKU page.
+   *
+   * The outline is DERIVED from the concept tree rather than authored — there
+   * is no second syllabus to keep in sync, and it is substantial indexable
+   * content for free.
+   */
+  async getPublicProgramBySlug(slug: string) {
+    const program = await this.prisma.program.findFirst({
+      where: { slug, status: 'PUBLISHED', deletedAt: null },
+      select: {
+        ...CatalogService.PUBLIC_PROGRAM_FIELDS,
+        syllabusFile: { select: { url: true, originalName: true } },
+        programCourses: {
+          orderBy: { sortOrder: 'asc' },
+          select: {
+            sortOrder: true,
+            isRequired: true,
+            course: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                description: true,
+                estimatedHours: true,
+                durationWeeks: true,
+                gradeBand: true,
+                status: true,
+                learningSubject: { select: { name: true, code: true } },
+                concepts: {
+                  orderBy: { sortOrder: 'asc' },
+                  select: {
+                    id: true,
+                    name: true,
+                    kind: true,
+                    sortOrder: true,
+                    _count: { select: { lessons: true, items: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!program) throw new NotFoundException('Programme not found');
+
+    // A DRAFT course inside a published programme must not leak.
+    const courses = program.programCourses
+      .filter((pc) => pc.course.status === 'PUBLISHED')
+      .map((pc) => ({
+        ...pc.course,
+        isRequired: pc.isRequired,
+        sortOrder: pc.sortOrder,
+      }));
+
+    return {
+      ...program,
+      programCourses: undefined,
+      courses,
+      totalChapters: courses.reduce((n, c) => n + c.concepts.length, 0),
+      totalEstimatedHours: courses.reduce(
+        (n, c) => n + (c.estimatedHours ?? 0),
+        0,
+      ),
+    };
+  }
+
+  /**
+   * Course detail for the public long-tail page. Item titles and durations are
+   * returned so the outline is browsable and indexable, but bodies are
+   * withheld unless the item is a free preview — this endpoint is anonymous,
+   * so there is no entitlement to check against.
+   */
+  async getPublicCourseBySlug(slug: string) {
+    const course = await this.prisma.course.findFirst({
+      where: { slug, status: 'PUBLISHED', deletedAt: null },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        thumbnailUrl: true,
+        estimatedHours: true,
+        durationWeeks: true,
+        gradeBand: true,
+        deliveryMode: true,
+        priceOneTimeCents: true,
+        priceMonthlyCents: true,
+        installmentCount: true,
+        currency: true,
+        learningSubject: { select: { id: true, name: true, code: true } },
+        concepts: {
+          orderBy: { sortOrder: 'asc' },
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            kind: true,
+            sortOrder: true,
+            lessons: {
+              orderBy: { sortOrder: 'asc' },
+              select: { id: true, title: true, sortOrder: true },
+            },
+            items: {
+              where: { deletedAt: null, status: 'PUBLISHED' },
+              orderBy: { sortOrder: 'asc' },
+              select: {
+                id: true,
+                title: true,
+                kind: true,
+                sortOrder: true,
+                videoDurationSeconds: true,
+                isFreePreview: true,
+              },
+            },
+          },
+        },
+        programCourses: {
+          select: {
+            program: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+                priceOneTimeCents: true,
+                currency: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!course) throw new NotFoundException('Course not found');
+
+    // Every published programme containing this course, so the page can
+    // cross-sell the bundle rather than only selling the single course.
+    const programs = course.programCourses
+      .map((pc) => pc.program)
+      .filter((p) => p.status === 'PUBLISHED');
+
+    return { ...course, programCourses: undefined, programs };
   }
 
   async getCourseDetail(
     id: string,
     userId?: string,
     includeUnpublished = false,
-    visibleCampusIds: string[] | null = null,
+    roles?: string[],
+    /** Set when a guardian is viewing on behalf of one of their children. */
+    actingStudentId?: string | null,
   ) {
     const course = await this.prisma.course.findUnique({
       where: { id },
@@ -193,33 +521,26 @@ export class CatalogService {
             },
           },
         },
-        campusAssignments: { where: { enabled: true }, select: { campusId: true } },
       },
     });
     // Same "not found" (not "forbidden") for deleted vs. unpublished-and-not-
     // staff — doesn't confirm to a probing student whether a draft course
-    // with that id exists at all. A campus-restricted course the caller's
-    // campus isn't assigned to gets the same treatment, for the same reason.
-    // Staff (visibleCampusIds === null) always bypass.
-    const isCampusRestrictedOut =
-      !includeUnpublished &&
-      visibleCampusIds !== null &&
-      !!course &&
-      course.campusAssignments.length > 0 &&
-      !course.campusAssignments.some((a) =>
-        visibleCampusIds.includes(a.campusId),
-      );
+    // with that id exists at all.
     if (
       !course ||
       course.deletedAt ||
-      (!includeUnpublished && course.status !== 'PUBLISHED') ||
-      isCampusRestrictedOut
+      (!includeUnpublished && course.status !== 'PUBLISHED')
     ) {
       throw new NotFoundException('Course not found');
     }
 
+    // Progress and unlock state follow the acting child too — otherwise a
+    // guardian on a shared device would see their own empty progression
+    // instead of the work their child has actually done.
     const studentProfileId = userId
-      ? await this.progression.resolveStudentProfileId(userId)
+      ? ((await this.progression.resolveStudentProfileId(userId)) ??
+        actingStudentId ??
+        null)
       : null;
     const unlockState = await this.progression.computeConceptUnlockState(
       studentProfileId,
@@ -227,28 +548,41 @@ export class CatalogService {
     );
     const stateByConcept = new Map(unlockState.map((s) => [s.conceptId, s]));
 
-    const allItemIds = course.concepts.flatMap((c) =>
-      c.items.map((i) => i.id),
-    );
+    const allItemIds = course.concepts.flatMap((c) => c.items.map((i) => i.id));
     const completedItemIds = studentProfileId
       ? await this.getCompletedModuleItemIds(studentProfileId, allItemIds)
       : new Set<string>();
 
-    // `campusAssignments` was only fetched to compute `isCampusRestrictedOut`
-    // above — internal visibility metadata, not part of the course-detail
-    // response shape.
-    const { campusAssignments: _campusAssignments, ...courseWithoutAssignments } =
-      course;
+    // The outline (titles, ordering, durations) always stays visible — it is
+    // the sales pitch and the indexable content. Only the payload of each item
+    // is withheld, so an unentitled visitor sees exactly what they would get.
+    const { allowed: isEntitled } = await this.entitlements.resolveCourseAccess(
+      userId,
+      roles,
+      course.id,
+      actingStudentId,
+    );
+
     return {
-      ...courseWithoutAssignments,
+      ...course,
+      isEntitled,
       concepts: course.concepts.map((concept) => ({
         ...concept,
         isDone: stateByConcept.get(concept.id)?.isDone ?? false,
         isLocked: stateByConcept.get(concept.id)?.isLocked ?? false,
-        items: concept.items.map((item) => ({
-          ...item,
-          isDone: completedItemIds.has(item.id),
-        })),
+        items: concept.items.map((item) => {
+          const unlocked = isEntitled || item.isFreePreview;
+          return {
+            ...item,
+            // Withholding the bodies rather than the rows: the learner still
+            // sees what exists and how long it runs.
+            videoUrl: unlocked ? item.videoUrl : null,
+            readingContent: unlocked ? item.readingContent : null,
+            assessmentId: unlocked ? item.assessmentId : null,
+            isContentLocked: !unlocked,
+            isDone: completedItemIds.has(item.id),
+          };
+        }),
       })),
     };
   }
@@ -276,6 +610,28 @@ export class CatalogService {
     if (!course || course.deletedAt) {
       throw new NotFoundException('Course not found');
     }
+
+    // `deliveryMode` was accepted by the DTO but silently dropped here, so a
+    // course could never change mode through the API. It is wired up now
+    // because the LIVE-only rule below has to be enforced somewhere.
+    if (
+      dto.deliveryMode !== undefined &&
+      dto.deliveryMode !== DeliveryMode.LIVE
+    ) {
+      const liveItems = await this.prisma.moduleItem.count({
+        where: {
+          kind: ModuleItemKind.LIVE_CLASS,
+          deletedAt: null,
+          concept: { courseId: id },
+        },
+      });
+      if (liveItems > 0) {
+        throw new ConflictException(
+          `Cannot set delivery mode to ${dto.deliveryMode}: this course has ${liveItems} live class item(s), which only a cohort can attend. Remove them first.`,
+        );
+      }
+    }
+
     return this.prisma.course.update({
       where: { id },
       data: {
@@ -288,6 +644,9 @@ export class CatalogService {
           : {}),
         ...(dto.status !== undefined ? { status: dto.status } : {}),
         ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+        ...(dto.deliveryMode !== undefined
+          ? { deliveryMode: dto.deliveryMode }
+          : {}),
       },
     });
   }
@@ -381,13 +740,17 @@ export class CatalogService {
     }
 
     const allConcepts = path.pathCourses.flatMap((pc) => pc.course.concepts);
-    const doneMap = await this.progression.computeConceptDoneMap(studentProfileId, allConcepts);
+    const doneMap = await this.progression.computeConceptDoneMap(
+      studentProfileId,
+      allConcepts,
+    );
 
     let previousDone = true;
     const pathCourses = path.pathCourses.map((pc) => {
       const concepts = pc.course.concepts;
       const isDone =
-        concepts.length > 0 && concepts.every((c) => doneMap.get(c.id) ?? false);
+        concepts.length > 0 &&
+        concepts.every((c) => doneMap.get(c.id) ?? false);
       const isLocked = !previousDone;
       previousDone = isDone;
       return { ...pc, course: shapeCourse(pc), isDone, isLocked };
@@ -408,9 +771,7 @@ export class CatalogService {
         ...(dto.description !== undefined
           ? { description: dto.description }
           : {}),
-        ...(dto.unlockMode !== undefined
-          ? { unlockMode: dto.unlockMode }
-          : {}),
+        ...(dto.unlockMode !== undefined ? { unlockMode: dto.unlockMode } : {}),
         ...(dto.status !== undefined ? { status: dto.status } : {}),
         ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
       },
@@ -485,5 +846,4 @@ export class CatalogService {
       where: { pathId_courseId: { pathId, courseId } },
     });
   }
-
 }

@@ -12,17 +12,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useGetClassSectionsQuery } from "@/features/dashboard/dashboardApi";
+import { useGetBatchesQuery } from "@/features/dashboard/dashboardApi";
 
 export interface LiveClassFormValues {
-  classSectionId: string;
+  /** A live class is met by a cohort, so it is scheduled against a batch. */
+  batchId: string;
   title: string;
   startAt: string;
   endAt: string;
 }
 
 export const EMPTY_LIVE_CLASS: LiveClassFormValues = {
-  classSectionId: "",
+  batchId: "",
   title: "",
   startAt: "",
   endAt: "",
@@ -36,7 +37,7 @@ interface LiveClassFormProps {
   isSaving: boolean;
   submitLabel: string;
   error?: string | null;
-  lockClassSection?: boolean;
+  lockBatch?: boolean;
 }
 
 /** Shared by /live-classes/create and the Reschedule dialog so both stay a single form definition. */
@@ -48,10 +49,10 @@ export function LiveClassForm({
   isSaving,
   submitLabel,
   error,
-  lockClassSection,
+  lockBatch,
 }: LiveClassFormProps) {
-  const { data: classSectionsData } = useGetClassSectionsQuery();
-  const classSections = classSectionsData?.items || [];
+  const { data: batchesData } = useGetBatchesQuery();
+  const batches = batchesData?.items || [];
 
   const set = <K extends keyof LiveClassFormValues>(key: K, value: LiveClassFormValues[K]) =>
     onChange({ ...values, [key]: value });
@@ -59,19 +60,19 @@ export function LiveClassForm({
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label>Class section</Label>
+        <Label>Batch</Label>
         <Select
-          value={values.classSectionId}
-          onValueChange={(v) => set("classSectionId", v)}
-          disabled={lockClassSection}
+          value={values.batchId}
+          onValueChange={(v) => set("batchId", v)}
+          disabled={lockBatch}
         >
           <SelectTrigger className="h-10 w-full">
-            <SelectValue placeholder="Select class section" />
+            <SelectValue placeholder="Select batch" />
           </SelectTrigger>
           <SelectContent>
-            {classSections.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name} ({c.code})
+            {batches.map((b) => (
+              <SelectItem key={b.id} value={b.id}>
+                {b.name} ({b.code})
               </SelectItem>
             ))}
           </SelectContent>

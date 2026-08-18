@@ -129,7 +129,7 @@ export class DashboardService {
         },
       },
       include: {
-        courseClass: true,
+        batch: true,
         classSection: true,
       },
       orderBy: {
@@ -179,11 +179,11 @@ export class DashboardService {
         teacherProfileId: teacherProfile.id,
         status: 'ACTIVE',
       },
-      select: { courseClassId: true },
+      select: { batchId: true },
     });
 
-    const assignedCourseClassIds = Array.from(
-      new Set(teacherSlots.map((s) => s.courseClassId).filter(Boolean)),
+    const assignedBatchIds = Array.from(
+      new Set(teacherSlots.map((s) => s.batchId).filter(Boolean)),
     ) as string[];
 
     const ungradedSubmissions = await this.prisma.homeworkSubmission.findMany({
@@ -191,7 +191,7 @@ export class DashboardService {
         status: { in: ['SUBMITTED', 'LATE'] },
         homework: {
           OR: [
-            { courseClassId: { in: assignedCourseClassIds } },
+            { batchId: { in: assignedBatchIds } },
             { recordedById: userId },
           ],
         },
@@ -239,15 +239,15 @@ export class DashboardService {
     const classSectionIds = studentProfile.placements.map(
       (p) => p.classSectionId,
     );
-    const courseClassIds = studentProfile.enrollments.map(
-      (e) => e.courseClassId,
+    const batchIds = studentProfile.enrollments.map(
+      (e) => e.batchId,
     );
 
     // 1. todaySchedule
     const todaySchedule = await this.prisma.timetableSlot.findMany({
       where: {
         classSectionId: { in: classSectionIds },
-        courseClassId: { in: courseClassIds },
+        batchId: { in: batchIds },
         dayOfWeek,
         status: 'ACTIVE',
         timetable: {
@@ -255,7 +255,7 @@ export class DashboardService {
         },
       },
       include: {
-        courseClass: true,
+        batch: true,
         teacherProfile: true,
       },
       orderBy: {
@@ -265,10 +265,10 @@ export class DashboardService {
 
     // 2. pendingHomework
     let pendingHomework: any[] = [];
-    if (courseClassIds.length > 0) {
+    if (batchIds.length > 0) {
       const pendingHomeworkRaw = await this.prisma.homework.findMany({
         where: {
-          courseClassId: { in: courseClassIds },
+          batchId: { in: batchIds },
           submissions: {
             none: {
               studentProfileId: studentProfile.id,
@@ -276,7 +276,7 @@ export class DashboardService {
           },
         },
         include: {
-          courseClass: true,
+          batch: true,
         },
         orderBy: {
           dueDate: 'asc',
@@ -287,7 +287,7 @@ export class DashboardService {
         id: hw.id,
         title: hw.title,
         dueDate: hw.dueDate,
-        courseName: hw.courseClass?.name || 'N/A',
+        courseName: hw.batch?.name || 'N/A',
       }));
     }
 
@@ -409,13 +409,13 @@ export class DashboardService {
     const childrenSnapshots = [];
     for (const child of childrenProfiles) {
       const classSectionIds = child.placements.map((p) => p.classSectionId);
-      const courseClassIds = child.enrollments.map((e) => e.courseClassId);
+      const batchIds = child.enrollments.map((e) => e.batchId);
 
       // 1. todaySchedule
       const todaySchedule = await this.prisma.timetableSlot.findMany({
         where: {
           classSectionId: { in: classSectionIds },
-          courseClassId: { in: courseClassIds },
+          batchId: { in: batchIds },
           dayOfWeek,
           status: 'ACTIVE',
           timetable: {
@@ -423,7 +423,7 @@ export class DashboardService {
           },
         },
         include: {
-          courseClass: true,
+          batch: true,
         },
         orderBy: {
           startTimeMinutes: 'asc',
@@ -444,10 +444,10 @@ export class DashboardService {
 
       // 3. pendingHomeworkCount
       let pendingHomeworkCount = 0;
-      if (courseClassIds.length > 0) {
+      if (batchIds.length > 0) {
         const allHomework = await this.prisma.homework.findMany({
           where: {
-            courseClassId: { in: courseClassIds },
+            batchId: { in: batchIds },
           },
           include: {
             submissions: {

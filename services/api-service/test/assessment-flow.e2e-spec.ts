@@ -27,7 +27,9 @@ describe('Assessment flow: author -> assign -> attempt -> mark -> gradebook (e2e
   let assessmentId: string;
   let assignmentId: string;
   let attemptId: string;
-  const tag = `AF${Date.now()}`;
+  // Class.code is capped at 20 chars (@MaxLength(20)) — "E2E-CLS-" alone is
+  // 8, so tag must stay short even though other E2E tags here don't need to.
+  const tag = `AF${Date.now().toString().slice(-8)}`;
 
   const http = () => request(ctx.app.getHttpServer());
   const asAdmin = () => csrfHeaders(admin);

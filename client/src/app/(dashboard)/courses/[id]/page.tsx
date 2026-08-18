@@ -12,6 +12,7 @@ import {
   MessageSquare,
   PlayCircle,
   Plus,
+  Radio,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -29,6 +30,7 @@ const kindIcon: Record<ModuleItemKind, React.ElementType> = {
   READING: FileText,
   DISCUSSION: MessageSquare,
   ASSESSMENT: ClipboardList,
+  LIVE_CLASS: Radio,
 };
 
 const statusColors: Record<string, string> = {
@@ -105,6 +107,7 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
           <option value="READING">Reading</option>
           <option value="DISCUSSION">Discussion</option>
           <option value="ASSESSMENT">Assessment</option>
+          <option value="LIVE_CLASS">Live Class</option>
         </select>
         <input
           value={title}
@@ -151,6 +154,14 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
             </option>
           ))}
         </select>
+      )}
+      {kind === "LIVE_CLASS" && (
+        <p className="rounded-lg bg-muted/60 p-2 text-[10px] leading-relaxed text-muted-foreground">
+          This reserves a live session in the outline. Each batch schedules its own
+          meeting time and join link against it from{" "}
+          <span className="font-semibold text-foreground">Live Classes</span> — adding
+          one here switches the course to <span className="font-semibold text-foreground">LIVE</span> delivery.
+        </p>
       )}
 
       <div className="flex justify-end gap-2">

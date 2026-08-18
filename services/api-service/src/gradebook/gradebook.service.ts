@@ -30,7 +30,6 @@ export class GradebookService {
     const {
       studentProfileId,
       batchId,
-      classSectionId,
       termId,
       title,
       category,
@@ -74,7 +73,6 @@ export class GradebookService {
       create: {
         studentProfileId,
         batchId,
-        classSectionId,
         termId,
         sourceType: GradeSourceType.MANUAL,
         sourceId: finalSourceId,
@@ -91,7 +89,6 @@ export class GradebookService {
       },
       update: {
         batchId,
-        classSectionId,
         termId,
         title,
         category: category || 'GENERAL',
@@ -172,7 +169,6 @@ export class GradebookService {
         const {
           studentProfileId,
           batchId,
-          classSectionId,
           termId,
           title,
           category,
@@ -208,7 +204,6 @@ export class GradebookService {
           create: {
             studentProfileId,
             batchId,
-            classSectionId,
             termId,
             sourceType: GradeSourceType.MANUAL,
             sourceId: finalSourceId,
@@ -225,7 +220,6 @@ export class GradebookService {
           },
           update: {
             batchId,
-            classSectionId,
             termId,
             title,
             category: category || 'GENERAL',
@@ -268,11 +262,8 @@ export class GradebookService {
 
     const percentage = maxPoints > 0 ? (pointsEarned / maxPoints) * 100 : null;
 
-    const placement = await this.prisma.studentClassPlacement.findFirst({
-      where: { studentProfileId: submission.studentProfileId, isActive: true },
-      select: { classSectionId: true },
-    });
-
+    // The ClassSection placement lookup that used to sit here existed only to
+    // stamp `classSectionId`. The batch comes straight off the homework.
     return this.prisma.gradeBookEntry.upsert({
       where: {
         studentProfileId_sourceType_sourceId: {
@@ -284,7 +275,6 @@ export class GradebookService {
       create: {
         studentProfileId: submission.studentProfileId,
         batchId: submission.homework.batchId,
-        classSectionId: placement?.classSectionId || null,
         termId: submission.homework.batch.termId,
         sourceType: GradeSourceType.HOMEWORK_SUBMISSION,
         sourceId: submissionId,
@@ -299,7 +289,6 @@ export class GradebookService {
       },
       update: {
         batchId: submission.homework.batchId,
-        classSectionId: placement?.classSectionId || null,
         termId: submission.homework.batch.termId,
         title: submission.homework.title,
         pointsEarned,
@@ -344,8 +333,9 @@ export class GradebookService {
       },
       create: {
         studentProfileId: attempt.studentProfileId,
+        // An assessment attempt has no cohort of its own — the assignment
+        // names a student, not a batch.
         batchId: null,
-        classSectionId: attempt.assignment.classSectionId,
         termId: attempt.assignment.assessment.termId,
         sourceType: GradeSourceType.ASSESSMENT_ATTEMPT,
         sourceId: attemptId,
@@ -359,7 +349,6 @@ export class GradebookService {
         assessedAt,
       },
       update: {
-        classSectionId: attempt.assignment.classSectionId,
         termId: attempt.assignment.assessment.termId,
         title: attempt.assignment.assessment.title,
         pointsEarned,

@@ -40,7 +40,7 @@ model User {
   deviceTokens            DeviceToken[]
   devicePairingCodes      DevicePairingCode[]
   fileUploads             FileUpload[]
-  hostedLiveClassSessions LiveClassSession[]     @relation("HostedLiveClassSessions")
+  hostedLiveClassSessions BatchSession[]         @relation("HostedLiveClassSessions")
   assignedCourses         StudentCourseAssignment[] @relation("AssignedCourses")
   grantedEntitlements     Entitlement[]             @relation("GrantedEntitlements")
   orders                  Order[]                   @relation("GuardianOrders")
@@ -523,12 +523,9 @@ model ClassSection {
   placements               StudentClassPlacement[]
   dailyAttendance          DailyAttendance[]
   teachers                 ClassTeacher[]
-  assessmentAssignments    AssessmentAssignment[]
   timetables               Timetable[]
   timetableSlots           TimetableSlot[]
-  gradeBookEntries         GradeBookEntry[]
   placementRecommendations PlacementRecommendation[]
-  liveClassSessions        LiveClassSession[]
 
   @@index([learningSubjectId])
   @@map("class_sections")
@@ -666,13 +663,13 @@ model StudentProfile {
   homeworkSubmissions      HomeworkSubmission[]
   assessmentEvidences      AssessmentEvidence[]
   competencyMasteries      CompetencyMastery[]
-  assessmentAssignments    AssessmentAssignment[]
   assessmentAttempts       AssessmentAttempt[]
+  assessmentAssignments    AssessmentAssignment[]
+  gradeBookEntries         GradeBookEntry[]
   makeupRequests           MakeupRequest[]
   lessonAttempts           LessonAttempt[]
   streak                   StudentStreak?
   experience               StudentExperience?
-  gradeBookEntries         GradeBookEntry[]
   masteryStatusChanges     MasteryStatusChange[]
   placementRecommendations PlacementRecommendation[]
   moduleItemProgress       ModuleItemProgress[]
@@ -871,20 +868,43 @@ model DailyAttendance {
   @@map("daily_attendance")
 }
 
+/// One scheduled meeting of one cohort.
+///
+/// Absorbed `LiveClassSession` on 2026-08-17. A live class is authored once as
+/// a `ModuleItem(kind: LIVE_CLASS)` inside a chapter, but each batch that buys
+/// the course meets at its own time on its own link — so the curriculum slot
+/// lives on the item and the meeting lives here. `moduleItemId` is the link
+/// back; it is null for ad-hoc sessions that are not part of the outline.
 model BatchSession {
-  id            String    @id @default(uuid())
-  batchId String
-  date          DateTime  @db.Date
-  startTime     DateTime?
-  endTime       DateTime?
-  topic         String? // e.g. "Intro to Trees"
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String    @id @default(uuid())
+  batchId      String
+  moduleItemId String?
+  date         DateTime  @db.Date
+  startTime    DateTime?
+  endTime      DateTime?
+  topic        String? // e.g. "Intro to Trees"
 
-  batch Batch             @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  attendance  BatchAttendance[]
+  // Meeting fields, inherited from the old LiveClassSession. `provider` stays
+  // NONE until the Zoom Server-to-Server OAuth hook is implemented.
+  teacherUserId     String?
+  status            LiveClassStatus   @default(SCHEDULED)
+  provider          LiveClassProvider @default(NONE)
+  externalMeetingId String?
+  joinUrl           String?
+  startUrl          String?
+  cancelledAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  batch      Batch             @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  moduleItem ModuleItem?       @relation(fields: [moduleItemId], references: [id], onDelete: SetNull)
+  teacher    User?             @relation("HostedLiveClassSessions", fields: [teacherUserId], references: [id], onDelete: SetNull)
+  attendance BatchAttendance[]
 
   @@index([batchId, date])
+  @@index([moduleItemId])
+  @@index([teacherUserId, date])
   @@map("batch_sessions")
 }
 
@@ -1159,6 +1179,11 @@ enum ModuleItemKind {
   READING
   DISCUSSION
   ASSESSMENT
+  /// The curriculum *slot* for a live session, not the meeting itself. One
+  /// LIVE_CLASS item resolves to a different `BatchSession` for every cohort
+  /// that buys the course, so the date and join link live there, not here.
+  /// A course containing one of these is LIVE-only — see `assertDeliveryMode`.
+  LIVE_CLASS
 }
 
 model ModuleItem {
@@ -1184,6 +1209,8 @@ model ModuleItem {
   assessment Assessment?          @relation(fields: [assessmentId], references: [id], onDelete: SetNull)
   progress   ModuleItemProgress[]
   discussion DiscussionThread?
+  /// Populated only for LIVE_CLASS items — one row per cohort meeting.
+  sessions   BatchSession[]
 
   @@map("module_items")
 }
@@ -1605,7 +1632,6 @@ model AssessmentAssignment {
   id               String   @id @default(uuid())
   assessmentId     String
   studentProfileId String
-  classSectionId   String
   lessonId         String?
   assignedByUserId String
   opensAt          DateTime
@@ -1617,7 +1643,6 @@ model AssessmentAssignment {
 
   assessment     Assessment          @relation(fields: [assessmentId], references: [id])
   studentProfile StudentProfile      @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  classSection   ClassSection        @relation(fields: [classSectionId], references: [id], onDelete: Cascade)
   assignedByUser User                @relation("AssignedAssignments", fields: [assignedByUserId], references: [id])
   attempts       AssessmentAttempt[]
   lesson         Lesson?             @relation(fields: [lessonId], references: [id], onDelete: SetNull)
@@ -1735,29 +1760,9 @@ enum LiveClassProvider {
   ZOOM
 }
 
-model LiveClassSession {
-  id                String            @id @default(uuid())
-  classSectionId    String
-  teacherUserId     String
-  title             String
-  scheduledStartAt  DateTime
-  scheduledEndAt    DateTime
-  status            LiveClassStatus   @default(SCHEDULED)
-  provider          LiveClassProvider @default(NONE)
-  externalMeetingId String?
-  joinUrl           String?
-  startUrl          String?
-  cancelledAt       DateTime?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-
-  classSection ClassSection @relation(fields: [classSectionId], references: [id], onDelete: Cascade)
-  teacher      User         @relation("HostedLiveClassSessions", fields: [teacherUserId], references: [id], onDelete: Cascade)
-
-  @@index([classSectionId, scheduledStartAt])
-  @@index([teacherUserId, scheduledStartAt])
-  @@map("live_class_sessions")
-}
+// `LiveClassSession` was absorbed into `BatchSession` on 2026-08-17. It hung
+// off ClassSection, which cannot express "same course, different cohort,
+// different meeting time" — the shape a live course actually sells in.
 
 model Broadcast {
   id             String   @id @default(uuid())
@@ -2077,7 +2082,6 @@ enum GradeBookEntryStatus {
 model GradeBookEntry {
   id               String               @id @default(uuid())
   studentProfileId String
-  classSectionId   String?
   batchId    String?
   termId           String?
   sourceType       GradeSourceType
@@ -2100,13 +2104,11 @@ model GradeBookEntry {
   deletedById      String?
 
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
-  classSection   ClassSection?  @relation(fields: [classSectionId], references: [id], onDelete: SetNull)
   batch    Batch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
   term           Term?          @relation(fields: [termId], references: [id], onDelete: SetNull)
 
   @@unique([studentProfileId, sourceType, sourceId])
   @@index([batchId, termId])
-  @@index([classSectionId, termId])
   @@index([studentProfileId, termId])
   @@map("gradebook_entries")
 }

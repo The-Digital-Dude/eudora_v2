@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { EnrollmentStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GuardianAccessService } from '../family/guardian-access.service';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
@@ -33,7 +34,16 @@ export class AssignmentsService {
     const where = {
       ...idFilter('assessmentId', query.assessmentId),
       ...idFilter('studentProfileId', query.studentProfileId),
-      ...idFilter('classSectionId', query.classSectionId),
+      // An assignment has no batch of its own — it belongs to a student. A
+      // batch filter therefore means "assignments held by anyone enrolled in
+      // this batch".
+      ...(query.batchId
+        ? {
+            studentProfile: {
+              enrollments: { some: { batchId: query.batchId } },
+            },
+          }
+        : {}),
       ...enumFilter('status', query.status, [
         'assigned',
         'started',
@@ -77,33 +87,22 @@ export class AssignmentsService {
 
   async createAssignment(input: CreateAssignmentDto, actorUserId: string) {
     const studentProfileId = emptyToNull(input.studentProfileId);
-    const classSectionId = emptyToNull(input.classSectionId);
-    if (!studentProfileId && !classSectionId) {
+    const batchId = emptyToNull(input.batchId);
+    if (!studentProfileId && !batchId) {
       throw new BadRequestException(
-        'Either studentProfileId or classSectionId must be provided',
+        'Either studentProfileId or batchId must be provided',
       );
     }
 
     if (studentProfileId) {
-      let resolvedClassSectionId = classSectionId;
-      if (!resolvedClassSectionId) {
-        const placement = await this.prisma.studentClassPlacement.findFirst({
-          where: { studentProfileId, isActive: true },
-          select: { classSectionId: true },
-        });
-        if (!placement) {
-          throw new BadRequestException(
-            'Student does not have an active class section placement',
-          );
-        }
-        resolvedClassSectionId = placement.classSectionId;
-      }
-
+      // No cohort membership is required to assign to one student. This used
+      // to demand an active ClassSection placement, which meant a child
+      // created through guardian checkout — who has a `classId` but no
+      // placement — could never be assigned anything.
       const assignment = await this.prisma.assessmentAssignment.create({
         data: {
           assessmentId: requireText(input.assessmentId, 'assessmentId'),
           studentProfileId,
-          classSectionId: resolvedClassSectionId,
           lessonId: emptyToNull(input.lessonId),
           assignedByUserId: actorUserId,
           opensAt: parseOptionalDate(input.opensAt, 'opensAt') ?? new Date(),
@@ -132,24 +131,23 @@ export class AssignmentsService {
       );
       return assignment;
     } else {
-      const placements = await this.prisma.studentClassPlacement.findMany({
-        where: { classSectionId: classSectionId!, isActive: true },
+      const enrollments = await this.prisma.studentCourseEnrollment.findMany({
+        where: { batchId: batchId!, status: EnrollmentStatus.ENROLLED },
         select: { studentProfileId: true },
       });
-      if (placements.length === 0) {
+      if (enrollments.length === 0) {
         throw new BadRequestException(
-          'No active students found in this class section',
+          'No actively enrolled students found in this batch',
         );
       }
 
       const createdAssignments = await this.prisma.$transaction(async (tx) => {
         const list: any[] = [];
-        for (const placement of placements) {
+        for (const enrollment of enrollments) {
           const assignment = await tx.assessmentAssignment.create({
             data: {
               assessmentId: requireText(input.assessmentId, 'assessmentId'),
-              studentProfileId: placement.studentProfileId,
-              classSectionId: classSectionId!,
+              studentProfileId: enrollment.studentProfileId,
               lessonId: emptyToNull(input.lessonId),
               assignedByUserId: actorUserId,
               opensAt:
@@ -185,7 +183,7 @@ export class AssignmentsService {
         );
         return createdAssignments[0];
       }
-      throw new BadRequestException('Failed to create class assignments');
+      throw new BadRequestException('Failed to create batch assignments');
     }
   }
 

@@ -2,7 +2,9 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
+import { DeliveryMode, ModuleItemKind } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { resolveSort } from '../common/sort.util';
 import {
@@ -608,6 +610,28 @@ export class CatalogService {
     if (!course || course.deletedAt) {
       throw new NotFoundException('Course not found');
     }
+
+    // `deliveryMode` was accepted by the DTO but silently dropped here, so a
+    // course could never change mode through the API. It is wired up now
+    // because the LIVE-only rule below has to be enforced somewhere.
+    if (
+      dto.deliveryMode !== undefined &&
+      dto.deliveryMode !== DeliveryMode.LIVE
+    ) {
+      const liveItems = await this.prisma.moduleItem.count({
+        where: {
+          kind: ModuleItemKind.LIVE_CLASS,
+          deletedAt: null,
+          concept: { courseId: id },
+        },
+      });
+      if (liveItems > 0) {
+        throw new ConflictException(
+          `Cannot set delivery mode to ${dto.deliveryMode}: this course has ${liveItems} live class item(s), which only a cohort can attend. Remove them first.`,
+        );
+      }
+    }
+
     return this.prisma.course.update({
       where: { id },
       data: {
@@ -620,6 +644,9 @@ export class CatalogService {
           : {}),
         ...(dto.status !== undefined ? { status: dto.status } : {}),
         ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+        ...(dto.deliveryMode !== undefined
+          ? { deliveryMode: dto.deliveryMode }
+          : {}),
       },
     });
   }

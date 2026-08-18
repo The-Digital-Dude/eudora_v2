@@ -1,12 +1,19 @@
 import { authApi } from "../auth/authApi";
 
+/**
+ * A live class is a `BatchSession` — the meeting one cohort attends. The
+ * curriculum slot it fulfils (if any) is a `ModuleItem` of kind LIVE_CLASS,
+ * exposed here as `moduleItem`.
+ */
 export interface LiveClassSession {
   id: string;
-  classSectionId: string;
-  teacherUserId: string;
-  title: string;
-  scheduledStartAt: string;
-  scheduledEndAt: string;
+  batchId: string;
+  moduleItemId?: string | null;
+  teacherUserId?: string | null;
+  topic: string | null;
+  date: string;
+  startTime: string | null;
+  endTime: string | null;
   status: "SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED";
   provider: "NONE" | "ZOOM";
   externalMeetingId?: string | null;
@@ -15,25 +22,28 @@ export interface LiveClassSession {
   cancelledAt?: string | null;
   createdAt: string;
   updatedAt: string;
-  classSection?: { id: string; name: string; code: string };
-  teacher?: { id: string; firstName: string; lastName: string };
+  batch?: { id: string; name: string; code: string };
+  moduleItem?: { id: string; title: string } | null;
+  teacher?: { id: string; firstName: string; lastName: string } | null;
 }
 
 export interface ScheduleLiveClassBody {
-  classSectionId: string;
-  title: string;
-  scheduledStartAt: string;
-  scheduledEndAt: string;
+  batchId: string;
+  moduleItemId?: string;
+  topic?: string;
+  startTime: string;
+  endTime: string;
 }
 
 export interface RescheduleLiveClassBody {
-  title?: string;
-  scheduledStartAt?: string;
-  scheduledEndAt?: string;
+  topic?: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 export interface ListLiveClassesParams {
-  classSectionId?: string;
+  batchId?: string;
+  moduleItemId?: string;
   teacherUserId?: string;
   status?: LiveClassSession["status"];
   from?: string;
@@ -46,7 +56,8 @@ export const liveClassesApi = authApi.injectEndpoints({
     getLiveClasses: builder.query<LiveClassSession[], ListLiveClassesParams | void>({
       query: (params) => {
         const queryParts: string[] = [];
-        if (params?.classSectionId) queryParts.push(`classSectionId=${params.classSectionId}`);
+        if (params?.batchId) queryParts.push(`batchId=${params.batchId}`);
+        if (params?.moduleItemId) queryParts.push(`moduleItemId=${params.moduleItemId}`);
         if (params?.teacherUserId) queryParts.push(`teacherUserId=${params.teacherUserId}`);
         if (params?.status) queryParts.push(`status=${params.status}`);
         if (params?.from) queryParts.push(`from=${params.from}`);

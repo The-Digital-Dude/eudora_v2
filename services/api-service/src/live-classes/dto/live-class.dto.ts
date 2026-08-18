@@ -8,38 +8,56 @@ import {
 import { LiveClassStatus } from '@prisma/client';
 
 export class CreateLiveClassDto {
+  /**
+   * The cohort that meets. A live class is scheduled per batch, not per
+   * course — the same chapter item resolves to a different meeting for
+   * every batch that buys the course.
+   */
   @IsString()
   @IsNotEmpty()
-  classSectionId: string;
+  batchId: string;
 
+  /**
+   * The `ModuleItem(kind: LIVE_CLASS)` this meeting fulfils, if any. Null for
+   * ad-hoc sessions (a make-up class, an extra revision hour) that are not
+   * part of the published outline.
+   */
   @IsString()
-  @IsNotEmpty()
-  title: string;
+  @IsOptional()
+  moduleItemId?: string;
+
+  /** Falls back to the linked module item's title when omitted. */
+  @IsString()
+  @IsOptional()
+  topic?: string;
 
   @IsDateString()
-  scheduledStartAt: string;
+  startTime: string;
 
   @IsDateString()
-  scheduledEndAt: string;
+  endTime: string;
 }
 
 export class RescheduleLiveClassDto {
   @IsString()
   @IsOptional()
-  title?: string;
+  topic?: string;
 
   @IsDateString()
   @IsOptional()
-  scheduledStartAt?: string;
+  startTime?: string;
 
   @IsDateString()
   @IsOptional()
-  scheduledEndAt?: string;
+  endTime?: string;
 }
 
 export class ListLiveClassesQueryDto {
   @IsOptional()
-  classSectionId?: string;
+  batchId?: string;
+
+  @IsOptional()
+  moduleItemId?: string;
 
   @IsOptional()
   teacherUserId?: string;

@@ -128,7 +128,6 @@ export class AttemptsService {
       select: {
         id: true,
         studentProfileId: true,
-        classSectionId: true,
         status: true,
         assessment: { select: { maxAttempts: true } },
       },
@@ -158,12 +157,10 @@ export class AttemptsService {
         'studentProfileId does not match the assignment',
       );
     }
-    if (resolvedAssignment.classSectionId) {
-      await this.assertStudentBelongsToClass(
-        studentProfileId,
-        resolvedAssignment.classSectionId,
-      );
-    }
+    // The section membership check that used to live here is gone with
+    // `AssessmentAssignment.classSectionId`. It is not replaced: an assignment
+    // names its student directly, and the mismatch guard above already
+    // rejects an attempt started on someone else's assignment.
 
     const attempt = await this.prisma.$transaction(async (tx) => {
       const existingCount = await tx.assessmentAttempt.count({
@@ -346,21 +343,6 @@ export class AttemptsService {
       attempt.id,
     );
     return attempt;
-  }
-
-  private async assertStudentBelongsToClass(
-    studentProfileId: string,
-    classSectionId: string,
-  ): Promise<void> {
-    const placement = await this.prisma.studentClassPlacement.findFirst({
-      where: { studentProfileId, classSectionId, isActive: true },
-      select: { studentProfileId: true },
-    });
-    if (!placement) {
-      throw new BadRequestException(
-        'Student is not actively placed in this class section',
-      );
-    }
   }
 
   private async autoMarkAttemptResponses(

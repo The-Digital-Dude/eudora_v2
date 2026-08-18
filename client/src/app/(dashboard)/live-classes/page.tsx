@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LiveClassSession, useGetLiveClassesQuery } from "@/features/academic/liveClassesApi";
-import { useGetClassSectionsQuery } from "@/features/dashboard/dashboardApi";
+import { useGetBatchesQuery } from "@/features/dashboard/dashboardApi";
 import { useAppSelector } from "@/store/hooks";
 
 import { LiveClassRow } from "./components/live-class-row";
@@ -48,14 +48,14 @@ export default function LiveClassesPage() {
   // boundary (the backend doesn't scope by ownership either).
   const [showAllTeachers, setShowAllTeachers] = React.useState(false);
   const [statusFilter, setStatusFilter] = React.useState<(typeof STATUS_OPTIONS)[number]>("all");
-  const [classSectionFilter, setClassSectionFilter] = React.useState<string>("all");
+  const [batchFilter, setBatchFilter] = React.useState<string>("all");
 
-  const { data: classSectionsData } = useGetClassSectionsQuery();
-  const classSections = classSectionsData?.items || [];
+  const { data: batchesData } = useGetBatchesQuery();
+  const batches = batchesData?.items || [];
 
   const { data: sessions, isLoading } = useGetLiveClassesQuery({
     status: statusFilter === "all" ? undefined : statusFilter,
-    classSectionId: classSectionFilter === "all" ? undefined : classSectionFilter,
+    batchId: batchFilter === "all" ? undefined : batchFilter,
     teacherUserId: isTeacher && !isAdmin && !showAllTeachers ? user?.id : undefined,
   });
 
@@ -129,13 +129,13 @@ export default function LiveClassesPage() {
                 {showAllTeachers ? "All teachers" : "My sessions"}
               </button>
             )}
-            <Select value={classSectionFilter} onValueChange={setClassSectionFilter}>
+            <Select value={batchFilter} onValueChange={setBatchFilter}>
               <SelectTrigger className="h-8 w-48 text-xs">
-                <SelectValue placeholder="Class section" />
+                <SelectValue placeholder="Batch" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All class sections</SelectItem>
-                {classSections.map((c) => (
+                <SelectItem value="all">All batches</SelectItem>
+                {batches.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name} ({c.code})
                   </SelectItem>

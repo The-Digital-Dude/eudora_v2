@@ -22,10 +22,6 @@ export class CreateManualGradeDto {
 
   @IsString()
   @IsOptional()
-  classSectionId?: string;
-
-  @IsString()
-  @IsOptional()
   termId?: string;
 
   @IsString()
@@ -100,10 +96,6 @@ export class BulkUpsertGradeEntryDto {
   @IsString()
   @IsOptional()
   batchId?: string;
-
-  @IsString()
-  @IsOptional()
-  classSectionId?: string;
 
   @IsString()
   @IsOptional()

@@ -10,6 +10,7 @@ import {
   Lock,
   MessageSquare,
   PlayCircle,
+  Radio,
   Sparkles,
   X,
 } from "lucide-react";
@@ -24,6 +25,7 @@ const kindIcon: Record<ModuleItemKind, React.ElementType> = {
   READING: FileText,
   DISCUSSION: MessageSquare,
   ASSESSMENT: ClipboardList,
+  LIVE_CLASS: Radio,
 };
 
 interface CourseOutlineSidebarProps {

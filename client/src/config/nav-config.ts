@@ -19,7 +19,6 @@ import {
   School,
   ShieldCheck,
   Sparkles,
-  SquareStack,
   Stethoscope,
   UserCog,
   UserPlus,
@@ -182,9 +181,10 @@ export const navGroups: NavGroup[] = [
             hidden: true,
           },
           {
-            // The `Class` taxonomy master. Titled "Grade Levels" because
-            // "Classes & Attendance" below is ClassSection, and a batch is a
-            // Batch — three different models, one overloaded word.
+            // The `Class` taxonomy master. Still titled "Grade Levels"
+            // rather than "Classes": the ClassSection admin pages are gone,
+            // but the model itself survives behind attendance and timetable,
+            // so the word stays ambiguous in the codebase.
             title: "Grade Levels",
             url: "/grade-levels",
             icon: GraduationCap,
@@ -244,12 +244,6 @@ export const navGroups: NavGroup[] = [
         title: "Teachers",
         url: "/teachers",
         icon: Users2,
-        requirement: { type: "roles", roles: ADMIN_ROLES },
-      },
-      {
-        title: "Classes & Attendance",
-        url: "/classes",
-        icon: SquareStack,
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
       {

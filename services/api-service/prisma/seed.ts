@@ -648,7 +648,7 @@ async function main() {
       let assignment = existingAssignment;
       if (!assignment) {
         assignment = await prisma.assessmentAssignment.create({
-          data: { assessmentId, studentProfileId: profile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' },
+          data: { assessmentId, studentProfileId: profile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' },
         });
       }
       const existingAttempt = await prisma.assessmentAttempt.findFirst({ where: { assessmentAssignmentId: assignment.id, studentProfileId: profile.id } });
@@ -685,7 +685,7 @@ async function main() {
       const existing = await prisma.gradeBookEntry.findFirst({ where: { studentProfileId: profile.id, sourceType: e.srcType, sourceId: e.srcId } });
       if (!existing) {
         await prisma.gradeBookEntry.create({
-          data: { studentProfileId: profile.id, classSectionId: sectionA.id, batchId: dsaClass.id, termId: term.id, sourceType: e.srcType, sourceId: e.srcId, title: e.title, category: e.category, pointsEarned: e.points, pointsPossible: e.possible, percentage: e.points, weight: 1.0, status: 'PUBLISHED', assessedAt: new Date('2026-09-16'), publishedAt: new Date(), createdById: superAdminUser.id },
+          data: { studentProfileId: profile.id, batchId: dsaClass.id, termId: term.id, sourceType: e.srcType, sourceId: e.srcId, title: e.title, category: e.category, pointsEarned: e.points, pointsPossible: e.possible, percentage: e.points, weight: 1.0, status: 'PUBLISHED', assessedAt: new Date('2026-09-16'), publishedAt: new Date(), createdById: superAdminUser.id },
         });
       }
     }
@@ -1205,7 +1205,7 @@ async function main() {
     for (const e of entries) {
       const exists = await prisma.gradeBookEntry.findFirst({ where: { studentProfileId: profile.id, sourceType: e.srcType, sourceId: e.srcId } });
       if (!exists) {
-        await prisma.gradeBookEntry.create({ data: { studentProfileId: profile.id, classSectionId: sectionB.id, termId: term.id, sourceType: e.srcType, sourceId: e.srcId, title: e.title, category: e.cat, pointsEarned: e.pts, pointsPossible: 100, percentage: e.pts, weight: 1.0, status: 'PUBLISHED', assessedAt: new Date('2026-09-16'), publishedAt: new Date(), createdById: superAdminUser.id } });
+        await prisma.gradeBookEntry.create({ data: { studentProfileId: profile.id, termId: term.id, sourceType: e.srcType, sourceId: e.srcId, title: e.title, category: e.cat, pointsEarned: e.pts, pointsPossible: 100, percentage: e.pts, weight: 1.0, status: 'PUBLISHED', assessedAt: new Date('2026-09-16'), publishedAt: new Date(), createdById: superAdminUser.id } });
       }
     }
   }
@@ -1567,7 +1567,6 @@ async function main() {
           data: {
             assessmentId: assessment.id,
             studentProfileId: profile.id,
-            classSectionId: sectionA.id,
             assignedByUserId: superAdminUser.id,
             opensAt,
             dueAt,
@@ -1736,7 +1735,7 @@ async function main() {
   if (charlotteProfile) {
     const existingFracAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: fracQuiz.id, studentProfileId: charlotteProfile.id } });
     if (!existingFracAssignment) {
-      await prisma.assessmentAssignment.create({ data: { assessmentId: fracQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+      await prisma.assessmentAssignment.create({ data: { assessmentId: fracQuiz.id, studentProfileId: charlotteProfile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
     }
   }
 
@@ -1861,7 +1860,7 @@ async function main() {
   if (charlotteProfile) {
     const existingAlgoAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: algoQuiz.id, studentProfileId: charlotteProfile.id } });
     if (!existingAlgoAssignment) {
-      await prisma.assessmentAssignment.create({ data: { assessmentId: algoQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+      await prisma.assessmentAssignment.create({ data: { assessmentId: algoQuiz.id, studentProfileId: charlotteProfile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
     }
   }
 
@@ -2031,7 +2030,7 @@ async function main() {
   if (charlotteProfile) {
     const existingPercentAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: percentQuiz.id, studentProfileId: charlotteProfile.id } });
     if (!existingPercentAssignment) {
-      await prisma.assessmentAssignment.create({ data: { assessmentId: percentQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+      await prisma.assessmentAssignment.create({ data: { assessmentId: percentQuiz.id, studentProfileId: charlotteProfile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
     }
   }
 
@@ -2178,7 +2177,7 @@ async function main() {
   if (charlotteProfile) {
     const existingDsAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: dsQuiz.id, studentProfileId: charlotteProfile.id } });
     if (!existingDsAssignment) {
-      await prisma.assessmentAssignment.create({ data: { assessmentId: dsQuiz.id, studentProfileId: charlotteProfile.id, classSectionId: sectionA.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
+      await prisma.assessmentAssignment.create({ data: { assessmentId: dsQuiz.id, studentProfileId: charlotteProfile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
     }
   }
 

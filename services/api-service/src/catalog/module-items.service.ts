@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { DeliveryMode } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateModuleItemDto,
@@ -25,6 +26,13 @@ export class ModuleItemsService {
     });
     if (!concept) {
       throw new NotFoundException('Concept not found');
+    }
+    if (dto.kind === 'LIVE_CLASS' && !concept.courseId) {
+      // A live class is met by a batch, and a batch is a cohort of a course.
+      // An item floating outside any course has nothing to schedule against.
+      throw new BadRequestException(
+        'A LIVE_CLASS item must belong to a concept attached to a course',
+      );
     }
     if (dto.kind === 'ASSESSMENT') {
       if (!dto.assessmentId) {
@@ -61,6 +69,17 @@ export class ModuleItemsService {
             moduleItemId: item.id,
             prompt: dto.discussionPrompt || dto.title,
           },
+        });
+      }
+
+      // A course carrying a live item is LIVE-only: a self-paced buyer has no
+      // batch, so the item would have no meeting to resolve to. Adding one
+      // therefore moves the course rather than failing — the inverse guard
+      // (blocking LIVE -> SELF_PACED) lives in CoursesService.
+      if (dto.kind === 'LIVE_CLASS') {
+        await tx.course.update({
+          where: { id: concept.courseId! },
+          data: { deliveryMode: DeliveryMode.LIVE },
         });
       }
 

@@ -116,7 +116,6 @@ export const assignmentSelect = {
   id: true,
   assessmentId: true,
   studentProfileId: true,
-  classSectionId: true,
   lessonId: true,
   assignedByUserId: true,
   opensAt: true,

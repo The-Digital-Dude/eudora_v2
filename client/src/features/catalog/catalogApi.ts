@@ -12,7 +12,13 @@ export interface LearningSubject {
   status: string;
 }
 
-export type ModuleItemKind = "VIDEO" | "READING" | "DISCUSSION" | "ASSESSMENT";
+export type ModuleItemKind =
+  | "VIDEO"
+  | "READING"
+  | "DISCUSSION"
+  | "ASSESSMENT"
+  /** Curriculum slot for a live session; the meeting itself is a BatchSession. */
+  | "LIVE_CLASS";
 
 export interface ModuleItem {
   id: string;

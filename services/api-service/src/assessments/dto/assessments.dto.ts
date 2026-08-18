@@ -398,9 +398,10 @@ export class ListAssignmentsQueryDto {
   @IsUUID()
   studentProfileId?: string;
 
+  /** Matches assignments held by anyone enrolled in this batch. */
   @IsOptional()
   @IsUUID()
-  classSectionId?: string;
+  batchId?: string;
 
   @IsOptional()
   @IsEnum([
@@ -430,9 +431,10 @@ export class CreateAssignmentDto {
   @IsUUID()
   studentProfileId?: string | null;
 
+  /** Bulk-assign target: every actively enrolled student in this batch. */
   @IsOptional()
   @IsUUID()
-  classSectionId?: string | null;
+  batchId?: string | null;
 
   @IsOptional()
   @IsUUID()

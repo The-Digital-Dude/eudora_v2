@@ -247,7 +247,6 @@ export default function GradebookPage() {
           entriesToSave.push({
             studentProfileId: student.id,
             batchId: selectedClassId,
-            classSectionId: dbEntry?.classSectionId || null,
             termId: selectedTermId,
             title: col.title,
             category: col.category,

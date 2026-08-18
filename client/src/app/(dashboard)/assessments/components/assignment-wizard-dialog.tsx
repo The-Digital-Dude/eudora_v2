@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Assessment,
   useCreateAssignmentMutation,
-  useGetClassSectionsQuery,
+  useGetBatchesQuery,
   useGetStudentsQuery,
 } from "@/features/assessments/assessmentsApi";
 
@@ -27,16 +27,16 @@ export function AssignmentWizardDialog({
   onOpenChange,
   assessment,
 }: AssignmentWizardDialogProps) {
-  const { data: classSectionsData, isLoading: isLoadingClasses } = useGetClassSectionsQuery();
+  const { data: batchesData, isLoading: isLoadingBatches } = useGetBatchesQuery();
   const { data: studentsData, isLoading: isLoadingStudents } = useGetStudentsQuery();
 
-  const classSections = classSectionsData?.items || [];
+  const batches = batchesData?.items || [];
   const students = studentsData?.items || [];
 
   const [createAssignment, { isLoading: isAssigning }] = useCreateAssignmentMutation();
 
-  const [targetType, setTargetType] = useState<"class" | "student">("class");
-  const [classSectionId, setClassSectionId] = useState<string>("");
+  const [targetType, setTargetType] = useState<"batch" | "student">("batch");
+  const [batchId, setBatchId] = useState<string>("");
   const [studentProfileId, setStudentProfileId] = useState<string>("");
   const [opensAt, setOpensAt] = useState<string>("");
   const [dueAt, setDueAt] = useState<string>("");
@@ -62,9 +62,9 @@ export function AssignmentWizardDialog({
       setDueAt(formatDate(nextWeek));
       
       // Reset targets
-      setClassSectionId("");
+      setBatchId("");
       setStudentProfileId("");
-      setTargetType("class");
+      setTargetType("batch");
     }
   }, [open]);
 
@@ -73,8 +73,8 @@ export function AssignmentWizardDialog({
 
     if (!assessment) return;
 
-    if (targetType === "class" && !classSectionId) {
-      return toast.error("Please select a class section.");
+    if (targetType === "batch" && !batchId) {
+      return toast.error("Please select a batch.");
     }
     if (targetType === "student" && !studentProfileId) {
       return toast.error("Please select a student profile.");
@@ -87,15 +87,15 @@ export function AssignmentWizardDialog({
     try {
       await createAssignment({
         assessmentId: assessment.id,
-        classSectionId: targetType === "class" ? classSectionId : null,
+        batchId: targetType === "batch" ? batchId : null,
         studentProfileId: targetType === "student" ? studentProfileId : null,
         opensAt: new Date(opensAt).toISOString(),
         dueAt: new Date(dueAt).toISOString(),
       }).unwrap();
 
       toast.success(
-        targetType === "class"
-          ? "Assessment successfully assigned to class!"
+        targetType === "batch"
+          ? "Assessment successfully assigned to the batch!"
           : "Assessment successfully assigned to student!"
       );
       onOpenChange(false);
@@ -129,15 +129,15 @@ export function AssignmentWizardDialog({
             <div className="flex rounded-xl bg-muted p-1">
               <button
                 type="button"
-                onClick={() => setTargetType("class")}
+                onClick={() => setTargetType("batch")}
                 className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
-                  targetType === "class"
+                  targetType === "batch"
                     ? "bg-card shadow text-foreground"
                     : "text-muted-foreground hover:text-foreground dark:hover:text-foreground"
                 }`}
               >
                 <Users className="h-4 w-4" />
-                Entire Class
+                Entire Batch
               </button>
               <button
                 type="button"
@@ -155,17 +155,17 @@ export function AssignmentWizardDialog({
           </div>
 
           {/* Class selector */}
-          {targetType === "class" && (
+          {targetType === "batch" && (
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Class Section
+                Batch
               </Label>
-              <Select value={classSectionId} onValueChange={setClassSectionId}>
+              <Select value={batchId} onValueChange={setBatchId}>
                 <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
-                  <SelectValue placeholder={isLoadingClasses ? "Loading classes..." : "Select class section..."} />
+                  <SelectValue placeholder={isLoadingBatches ? "Loading batches..." : "Select batch..."} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  {classSections.map((cls) => (
+                  {batches.map((cls) => (
                     <SelectItem key={cls.id} value={cls.id}>
                       {cls.name} ({cls.code})
                     </SelectItem>

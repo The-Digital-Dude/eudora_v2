@@ -137,7 +137,6 @@ export const assignmentSelect = {
     },
   },
   studentProfile: { select: { id: true, fullName: true } },
-  classSection: { select: { id: true, code: true, name: true } },
 };
 
 /**

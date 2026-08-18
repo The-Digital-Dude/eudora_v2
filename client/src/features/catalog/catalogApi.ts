@@ -1,5 +1,27 @@
 import { authApi } from "../auth/authApi";
 
+export interface MyLiveSession {
+  id: string;
+  batchId: string;
+  moduleItemId: string | null;
+  topic: string | null;
+  date: string;
+  startTime: string | null;
+  endTime: string | null;
+  status: "SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED";
+  provider: "NONE" | "ZOOM";
+  joinUrl: string | null;
+  cancelledAt: string | null;
+  batch?: { id: string; name: string; code: string };
+  teacher?: { id: string; firstName: string; lastName: string } | null;
+}
+
+/** Why there is no session to show, when `session` is null. */
+export type MyLiveSessionReason =
+  | "NOT_A_STUDENT"
+  | "NOT_IN_A_BATCH"
+  | "NOT_SCHEDULED";
+
 // ─── Type Definitions ─────────────────────────────────────────────────────────
 
 export interface LearningSubject {
@@ -444,6 +466,13 @@ export const catalogApi = authApi.injectEndpoints({
       query: (moduleItemId: string) => `/catalog/module-items/${moduleItemId}/my-assignment`,
     } as any),
 
+    getMySessionForItem: builder.query<
+      { session: MyLiveSession | null; reason: MyLiveSessionReason | null },
+      string
+    >({
+      query: (moduleItemId: string) => `/catalog/module-items/${moduleItemId}/my-session`,
+    } as any),
+
     getDiscussion: builder.query<DiscussionThread, string>({
       query: (moduleItemId: string) => `/catalog/module-items/${moduleItemId}/discussion`,
       providesTags: (_result: any, _err: any, id: any) => [{ type: "Discussion" as any, id }],
@@ -486,6 +515,7 @@ export const {
   useDeleteModuleItemMutation,
   useUpdateModuleItemProgressMutation,
   useGetMyAssignmentForItemQuery,
+  useGetMySessionForItemQuery,
   useGetDiscussionQuery,
   useAddDiscussionPostMutation,
 } = catalogApi;

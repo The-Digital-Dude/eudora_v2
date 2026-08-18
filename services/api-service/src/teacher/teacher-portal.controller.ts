@@ -16,6 +16,14 @@ export class TeacherPortalController {
     return this.teacherService.getClassesOverview(user.id);
   }
 
+  // The commerce-spine counterpart to `classes` above: cohorts this teacher
+  // leads or teaches via CourseTeacher. Kept separate because a section is
+  // marked present per day and a batch per session.
+  @Get('batches')
+  async getMyBatches(@CurrentUser() user: CurrentUserDto) {
+    return this.teacherService.getMyBatches(user.id);
+  }
+
   @Get('alerts')
   async getPerformanceAlerts(@CurrentUser() user: CurrentUserDto) {
     return this.teacherService.getPerformanceAlerts(user.id);

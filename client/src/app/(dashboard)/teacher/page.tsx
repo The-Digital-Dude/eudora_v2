@@ -6,9 +6,10 @@ import Link from "next/link";
 import React, { useEffect,useState } from "react";
 
 import { useGetDashboardSnapshotQuery } from "@/features/dashboard/dashboardApi";
-import { useGetTeacherClassesQuery } from "@/features/teacher/teacherPortalApi";
+import { useGetTeacherBatchesQuery,useGetTeacherClassesQuery } from "@/features/teacher/teacherPortalApi";
 import { useAppSelector } from "@/store/hooks";
 
+import { BatchesOverview } from "./components/batches-overview";
 import { ClassesOverview } from "./components/classes-overview";
 import { PerformanceAlerts } from "./components/performance-alerts";
 import { QuickAttendance } from "./components/quick-attendance";
@@ -22,6 +23,9 @@ export default function TeacherPage() {
 
   // Query assigned classes
   const { data: classes = [], isLoading: isClassesLoading, refetch: refetchClasses } = useGetTeacherClassesQuery();
+
+  // Cohorts on the commerce spine — a teacher may have these, sections, or both.
+  const { data: batches = [], isLoading: isBatchesLoading, refetch: refetchBatches } = useGetTeacherBatchesQuery();
 
   // Query snapshot (schedule, grading tasks)
   const { data: snapshot, isLoading: isSnapshotLoading, refetch: refetchSnapshot } = useGetDashboardSnapshotQuery();
@@ -50,6 +54,7 @@ export default function TeacherPage() {
   const handleAttendanceSuccess = () => {
     // Refresh assigned classes so marked status updates instantly
     refetchClasses();
+    refetchBatches();
     refetchSnapshot();
   };
 
@@ -106,6 +111,13 @@ export default function TeacherPage() {
               onSelectClass={setActiveClassId}
               isLoading={isClassesLoading}
             />
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
+              My Batches
+            </h3>
+            <BatchesOverview batches={batches} isLoading={isBatchesLoading} />
           </div>
 
           {/* Quick roll-call selector */}

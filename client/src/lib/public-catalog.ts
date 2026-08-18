@@ -4,10 +4,10 @@ import { SITE_URL } from "@/config/site";
  * Server-side reads of the anonymous catalog API.
  *
  * Deliberately plain `fetch` rather than the RTK Query layer in
- * `features/catalog`: that client is browser-only — it posts to a relative
- * `/api` path, attaches cookies and a CSRF header — so it cannot run during
- * prerendering. These pages must be static and indexable, so they talk to the
- * API host directly with no credentials.
+ * `features/catalog`: that client is browser-only — it attaches cookies and a
+ * CSRF header — so it cannot run during prerendering. These pages must be
+ * static and indexable, so they talk to the API host directly with no
+ * credentials.
  */
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
 

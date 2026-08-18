@@ -140,10 +140,10 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                                         </Badge>
                                       </span>
                                     ) : (
-                                      <SidebarMenuSubButton asChild isActive={isActive}>
+                                      <SidebarMenuSubButton asChild size="sm" isActive={isActive}>
                                         <Link href={child.url} aria-current={isActive ? "page" : undefined}>
                                           <ChildIcon className="h-3.5 w-3.5" />
-                                          <span>{child.title}</span>
+                                          <span className="truncate">{child.title}</span>
                                         </Link>
                                       </SidebarMenuSubButton>
                                     )}

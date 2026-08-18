@@ -5,23 +5,19 @@ import { getActingChildId } from "@/lib/acting-child";
 
 import { login, logout } from "./authSlice";
 
-// Helper to extract a cookie value from the browser on client-side
-export function getCookie(name: string): string {
-  if (typeof document === "undefined") return "";
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return parts.pop()?.split(";").shift() || "";
-  }
-  return "";
-}
+// The API is a separate origin from the client, so this can never be a
+// relative path — there is no Next.js proxy rewriting /api/* anymore.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: "/api",
+  baseUrl: `${API_URL}/api`,
   credentials: "include",
-  prepareHeaders: (headers) => {
-    // Append CSRF Token header for all unsafe methods
-    const csrfToken = getCookie("csrf_token");
+  prepareHeaders: (headers, { getState }) => {
+    // The API and client are cross-origin, so the browser can never read the
+    // csrf_token cookie via document.cookie (that's a same-origin-only
+    // restriction, independent of SameSite) — the value is instead captured
+    // into Redux at login/refresh/session-restore time and read back here.
+    const csrfToken = (getState() as any).auth?.csrfToken;
     if (csrfToken) {
       headers.set("x-csrf-token", csrfToken);
     }
@@ -67,7 +63,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
       if (refreshResult.data) {
         // Rotated successfully, store new user session details in Redux state
         const user = (refreshResult.data as any).data ?? refreshResult.data;
-        api.dispatch(login({ user, token: null }));
+        api.dispatch(login({ user, csrfToken: user.csrfToken }));
 
         // Retry the original request
         result = await baseQuery(args, api, extraOptions);

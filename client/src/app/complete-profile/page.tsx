@@ -140,7 +140,7 @@ export default function CompleteProfilePage() {
       // Refresh auth state in redux
       const { data: updatedUser } = await refetchMe();
       if (updatedUser) {
-        dispatch(login({ user: updatedUser, token: null }));
+        dispatch(login({ user: updatedUser, csrfToken: updatedUser.csrfToken }));
       }
 
       // Send them to their own role's home, not /dashboard — that route is

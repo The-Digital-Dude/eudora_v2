@@ -65,6 +65,20 @@ export class ModuleItemsController {
     return this.moduleItemsService.upsertProgress(id, user.id, dto);
   }
 
+  @Get(':id/my-session')
+  async getMySessionForItem(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
+  ) {
+    await this.assertItemAccess(id, user, actingStudentId);
+    return this.moduleItemsService.getMySessionForItem(
+      id,
+      user.id,
+      actingStudentId,
+    );
+  }
+
   @Get(':id/my-assignment')
   async getMyAssignmentForItem(
     @Param('id') id: string,

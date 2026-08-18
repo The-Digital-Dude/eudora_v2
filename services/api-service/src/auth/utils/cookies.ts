@@ -27,9 +27,14 @@ export function setAuthCookies(
 ): void {
   const secure = process.env.NODE_ENV === 'production';
 
+  // The client and API are separate origins, so these must survive
+  // cross-origin fetch/XHR (Lax only attaches cookies to top-level
+  // navigations). SameSite=None requires Secure, which is already true
+  // whenever this matters (production); local HTTP dev falls back to Lax,
+  // matching the precedent in setAppleStateCookie below.
   response.cookie('access_token', tokens.accessToken, {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: secure ? 'none' : 'lax',
     secure,
     maxAge: tokens.accessTokenExpiresInSeconds * 1000,
     path: '/',
@@ -37,7 +42,7 @@ export function setAuthCookies(
 
   response.cookie('refresh_token', tokens.refreshToken, {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: secure ? 'none' : 'lax',
     secure,
     maxAge: tokens.refreshTokenExpiresInSeconds * 1000,
     path: '/api/auth', // Since global prefix is '/api'
@@ -45,7 +50,7 @@ export function setAuthCookies(
 
   response.cookie('csrf_token', tokens.csrfToken, {
     httpOnly: false,
-    sameSite: 'lax',
+    sameSite: secure ? 'none' : 'lax',
     secure,
     maxAge: tokens.refreshTokenExpiresInSeconds * 1000,
     path: '/',

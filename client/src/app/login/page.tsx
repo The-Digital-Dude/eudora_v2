@@ -53,7 +53,7 @@ function GoogleLoginButton({
           token: tokenResponse.access_token,
           role: loginAs === "guardian" ? "GUARDIAN" : "USER",
         }).unwrap();
-        dispatch(login({ user: loggedInUser, token: null }));
+        dispatch(login({ user: loggedInUser, csrfToken: loggedInUser.csrfToken }));
         toast.success("Successfully logged in with Google!");
         onLoggedIn(loggedInUser);
       } catch (err: any) {
@@ -200,7 +200,7 @@ export default function LoginPage() {
         email: values.email,
         password: values.password,
       }).unwrap();
-      dispatch(login({ user: loggedInUser, token: null }));
+      dispatch(login({ user: loggedInUser, csrfToken: loggedInUser.csrfToken }));
       toast.success("Welcome back! Successfully logged in.");
       checkRedirect(loggedInUser);
     } catch (err: any) {

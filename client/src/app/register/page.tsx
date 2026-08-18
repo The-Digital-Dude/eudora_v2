@@ -93,7 +93,7 @@ export default function RegisterPage() {
       }).unwrap();
 
       // Automatically sign in locally on register success
-      dispatch(login({ user, token: null }));
+      dispatch(login({ user, csrfToken: user.csrfToken }));
       toast.success("Account created successfully!");
       // Registration creates a plain USER; the guardian profile and first
       // child are collected next, so the destination has to survive that hop.

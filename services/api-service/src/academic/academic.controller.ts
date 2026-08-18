@@ -19,10 +19,7 @@ import {
   CreateClassSectionDto,
   UpdateClassSectionDto,
 } from './dto/class-section.dto';
-import {
-  CreateBatchDto,
-  UpdateBatchDto,
-} from './dto/batch.dto';
+import { CreateBatchDto, UpdateBatchDto } from './dto/batch.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
@@ -192,10 +189,7 @@ export class AcademicController {
 
   @Patch('batches/:id')
   @Roles('ADMIN', 'SUPER_ADMIN')
-  async updateBatch(
-    @Param('id') id: string,
-    @Body() dto: UpdateBatchDto,
-  ) {
+  async updateBatch(@Param('id') id: string, @Body() dto: UpdateBatchDto) {
     return this.academicService.updateBatch(id, dto);
   }
 

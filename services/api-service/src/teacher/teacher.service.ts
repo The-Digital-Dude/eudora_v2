@@ -14,7 +14,12 @@ import { AssignClassDto } from './dto/assign-class.dto';
 import { TeacherStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
-const TEACHER_SORTABLE_FIELDS = ['fullName', 'employeeCode', 'specialization', 'status'] as const;
+const TEACHER_SORTABLE_FIELDS = [
+  'fullName',
+  'employeeCode',
+  'specialization',
+  'status',
+] as const;
 
 @Injectable()
 export class TeacherService {
@@ -107,7 +112,12 @@ export class TeacherService {
       ];
     }
 
-    const orderBy = resolveSort(sortBy, sortOrder, TEACHER_SORTABLE_FIELDS, 'fullName');
+    const orderBy = resolveSort(
+      sortBy,
+      sortOrder,
+      TEACHER_SORTABLE_FIELDS,
+      'fullName',
+    );
 
     const [teachers, total] = await Promise.all([
       this.prisma.teacherProfile.findMany({
@@ -323,6 +333,105 @@ export class TeacherService {
     }
 
     return classes;
+  }
+
+  /**
+   * The cohorts this teacher actually teaches, on the commerce spine.
+   *
+   * `getClassesOverview` above answers the same question for ClassSection,
+   * and a teacher can legitimately have both. They are kept as separate
+   * lists rather than merged: a section is marked present once per day, a
+   * batch once per session, so a single "attendance done?" flag would mean
+   * two different things depending on the row it came from.
+   *
+   * Two routes into a batch, and a teacher may hold both — lead of the
+   * cohort, or assigned to its course. LEAD wins when reporting the role.
+   */
+  async getMyBatches(userId: string) {
+    const teacher = await this.findByUserId(userId);
+
+    const courseIds = (
+      await this.prisma.courseTeacher.findMany({
+        where: { teacherProfileId: teacher.id },
+        select: { courseId: true },
+      })
+    ).map((c) => c.courseId);
+
+    const batches = await this.prisma.batch.findMany({
+      where: {
+        OR: [
+          { leadTeacherProfileId: teacher.id },
+          ...(courseIds.length > 0 ? [{ courseId: { in: courseIds } }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        status: true,
+        startDate: true,
+        endDate: true,
+        leadTeacherProfileId: true,
+        course: { select: { id: true, title: true, deliveryMode: true } },
+        _count: { select: { enrollments: true } },
+      },
+      orderBy: [{ startDate: 'asc' }, { name: 'asc' }],
+    });
+
+    if (batches.length === 0) {
+      return [];
+    }
+
+    // One query for the next meeting of every batch, rather than one per
+    // batch inside the loop — getClassesOverview does the latter and issues
+    // 2N queries for N sections.
+    const now = new Date();
+    const upcoming = await this.prisma.batchSession.findMany({
+      where: {
+        batchId: { in: batches.map((b) => b.id) },
+        status: { in: ['SCHEDULED', 'LIVE'] },
+        date: {
+          gte: new Date(
+            Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+          ),
+        },
+      },
+      orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+      select: {
+        id: true,
+        batchId: true,
+        topic: true,
+        date: true,
+        startTime: true,
+        endTime: true,
+        status: true,
+        joinUrl: true,
+        startUrl: true,
+        moduleItem: { select: { id: true, title: true } },
+      },
+    });
+
+    const nextByBatch = new Map<string, (typeof upcoming)[number]>();
+    for (const session of upcoming) {
+      if (!nextByBatch.has(session.batchId)) {
+        nextByBatch.set(session.batchId, session);
+      }
+    }
+
+    return batches.map((b) => ({
+      batchId: b.id,
+      name: b.name,
+      code: b.code,
+      status: b.status,
+      startDate: b.startDate,
+      endDate: b.endDate,
+      course: b.course,
+      enrolledCount: b._count.enrollments,
+      role: b.leadTeacherProfileId === teacher.id ? 'LEAD' : 'COURSE_TEACHER',
+      // `startUrl` is the host link — safe here, and only here, because this
+      // endpoint is TEACHER-only and scoped to batches they teach.
+      nextSession: nextByBatch.get(b.id) ?? null,
+    }));
   }
 
   async getPerformanceAlerts(userId: string) {

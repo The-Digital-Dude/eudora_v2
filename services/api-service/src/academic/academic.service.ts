@@ -16,10 +16,7 @@ import {
   CreateClassSectionDto,
   UpdateClassSectionDto,
 } from './dto/class-section.dto';
-import {
-  CreateBatchDto,
-  UpdateBatchDto,
-} from './dto/batch.dto';
+import { CreateBatchDto, UpdateBatchDto } from './dto/batch.dto';
 
 const CLASS_SECTION_SORTABLE_FIELDS = ['name', 'code', 'status'] as const;
 
@@ -345,7 +342,12 @@ export class AcademicService {
       ];
     }
 
-    const orderBy = resolveSort(sortBy, sortOrder, CLASS_SECTION_SORTABLE_FIELDS, 'name');
+    const orderBy = resolveSort(
+      sortBy,
+      sortOrder,
+      CLASS_SECTION_SORTABLE_FIELDS,
+      'name',
+    );
 
     const [sections, total] = await Promise.all([
       this.prisma.classSection.findMany({
@@ -464,6 +466,16 @@ export class AcademicService {
       }
     }
 
+    if (dto.leadTeacherProfileId) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { id: dto.leadTeacherProfileId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!teacher) {
+        throw new NotFoundException('Lead teacher not found');
+      }
+    }
+
     if (dto.startDate && dto.endDate && dto.endDate < dto.startDate) {
       throw new BadRequestException('endDate cannot be before startDate');
     }
@@ -472,7 +484,7 @@ export class AcademicService {
       where: { code: dto.code },
     });
     if (existingCode) {
-      throw new ConflictException('Course class code already exists');
+      throw new ConflictException('Batch code already exists');
     }
 
     const { startDate, endDate, enrollmentDeadline, ...rest } = dto;
@@ -498,7 +510,12 @@ export class AcademicService {
         where,
         skip,
         take: limit,
-        include: { term: { include: { academicYear: true } } },
+        include: {
+          term: { include: { academicYear: true } },
+          course: { select: { id: true, title: true, deliveryMode: true } },
+          leadTeacher: { select: { id: true, fullName: true } },
+          _count: { select: { enrollments: true } },
+        },
         orderBy: { name: 'asc' },
       }),
       this.prisma.batch.count({ where }),
@@ -520,11 +537,13 @@ export class AcademicService {
       where: { id },
       include: {
         term: { include: { academicYear: true } },
+        course: { select: { id: true, title: true, deliveryMode: true } },
+        leadTeacher: { select: { id: true, fullName: true } },
         enrollments: { include: { studentProfile: true } },
       },
     });
     if (!cls) {
-      throw new NotFoundException('Course class not found');
+      throw new NotFoundException('Batch not found');
     }
     return cls;
   }
@@ -534,7 +553,7 @@ export class AcademicService {
       where: { id },
     });
     if (!cls) {
-      throw new NotFoundException('Course class not found');
+      throw new NotFoundException('Batch not found');
     }
 
     if (dto.termId) {
@@ -551,7 +570,7 @@ export class AcademicService {
         where: { code: dto.code },
       });
       if (existingCode) {
-        throw new ConflictException('Course class code already exists');
+        throw new ConflictException('Batch code already exists');
       }
     }
 
@@ -562,6 +581,16 @@ export class AcademicService {
       });
       if (!course) {
         throw new NotFoundException('Course not found');
+      }
+    }
+
+    if (dto.leadTeacherProfileId) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { id: dto.leadTeacherProfileId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!teacher) {
+        throw new NotFoundException('Lead teacher not found');
       }
     }
 
@@ -601,14 +630,26 @@ export class AcademicService {
       where: { id },
     });
     if (!cls) {
-      throw new NotFoundException('Course class not found');
+      throw new NotFoundException('Batch not found');
+    }
+
+    // `StudentCourseEnrollment.batch` cascades, so deleting a batch with
+    // seats in it silently destroys paid enrolments — and with them the
+    // gradebook and attendance rows that hang off those students. Refuse.
+    const enrolled = await this.prisma.studentCourseEnrollment.count({
+      where: { batchId: id },
+    });
+    if (enrolled > 0) {
+      throw new ConflictException(
+        `Cannot delete a batch with ${enrolled} enrolled student(s). Set it INACTIVE instead.`,
+      );
     }
 
     await this.prisma.batch.delete({
       where: { id },
     });
 
-    return { message: 'Course class deleted successfully' };
+    return { message: 'Batch deleted successfully' };
   }
 
   async getClassSectionRoster(classSectionId: string) {

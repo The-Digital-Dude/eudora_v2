@@ -81,12 +81,22 @@ export interface Lead {
 
 export interface Batch {
   id: string;
-  termId: string;
+  termId: string | null;
+  courseId: string | null;
   name: string;
   code: string;
   status: "ACTIVE" | "INACTIVE";
   description: string | null;
   capacity: number | null;
+  startDate: string | null;
+  /** What a LIVE purchase's access expiry tracks. */
+  endDate: string | null;
+  /** After this the batch stops taking seats even if capacity remains. */
+  enrollmentDeadline: string | null;
+  leadTeacherProfileId: string | null;
+  course?: { id: string; title: string; deliveryMode: string } | null;
+  leadTeacher?: { id: string; fullName: string } | null;
+  _count?: { enrollments: number };
   /** Default false — a class only becomes guardian-self-enrollable once staff opts it in. */
   isOpenForEnrollment: boolean;
   createdAt: string;
@@ -99,6 +109,21 @@ export interface Batch {
       name: string;
     };
   };
+}
+
+export interface BatchPayload {
+  name: string;
+  code: string;
+  courseId?: string | null;
+  termId?: string | null;
+  status?: "ACTIVE" | "INACTIVE";
+  description?: string | null;
+  capacity?: number | null;
+  isOpenForEnrollment?: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+  enrollmentDeadline?: string | null;
+  leadTeacherProfileId?: string | null;
 }
 
 export interface ClassSection {
@@ -479,9 +504,24 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       providesTags: ["Batches"],
     } as any),
+    createBatch: builder.mutation<Batch, BatchPayload>({
+      query: (body: any) => ({
+        url: "/batches",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Batches"],
+    } as any),
+    deleteBatch: builder.mutation<{ message: string }, string>({
+      query: (id: any) => ({
+        url: `/batches/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Batches"],
+    } as any),
     updateBatch: builder.mutation<
       Batch,
-      { id: string; body: Partial<Pick<Batch, "description" | "capacity" | "isOpenForEnrollment">> }
+      { id: string; body: Partial<BatchPayload> }
     >({
       query: ({ id, body }: any) => ({
         url: `/batches/${id}`,
@@ -914,6 +954,8 @@ export const {
   useUpdateLeadMutation,
   useDeleteLeadMutation,
   useGetBatchesQuery,
+  useCreateBatchMutation,
+  useDeleteBatchMutation,
   useUpdateBatchMutation,
   useGetClassSectionsQuery,
   useGetClassSectionQuery,

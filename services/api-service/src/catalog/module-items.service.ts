@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { DeliveryMode } from '@prisma/client';
+import { DeliveryMode, EnrollmentStatus, ModuleItemKind } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateModuleItemDto,
@@ -12,12 +12,14 @@ import {
   CreateDiscussionPostDto,
 } from './dto/module-item.dto';
 import { ProgressionService } from '../progression/progression.service';
+import { ActingStudentService } from '../entitlements/acting-student.service';
 
 @Injectable()
 export class ModuleItemsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly progression: ProgressionService,
+    private readonly actingStudent: ActingStudentService,
   ) {}
 
   async createModuleItem(dto: CreateModuleItemDto) {
@@ -206,6 +208,67 @@ export class ModuleItemsService {
       select: { id: true, status: true, dueAt: true },
     });
     return { assignment: assignment ?? null };
+  }
+
+  /**
+   * The meeting *this* student attends for a LIVE_CLASS item.
+   *
+   * The item is shared by every cohort that buys the course, so the session
+   * can only be resolved per-student: their `StudentCourseEnrollment` names
+   * the batch, and the batch owns the dated `BatchSession`. A student with no
+   * enrollment, or a batch that has not scheduled this item yet, gets
+   * `{ session: null }` plus a reason the UI can explain.
+   */
+  async getMySessionForItem(
+    moduleItemId: string,
+    userId: string,
+    actingStudentId?: string | null,
+  ) {
+    const item = await this.prisma.moduleItem.findUnique({
+      where: { id: moduleItemId },
+      select: { id: true, kind: true, title: true, deletedAt: true },
+    });
+    if (!item || item.deletedAt) {
+      throw new NotFoundException('Module item not found');
+    }
+    if (item.kind !== ModuleItemKind.LIVE_CLASS) {
+      throw new BadRequestException('This item is not a live class');
+    }
+
+    const studentProfileId = await this.actingStudent.resolve(
+      userId,
+      actingStudentId ?? null,
+    );
+    if (!studentProfileId) {
+      return { session: null, reason: 'NOT_A_STUDENT' as const };
+    }
+
+    const enrollments = await this.prisma.studentCourseEnrollment.findMany({
+      where: { studentProfileId, status: EnrollmentStatus.ENROLLED },
+      select: { batchId: true },
+    });
+    if (enrollments.length === 0) {
+      return { session: null, reason: 'NOT_IN_A_BATCH' as const };
+    }
+
+    const session = await this.prisma.batchSession.findFirst({
+      where: {
+        moduleItemId,
+        batchId: { in: enrollments.map((e) => e.batchId) },
+      },
+      orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+      include: {
+        batch: { select: { id: true, name: true, code: true } },
+        teacher: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+    if (!session) {
+      return { session: null, reason: 'NOT_SCHEDULED' as const };
+    }
+
+    // The host URL starts the meeting and must never reach a learner.
+    const { startUrl: _startUrl, ...safe } = session;
+    return { session: safe, reason: null };
   }
 
   async getDiscussion(moduleItemId: string) {

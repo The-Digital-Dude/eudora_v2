@@ -247,6 +247,15 @@ export const navGroups: NavGroup[] = [
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
       {
+        // The cohort a LIVE course is actually sold as a seat in. Had no
+        // admin surface at all until now — batches could only be created by
+        // calling the API directly.
+        title: "Batches",
+        url: "/batches",
+        icon: Layers,
+        requirement: { type: "roles", roles: ADMIN_ROLES },
+      },
+      {
         title: "Academic Programs",
         url: "/programs",
         icon: School,

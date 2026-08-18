@@ -69,7 +69,7 @@ describe('Homework flow: assign -> submit -> grade -> gradebook (e2e)', () => {
 
   it('lists the homework for the course class', async () => {
     const res = await http()
-      .get(`/api/homework/course-class/${world.batchId}`)
+      .get(`/api/homework/batch/${world.batchId}`)
       .set(asAdmin())
       .expect(200);
     const payload = unwrap<any>(res);

@@ -93,7 +93,7 @@ describe('Assessment flow: author -> assign -> attempt -> mark -> gradebook (e2e
     subjectId = unwrap<{ id: string }>(subjectRes).id;
 
     const classRes = await http()
-      .post('/api/assessments/classes')
+      .post('/api/classes')
       .set(asAdmin())
       .send({ code: `E2E-CLS-${tag}`, name: `E2E Class ${tag}` })
       .expect(201);

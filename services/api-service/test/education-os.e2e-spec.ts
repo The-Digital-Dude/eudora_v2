@@ -261,7 +261,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
 
     it('should allow admin to create a course class under a term', async () => {
       const res = await request(app.getHttpServer())
-        .post('/api/course-classes')
+        .post('/api/batches')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
           termId,

@@ -3,13 +3,11 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
-import { PrismaService } from '../src/prisma/prisma.service';
 
 describe('Live Classes (e2e)', () => {
   let app: INestApplication<App>;
-  let prisma: PrismaService;
   let superAdminToken: string;
-  let classSectionId: string;
+  let batchId: string;
 
   const isoStart = (offsetMinutes: number) =>
     new Date(Date.now() + offsetMinutes * 60_000).toISOString();
@@ -28,8 +26,6 @@ describe('Live Classes (e2e)', () => {
       }),
     );
     await app.init();
-
-    prisma = app.get(PrismaService);
 
     const loginRes = await request(app.getHttpServer())
       .post('/api/auth/login')
@@ -53,11 +49,17 @@ describe('Live Classes (e2e)', () => {
       : '';
     expect(superAdminToken).toBeDefined();
 
-    const section = await prisma.classSection.findFirst({
-      where: { code: 'CS-2026-A' },
-    });
-    expect(section).toBeTruthy();
-    classSectionId = section!.id;
+    // Live classes are scheduled per Batch, not per ClassSection — create
+    // one to hang the sessions off of, since none is seeded.
+    const batchRes = await request(app.getHttpServer())
+      .post('/api/batches')
+      .set('Authorization', `Bearer ${superAdminToken}`)
+      .send({
+        name: `E2E Live Batch ${Date.now()}`,
+        code: `E2E-LIVE-${Date.now()}`,
+      })
+      .expect(201);
+    batchId = (batchRes.body as { data: { id: string } }).data.id;
   });
 
   afterAll(async () => {
@@ -72,10 +74,10 @@ describe('Live Classes (e2e)', () => {
         .post('/api/live-classes')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          classSectionId,
-          title: 'E2E Live Class',
-          scheduledStartAt: isoStart(60),
-          scheduledEndAt: isoStart(120),
+          batchId,
+          topic: 'E2E Live Class',
+          startTime: isoStart(60),
+          endTime: isoStart(120),
         })
         .expect(201);
 
@@ -84,9 +86,9 @@ describe('Live Classes (e2e)', () => {
       sessionId = res.body.data.id;
     });
 
-    it('lists sessions filtered by classSectionId', async () => {
+    it('lists sessions filtered by batchId', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/api/live-classes?classSectionId=${classSectionId}`)
+        .get(`/api/live-classes?batchId=${batchId}`)
         .set('Authorization', `Bearer ${superAdminToken}`)
         .expect(200);
 
@@ -138,10 +140,10 @@ describe('Live Classes (e2e)', () => {
         .post('/api/live-classes')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          classSectionId,
-          title: 'E2E Cancelled Class',
-          scheduledStartAt: isoStart(60),
-          scheduledEndAt: isoStart(120),
+          batchId,
+          topic: 'E2E Cancelled Class',
+          startTime: isoStart(60),
+          endTime: isoStart(120),
         })
         .expect(201);
 
@@ -165,23 +167,23 @@ describe('Live Classes (e2e)', () => {
         .post('/api/live-classes')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          classSectionId,
-          title: 'Invalid window',
-          scheduledStartAt: isoStart(120),
-          scheduledEndAt: isoStart(60),
+          batchId,
+          topic: 'Invalid window',
+          startTime: isoStart(120),
+          endTime: isoStart(60),
         })
         .expect(400);
     });
 
-    it('rejects scheduling against a non-existent class section', async () => {
+    it('rejects scheduling against a non-existent batch', async () => {
       await request(app.getHttpServer())
         .post('/api/live-classes')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          classSectionId: '00000000-0000-0000-0000-000000000000',
-          title: 'Missing section',
-          scheduledStartAt: isoStart(60),
-          scheduledEndAt: isoStart(120),
+          batchId: '00000000-0000-0000-0000-000000000000',
+          topic: 'Missing batch',
+          startTime: isoStart(60),
+          endTime: isoStart(120),
         })
         .expect(404);
     });

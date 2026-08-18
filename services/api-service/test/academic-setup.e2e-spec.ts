@@ -39,7 +39,7 @@ describe('Academic setup chain (e2e)', () => {
     expect(world.batchId).toBeTruthy();
 
     const courseRes = await http()
-      .get(`/api/course-classes/${world.batchId}`)
+      .get(`/api/batches/${world.batchId}`)
       .set(asAdmin())
       .expect(200);
     const course = unwrap<{ id: string; code: string; termId: string }>(
@@ -63,7 +63,7 @@ describe('Academic setup chain (e2e)', () => {
 
   it('rejects creating a course class under a nonexistent term', async () => {
     await http()
-      .post('/api/course-classes')
+      .post('/api/batches')
       .set(asAdmin())
       .send({
         termId: '00000000-0000-0000-0000-000000000000',
@@ -73,18 +73,18 @@ describe('Academic setup chain (e2e)', () => {
       .expect(404);
   });
 
-  it('denies unauthenticated campus creation (401)', async () => {
+  it('denies unauthenticated program creation (401)', async () => {
     await http()
-      .post('/api/campuses')
-      .send({ name: `E2E NoAuth ${tag}` })
+      .post('/api/programs')
+      .send({ name: `E2E NoAuth ${tag}`, code: `E2E-NOAUTH-${tag}` })
       .expect(401);
   });
 
-  it('denies campus creation to a plain USER role (403)', async () => {
+  it('denies program creation to a plain USER role (403)', async () => {
     await http()
-      .post('/api/campuses')
+      .post('/api/programs')
       .set('Authorization', `Bearer ${plainUser.token}`)
-      .send({ name: `E2E Forbidden ${tag}` })
+      .send({ name: `E2E Forbidden ${tag}`, code: `E2E-FORBIDDEN-${tag}` })
       .expect(403);
   });
 
@@ -97,7 +97,7 @@ describe('Academic setup chain (e2e)', () => {
 
   it('deletes an empty course class cleanly', async () => {
     const createRes = await http()
-      .post('/api/course-classes')
+      .post('/api/batches')
       .set(asAdmin())
       .send({
         termId: world.termId,
@@ -108,12 +108,12 @@ describe('Academic setup chain (e2e)', () => {
     const disposableId = unwrap<{ id: string }>(createRes).id;
 
     await http()
-      .delete(`/api/course-classes/${disposableId}`)
+      .delete(`/api/batches/${disposableId}`)
       .set(asAdmin())
       .expect(200);
 
     await http()
-      .get(`/api/course-classes/${disposableId}`)
+      .get(`/api/batches/${disposableId}`)
       .set(asAdmin())
       .expect(404);
   });

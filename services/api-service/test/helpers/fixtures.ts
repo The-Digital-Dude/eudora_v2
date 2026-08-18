@@ -231,7 +231,7 @@ export async function buildAcademicWorld(
   const termId = unwrap<{ id: string }>(termRes).id;
 
   const courseRes = await http()
-    .post('/api/course-classes')
+    .post('/api/batches')
     .set(auth)
     .send({ termId, name: `E2E Course ${tag}`, code: `E2E-CRS-${tag}` })
     .expect(201);

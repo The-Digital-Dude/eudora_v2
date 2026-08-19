@@ -282,6 +282,24 @@ export interface TeacherProfile {
     lastName: string;
   };
   classAssignments?: ClassTeacher[];
+  /** Courses this teacher is assigned to (the commerce spine). */
+  courseTeachers?: {
+    courseId: string;
+    role: string;
+    course: { id: string; title: string; deliveryMode: string };
+  }[];
+  /** Cohorts this teacher leads. */
+  leadBatches?: {
+    id: string;
+    name: string;
+    code: string;
+    status: "ACTIVE" | "INACTIVE";
+    startDate: string | null;
+    endDate: string | null;
+    isOpenForEnrollment: boolean;
+    course: { id: string; title: string } | null;
+    _count: { enrollments: number };
+  }[];
 }
 
 export interface AcademicYear {

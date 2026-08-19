@@ -150,6 +150,28 @@ export class TeacherService {
       include: {
         user: { select: { email: true, firstName: true, lastName: true } },
         classAssignments: { include: { classSection: true } },
+        // A teacher's workload spans both spines, and until now the admin
+        // view showed only the ClassSection half — course assignments were
+        // written by the catalog and visible nowhere on this screen.
+        courseTeachers: {
+          include: {
+            course: { select: { id: true, title: true, deliveryMode: true } },
+          },
+        },
+        leadBatches: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            status: true,
+            startDate: true,
+            endDate: true,
+            isOpenForEnrollment: true,
+            course: { select: { id: true, title: true } },
+            _count: { select: { enrollments: true } },
+          },
+          orderBy: [{ startDate: 'asc' }, { name: 'asc' }],
+        },
       },
     });
     if (!teacher) {

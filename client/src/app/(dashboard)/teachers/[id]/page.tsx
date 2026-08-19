@@ -20,6 +20,7 @@ import {
   TeacherProfileForm,
   type TeacherProfileFormValues,
 } from "../components/teacher-profile-form";
+import { TeacherWorkloadPanels } from "../components/teacher-workload-panels";
 
 export default function TeacherDetailPage() {
   const router = useRouter();
@@ -143,6 +144,8 @@ export default function TeacherDetailPage() {
           mode="edit"
         />
       </Card>
+
+      <TeacherWorkloadPanels teacher={teacher} />
 
       <Card className="rounded-3xl border border-border bg-card p-6">
         <h2 className="font-display mb-4 text-sm font-bold text-foreground">Section Allocations</h2>

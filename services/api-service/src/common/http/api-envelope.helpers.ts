@@ -47,6 +47,7 @@ export function isRawResponsePath(request: HttpRequestLike): boolean {
   return (
     path === '/health' ||
     path === '/api/health' ||
+    path === '/api/health/live' ||
     path === '/api/billing/webhooks/stripe'
   );
 }

@@ -1,0 +1,68 @@
+# Render Blueprint — declarative service definition.
+#
+# Deploying from this file rather than the dashboard removes the ambiguity
+# between Render's three overlapping path fields (Root Directory, Dockerfile
+# Path, Docker Build Context Directory), which resolve against different bases
+# and are easy to get into an inconsistent state. Here both paths are stated
+# explicitly, relative to the repository root.
+services:
+  - type: web
+    name: eudora-api
+    runtime: docker
+    plan: free
+    branch: business-extraction
+
+    # The Dockerfile lives in the service directory, and so must the build
+    # context: its first COPY pulls package.json/pnpm-lock.yaml/.npmrc/
+    # pnpm-workspace.yaml from the context root. Pointing the context at the
+    # repository root instead both breaks that COPY and ships the whole
+    # monorepo (client, mobile, .pnpm-store) to the builder.
+    dockerfilePath: ./services/api-service/Dockerfile
+    dockerContext: ./services/api-service
+
+    # Singapore is Render's closest region to the Tokyo database. Every query
+    # crosses this link, so the extra hop from a US region is paid on every
+    # request, not just at deploy time.
+    region: singapore
+
+    # Deliberately NOT /api/health — that one runs SELECT 1, and Render polls
+    # this constantly. Pointing it at the database check would keep a
+    # scale-to-zero Postgres permanently awake and burn its monthly compute
+    # allowance. This path answers from the process alone.
+    healthCheckPath: /api/health/live
+
+    envVars:
+      - key: NODE_ENV
+        # Not cosmetic: this is what switches the auth cookies to Secure and
+        # SameSite=None. Without it, cross-origin login silently fails once the
+        # client is served from a different domain.
+        value: production
+      - key: STORAGE_PROVIDER
+        value: S3
+      - key: S3_BUCKET
+        value: uploads
+      - key: S3_REGION
+        value: ap-northeast-1
+      - key: S3_FORCE_PATH_STYLE
+        value: "true"
+      - key: S3_ENDPOINT
+        value: https://ssvxkxjoryudpvanzwfz.supabase.co/storage/v1/s3
+      - key: S3_PUBLIC_URL
+        value: https://ssvxkxjoryudpvanzwfz.supabase.co/storage/v1/object/public/uploads
+
+      # sync: false keeps these out of the repository — Render prompts for them
+      # at deploy time and stores them encrypted.
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      # Set once the client's real origin is known; the API refuses
+      # cross-origin credentialed requests from anything not listed here.
+      - key: CORS_ORIGINS
+        sync: false
+      - key: APP_URL
+        sync: false

@@ -1,8 +1,32 @@
 import type { NextConfig } from "next";
 
+/**
+ * Uploaded images are served from the object store's own host, which
+ * next/image refuses to optimise unless it is allowlisted here. Derived from
+ * the same S3_PUBLIC_URL the API uses to build stored URLs, so the two cannot
+ * drift apart. Read at build time — a change needs a rebuild, not a restart.
+ */
+function uploadHostPatterns(): NonNullable<NextConfig["images"]>["remotePatterns"] {
+  const publicUrl = process.env.S3_PUBLIC_URL;
+  if (!publicUrl) return [];
+
+  try {
+    const { protocol, hostname } = new URL(publicUrl);
+    return [{ protocol: protocol.replace(":", "") as "http" | "https", hostname }];
+  } catch {
+    // A malformed value should not take the whole build down; uploaded images
+    // simply will not optimise until it is corrected.
+    console.warn(`[next.config] S3_PUBLIC_URL is not a valid URL: ${publicUrl}`);
+    return [];
+  }
+}
+
 const nextConfig: NextConfig = {
   output: "standalone",
   allowedDevOrigins: ["192.168.0.101", "localhost", "127.0.0.1"],
+  images: {
+    remotePatterns: uploadHostPatterns(),
+  },
   async redirects() {
     return [
       // /landing used to duplicate the homepage content — collapse to a single

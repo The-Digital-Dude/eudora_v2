@@ -1,27 +1,35 @@
 import {
+  Inject,
   Injectable,
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { LocalStorageService } from './local-storage.service';
-import { StorageProvider } from './storage.provider';
+import type { StorageProvider } from './storage.provider';
+import {
+  ACTIVE_STORAGE_PROVIDER,
+  resolveStorageProviderKind,
+} from './storage.provider';
 import * as path from 'path';
 import * as fs from 'fs';
 
 @Injectable()
 export class UploadsService {
-  // Local disk is the only storage backend. An S3 provider used to be selected
-  // here via STORAGE_PROVIDER, but it never uploaded anything — the AWS SDK was
-  // never installed and the service returned a fabricated URL.
-  private readonly providerType = 'LOCAL';
-  private readonly storageProvider: StorageProvider;
+  // Which backend is active, recorded on every row so the origin of a file
+  // stays traceable after the environment's configuration changes. An S3
+  // provider used to be selected here but never uploaded anything — the AWS
+  // SDK was not installed and the service returned a fabricated URL — so rows
+  // marked 'S3' point at files that do not exist.
+  private readonly providerType = resolveStorageProviderKind();
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly localStorageService: LocalStorageService,
-  ) {
-    this.storageProvider = this.localStorageService;
+    @Inject(ACTIVE_STORAGE_PROVIDER)
+    private readonly storageProvider: StorageProvider,
+  ) {}
+
+  get isLocal(): boolean {
+    return this.providerType === 'LOCAL';
   }
 
   async uploadFile(file: any, userId: string) {
@@ -41,8 +49,22 @@ export class UploadsService {
     });
   }
 
+  /**
+   * Only meaningful under LOCAL storage; R2 serves objects from its own public
+   * URL and never routes through this service.
+   *
+   * `key` arrives straight from the URL, so it is reduced to a bare filename
+   * before use and the resolved path is re-checked against the upload
+   * directory — without that, `../` segments would let any caller read
+   * arbitrary files off the container.
+   */
   getLocalFilePath(key: string): string {
-    const filePath = path.join(process.cwd(), 'uploads', key);
+    const uploadDir = path.join(process.cwd(), 'uploads');
+    const filePath = path.resolve(uploadDir, path.basename(key));
+
+    if (!filePath.startsWith(path.resolve(uploadDir) + path.sep)) {
+      throw new NotFoundException('File not found');
+    }
     if (!fs.existsSync(filePath)) {
       throw new NotFoundException('File not found');
     }
@@ -67,10 +89,15 @@ export class UploadsService {
       throw new ForbiddenException('Not authorized to delete this file');
     }
 
-    // Delete from storage provider. Rows written under the old 'S3' provider
-    // point at files that were never actually uploaded, so this is a no-op for
-    // them — deleteFile skips keys with no file on disk.
-    await this.localStorageService.deleteFile(fileUpload.key);
+    // Deletes through whichever backend is currently active. A row written by
+    // a different backend (a legacy 'LOCAL' or 'S3' row in an environment now
+    // on R2) resolves to a key that isn't there, which both providers treat as
+    // a no-op — so the metadata row is still removed rather than the request
+    // failing on a file that cannot be found anyway.
+    await this.storageProvider.deleteFile(
+      fileUpload.key,
+      fileUpload.bucket ?? undefined,
+    );
 
     // Delete from db
     await this.prisma.fileUpload.delete({

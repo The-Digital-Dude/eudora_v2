@@ -36,6 +36,12 @@ ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+# Not NEXT_PUBLIC_*: read by next.config.ts at build time to allowlist the
+# bucket host for next/image, never referenced in client-side code.
+ARG S3_PUBLIC_URL
+ENV S3_PUBLIC_URL=$S3_PUBLIC_URL
 
 # Build the application
 RUN pnpm run build

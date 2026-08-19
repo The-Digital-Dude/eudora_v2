@@ -120,29 +120,60 @@ export interface PublicClassSummary extends PublicClassRef {
 }
 
 /**
- * Returns null on any failure rather than throwing. A build must not break
- * because the API was briefly unreachable — the page renders its not-found
+ * The API is hosted on a free tier that suspends the container after a period
+ * of inactivity, and the first request back costs a 30-60s cold start. Without
+ * a retry that shows up as an empty catalogue rather than a slow one — and
+ * because the result is what ISR caches, a single unlucky fetch would strand
+ * the marketing pages on their empty state until the next revalidation window.
+ * A keep-warm ping is the primary defence; this is the backstop for when it
+ * lapses.
+ */
+const FETCH_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 1500;
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Returns null once retries are exhausted rather than throwing. A build must
+ * not break because the API was unreachable — the page renders its not-found
  * state and ISR picks the content up on the next revalidation. Failures are
  * still logged (server-side only) since a silent null here is otherwise
  * indistinguishable from "nothing published yet".
  */
 async function getJson<T>(path: string): Promise<T | null> {
   const url = `${API_URL}/api${path}`;
-  try {
-    const res = await fetch(url, {
-      next: { revalidate: CATALOG_REVALIDATE_SECONDS },
-      headers: { accept: "application/json" },
-    });
-    if (!res.ok) {
-      console.error(`[public-catalog] ${url} -> HTTP ${res.status}`);
-      return null;
+
+  for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
+    const isLastAttempt = attempt === FETCH_ATTEMPTS;
+    try {
+      const res = await fetch(url, {
+        next: { revalidate: CATALOG_REVALIDATE_SECONDS },
+        headers: { accept: "application/json" },
+      });
+
+      // 5xx is what a cold or restarting container returns, so it is worth
+      // another attempt. A 4xx is a genuine answer — the slug really is not
+      // there — and retrying it only delays the not-found page.
+      if (!res.ok) {
+        if (res.status < 500 || isLastAttempt) {
+          console.error(`[public-catalog] ${url} -> HTTP ${res.status}`);
+          return null;
+        }
+      } else {
+        const body = (await res.json()) as { data?: T };
+        return body.data ?? null;
+      }
+    } catch (err) {
+      if (isLastAttempt) {
+        console.error(`[public-catalog] fetch failed for ${url}:`, err);
+        return null;
+      }
     }
-    const body = (await res.json()) as { data?: T };
-    return body.data ?? null;
-  } catch (err) {
-    console.error(`[public-catalog] fetch failed for ${url}:`, err);
-    return null;
+
+    await delay(RETRY_BASE_DELAY_MS * attempt);
   }
+
+  return null;
 }
 
 export const getPublicPrograms = (classSlug?: string) =>

@@ -124,12 +124,24 @@ export default function RegisterPage() {
       ? "/apply/teacher"
       : (readNextParam() ?? getRoleHome(newUser as any));
 
-  // Redirect if already authenticated
+  /**
+   * Sends an already-signed-in visitor to where they belong.
+   *
+   * Deliberately resolved through destinationFor, the same helper the submit
+   * handlers use. This effect also fires when signing up flips
+   * `isAuthenticated`, so it races every redirect on this page — and when it
+   * computed the destination from the role alone it won that race with the
+   * wrong answer: a teacher applicant is a plain USER, so it pushed /student
+   * over /apply/teacher. Parents never saw it, because for them both answers
+   * were /parent. Sharing one helper means the two cannot disagree again,
+   * whichever wins.
+   */
   useEffect(() => {
     if (isAuthenticated) {
-      router.push(readNextParam() ?? getRoleHome(user));
+      router.push(destinationFor(user, accountType));
     }
-  }, [isAuthenticated, user, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, user, accountType, router]);
 
   const handleRegister = async (values: RegisterFormValues) => {
     const nameParts = values.name.trim().split(/\s+/);

@@ -22,7 +22,12 @@ function uploadHostPatterns(): NonNullable<NextConfig["images"]>["remotePatterns
 }
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // `standalone` exists for the Dockerfile, which runs `.next/standalone/
+  // server.js`. Netlify's Next runtime cannot serve that layout: the build
+  // still succeeds, but every route then returns Netlify's own 404 — a silent
+  // failure rather than a build error. Netlify sets NETLIFY=true during its
+  // builds, so each target gets the output it can actually serve.
+  output: process.env.NETLIFY ? undefined : "standalone",
   allowedDevOrigins: ["192.168.0.101", "localhost", "127.0.0.1"],
   images: {
     remotePatterns: uploadHostPatterns(),

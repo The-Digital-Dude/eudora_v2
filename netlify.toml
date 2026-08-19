@@ -1,15 +1,15 @@
 # Netlify configuration, kept in the repo rather than the dashboard so the
 # build settings are versioned and can't drift.
 #
-# `publish` is deliberately NOT set: the Next.js runtime plugin derives it from
-# the build output itself. Setting it by hand is what breaks these deploys —
-# Netlify resolves it relative to `base`, so the natural-looking "client/.next"
-# becomes client/client/.next, which does not exist. The deploy then succeeds
-# while publishing an empty directory, and every path (including static files
-# in public/) returns Netlify's own 404.
+# `publish` is set explicitly rather than left to the dashboard: a value set in
+# the UI wins whenever this file omits the key, and the UI had it pointing at
+# "client" — the same path as `base`, which the Next.js plugin rejects outright.
+# Relative to `base`, so this resolves to client/.next, the directory `next
+# build` actually writes.
 [build]
   base = "client"
   command = "npm run build"
+  publish = ".next"
 
 # Explicit rather than relying on auto-detection: this plugin is what serves
 # SSR routes and ISR revalidation. Without it Netlify treats the output as a

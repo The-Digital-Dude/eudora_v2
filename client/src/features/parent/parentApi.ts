@@ -72,6 +72,30 @@ export interface AvailableCourse {
   isAssigned: boolean;
 }
 
+/**
+ * Shape *after* the RTK Query base query normalises the API envelope: the
+ * server sends `{ data: [...], meta: { pagination: { totalItems, ... } } }`
+ * and `baseQueryWithReauth` rewrites it to `{ items, total }`. Notably `page`
+ * and `pageSize` do not survive that hop, so callers track the current page
+ * themselves rather than reading it back.
+ */
+export interface AvailableCoursesPage {
+  items: AvailableCourse[];
+  total: number;
+}
+
+/**
+ * `basis` says why these were chosen, so the UI can be honest about it rather
+ * than implying a personalised recommendation it didn't make:
+ *   CLASS      — from the programmes built on the child's class
+ *   GRADE_BAND — inferred from the child's age
+ *   POPULAR    — no signal available; a generic fallback
+ */
+export interface RecommendedCourses {
+  items: AvailableCourse[];
+  basis: "CLASS" | "GRADE_BAND" | "POPULAR";
+}
+
 export interface CourseAssignment {
   id: string;
   studentProfileId: string;
@@ -165,9 +189,31 @@ export const parentApi = authApi.injectEndpoints({
       providesTags: ["ParentPortal"],
     }),
 
-    getAvailableCourses: builder.query<AvailableCourse[], string>({
-      query: (studentProfileId) => `/parent/children/${studentProfileId}/available-courses`,
-      providesTags: (result, error, id) => [{ type: "ParentPortal", id: `AVAILABLE-COURSES-${id}` }],
+    getAvailableCourses: builder.query<
+      AvailableCoursesPage,
+      { studentProfileId: string; search?: string; page?: number; limit?: number }
+    >({
+      query: ({ studentProfileId, search, page, limit }) => ({
+        url: `/parent/children/${studentProfileId}/available-courses`,
+        params: {
+          ...(search ? { search } : {}),
+          ...(page ? { page } : {}),
+          ...(limit ? { limit } : {}),
+        },
+      }),
+      // Keyed on the child only: a new search should replace the previous
+      // results rather than accumulating a cache entry per keystroke.
+      providesTags: (result, error, arg) => [
+        { type: "ParentPortal", id: `AVAILABLE-COURSES-${arg.studentProfileId}` },
+      ],
+    }),
+
+    getRecommendedCourses: builder.query<RecommendedCourses, string>({
+      query: (studentProfileId) =>
+        `/parent/children/${studentProfileId}/recommended-courses`,
+      providesTags: (result, error, id) => [
+        { type: "ParentPortal", id: `RECOMMENDED-${id}` },
+      ],
     }),
     getCourseAssignments: builder.query<CourseAssignment[], string>({
       query: (studentProfileId) => `/parent/children/${studentProfileId}/course-assignments`,
@@ -240,6 +286,7 @@ export const {
   useGetInvoicesQuery,
   useGetPaymentsQuery,
   useGetAvailableCoursesQuery,
+  useGetRecommendedCoursesQuery,
   useGetCourseAssignmentsQuery,
   useAssignCourseMutation,
   useRemoveCourseAssignmentMutation,

@@ -1,5 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { StorageProvider } from './storage.provider';
 import * as crypto from 'crypto';
 import * as path from 'path';
@@ -25,10 +31,16 @@ export class S3StorageService implements StorageProvider {
   private readonly logger = new Logger(S3StorageService.name);
   private readonly client: S3Client;
   private readonly bucket: string;
+  /** Where objects that must not be publicly readable go. */
+  private readonly privateBucket: string;
   private readonly publicUrl: string;
 
   constructor() {
     this.bucket = requireEnv('S3_BUCKET');
+    // Falls back to the public bucket rather than failing at boot, so an
+    // existing deployment keeps starting after this ships. uploadPrivateFile
+    // warns loudly every time that fallback is actually used.
+    this.privateBucket = process.env.S3_PRIVATE_BUCKET || this.bucket;
     // A trailing slash would produce `host//key`, which is a different (and
     // missing) object rather than being normalised away.
     this.publicUrl = requireHttpUrl('S3_PUBLIC_URL').replace(/\/+$/, '');
@@ -72,6 +84,59 @@ export class S3StorageService implements StorageProvider {
       url: `${this.publicUrl}/${key}`,
       bucket: this.bucket,
     };
+  }
+
+  /**
+   * Writes to S3_PRIVATE_BUCKET when one is configured, otherwise to the main
+   * bucket under a prefix. The separate bucket is strongly preferred: the main
+   * one is public precisely so uploaded images resolve without signing, and a
+   * prefix inside it is a naming convention, not an access control.
+   *
+   * Also sets ACL private explicitly. On AWS with an older bucket that has
+   * ACLs enabled and a public-read default this is what keeps the object out
+   * of anonymous reach; on Supabase and R2 it is accepted and ignored.
+   */
+  async uploadPrivateFile(
+    file: any,
+    keyPrefix: string,
+  ): Promise<{ key: string; bucket?: string }> {
+    const extension = path.extname(file.originalname);
+    const key = `${keyPrefix.replace(/^\/+|\/+$/g, '')}/${crypto.randomUUID()}${extension}`;
+    const bucket = this.privateBucket;
+
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+        ACL: 'private',
+      }),
+    );
+
+    if (bucket === this.bucket) {
+      this.logger.warn(
+        `Private upload stored in the public bucket "${bucket}" under "${keyPrefix}/". ` +
+          `Set S3_PRIVATE_BUCKET so these objects are not reachable by URL.`,
+      );
+    }
+
+    return { key, bucket };
+  }
+
+  async getSignedUrl(
+    key: string,
+    bucket: string | undefined,
+    expiresInSeconds: number,
+  ): Promise<string> {
+    return getSignedUrl(
+      this.client,
+      new GetObjectCommand({
+        Bucket: bucket || this.privateBucket,
+        Key: key,
+      }),
+      { expiresIn: expiresInSeconds },
+    );
   }
 
   async deleteFile(key: string, bucket?: string): Promise<void> {

@@ -32,11 +32,18 @@ export const SELF_SIGNUP_ROLES = ['USER', 'GUARDIAN'] as const;
 
 export type SelfSignupRole = (typeof SELF_SIGNUP_ROLES)[number];
 
+/**
+ * Falls back to GUARDIAN, not USER. Self-signup is a parent setting up an
+ * account for a child, so an unrecognised or absent hint should produce the
+ * account type that path actually needs — USER left them on the student
+ * dashboard with nothing to do and no way to reach the family portal. A caller
+ * that genuinely wants a learner account still asks for USER explicitly.
+ */
 export function resolveSelfSignupRole(
   roleHint?: string | null,
 ): SelfSignupRole {
   const candidate = (roleHint ?? '').trim().toUpperCase();
   return (SELF_SIGNUP_ROLES as readonly string[]).includes(candidate)
     ? (candidate as SelfSignupRole)
-    : 'USER';
+    : 'GUARDIAN';
 }

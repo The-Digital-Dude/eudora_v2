@@ -24,7 +24,9 @@ import {
   useMarkAllNotificationsAsReadMutation,
   useMarkNotificationAsReadMutation,
 } from "@/features/dashboard/dashboardApi";
-import { getRoleHome, hasAccess } from "@/lib/access-control";
+import { getPrimaryRole, getRoleHome, hasAccess } from "@/lib/access-control";
+
+import { ChildSwitcher } from "./child-switcher";
 
 interface PortalTopbarProps {
   user: {
@@ -54,6 +56,10 @@ function usePortalNavLinks(user: PortalTopbarProps["user"]) {
 export function PortalTopbar({ user, onLogout }: PortalTopbarProps) {
   const pathname = usePathname();
   const navLinks = usePortalNavLinks(user);
+  // Students reach content through their own profile and have no children to
+  // switch between, so the picker (and its /parent/children fetch) is
+  // guardian-only.
+  const isGuardian = getPrimaryRole(user) === "GUARDIAN";
 
   const { data: notifications = [] } = useGetNotificationsQuery();
   const { data: unreadData } = useGetUnreadNotificationsCountQuery();
@@ -92,6 +98,10 @@ export function PortalTopbar({ user, onLogout }: PortalTopbarProps) {
         </Link>
 
         <div className="flex items-center gap-2">
+          {/* Which child the session is scoped to. Self-hiding for guardians
+              with one child, and absent entirely for students. */}
+          {isGuardian && <ChildSwitcher />}
+
           {/* Notifications */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

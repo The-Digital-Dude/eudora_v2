@@ -145,6 +145,7 @@ export const authApi = createApi({
     "PlacementRecommendations",
     "Entitlements",
     "Classes",
+    "TeacherApplications",
   ],
   endpoints: (builder) => ({
     login: builder.mutation({

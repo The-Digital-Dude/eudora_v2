@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -30,4 +31,14 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   lastName: string;
+
+  /**
+   * Which kind of account to create. Deliberately a *hint*: the service runs it
+   * through SELF_SIGNUP_ROLES, so anything outside USER/GUARDIAN silently falls
+   * back to USER rather than granting a privileged role from the request body.
+   * Same treatment the OAuth signup path already gives its roleHint.
+   */
+  @IsOptional()
+  @IsString()
+  role?: string;
 }

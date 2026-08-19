@@ -17,6 +17,10 @@ const staticPrivatePaths = [
   "/register",
   "/complete-profile",
   "/checkout",
+  // Requires a session and shows an individual their own application status.
+  // The marketing page that recruits teachers is what should be indexed; this
+  // is the form behind it.
+  "/apply/teacher",
 ];
 
 export default function robots(): MetadataRoute.Robots {

@@ -54,6 +54,20 @@ export class FamilyController {
     return this.familyService.createGuardianProfile(dto);
   }
 
+  /**
+   * The onboarding wizard's step 1. Always acts on the caller's own profile,
+   * so unlike POST /guardian-profiles it can neither be pointed at someone
+   * else nor 409 on the row registration already created for them.
+   */
+  @Post('guardian-profiles/me')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'GUARDIAN')
+  async upsertOwnGuardianProfile(
+    @Body() dto: CreateGuardianProfileDto,
+    @Req() req: any,
+  ) {
+    return this.familyService.upsertOwnGuardianProfile(req.user.id, dto);
+  }
+
   @Get('guardian-profiles')
   async findAllGuardianProfiles(
     @Query('page') page?: string,

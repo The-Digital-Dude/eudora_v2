@@ -44,6 +44,8 @@ model User {
   assignedCourses         StudentCourseAssignment[] @relation("AssignedCourses")
   grantedEntitlements     Entitlement[]             @relation("GrantedEntitlements")
   orders                  Order[]                   @relation("GuardianOrders")
+  teacherApplication      TeacherApplication?       @relation("TeacherApplicant")
+  reviewedTeacherApplications TeacherApplication[]  @relation("TeacherApplicationReviewer")
 
   @@map("users")
 }
@@ -823,6 +825,52 @@ model TeacherProfile {
   timetableSlots   TimetableSlot[]
 
   @@map("teacher_profiles")
+}
+
+enum TeacherApplicationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+/**
+ * Someone asking to teach here. Deliberately NOT a TeacherProfile: the TEACHER
+ * role reaches student names, attendance and grades, so it is granted by a
+ * human reviewing this row, never by the act of submitting one. Approval is
+ * what creates the profile and assigns the role.
+ */
+model TeacherApplication {
+  id     String @id @default(uuid())
+  /// One open application per account. A rejected applicant who should be
+  /// reconsidered has this row reopened rather than filing a second.
+  userId String @unique
+
+  fullName        String
+  phone           String?
+  specialization  String?
+  yearsExperience Int?
+  bio             String?
+
+  /// The CV. Stored privately and reached through a short-lived signed URL —
+  /// it carries a home address and phone number, so it must never sit in the
+  /// public object namespace the rest of our uploads use.
+  resumeFileId String @unique
+
+  status      TeacherApplicationStatus @default(PENDING)
+  reviewNotes String?
+  reviewedById String?
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User       @relation("TeacherApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User?      @relation("TeacherApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  resumeFile FileUpload @relation("TeacherApplicationResume", fields: [resumeFileId], references: [id])
+
+  @@index([status, createdAt])
+  @@map("teacher_applications")
 }
 
 model ClassTeacher {
@@ -1975,8 +2023,14 @@ model DevicePairingCode {
 }
 
 model FileUpload {
-  id           String   @id @default(uuid())
-  url          String
+  id String @id @default(uuid())
+  /// Null for a private object: there is no public URL to hand out, and a
+  /// placeholder here would eventually be rendered as one. Reach private files
+  /// through a short-lived signed URL instead.
+  url          String?
+  /// Private objects live outside the public namespace and are only served
+  /// through an endpoint that checks who is asking.
+  isPrivate    Boolean  @default(false)
   key          String // Storage key/path
   bucket       String? // Storage bucket (S3)
   provider     String // "LOCAL" or "S3"
@@ -1989,6 +2043,7 @@ model FileUpload {
 
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   programSyllabi  Program[] @relation("ProgramSyllabus")
+  teacherApplication TeacherApplication? @relation("TeacherApplicationResume")
 
   @@map("file_uploads")
 }

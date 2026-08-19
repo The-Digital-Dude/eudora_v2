@@ -55,6 +55,44 @@ export class FamilyService {
     });
   }
 
+  /**
+   * Self-service create-or-edit for the signed-in guardian.
+   *
+   * Registration now writes the profile alongside the GUARDIAN role, so by the
+   * time onboarding asks for a name there is already a row to edit. Upsert
+   * rather than update because accounts created before that change still
+   * arrive here with nothing to update.
+   *
+   * Deliberately separate from createGuardianProfile, which keeps its 409: an
+   * administrator creating a second profile for someone has made a mistake
+   * worth surfacing, whereas a guardian re-submitting their own details is
+   * just an edit.
+   */
+  async upsertOwnGuardianProfile(
+    userId: string,
+    dto: { fullName: string; email?: string; phone?: string },
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.deletedAt) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.prisma.guardianProfile.upsert({
+      where: { userId },
+      update: {
+        fullName: dto.fullName,
+        ...(dto.email !== undefined ? { email: dto.email } : {}),
+        ...(dto.phone !== undefined ? { phone: dto.phone } : {}),
+      },
+      create: {
+        userId,
+        fullName: dto.fullName,
+        email: dto.email ?? user.email,
+        phone: dto.phone,
+      },
+    });
+  }
+
   async findAllGuardianProfiles(page = 1, limit = 10) {
     const skip = (page - 1) * limit;
     const [guardians, total] = await Promise.all([
@@ -537,12 +575,20 @@ export class FamilyService {
       return existingRel;
     }
 
+    // Mirrors ParentService.createChild: both routes must produce the same
+    // capability row, or a guardian's billing rights would silently depend on
+    // which of the two ways they attached the child.
+    const existingLinks = await this.prisma.guardianStudentRelationship.count({
+      where: { guardianProfileId: guardian.id },
+    });
+
     return this.prisma.guardianStudentRelationship.create({
       data: {
         guardianProfileId: guardian.id,
         studentProfileId: studentUser.studentProfile.id,
         relationshipType: relationshipType || 'OTHER',
-        isPrimary: false,
+        isPrimary: existingLinks === 0,
+        hasFinancialResponsibility: true,
         hasAcademicAccess: true,
       },
     });

@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ParentService } from './parent.service';
@@ -17,6 +18,7 @@ import { GuardianScopeGuard } from '../auth/guards/guardian-scope.guard';
 import { CreateCourseAssignmentDto } from './dto/course-assignment.dto';
 import { CreateClassEnrollmentDto } from './dto/class-enrollment.dto';
 import { CreateChildDto } from './dto/create-child.dto';
+import { AvailableCoursesQueryDto } from './dto/available-courses.dto';
 
 @Controller('parent')
 @UseGuards(RolesGuard)
@@ -71,8 +73,27 @@ export class ParentController {
   @UseGuards(GuardianScopeGuard)
   async getAvailableCourses(
     @Param('studentProfileId') studentProfileId: string,
+    @Query() query: AvailableCoursesQueryDto,
   ) {
-    return this.parentService.getAvailableCourses(studentProfileId);
+    return this.parentService.getAvailableCourses(studentProfileId, {
+      search: query.search,
+      page: query.page,
+      limit: query.limit,
+    });
+  }
+
+  /**
+   * Courses worth suggesting for this child, as a separate call from the
+   * browsable list: the two answer different questions and a guardian sees
+   * them side by side, so folding recommendations into the paginated search
+   * would make them vanish as soon as someone typed a query.
+   */
+  @Get('children/:studentProfileId/recommended-courses')
+  @UseGuards(GuardianScopeGuard)
+  async getRecommendedCourses(
+    @Param('studentProfileId') studentProfileId: string,
+  ) {
+    return this.parentService.getRecommendedCourses(studentProfileId);
   }
 
   @Get('children/:studentProfileId/course-assignments')

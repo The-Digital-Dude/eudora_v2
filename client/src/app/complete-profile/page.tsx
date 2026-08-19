@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
+import { AddChildForm } from "@/components/add-child-form";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -65,6 +66,9 @@ export default function CompleteProfilePage() {
   // Onboarding wizard states
   const [step, setStep] = useState(1);
   const [success, setSuccess] = useState(false);
+  // Step 2 shows the create-a-child form by default; this flips it to the
+  // link-an-existing-account form for school-issued students.
+  const [linkExisting, setLinkExisting] = useState(false);
 
   const step1Form = useForm<Step1FormValues>({
     resolver: zodResolver(step1Schema as any),
@@ -127,6 +131,37 @@ export default function CompleteProfilePage() {
     }
   };
 
+  /**
+   * Shared tail of both step-2 paths: refresh the session so the new GUARDIAN
+   * role and profile are in the store, then move on. Without the refetch the
+   * guardian lands on their portal still carrying the plain-USER roles they
+   * registered with, and the route guard bounces them.
+   */
+  const finishOnboarding = async (successMessage: string) => {
+    setSuccess(true);
+    toast.success(successMessage);
+
+    const { data: updatedUser } = await refetchMe();
+    if (updatedUser) {
+      dispatch(login({ user: updatedUser, csrfToken: updatedUser.csrfToken }));
+    }
+
+    // Send them to their own role's home, not /dashboard — that route is
+    // ADMIN_ROLES-only, so a freshly-onboarded guardian landed on the
+    // "Access Denied" card instead of the portal they just set up.
+    //
+    // Unless they arrived mid-purchase: `next` returns them to the checkout
+    // they abandoned to set this up, which is the whole point of carrying it.
+    const next = readNextParam();
+    setTimeout(() => {
+      router.push(next ?? getRoleHome(updatedUser ?? user));
+    }, 1500);
+  };
+
+  const handleChildAdded = async (child: { fullName: string }) => {
+    await finishOnboarding(`${child.fullName} is all set up!`);
+  };
+
   const handleLinkStudent = async (values: Step2FormValues) => {
     try {
       await selfLinkGuardian({
@@ -134,25 +169,7 @@ export default function CompleteProfilePage() {
         relationshipType: values.relationshipType,
       }).unwrap();
 
-      setSuccess(true);
-      toast.success("Child profile linked successfully!");
-
-      // Refresh auth state in redux
-      const { data: updatedUser } = await refetchMe();
-      if (updatedUser) {
-        dispatch(login({ user: updatedUser, csrfToken: updatedUser.csrfToken }));
-      }
-
-      // Send them to their own role's home, not /dashboard — that route is
-      // ADMIN_ROLES-only, so a freshly-onboarded guardian landed on the
-      // "Access Denied" card instead of the portal they just set up.
-      //
-      // Unless they arrived mid-purchase: `next` returns them to the checkout
-      // they abandoned to set this up, which is the whole point of carrying it.
-      const next = readNextParam();
-      setTimeout(() => {
-        router.push(next ?? getRoleHome(updatedUser ?? user));
-      }, 1500);
+      await finishOnboarding("Child profile linked successfully!");
     } catch (err: any) {
       console.error(err);
       const errMsg =
@@ -287,7 +304,62 @@ export default function CompleteProfilePage() {
           )}
 
           {/* STEP 2: Link Child */}
-          {step === 2 && !success && (
+          {/*
+            Adding a child creates one; it does not hunt for an existing
+            account. This step used to ask only for the child's school email
+            and call self-link, which 404s ("No student account matches…")
+            whenever the child has no account — which is every direct sign-up.
+            Onboarding therefore ended in an error for exactly the people it
+            existed for. Linking an existing, school-issued student is still
+            possible, but as the secondary path it actually is.
+          */}
+          {step === 2 && !success && !linkExisting && (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h2 className="font-display text-xl font-bold tracking-tight">
+                  Add your child
+                </h2>
+                <p className="text-muted-foreground text-xs leading-normal">
+                  Who are you setting this up for? You can add more children
+                  later.
+                </p>
+              </div>
+
+              <AddChildForm onCreated={handleChildAdded} submitLabel="Complete setup" />
+
+              <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
+                <Button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  variant="outline"
+                  className="hover:bg-muted/50 h-10 rounded-xl px-4 text-xs font-semibold active:scale-98"
+                >
+                  Back
+                </Button>
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setLinkExisting(true)}
+                    className="text-muted-foreground hover:text-foreground cursor-pointer text-[11px] font-semibold hover:underline"
+                  >
+                    My child already has an account
+                  </button>
+                  {/* No step of onboarding should be a wall. The family portal
+                      offers this same form, so someone who is not ready to
+                      name a child can go there and come back. */}
+                  <button
+                    type="button"
+                    onClick={() => router.push(readNextParam() ?? getRoleHome(user))}
+                    className="text-muted-foreground hover:text-foreground cursor-pointer text-[11px] font-semibold hover:underline"
+                  >
+                    Skip for now
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && !success && linkExisting && (
             <Form {...step2Form}>
               <form onSubmit={step2Form.handleSubmit(handleLinkStudent)} className="space-y-6">
                 <div className="space-y-2">
@@ -295,8 +367,8 @@ export default function CompleteProfilePage() {
                     Link to Your Child
                   </h2>
                   <p className="text-muted-foreground text-xs leading-normal">
-                    Enter your child&apos;s school email address to associate their student profile
-                    with your account.
+                    For a student the school has already set up. Enter the email
+                    address on their existing account.
                   </p>
                 </div>
 
@@ -363,7 +435,7 @@ export default function CompleteProfilePage() {
                 <div className="flex gap-3">
                   <Button
                     type="button"
-                    onClick={() => setStep(1)}
+                    onClick={() => setLinkExisting(false)}
                     variant="outline"
                     className="hover:bg-muted/50 h-11 flex-1 rounded-xl text-xs font-semibold active:scale-98"
                   >

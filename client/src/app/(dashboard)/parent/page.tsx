@@ -1,9 +1,12 @@
 ﻿"use client";
 
-import { BookOpen, CreditCard, GraduationCap, Loader2, ShieldAlert } from "lucide-react";
-import React, { useEffect,useState } from "react";
+import { BookOpen, CreditCard, GraduationCap, Loader2 } from "lucide-react";
+import React, {useState } from "react";
 
-import { useGetChildAttendanceQuery, useGetChildGradesQuery,useGetChildHomeworkQuery, useGetChildrenQuery } from "@/features/parent/parentApi";
+import { AddChildDialog } from "@/components/add-child-dialog";
+import { AddChildForm } from "@/components/add-child-form";
+import { useGetChildAttendanceQuery, useGetChildGradesQuery,useGetChildHomeworkQuery } from "@/features/parent/parentApi";
+import { useActingChild } from "@/features/parent/useActingChild";
 import { useAppSelector } from "@/store/hooks";
 
 import { AttendanceCalendar } from "./components/attendance-calendar";
@@ -19,16 +22,20 @@ export default function ParentPage() {
   const auth = useAppSelector((state) => state.auth);
   const user = auth.user as any;
 
-  const { data: children = [], isLoading: isChildrenLoading } = useGetChildrenQuery();
-  const [activeStudentId, setActiveStudentId] = useState<string>("");
+  // Shared with the topbar switcher and, crucially, with the
+  // `x-acting-student-id` header. This used to be local state that never
+  // reached localStorage, so the page could show one child while every API
+  // call was still scoped to another.
+  const {
+    children,
+    isLoading: isChildrenLoading,
+    activeChildId,
+    select: setActiveStudentId,
+  } = useActingChild();
+  // "" rather than null so the existing `skip: !activeStudentId` guards keep
+  // working unchanged.
+  const activeStudentId = activeChildId ?? "";
   const [activeSection, setActiveSection] = useState<"academics" | "courses" | "billing">("academics");
-
-  // Automatically select the first child
-  useEffect(() => {
-    if (children.length > 0 && !activeStudentId) {
-      setActiveStudentId(children[0].studentProfileId);
-    }
-  }, [children, activeStudentId]);
 
   // Fetch data for the active student
   const { data: attendance = [], isLoading: isAttendanceLoading } = useGetChildAttendanceQuery(activeStudentId, {
@@ -53,13 +60,24 @@ export default function ParentPage() {
   }
 
   if (children.length === 0) {
+    // Previously this told guardians to "contact school administration" — advice
+    // that was both a dead end and untrue: adding a child is self-service, the
+    // endpoint has always existed, and the form was only reachable from checkout.
     return (
-      <div className="flex flex-col items-center justify-center h-[350px] p-6 text-center rounded-3xl border border-border/50 bg-card/40/50/20 backdrop-blur-md">
-        <ShieldAlert className="h-12 w-12 text-muted-foreground mb-3" />
-        <h3 className="text-base font-bold text-foreground">No linked children</h3>
-        <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-          We couldn&apos;t find any student profiles linked to your guardian account. Please contact school administration to set up your links.
-        </p>
+      <div className="mx-auto max-w-md space-y-4 rounded-3xl border border-border/50 bg-card/40 p-6 text-center backdrop-blur-md">
+        <GraduationCap className="mx-auto h-10 w-10 text-muted-foreground" />
+        <div className="space-y-1">
+          <h3 className="font-display text-base font-bold text-foreground">
+            Add your first child
+          </h3>
+          <p className="mx-auto max-w-sm text-xs text-muted-foreground">
+            Tell us who you&apos;re learning for, and we&apos;ll set up their
+            progress tracking and course plan.
+          </p>
+        </div>
+        <div className="text-left">
+          <AddChildForm />
+        </div>
       </div>
     );
   }
@@ -121,9 +139,14 @@ export default function ParentPage() {
         <div className="space-y-6">
           {/* Children Status Cards Grid */}
           <div>
-            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
-              Linked Children
-            </h3>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                Linked Children
+              </h3>
+              {/* Reachable with children already present — the inline form
+                  below only ever shows when there are none. */}
+              <AddChildDialog />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {children.map((child) => (
                 <ChildStatusCard
@@ -183,8 +206,8 @@ export default function ParentPage() {
           <div>
             <h2 className="text-lg font-bold text-foreground">Learning plan</h2>
             <p className="text-xs text-muted-foreground">
-              Choose which self-paced courses {selectedChild.fullName} should work on. Switch
-              children from the Academics tab.
+              Choose which self-paced courses {selectedChild.fullName} should work
+              on. Use the child picker in the top bar to switch.
             </p>
           </div>
           <CoursePlanPanel

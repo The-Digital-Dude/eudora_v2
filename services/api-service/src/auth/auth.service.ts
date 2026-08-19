@@ -24,6 +24,37 @@ import * as crypto from 'crypto';
  */
 const REFRESH_ROTATION_GRACE_MS = 60 * 1000;
 
+/**
+ * Nested-create fragment that gives a guardian their profile in the same write
+ * that gives them the role.
+ *
+ * The two used to be created a page apart — the role at signup, the profile in
+ * step 1 of /complete-profile — so closing that tab left an account whose role
+ * says GUARDIAN and whose profile does not exist. Every /parent endpoint then
+ * 404s ("Guardian profile not found"), including the one behind the portal's
+ * own "add your first child" form, so the panel could not repair itself.
+ *
+ * The name here is a starting value the guardian edits later; an imperfect one
+ * is never a reason to withhold the row and recreate that dead end.
+ */
+function buildGuardianProfileSeed(
+  roleName: string,
+  user: { firstName: string; lastName: string; email: string },
+) {
+  if (roleName !== 'GUARDIAN') return {};
+  const fullName = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+  return {
+    guardianProfile: {
+      create: {
+        // Apple's private relay and a provider that returns no name both land
+        // here; the email is at least something the guardian recognises.
+        fullName: fullName || user.email,
+        email: user.email,
+      },
+    },
+  };
+}
+
 @Injectable()
 export class AuthService {
   /** Relations every session-issuing path needs loaded on the user. */
@@ -46,8 +77,13 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    // Normalised the way login already looks it up. Without this, registering
+    // with any uppercase character created a row that sign-in could never
+    // match again — the account existed and was unreachable.
+    const email = dto.email.trim().toLowerCase();
+
     const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+      where: { email },
     });
 
     if (existingUser) {
@@ -56,19 +92,27 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
+    // Resolved through the same allowlist the OAuth path uses, so a request
+    // body naming TEACHER/ADMIN is ignored rather than honoured. Email signup
+    // previously hardcoded USER, which left guardians unable to onboard at all:
+    // POST /guardian-profiles requires the GUARDIAN role, so the very first
+    // step of their setup returned 403. Google signup already worked, since it
+    // has always gone through resolveSelfSignupRole.
+    const roleName = resolveSelfSignupRole(dto.role);
+
     const defaultRole = await this.prisma.role.findUnique({
-      where: { name: 'USER' },
+      where: { name: roleName },
     });
 
     if (!defaultRole) {
       throw new ConflictException(
-        'Default role USER does not exist. Please seed the database.',
+        `Role ${roleName} does not exist. Please seed the database.`,
       );
     }
 
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
+        email,
         password: hashedPassword,
         firstName: dto.firstName,
         lastName: dto.lastName,
@@ -77,22 +121,13 @@ export class AuthService {
             roleId: defaultRole.id,
           },
         },
+        ...buildGuardianProfileSeed(roleName, {
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          email,
+        }),
       },
-      include: {
-        roles: {
-          include: {
-            role: {
-              include: {
-                permissions: {
-                  include: {
-                    permission: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+      include: AuthService.USER_SESSION_INCLUDE,
     });
 
     const tokens = await this.createSessionTokens(user, null, null);
@@ -493,6 +528,13 @@ export class AuthService {
           firstName: profile.firstName || '',
           lastName: profile.lastName || '',
           roles: { create: { roleId: dbRole.id } },
+          // Same reason as the password path: role and profile are created
+          // together so a guardian can never hold one without the other.
+          ...buildGuardianProfileSeed(targetRole, {
+            firstName: profile.firstName || '',
+            lastName: profile.lastName || '',
+            email,
+          }),
           identities: {
             create: {
               provider,

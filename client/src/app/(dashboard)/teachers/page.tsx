@@ -16,6 +16,8 @@ import {
 } from "@/features/dashboard/dashboardApi";
 import { useDebouncedQueryInput, useListQueryState } from "@/hooks/use-list-query-state";
 
+import { TeacherApplicationsPanel } from "./components/teacher-applications-panel";
+
 export default function TeachersPage() {
   const router = useRouter();
   const { values, setValue, setValues } = useListQueryState(
@@ -208,6 +210,11 @@ export default function TeachersPage() {
           </Link>
         </Button>
       </div>
+
+      {/* Applications first: an unread one is a person waiting, and it is the
+          only route by which someone becomes a teacher without an admin
+          creating the account by hand. */}
+      <TeacherApplicationsPanel />
 
       {/* Metrics Bar */}
       <div className="grid gap-6 md:grid-cols-3">

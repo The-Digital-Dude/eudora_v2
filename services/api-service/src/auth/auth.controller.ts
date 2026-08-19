@@ -11,6 +11,7 @@ import {
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -34,7 +35,14 @@ import {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  /**
+   * Five accounts per IP per hour. A household setting up on shared wifi needs
+   * one or two; anything past this is a script. Deliberately far tighter than
+   * the app-wide default — this endpoint creates rows and, for a teacher
+   * applicant, unlocks an upload.
+   */
   @Public()
+  @Throttle({ default: { ttl: 3_600_000, limit: 5 } })
   @Post('register')
   async register(
     @Body() dto: RegisterDto,
@@ -45,7 +53,13 @@ export class AuthController {
     return { ...result.user, csrfToken: result.tokens.csrfToken };
   }
 
+  /**
+   * Complements the per-account lockout in AuthService, which does nothing
+   * against an attacker spraying one password across many accounts — that
+   * pattern never trips a single account's failure counter.
+   */
   @Public()
+  @Throttle({ default: { ttl: 300_000, limit: 10 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(

@@ -818,7 +818,10 @@ export const dashboardApi = authApi.injectEndpoints({
       { fullName: string; phone?: string; email?: string }
     >({
       query: (body: any) => ({
-        url: "/guardian-profiles",
+        // The /me variant, not the admin create: registration already wrote a
+        // profile row alongside the GUARDIAN role, so a plain create would 409
+        // on every onboarding attempt. This one upserts the caller's own.
+        url: "/guardian-profiles/me",
         method: "POST",
         body,
       }),

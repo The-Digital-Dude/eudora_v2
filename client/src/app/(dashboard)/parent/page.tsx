@@ -1,23 +1,48 @@
-﻿"use client";
+"use client";
 
 import { BookOpen, CreditCard, GraduationCap, Loader2 } from "lucide-react";
-import React, {useState } from "react";
+import React, { useState } from "react";
 
-import { AddChildDialog } from "@/components/add-child-dialog";
-import { AddChildForm } from "@/components/add-child-form";
-import { useGetChildAttendanceQuery, useGetChildGradesQuery,useGetChildHomeworkQuery } from "@/features/parent/parentApi";
+import {
+  useGetChildAttendanceQuery,
+  useGetChildGradesQuery,
+  useGetChildHomeworkQuery,
+} from "@/features/parent/parentApi";
 import { useActingChild } from "@/features/parent/useActingChild";
 import { useAppSelector } from "@/store/hooks";
 
 import { AttendanceCalendar } from "./components/attendance-calendar";
 import { BillingHistoryPanel } from "./components/billing-history-panel";
-import { ChildStatusCard } from "./components/child-status-card";
+import { ChildSummary } from "./components/child-summary";
+import { ChildTabs } from "./components/child-tabs";
 import { ClassEnrollmentPanel } from "./components/class-enrollment-panel";
 import { CoursePlanPanel } from "./components/course-plan-panel";
 import { HomeworkGradesPanel } from "./components/homework-grades-panel";
 import { LearningPanel } from "./components/learning-panel";
+import { ParentWelcome } from "./components/parent-welcome";
 import { PurchasesPanel } from "./components/purchases-panel";
 
+type Section = "academics" | "courses" | "billing";
+
+const SECTIONS: {
+  id: Section;
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { id: "academics", label: "Progress", Icon: GraduationCap },
+  { id: "courses", label: "Courses", Icon: BookOpen },
+  { id: "billing", label: "Billing", Icon: CreditCard },
+];
+
+/**
+ * The family portal.
+ *
+ * Reads top to bottom as the question a guardian actually arrives with: which
+ * child, how are they doing, what do I want to do about it. So the child picker
+ * sits above everything it governs, the selected child's numbers are shown once
+ * rather than repeated on a card per child, and the section tabs come last
+ * because all they do is re-point the detail below them.
+ */
 export default function ParentPage() {
   const auth = useAppSelector((state) => state.auth);
   const user = auth.user as any;
@@ -35,16 +60,17 @@ export default function ParentPage() {
   // "" rather than null so the existing `skip: !activeStudentId` guards keep
   // working unchanged.
   const activeStudentId = activeChildId ?? "";
-  const [activeSection, setActiveSection] = useState<"academics" | "courses" | "billing">("academics");
+  const [activeSection, setActiveSection] = useState<Section>("academics");
 
-  // Fetch data for the active student
-  const { data: attendance = [], isLoading: isAttendanceLoading } = useGetChildAttendanceQuery(activeStudentId, {
-    skip: !activeStudentId,
-  });
+  const { data: attendance = [], isLoading: isAttendanceLoading } = useGetChildAttendanceQuery(
+    activeStudentId,
+    { skip: !activeStudentId },
+  );
 
-  const { data: homework = [], isLoading: isHomeworkLoading } = useGetChildHomeworkQuery(activeStudentId, {
-    skip: !activeStudentId,
-  });
+  const { data: homework = [], isLoading: isHomeworkLoading } = useGetChildHomeworkQuery(
+    activeStudentId,
+    { skip: !activeStudentId },
+  );
 
   const { data: grades = [], isLoading: isGradesLoading } = useGetChildGradesQuery(activeStudentId, {
     skip: !activeStudentId,
@@ -53,193 +79,143 @@ export default function ParentPage() {
   if (isChildrenLoading) {
     return (
       <div className="flex h-[400px] flex-col items-center justify-center gap-4 text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm font-medium text-muted-foreground">Loading children data...</p>
+        <Loader2 className="text-primary h-8 w-8 animate-spin" />
+        <p className="text-muted-foreground text-sm font-medium">Loading your family portal...</p>
       </div>
     );
   }
 
+  // The whole page, not a card in the corner of one. A guardian with no child
+  // yet has exactly one useful thing to do here, so the page should be it.
   if (children.length === 0) {
-    // Previously this told guardians to "contact school administration" — advice
-    // that was both a dead end and untrue: adding a child is self-service, the
-    // endpoint has always existed, and the form was only reachable from checkout.
-    return (
-      <div className="mx-auto max-w-md space-y-4 rounded-3xl border border-border/50 bg-card/40 p-6 text-center backdrop-blur-md">
-        <GraduationCap className="mx-auto h-10 w-10 text-muted-foreground" />
-        <div className="space-y-1">
-          <h3 className="font-display text-base font-bold text-foreground">
-            Add your first child
-          </h3>
-          <p className="mx-auto max-w-sm text-xs text-muted-foreground">
-            Tell us who you&apos;re learning for, and we&apos;ll set up their
-            progress tracking and course plan.
-          </p>
-        </div>
-        <div className="text-left">
-          <AddChildForm />
-        </div>
-      </div>
-    );
+    return <ParentWelcome firstName={user?.firstName} />;
   }
 
   const selectedChild = children.find((c) => c.studentProfileId === activeStudentId) || children[0];
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-foreground">
-            Parent Portal
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Welcome back, {user?.firstName || user?.name || "Guardian"}. Monitor your children&apos;s educational progress and schedules.
-          </p>
-        </div>
+      <div>
+        <h1 className="font-display text-foreground text-xl font-bold tracking-tight">
+          Family portal
+        </h1>
+        <p className="text-muted-foreground mt-0.5 text-xs">
+          Welcome back, {user?.firstName || "Guardian"}.
+        </p>
+      </div>
 
-        {/* Global Navigation Tabs for Parent */}
-        <div className="inline-flex rounded-xl bg-muted p-1 self-start md:self-auto">
+      <ChildTabs
+        childList={children}
+        activeChildId={selectedChild.studentProfileId}
+        onSelect={setActiveStudentId}
+      />
+
+      <ChildSummary child={selectedChild} />
+
+      {/* Underlined rather than a pill group: these are page sections, and an
+          underline is the convention that says "what is below changes", where a
+          pill group reads as a filter narrowing what is already on screen. */}
+      <div className="border-border flex gap-1 border-b">
+        {SECTIONS.map(({ id, label, Icon }) => (
           <button
-            onClick={() => setActiveSection("academics")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeSection === "academics"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+            key={id}
+            type="button"
+            onClick={() => setActiveSection(id)}
+            aria-current={activeSection === id ? "page" : undefined}
+            className={`-mb-px flex cursor-pointer items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-bold transition-all ${
+              activeSection === id
+                ? "border-foreground text-foreground"
+                : "text-muted-foreground hover:text-foreground border-transparent"
             }`}
           >
-            <GraduationCap className="h-4 w-4" />
-            Academics
+            <Icon className="h-4 w-4" />
+            {label}
           </button>
-          <button
-            onClick={() => setActiveSection("courses")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeSection === "courses"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <BookOpen className="h-4 w-4" />
-            Courses
-          </button>
-          <button
-            onClick={() => setActiveSection("billing")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeSection === "billing"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <CreditCard className="h-4 w-4" />
-            Billing
-          </button>
-        </div>
+        ))}
       </div>
 
       {activeSection === "academics" && (
-        <div className="space-y-6">
-          {/* Children Status Cards Grid */}
-          <div>
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
-                Linked Children
-              </h3>
-              {/* Reachable with children already present — the inline form
-                  below only ever shows when there are none. */}
-              <AddChildDialog />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {children.map((child) => (
-                <ChildStatusCard
-                  key={child.studentProfileId}
-                  child={child}
-                  isActive={child.studentProfileId === activeStudentId}
-                  onSelect={() => setActiveStudentId(child.studentProfileId)}
-                />
-              ))}
-            </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="flex flex-col lg:col-span-1">
+            <SectionHeading>Attendance</SectionHeading>
+            {isAttendanceLoading ? (
+              <div className="border-border bg-card flex min-h-[280px] flex-1 items-center justify-center rounded-3xl border p-6">
+                <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+              </div>
+            ) : (
+              <AttendanceCalendar records={attendance} />
+            )}
           </div>
 
-          {/* Academic details */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Attendance Calendar (col-span-1) */}
-            <div className="lg:col-span-1 flex flex-col">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                Attendance Calendar
-              </h3>
-              {isAttendanceLoading ? (
-                <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl backdrop-blur-md flex items-center justify-center flex-1 min-h-[280px]">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <AttendanceCalendar records={attendance} />
-              )}
-            </div>
+          <div className="flex flex-col lg:col-span-2">
+            <SectionHeading>Assignments &amp; grades</SectionHeading>
+            <HomeworkGradesPanel
+              homework={homework}
+              grades={grades}
+              isHomeworkLoading={isHomeworkLoading}
+              isGradesLoading={isGradesLoading}
+            />
+          </div>
 
-            {/* Homework and Grades (col-span-2) */}
-            <div className="lg:col-span-2 flex flex-col">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                Assignments & Grades
-              </h3>
-              <HomeworkGradesPanel
-                homework={homework}
-                grades={grades}
-                isHomeworkLoading={isHomeworkLoading}
-                isGradesLoading={isGradesLoading}
-              />
-            </div>
-
-            {/* Active Learning progress (col-span-3) */}
-            {selectedChild && (
-              <div className="lg:col-span-3">
-                <LearningPanel
-                  studentProfileId={selectedChild.studentProfileId}
-                  childName={selectedChild.fullName}
-                />
-              </div>
-            )}
+          <div className="lg:col-span-3">
+            <LearningPanel
+              studentProfileId={selectedChild.studentProfileId}
+              childName={selectedChild.fullName}
+            />
           </div>
         </div>
       )}
 
-      {activeSection === "courses" && selectedChild && (
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">Learning plan</h2>
-            <p className="text-xs text-muted-foreground">
-              Choose which self-paced courses {selectedChild.fullName} should work
-              on. Use the child picker in the top bar to switch.
-            </p>
-          </div>
-          <CoursePlanPanel
-            studentProfileId={selectedChild.studentProfileId}
-            childName={selectedChild.fullName}
-          />
+      {activeSection === "courses" && (
+        <div className="space-y-8">
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-foreground text-base font-bold tracking-tight">Learning plan</h2>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                Self-paced courses {selectedChild.fullName} works through in their own time.
+              </p>
+            </div>
+            <CoursePlanPanel
+              studentProfileId={selectedChild.studentProfileId}
+              childName={selectedChild.fullName}
+            />
+          </section>
 
-          <div className="border-t border-border pt-6">
-            <h2 className="text-lg font-bold text-foreground">Class enrollment</h2>
-            <p className="text-xs text-muted-foreground">
-              Term-based classes staff has opened for self-enrollment — separate from the
-              self-paced plan above.
-            </p>
-          </div>
-          <ClassEnrollmentPanel
-            studentProfileId={selectedChild.studentProfileId}
-            childName={selectedChild.fullName}
-          />
+          <section className="border-border space-y-4 border-t pt-8">
+            <div>
+              <h2 className="text-foreground text-base font-bold tracking-tight">Class enrolment</h2>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                Scheduled classes with a teacher and a set term — separate from the self-paced plan
+                above.
+              </p>
+            </div>
+            <ClassEnrollmentPanel
+              studentProfileId={selectedChild.studentProfileId}
+              childName={selectedChild.fullName}
+            />
+          </section>
         </div>
       )}
 
       {activeSection === "billing" && (
-        <div className="max-w-4xl mx-auto space-y-10">
-          {/* Stripe purchases first — that is what a guardian actually bought.
-              The invoice ledger below is staff-entered offline billing, a
-              separate system that predates checkout. */}
+        <div className="space-y-8">
+          {/* Purchases first — that is what a guardian actually bought. The
+              invoice ledger below is staff-entered offline billing, a separate
+              system that predates checkout. */}
           <PurchasesPanel />
-          <div className="border-t border-border pt-8">
+          <div className="border-border border-t pt-8">
             <BillingHistoryPanel />
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-muted-foreground mb-3 text-[10px] font-bold tracking-wider uppercase">
+      {children}
+    </h3>
   );
 }

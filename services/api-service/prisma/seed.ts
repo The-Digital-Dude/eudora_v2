@@ -100,8 +100,7 @@ async function main() {
   // Classes are the taxonomy master (Class -> Program -> Course). These rows
   // were the old `Level` lookup, which only ever held grade levels. Seeded
   // before Programs because Program.classId points at them.
-  const gradeLevel = await prisma.class.upsert({ where: { code: 'G10' }, update: {}, create: { code: 'G10', name: 'Grade 10', slug: 'grade-10', sortOrder: 10, status: 'PUBLISHED' } });
-  const grade11Level = await prisma.class.upsert({ where: { code: 'G11' }, update: {}, create: { code: 'G11', name: 'Grade 11', slug: 'grade-11', sortOrder: 11, status: 'PUBLISHED' } });
+  const gradeLevel = await prisma.class.upsert({ where: { code: 'G2' }, update: {}, create: { code: 'G2', name: 'Grade 2', slug: 'grade-2', sortOrder: 2, status: 'PUBLISHED' } });
   const kLevel = await prisma.class.upsert({ where: { code: 'K' }, update: {}, create: { code: 'K', name: 'Kindergarten', slug: 'kindergarten', sortOrder: 0, status: 'PUBLISHED' } });
   const g1Level = await prisma.class.upsert({ where: { code: 'G1' }, update: {}, create: { code: 'G1', name: 'Grade 1', slug: 'grade-1', sortOrder: 1, status: 'PUBLISHED' } });
   const g3Level = await prisma.class.upsert({ where: { code: 'G3' }, update: {}, create: { code: 'G3', name: 'Grade 3', slug: 'grade-3', sortOrder: 3, status: 'PUBLISHED' } });
@@ -124,14 +123,14 @@ async function main() {
   };
 
   const program = await prisma.program.upsert({
-    where: { code: 'BSC-CS' },
+    where: { code: 'KIDS-EY' },
     update: csProgramFields,
     create: {
-      name: 'Bachelor of Science in Computer Science',
-      code: 'BSC-CS',
-      slug: 'bsc-cs',
+      name: 'Early Years Foundation',
+      code: 'KIDS-EY',
+      slug: 'early-years-foundation',
       classId: gradeLevel.id,
-      shortDescription: 'A four-year computer science degree programme.',
+      shortDescription: 'Phonics, counting and shapes for pre-school and reception.',
       status: 'PUBLISHED',
       deliveryMode: 'LIVE',
       durationMonths: 3,
@@ -142,14 +141,14 @@ async function main() {
   });
 
   const mathProgram = await prisma.program.upsert({
-    where: { code: 'BSC-MATH' },
+    where: { code: 'KIDS-MATH' },
     update: csProgramFields,
     create: {
-      name: 'Bachelor of Science in Mathematics',
-      code: 'BSC-MATH',
-      slug: 'bsc-math',
+      name: 'Primary Maths Pathway',
+      code: 'KIDS-MATH',
+      slug: 'primary-maths-pathway',
       classId: gradeLevel.id,
-      shortDescription: 'A four-year mathematics degree programme.',
+      shortDescription: 'Number sense through fractions, for Grades 1 to 6.',
       status: 'PUBLISHED',
       deliveryMode: 'LIVE',
       durationMonths: 3,
@@ -177,35 +176,35 @@ async function main() {
 
   // Class sections
   const sectionA = await prisma.classSection.upsert({
-    where: { code: 'CS-2026-A' },
+    where: { code: 'G2-AM-2026' },
     update: {},
-    create: { programId: program.id, academicYearId: academicYear.id, name: 'CS Section A', code: 'CS-2026-A', class: 'Grade 10', classroom: 'Lab 1', status: 'ACTIVE' },
+    create: { programId: program.id, academicYearId: academicYear.id, name: 'Grade 2 Morning Group', code: 'G2-AM-2026', class: 'Grade 2', classroom: 'Room A', status: 'ACTIVE' },
   });
 
   const sectionB = await prisma.classSection.upsert({
-    where: { code: 'CS-2026-B' },
+    where: { code: 'G2-PM-2026' },
     update: {},
-    create: { programId: program.id, academicYearId: academicYear.id, name: 'CS Section B', code: 'CS-2026-B', class: 'Grade 10', classroom: 'Lab 2', status: 'ACTIVE' },
+    create: { programId: program.id, academicYearId: academicYear.id, name: 'Grade 2 Afternoon Group', code: 'G2-PM-2026', class: 'Grade 2', classroom: 'Room B', status: 'ACTIVE' },
   });
 
   const mathSection = await prisma.classSection.upsert({
-    where: { code: 'MATH-2026-A' },
+    where: { code: 'G4-MATH-2026' },
     update: {},
-    create: { programId: mathProgram.id, academicYearId: academicYear.id, name: 'Math Section A', code: 'MATH-2026-A', class: 'Grade 10', classroom: 'Room 201', status: 'ACTIVE' },
+    create: { programId: mathProgram.id, academicYearId: academicYear.id, name: 'Grade 4 Maths Group', code: 'G4-MATH-2026', class: 'Grade 4', classroom: 'Room C', status: 'ACTIVE' },
   });
 
   // ─── Subjects & Levels ───────────────────────────────────────────────────────
   const mathSubject = await prisma.subject.upsert({ where: { code: 'MATH' }, update: {}, create: { code: 'MATH', name: 'Mathematics' } });
-  const csSubject = await prisma.subject.upsert({ where: { code: 'CS' }, update: {}, create: { code: 'CS', name: 'Computer Science' } });
+  const csSubject = await prisma.subject.upsert({ where: { code: 'SCI' }, update: {}, create: { code: 'SCI', name: 'Science' } });
   const engSubject = await prisma.subject.upsert({ where: { code: 'ENG' }, update: {}, create: { code: 'ENG', name: 'English' } });
 
 
   // ─── Course Classes ───────────────────────────────────────────────────────────
-  const dsaClass = await prisma.batch.upsert({ where: { code: 'CS-DSA-2026' }, update: {}, create: { termId: term.id, name: 'Algorithms & Data Structures', code: 'CS-DSA-2026', status: 'ACTIVE' } });
-  const algClass = await prisma.batch.upsert({ where: { code: 'CS-ALG-2026' }, update: {}, create: { termId: term.id, name: 'Introduction to Algorithms', code: 'CS-ALG-2026', status: 'ACTIVE' } });
-  const webClass = await prisma.batch.upsert({ where: { code: 'CS-WEB-2026' }, update: {}, create: { termId: term.id, name: 'Web Development Fundamentals', code: 'CS-WEB-2026', status: 'ACTIVE' } });
-  const calcClass = await prisma.batch.upsert({ where: { code: 'MATH-CALC-2026' }, update: {}, create: { termId: term.id, name: 'Calculus I', code: 'MATH-CALC-2026', status: 'ACTIVE' } });
-  const engClass = await prisma.batch.upsert({ where: { code: 'ENG-COMP-2026' }, update: {}, create: { termId: term.id, name: 'English Composition', code: 'ENG-COMP-2026', status: 'ACTIVE' } });
+  const dsaClass = await prisma.batch.upsert({ where: { code: 'G34-MATH-2026' }, update: {}, create: { termId: term.id, name: 'Multiplication & Fractions', code: 'G34-MATH-2026', status: 'ACTIVE' } });
+  const algClass = await prisma.batch.upsert({ where: { code: 'G12-MATH-2026' }, update: {}, create: { termId: term.id, name: 'Adding & Subtracting', code: 'G12-MATH-2026', status: 'ACTIVE' } });
+  const webClass = await prisma.batch.upsert({ where: { code: 'G34-SCI-2026' }, update: {}, create: { termId: term.id, name: 'Shapes & Measuring', code: 'G34-SCI-2026', status: 'ACTIVE' } });
+  const calcClass = await prisma.batch.upsert({ where: { code: 'G56-MATH-2026' }, update: {}, create: { termId: term.id, name: 'Fractions & Early Algebra', code: 'G56-MATH-2026', status: 'ACTIVE' } });
+  const engClass = await prisma.batch.upsert({ where: { code: 'G12-READ-2026' }, update: {}, create: { termId: term.id, name: 'Reading & Sentences', code: 'G12-READ-2026', status: 'ACTIVE' } });
 
   console.log('✅ Seeded institution & academic structures');
 
@@ -213,10 +212,10 @@ async function main() {
   console.log('🌱 Seeding teachers...');
   const teacherPassword = await bcrypt.hash('Teacher@123', 10);
   const teacherData = [
-    { email: 'prof.turing@eudora.app', firstName: 'Alan', lastName: 'Turing', specialization: 'Computer Science', employeeCode: 'EMP-TURING', phone: '(555) 100-0001' },
-    { email: 'prof.lovelace@eudora.app', firstName: 'Ada', lastName: 'Lovelace', specialization: 'Mathematics', employeeCode: 'EMP-LOVELACE', phone: '(555) 100-0002' },
-    { email: 'prof.hopper@eudora.app', firstName: 'Grace', lastName: 'Hopper', specialization: 'Computer Science', employeeCode: 'EMP-HOPPER', phone: '(555) 100-0003' },
-    { email: 'prof.euler@eudora.app', firstName: 'Leonhard', lastName: 'Euler', specialization: 'Mathematics', employeeCode: 'EMP-EULER', phone: '(555) 100-0004' },
+    { email: 'sarah.mitchell@eudora.app', firstName: 'Sarah', lastName: 'Mitchell', specialization: 'Early Years', employeeCode: 'EMP-MITCHELL', phone: '(555) 100-0001' },
+    { email: 'amara.okafor@eudora.app', firstName: 'Amara', lastName: 'Okafor', specialization: 'Primary Maths', employeeCode: 'EMP-OKAFOR', phone: '(555) 100-0002' },
+    { email: 'luis.dasilva@eudora.app', firstName: 'Luis', lastName: 'da Silva', specialization: 'Reading and Phonics', employeeCode: 'EMP-DASILVA', phone: '(555) 100-0003' },
+    { email: 'mai.nguyen@eudora.app', firstName: 'Mai', lastName: 'Nguyen', specialization: 'Primary Maths', employeeCode: 'EMP-NGUYEN', phone: '(555) 100-0004' },
   ];
 
   const teacherProfiles: Record<string, any> = {};
@@ -244,10 +243,10 @@ async function main() {
 
   // Assign teachers to class sections
   const classSectionAssignments = [
-    { teacherCode: 'EMP-TURING', classSectionId: sectionA.id, role: 'PRIMARY' },
-    { teacherCode: 'EMP-LOVELACE', classSectionId: sectionA.id, role: 'ASSISTANT' },
-    { teacherCode: 'EMP-HOPPER', classSectionId: sectionB.id, role: 'PRIMARY' },
-    { teacherCode: 'EMP-EULER', classSectionId: mathSection.id, role: 'PRIMARY' },
+    { teacherCode: 'EMP-MITCHELL', classSectionId: sectionA.id, role: 'PRIMARY' },
+    { teacherCode: 'EMP-OKAFOR', classSectionId: sectionA.id, role: 'ASSISTANT' },
+    { teacherCode: 'EMP-DASILVA', classSectionId: sectionB.id, role: 'PRIMARY' },
+    { teacherCode: 'EMP-NGUYEN', classSectionId: mathSection.id, role: 'PRIMARY' },
   ];
   for (const a of classSectionAssignments) {
     await prisma.classTeacher.upsert({
@@ -385,7 +384,7 @@ async function main() {
   await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: csQuiz1.id, questionId: csQ3.id } }, update: {}, create: { assessmentId: csQuiz1.id, sectionId: csQ1Section.id, questionId: csQ3.id, questionNumber: 3, marksAvailable: 10 } });
 
   const { assessment: mathMidterm } = await createAssessment(midtermType.id, mathSubject.id, gradeLevel.id, term.id, 'Fall Midterm — Mathematics', 100, 'published', 8);
-  const { assessment: csMidterm } = await createAssessment(midtermType.id, csSubject.id, gradeLevel.id, term.id, 'Fall Midterm — Computer Science', 100, 'published', 8);
+  const { assessment: csMidterm } = await createAssessment(midtermType.id, csSubject.id, gradeLevel.id, term.id, 'Autumn Check-in — Science', 100, 'published', 8);
   const { assessment: mathFinal } = await createAssessment(finalType.id, mathSubject.id, gradeLevel.id, term.id, 'Final Exam — Mathematics', 100, 'draft', 16);
   const { assessment: csHw } = await createAssessment(hwType.id, csSubject.id, gradeLevel.id, term.id, 'CS Homework Assessment — Algorithms', 20, 'published', 3);
   console.log('✅ Seeded assessments');
@@ -525,30 +524,30 @@ async function main() {
   // startTimeMinutes: 480 = 8:00am, 540 = 9:00am, 600 = 10:00am, 660 = 11:00am, 750 = 12:30pm, 810 = 13:30pm
   const slotDefinitions = [
     // MONDAY
-    { day: 'MONDAY', period: 1, start: 480, end: 540, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'MONDAY', period: 2, start: 540, end: 620, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'MONDAY', period: 3, start: 640, end: 720, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'MONDAY', period: 4, start: 750, end: 830, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
+    { day: 'MONDAY', period: 1, start: 480, end: 540, room: 'Room A', batchId: dsaClass.id, teacherCode: 'EMP-MITCHELL' },
+    { day: 'MONDAY', period: 2, start: 540, end: 620, room: 'Room D', batchId: algClass.id, teacherCode: 'EMP-DASILVA' },
+    { day: 'MONDAY', period: 3, start: 640, end: 720, room: 'Room B', batchId: webClass.id, teacherCode: 'EMP-MITCHELL' },
+    { day: 'MONDAY', period: 4, start: 750, end: 830, room: 'Room C', batchId: calcClass.id, teacherCode: 'EMP-NGUYEN' },
     // TUESDAY
-    { day: 'TUESDAY', period: 1, start: 480, end: 540, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'TUESDAY', period: 2, start: 540, end: 620, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'TUESDAY', period: 3, start: 640, end: 720, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'TUESDAY', period: 4, start: 750, end: 830, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'TUESDAY', period: 1, start: 480, end: 540, room: 'Room E', batchId: engClass.id, teacherCode: 'EMP-DASILVA' },
+    { day: 'TUESDAY', period: 2, start: 540, end: 620, room: 'Room A', batchId: dsaClass.id, teacherCode: 'EMP-MITCHELL' },
+    { day: 'TUESDAY', period: 3, start: 640, end: 720, room: 'Room D', batchId: algClass.id, teacherCode: 'EMP-DASILVA' },
+    { day: 'TUESDAY', period: 4, start: 750, end: 830, room: 'Room B', batchId: webClass.id, teacherCode: 'EMP-MITCHELL' },
     // WEDNESDAY
-    { day: 'WEDNESDAY', period: 1, start: 480, end: 540, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
-    { day: 'WEDNESDAY', period: 2, start: 540, end: 620, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-LOVELACE' },
-    { day: 'WEDNESDAY', period: 3, start: 640, end: 720, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'WEDNESDAY', period: 4, start: 750, end: 830, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
+    { day: 'WEDNESDAY', period: 1, start: 480, end: 540, room: 'Room C', batchId: calcClass.id, teacherCode: 'EMP-NGUYEN' },
+    { day: 'WEDNESDAY', period: 2, start: 540, end: 620, room: 'Room E', batchId: engClass.id, teacherCode: 'EMP-OKAFOR' },
+    { day: 'WEDNESDAY', period: 3, start: 640, end: 720, room: 'Room A', batchId: dsaClass.id, teacherCode: 'EMP-MITCHELL' },
+    { day: 'WEDNESDAY', period: 4, start: 750, end: 830, room: 'Room D', batchId: algClass.id, teacherCode: 'EMP-DASILVA' },
     // THURSDAY
-    { day: 'THURSDAY', period: 1, start: 480, end: 540, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'THURSDAY', period: 2, start: 540, end: 620, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
-    { day: 'THURSDAY', period: 3, start: 640, end: 720, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-LOVELACE' },
-    { day: 'THURSDAY', period: 4, start: 750, end: 830, room: 'Lab 1', batchId: dsaClass.id, teacherCode: 'EMP-TURING' },
+    { day: 'THURSDAY', period: 1, start: 480, end: 540, room: 'Room B', batchId: webClass.id, teacherCode: 'EMP-MITCHELL' },
+    { day: 'THURSDAY', period: 2, start: 540, end: 620, room: 'Room C', batchId: calcClass.id, teacherCode: 'EMP-NGUYEN' },
+    { day: 'THURSDAY', period: 3, start: 640, end: 720, room: 'Room E', batchId: engClass.id, teacherCode: 'EMP-OKAFOR' },
+    { day: 'THURSDAY', period: 4, start: 750, end: 830, room: 'Room A', batchId: dsaClass.id, teacherCode: 'EMP-MITCHELL' },
     // FRIDAY
-    { day: 'FRIDAY', period: 1, start: 480, end: 540, room: 'Room 101', batchId: algClass.id, teacherCode: 'EMP-HOPPER' },
-    { day: 'FRIDAY', period: 2, start: 540, end: 620, room: 'Lab 2', batchId: webClass.id, teacherCode: 'EMP-TURING' },
-    { day: 'FRIDAY', period: 3, start: 640, end: 720, room: 'Room 201', batchId: calcClass.id, teacherCode: 'EMP-EULER' },
-    { day: 'FRIDAY', period: 4, start: 750, end: 830, room: 'Room 103', batchId: engClass.id, teacherCode: 'EMP-LOVELACE' },
+    { day: 'FRIDAY', period: 1, start: 480, end: 540, room: 'Room D', batchId: algClass.id, teacherCode: 'EMP-DASILVA' },
+    { day: 'FRIDAY', period: 2, start: 540, end: 620, room: 'Room B', batchId: webClass.id, teacherCode: 'EMP-MITCHELL' },
+    { day: 'FRIDAY', period: 3, start: 640, end: 720, room: 'Room C', batchId: calcClass.id, teacherCode: 'EMP-NGUYEN' },
+    { day: 'FRIDAY', period: 4, start: 750, end: 830, room: 'Room E', batchId: engClass.id, teacherCode: 'EMP-OKAFOR' },
   ] as const;
 
   for (const s of slotDefinitions) {
@@ -574,7 +573,7 @@ async function main() {
 
   // ─── Homework ─────────────────────────────────────────────────────────────────
   console.log('🌱 Seeding homework...');
-  const turingUser = teacherUsers['EMP-TURING'];
+  const turingUser = teacherUsers['EMP-MITCHELL'];
 
   const hw1 = await prisma.homework.upsert({
     where: { id: (await prisma.homework.findFirst({ where: { title: 'DSA Problem Set 1', batchId: dsaClass.id } }))?.id ?? 'nonexistent-id' },
@@ -593,9 +592,9 @@ async function main() {
   })();
 
   const hw3 = await (async () => {
-    const existing = await prisma.homework.findFirst({ where: { title: 'Calculus Assignment 1', batchId: calcClass.id } });
+    const existing = await prisma.homework.findFirst({ where: { title: 'Fractions Worksheet 1', batchId: calcClass.id } });
     if (existing) return existing;
-    return prisma.homework.create({ data: { batchId: calcClass.id, title: 'Calculus Assignment 1', description: 'Solve limits and derivatives from Chapter 2.', dueDate: new Date('2026-09-22'), maxPoints: 50, recordedById: superAdminUser.id } });
+    return prisma.homework.create({ data: { batchId: calcClass.id, title: 'Fractions Worksheet 1', description: 'Practise equivalent fractions using the number line.', dueDate: new Date('2026-09-22'), maxPoints: 50, recordedById: superAdminUser.id } });
   })();
 
   // Homework submissions
@@ -747,7 +746,7 @@ async function main() {
   await prisma.lead.deleteMany();
   await prisma.lead.createMany({
     data: [
-      { name: 'Charlotte Harris', email: 'charlotte@example.com', phone: '(555) 019-8832', status: 'Enrolled', source: 'Website Form', notes: 'Enrolled in Grade 10 CS.' },
+      { name: 'Charlotte Harris', email: 'charlotte@example.com', phone: '(555) 019-8832', status: 'Enrolled', source: 'Website Form', notes: 'Enrolled in Grade 2 Maths.' },
       { name: 'Elijah Miller', email: 'elijah.m@example.com', phone: '(555) 012-3841', status: 'Diagnostic Scheduled', source: 'Referral', notes: 'Needs diagnostic assessment for math level alignment.' },
       { name: 'Aria Watson', email: 'aria.w@example.com', phone: '(555) 019-3392', status: 'Enrolled', source: 'Facebook Ad', notes: 'Completed evaluation and enrolled.' },
       { name: 'Lucas Brooks', email: 'lucas.b@example.com', phone: '(555) 015-2831', status: 'Enrolled', source: 'Walk-in', notes: 'Fully enrolled in BSC-CS program.' },
@@ -1129,8 +1128,8 @@ async function main() {
   console.log('✅ Seeded family invoices & payments');
 
   // Teacher shortcuts used below for audit-log and notification seeding.
-  const turingU = teacherUsers['EMP-TURING'];
-  const lovelaceU = teacherUsers['EMP-LOVELACE'];
+  const turingU = teacherUsers['EMP-MITCHELL'];
+  const okaforU = teacherUsers['EMP-OKAFOR'];
 
   // ─── Section B Timetable & Attendance ────────────────────────────────────────
   console.log('🌱 Seeding Section B timetable & attendance...');
@@ -1140,16 +1139,16 @@ async function main() {
       data: { academicYearId: academicYear.id, termId: term.id, classSectionId: sectionB.id, name: 'Fall 2026 — CS Section B', status: 'PUBLISHED', effectiveFrom: new Date('2026-09-10'), effectiveTo: new Date('2026-12-20'), publishedAt: new Date(), createdById: superAdminUser.id },
     });
     const bSlots = [
-      { day: 'MONDAY',    period: 1, start: 540,  end: 620,  room: 'Lab 3',    ccId: dsaClass.id,  tc: 'EMP-HOPPER' },
-      { day: 'MONDAY',    period: 2, start: 640,  end: 720,  room: 'Room 102', ccId: algClass.id,  tc: 'EMP-LOVELACE' },
-      { day: 'TUESDAY',   period: 1, start: 480,  end: 560,  room: 'Lab 3',    ccId: webClass.id,  tc: 'EMP-HOPPER' },
-      { day: 'TUESDAY',   period: 2, start: 640,  end: 720,  room: 'Room 204', ccId: calcClass.id, tc: 'EMP-EULER' },
-      { day: 'WEDNESDAY', period: 1, start: 540,  end: 620,  room: 'Lab 3',    ccId: dsaClass.id,  tc: 'EMP-HOPPER' },
-      { day: 'WEDNESDAY', period: 2, start: 640,  end: 720,  room: 'Room 102', ccId: engClass.id,  tc: 'EMP-LOVELACE' },
-      { day: 'THURSDAY',  period: 1, start: 480,  end: 560,  room: 'Room 204', ccId: calcClass.id, tc: 'EMP-EULER' },
-      { day: 'THURSDAY',  period: 2, start: 640,  end: 720,  room: 'Lab 3',    ccId: webClass.id,  tc: 'EMP-HOPPER' },
-      { day: 'FRIDAY',    period: 1, start: 540,  end: 620,  room: 'Room 102', ccId: algClass.id,  tc: 'EMP-LOVELACE' },
-      { day: 'FRIDAY',    period: 2, start: 640,  end: 720,  room: 'Room 103', ccId: engClass.id,  tc: 'EMP-LOVELACE' },
+      { day: 'MONDAY',    period: 1, start: 540,  end: 620,  room: 'Lab 3',    ccId: dsaClass.id,  tc: 'EMP-DASILVA' },
+      { day: 'MONDAY',    period: 2, start: 640,  end: 720,  room: 'Room 102', ccId: algClass.id,  tc: 'EMP-OKAFOR' },
+      { day: 'TUESDAY',   period: 1, start: 480,  end: 560,  room: 'Lab 3',    ccId: webClass.id,  tc: 'EMP-DASILVA' },
+      { day: 'TUESDAY',   period: 2, start: 640,  end: 720,  room: 'Room 204', ccId: calcClass.id, tc: 'EMP-NGUYEN' },
+      { day: 'WEDNESDAY', period: 1, start: 540,  end: 620,  room: 'Lab 3',    ccId: dsaClass.id,  tc: 'EMP-DASILVA' },
+      { day: 'WEDNESDAY', period: 2, start: 640,  end: 720,  room: 'Room 102', ccId: engClass.id,  tc: 'EMP-OKAFOR' },
+      { day: 'THURSDAY',  period: 1, start: 480,  end: 560,  room: 'Room 204', ccId: calcClass.id, tc: 'EMP-NGUYEN' },
+      { day: 'THURSDAY',  period: 2, start: 640,  end: 720,  room: 'Lab 3',    ccId: webClass.id,  tc: 'EMP-DASILVA' },
+      { day: 'FRIDAY',    period: 1, start: 540,  end: 620,  room: 'Room 102', ccId: algClass.id,  tc: 'EMP-OKAFOR' },
+      { day: 'FRIDAY',    period: 2, start: 640,  end: 720,  room: 'Room E', ccId: engClass.id,  tc: 'EMP-OKAFOR' },
     ] as const;
     for (const s of bSlots) {
       await prisma.timetableSlot.create({ data: { timetableId: timetableB.id, dayOfWeek: s.day, periodIndex: s.period, startTimeMinutes: s.start, endTimeMinutes: s.end, room: s.room, classSectionId: sectionB.id, batchId: s.ccId, teacherProfileId: teacherProfiles[s.tc].id, status: 'ACTIVE' } });
@@ -1223,8 +1222,8 @@ async function main() {
       { actorUserId: turingU.id, event: 'HOMEWORK_CREATED', targetType: 'Homework', targetId: hw1.id, ipAddress: '10.0.0.1', metadata: { title: 'DSA Problem Set 1' } },
       { actorUserId: turingU.id, event: 'GRADE_PUBLISHED', targetType: 'GradeBookEntry', targetId: null, ipAddress: '10.0.0.1', metadata: { assessment: 'Week 1 Math Quiz', studentCount: 5 } },
       { actorUserId: turingU.id, event: 'SESSION_CREATED', targetType: 'BatchSession', targetId: sessions[0]?.id ?? null, ipAddress: '10.0.0.1', metadata: { topic: 'Introduction to Linked Lists' } },
-      { actorUserId: teacherUsers['EMP-LOVELACE'].id, event: 'HOMEWORK_GRADED', targetType: 'Homework', targetId: hw3.id, ipAddress: '10.0.0.2', metadata: { title: 'Calculus Assignment 1' } },
-      { actorUserId: teacherUsers['EMP-HOPPER'].id, event: 'TIMETABLE_PUBLISHED', targetType: 'Timetable', targetId: null, ipAddress: '10.0.0.3', metadata: { name: 'Fall 2026 — CS Section B' } },
+      { actorUserId: teacherUsers['EMP-OKAFOR'].id, event: 'HOMEWORK_GRADED', targetType: 'Homework', targetId: hw3.id, ipAddress: '10.0.0.2', metadata: { title: 'Fractions Worksheet 1' } },
+      { actorUserId: teacherUsers['EMP-DASILVA'].id, event: 'TIMETABLE_PUBLISHED', targetType: 'Timetable', targetId: null, ipAddress: '10.0.0.3', metadata: { name: 'Fall 2026 — CS Section B' } },
       { actorUserId: superAdminUser.id, event: 'ATTENDANCE_RECORDED', targetType: 'DailyAttendance', targetId: null, ipAddress: '127.0.0.1', metadata: { date: '2026-06-23', sections: ['CS-2026-A', 'CS-2026-B'], totalRecords: 11 } },
       { actorUserId: superAdminUser.id, event: 'RUBRIC_ASSESSMENT_CREATED', targetType: 'RubricAssessment', targetId: null, ipAddress: '127.0.0.1', metadata: { rubricName: 'Comparing Fractions Rubric', evaluatedCount: 4 } },
     ],
@@ -1239,17 +1238,17 @@ async function main() {
       { userId: turingU.id, type: 'INFO',    title: 'Week 1 Quiz — All Submissions In', body: '5 students completed the Week 1 Math Quiz. Click to review.', readAt: new Date() },
       { userId: turingU.id, type: 'WARNING', title: 'Makeup Request Pending', body: "Charlotte Harris has an unresolved makeup request for the June 12 DSA session.", readAt: null },
       { userId: turingU.id, type: 'INFO',    title: 'Noah Johnson — Midterm Marked', body: "Noah's Fall Midterm has been marked. Score: 80/100.", readAt: null },
-      { userId: lovelaceU.id, type: 'INFO',    title: 'New Message from Robert Harris', body: 'Robert Harris asked about Fall Midterm topics for Charlotte.', readAt: new Date() },
-      { userId: lovelaceU.id, type: 'WARNING', title: 'Calculus HW1 — 3 Not Submitted', body: 'Calculus Assignment 1 deadline passed. 3 students still outstanding.', readAt: null },
-      { userId: lovelaceU.id, type: 'INFO',    title: 'Gradebook Published', body: 'Your Week 1 Math Quiz grades have been published to students and guardians.', readAt: null },
-      { userId: teacherUsers['EMP-HOPPER'].id, type: 'INFO',    title: 'Section B Timetable Active', body: 'Fall 2026 timetable for CS Section B is now live.', readAt: null },
-      { userId: teacherUsers['EMP-HOPPER'].id, type: 'INFO',    title: 'New Message from Sandra Brooks', body: 'Sandra Brooks inquired about support resources for Lucas.', readAt: null },
-      { userId: teacherUsers['EMP-EULER'].id,  type: 'WARNING', title: 'Low Attendance Alert', body: "William Anderson was absent 2 days this week (June 18–19). Consider reaching out.", readAt: null },
+      { userId: okaforU.id, type: 'INFO',    title: 'New Message from Robert Harris', body: 'Robert Harris asked about Fall Midterm topics for Charlotte.', readAt: new Date() },
+      { userId: okaforU.id, type: 'WARNING', title: 'Fractions Worksheet 1 — 3 Not Submitted', body: 'Fractions Worksheet 1 deadline passed. 3 students still outstanding.', readAt: null },
+      { userId: okaforU.id, type: 'INFO',    title: 'Gradebook Published', body: 'Your Week 1 Math Quiz grades have been published to students and guardians.', readAt: null },
+      { userId: teacherUsers['EMP-DASILVA'].id, type: 'INFO',    title: 'Section B Timetable Active', body: 'Fall 2026 timetable for CS Section B is now live.', readAt: null },
+      { userId: teacherUsers['EMP-DASILVA'].id, type: 'INFO',    title: 'New Message from Sandra Brooks', body: 'Sandra Brooks inquired about support resources for Lucas.', readAt: null },
+      { userId: teacherUsers['EMP-NGUYEN'].id,  type: 'WARNING', title: 'Low Attendance Alert', body: "William Anderson was absent 2 days this week (June 18–19). Consider reaching out.", readAt: null },
       { userId: guardian1User.id, type: 'INFO',    title: 'Grade Published — Week 1 Math Quiz', body: "Charlotte's Week 1 Math Quiz grade (90%) is now available.", readAt: null },
-      { userId: guardian1User.id, type: 'INFO',    title: 'Reply from Prof. Turing', body: 'Alan Turing replied to your message about the June 12 absence.', readAt: new Date() },
-      { userId: guardian2User.id, type: 'INFO',    title: 'Aria scored 100% on Math Quiz!', body: 'Prof. Turing has a message for you regarding Aria\'s outstanding performance.', readAt: null },
-      { userId: guardian3User.id, type: 'INFO',    title: 'Reply from Prof. Turing', body: 'Alan Turing replied to your progress inquiry about Noah.', readAt: null },
-      { userId: guardian4User.id, type: 'INFO',    title: 'Reply from Prof. Hopper', body: 'Grace Hopper replied with tutoring support information for Lucas.', readAt: null },
+      { userId: guardian1User.id, type: 'INFO',    title: 'Reply from Ms Mitchell', body: 'Sarah Mitchell replied to your message about the June 12 absence.', readAt: new Date() },
+      { userId: guardian2User.id, type: 'INFO',    title: 'Aria scored 100% on Math Quiz!', body: 'Ms Mitchell has a message for you regarding Aria\'s outstanding performance.', readAt: null },
+      { userId: guardian3User.id, type: 'INFO',    title: 'Reply from Ms Mitchell', body: 'Sarah Mitchell replied to your progress inquiry about Noah.', readAt: null },
+      { userId: guardian4User.id, type: 'INFO',    title: 'Reply from Mr da Silva', body: 'Luis da Silva replied with tutoring support information for Lucas.', readAt: null },
     ],
   });
   console.log('✅ Seeded teacher & guardian notifications');
@@ -1657,9 +1656,9 @@ async function main() {
   console.log('🌱 Seeding Phase 3.5 courses...');
 
   const csLearningSubject = await prisma.learningSubject.upsert({
-    where: { code: 'CS' },
+    where: { code: 'SCI' },
     update: {},
-    create: { code: 'CS', name: 'Computer Science', description: 'Algorithms, data structures, and how programs work.', sortOrder: 2 },
+    create: { code: 'SCI', name: 'Science & Discovery', description: 'Shapes, measuring, patterns and how the world works.', sortOrder: 2 },
   });
 
   // Course: Fractions & Algebra Basics — reparents the two orphaned legacy
@@ -1752,130 +1751,6 @@ async function main() {
     await prisma.card.create({ data: { lessonId: fracCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Solve this on your own, no hints.', questionId: fracCheckpointQ.id } });
   }
 
-  // Course: Intro to Algorithms — reparents the orphaned 'Sorting Algorithms'
-  // Concept, adds a GRID_MATCHING question (this widget type's first seed
-  // coverage anywhere).
-  const algorithmsCourse = await prisma.course.upsert({
-    where: { slug: 'intro-to-algorithms' },
-    update: { gradeBand: 'G5_6' },
-    create: {
-      learningSubjectId: csLearningSubject.id,
-      title: 'Intro to Algorithms',
-      slug: 'intro-to-algorithms',
-      description: 'How computers sort, search, and reason about the cost of getting things done.',
-      estimatedHours: 6,
-      status: 'PUBLISHED',
-      sortOrder: 1,
-      gradeBand: 'G5_6',
-    },
-  });
-
-  await prisma.concept.update({ where: { id: sortingConc.id }, data: { courseId: algorithmsCourse.id, sortOrder: 1, kind: 'CHAPTER' } });
-
-  const complexityChapter = await prisma.concept.upsert({
-    where: { name: 'Algorithm Complexity' },
-    update: { courseId: algorithmsCourse.id, sortOrder: 2, kind: 'CHAPTER' },
-    create: { name: 'Algorithm Complexity', description: 'Matching common algorithms to how their runtime scales.', courseId: algorithmsCourse.id, sortOrder: 2, kind: 'CHAPTER' },
-  });
-
-  let complexityLesson = await prisma.lesson.findFirst({ where: { title: 'Matching Algorithms to Complexity', conceptId: complexityChapter.id } });
-  if (!complexityLesson) {
-    complexityLesson = await prisma.lesson.create({ data: { conceptId: complexityChapter.id, title: 'Matching Algorithms to Complexity', description: 'Pair each algorithm with its worst-case time complexity.', sortOrder: 1, xpReward: 60 } });
-    await prisma.card.create({ data: { lessonId: complexityLesson.id, title: 'Why Complexity Matters', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Big-O notation describes how an algorithm's running time grows as the input gets larger — it tells you what to expect at scale, not the exact speed on any one machine." } });
-
-    const gridQ = await prisma.question.create({
-      data: {
-        subjectId: csSubject.id,
-        classId: gradeLevel.id,
-        questionType: 'interactive',
-        prompt: 'Match each algorithm to its worst-case time complexity.',
-        correctAnswer: null,
-        widgetType: 'GRID_MATCHING',
-        isGraded: true,
-        explanation: 'Bubble Sort compares every pair in nested loops (O(n²)). Binary Search halves the search space each step (O(log n)). Linear Search may need to check every element once (O(n)).',
-        hints: ['Think about how many comparisons each algorithm needs in the worst case.'],
-        widgetConfig: {
-          left: [
-            { id: 'bubble', text: 'Bubble Sort' },
-            { id: 'binary', text: 'Binary Search' },
-            { id: 'linear', text: 'Linear Search' },
-          ],
-          right: [
-            { id: 'on2', text: 'O(n²)' },
-            { id: 'ologn', text: 'O(log n)' },
-            { id: 'on', text: 'O(n)' },
-          ],
-          correctPairs: [['bubble', 'on2'], ['binary', 'ologn'], ['linear', 'on']],
-        },
-      },
-    });
-    await prisma.card.create({ data: { lessonId: complexityLesson.id, title: 'Match Them Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap an algorithm, then tap its matching complexity.', questionId: gridQ.id } });
-  }
-
-  const algorithmsPracticeChapter = await prisma.concept.upsert({
-    where: { name: 'Algorithms in Practice' },
-    update: { courseId: algorithmsCourse.id, sortOrder: 3, kind: 'CHAPTER' },
-    create: { name: 'Algorithms in Practice', description: 'A closer look at how sorting algorithms are actually used.', courseId: algorithmsCourse.id, sortOrder: 3, kind: 'CHAPTER' },
-  });
-
-  let algoRecapLesson = await prisma.lesson.findFirst({ where: { title: 'Sorting in the Real World', conceptId: algorithmsPracticeChapter.id } });
-  if (!algoRecapLesson) {
-    algoRecapLesson = await prisma.lesson.create({ data: { conceptId: algorithmsPracticeChapter.id, title: 'Sorting in the Real World', description: 'Where sorting and searching show up outside the classroom.', sortOrder: 1, xpReward: 30 } });
-    await prisma.card.create({ data: { lessonId: algoRecapLesson.id, title: 'Everywhere You Look', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Every time you sort a spreadsheet column, search a contact list, or get search results ranked by relevance, an algorithm like the ones you just studied is doing the work.' } });
-  }
-
-  let algoVideoItem = await prisma.moduleItem.findFirst({ where: { conceptId: algorithmsPracticeChapter.id, kind: 'VIDEO' } });
-  if (!algoVideoItem) {
-    algoVideoItem = await prisma.moduleItem.create({ data: { conceptId: algorithmsPracticeChapter.id, kind: 'VIDEO', title: 'Watch: Sorting Algorithms Visualized', sortOrder: 2, status: 'PUBLISHED', videoUrl: 'https://www.youtube.com/watch?v=kPRA0W1kECg', videoDurationSeconds: 291 } });
-  }
-
-  let algoReadingItem = await prisma.moduleItem.findFirst({ where: { conceptId: algorithmsPracticeChapter.id, kind: 'READING' } });
-  if (!algoReadingItem) {
-    algoReadingItem = await prisma.moduleItem.create({ data: { conceptId: algorithmsPracticeChapter.id, kind: 'READING', title: 'Reading: Choosing the Right Algorithm', sortOrder: 3, status: 'PUBLISHED', readingContent: 'A simple algorithm like Bubble Sort is easy to understand but slow on large inputs. Real systems typically use faster algorithms like Merge Sort or Quick Sort, which scale much better as the amount of data grows.' } });
-  }
-
-  // Closes a gap flagged during seed-data coverage review: this course had
-  // VIDEO/READING items but no DISCUSSION/ASSESSMENT, unlike fractionsCourse's
-  // practice chapter which has the full module-item-kind set.
-  let algoDiscussionItem = await prisma.moduleItem.findFirst({ where: { conceptId: algorithmsPracticeChapter.id, kind: 'DISCUSSION' } });
-  if (!algoDiscussionItem) {
-    algoDiscussionItem = await prisma.moduleItem.create({ data: { conceptId: algorithmsPracticeChapter.id, kind: 'DISCUSSION', title: 'Discuss: The Algorithm You Use Most', sortOrder: 4, status: 'PUBLISHED' } });
-    const algoThread = await prisma.discussionThread.create({ data: { moduleItemId: algoDiscussionItem.id, prompt: 'Which everyday app or feature do you think relies on sorting or searching the most? Why?' } });
-    if (charlotteProfile) {
-      await prisma.discussionPost.create({ data: { discussionThreadId: algoThread.id, studentProfileId: charlotteProfile.id, body: 'Probably my music app — it has to search through thousands of songs instantly whenever I type in the search box.' } });
-    }
-  }
-
-  const algoQuizQ = await makeQ(csSubject.id, gradeLevel.id, 'What is the time complexity of Binary Search in the worst case?', [{ label: 'A', text: 'O(log n)', correct: true }, { label: 'B', text: 'O(n)', correct: false }, { label: 'C', text: 'O(n²)', correct: false }], 'Binary Search halves the search space every step, so the number of steps grows logarithmically with n.');
-  let algoQuiz = await prisma.assessment.findFirst({ where: { title: 'Practice Quiz — Intro to Algorithms' } });
-  if (!algoQuiz) {
-    algoQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: csSubject.id, classId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Intro to Algorithms', description: 'Low-stakes practice on sorting and complexity.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 2, publishedAt: new Date() } });
-    const algoSection = await prisma.assessmentSection.create({ data: { assessmentId: algoQuiz.id, title: 'Section 1', sortOrder: 1 } });
-    await prisma.assessmentQuestion.create({ data: { assessmentId: algoQuiz.id, sectionId: algoSection.id, questionId: algoQuizQ.id, questionNumber: 1, marksAvailable: 10 } });
-  }
-  let algoAssessmentItem = await prisma.moduleItem.findFirst({ where: { conceptId: algorithmsPracticeChapter.id, assessmentId: algoQuiz.id } });
-  if (!algoAssessmentItem) {
-    algoAssessmentItem = await prisma.moduleItem.create({ data: { conceptId: algorithmsPracticeChapter.id, kind: 'ASSESSMENT', title: 'Practice Quiz: Intro to Algorithms', sortOrder: 5, status: 'PUBLISHED', assessmentId: algoQuiz.id } });
-  }
-  if (charlotteProfile) {
-    const existingAlgoAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: algoQuiz.id, studentProfileId: charlotteProfile.id } });
-    if (!existingAlgoAssignment) {
-      await prisma.assessmentAssignment.create({ data: { assessmentId: algoQuiz.id, studentProfileId: charlotteProfile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
-    }
-  }
-
-  const algorithmsCheckpoint = await prisma.concept.upsert({
-    where: { name: 'Intro to Algorithms Checkpoint' },
-    update: { courseId: algorithmsCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
-    create: { name: 'Intro to Algorithms Checkpoint', description: 'A short checkpoint covering sorting and complexity — pass at 70% or better on the first try.', courseId: algorithmsCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
-  });
-  let algoCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Intro to Algorithms', conceptId: algorithmsCheckpoint.id } });
-  if (!algoCheckpointLesson) {
-    algoCheckpointLesson = await prisma.lesson.create({ data: { conceptId: algorithmsCheckpoint.id, title: 'Checkpoint: Intro to Algorithms', description: 'Confirm your understanding of sorting and algorithm complexity.', sortOrder: 1, xpReward: 80 } });
-    await prisma.card.create({ data: { lessonId: algoCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: "This checkpoint checks first-try accuracy — retries won't count toward passing." } });
-    const algoCheckpointQ = await makeQ(csSubject.id, gradeLevel.id, 'Which search algorithm requires the list to already be sorted?', [{ label: 'A', text: 'Binary Search', correct: true }, { label: 'B', text: 'Linear Search', correct: false }, { label: 'C', text: 'Bubble Sort', correct: false }], 'Binary Search repeatedly halves the search range, which only works correctly on a sorted list.');
-    await prisma.card.create({ data: { lessonId: algoCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Solve this on your own, no hints.', questionId: algoCheckpointQ.id } });
-  }
 
   console.log('✅ Seeded Phase 3.5 courses');
 
@@ -2048,153 +1923,6 @@ async function main() {
   }
 
   console.log('✅ Seeded Percentages & Ratios course');
-
-  // ─── Content expansion: Data Structures Basics (CS) ────────────────────────────
-  // Widget mix: STANDARD_MCQ, GRID_MATCHING. Module items: VIDEO, READING,
-  // DISCUSSION, ASSESSMENT.
-  console.log('🌱 Seeding Data Structures Basics course...');
-
-  const dsCourse = await prisma.course.upsert({
-    where: { slug: 'data-structures-basics' },
-    update: {},
-    create: {
-      learningSubjectId: csLearningSubject.id,
-      title: 'Data Structures Basics',
-      slug: 'data-structures-basics',
-      description: 'How computers organize and store data — arrays, lists, stacks, and queues.',
-      estimatedHours: 5,
-      status: 'PUBLISHED',
-      sortOrder: 2,
-      gradeBand: 'G5_6',
-    },
-  });
-
-  const arraysChapter = await prisma.concept.upsert({
-    where: { name: 'Arrays and Lists' },
-    update: { courseId: dsCourse.id, sortOrder: 1, kind: 'CHAPTER' },
-    create: { name: 'Arrays and Lists', description: 'Storing ordered collections of data.', courseId: dsCourse.id, sortOrder: 1, kind: 'CHAPTER' },
-  });
-
-  let arraysLesson = await prisma.lesson.findFirst({ where: { title: 'What is an Array?', conceptId: arraysChapter.id } });
-  if (!arraysLesson) {
-    arraysLesson = await prisma.lesson.create({ data: { conceptId: arraysChapter.id, title: 'What is an Array?', description: 'A list of items stored in order.', sortOrder: 1, xpReward: 40 } });
-    await prisma.card.create({ data: { lessonId: arraysLesson.id, title: 'Ordered Storage', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'An array stores items in order, each with an index starting at 0 — like numbered mailboxes in a row.' } });
-    const arrQ1 = await makeQ(csSubject.id, gradeLevel.id, 'In an array [10, 20, 30, 40], what is the value at index 2?', [{ label: 'A', text: '30', correct: true }, { label: 'B', text: '20', correct: false }, { label: 'C', text: '40', correct: false }], 'Array indices start at 0, so index 2 is the third item: 30.');
-    await prisma.card.create({ data: { lessonId: arraysLesson.id, title: 'Find the Index', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Count carefully — indices start at 0.', questionId: arrQ1.id } });
-    const arrQ2 = await makeQ(csSubject.id, gradeLevel.id, 'What is the main advantage of an array over a plain list of separate variables?', [{ label: 'A', text: 'You can loop through items by index', correct: true }, { label: 'B', text: 'Arrays use less memory than any other structure', correct: false }, { label: 'C', text: 'Arrays can never change size', correct: false }], 'Arrays let you access and process every item with a loop, instead of naming each variable separately.');
-    await prisma.card.create({ data: { lessonId: arraysLesson.id, title: 'Why Arrays?', sortOrder: 3, cardType: 'INTERACTIVE', content: 'Think about what makes arrays useful.', questionId: arrQ2.id } });
-  }
-
-  const stacksChapter = await prisma.concept.upsert({
-    where: { name: 'Stacks and Queues' },
-    update: { courseId: dsCourse.id, sortOrder: 2, kind: 'CHAPTER' },
-    create: { name: 'Stacks and Queues', description: 'Two ways to add and remove items in a specific order.', courseId: dsCourse.id, sortOrder: 2, kind: 'CHAPTER' },
-  });
-
-  let stacksLesson = await prisma.lesson.findFirst({ where: { title: 'Stack or Queue?', conceptId: stacksChapter.id } });
-  if (!stacksLesson) {
-    stacksLesson = await prisma.lesson.create({ data: { conceptId: stacksChapter.id, title: 'Stack or Queue?', description: 'LIFO vs. FIFO ordering.', sortOrder: 1, xpReward: 40 } });
-    await prisma.card.create({ data: { lessonId: stacksLesson.id, title: 'Two Ways to Line Up', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'A Stack is Last In, First Out — like a stack of plates. A Queue is First In, First Out — like a checkout line.' } });
-    const stackQ = await makeQ(csSubject.id, gradeLevel.id, 'Which structure works like a line at a grocery store checkout?', [{ label: 'A', text: 'Queue', correct: true }, { label: 'B', text: 'Stack', correct: false }, { label: 'C', text: 'Array', correct: false }], 'A checkout line is First In, First Out — the first person in line is served first, which is how a Queue works.');
-    await prisma.card.create({ data: { lessonId: stacksLesson.id, title: 'Pick the Structure', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Think about the order things happen in.', questionId: stackQ.id } });
-  }
-
-  let stacksMatchLesson = await prisma.lesson.findFirst({ where: { title: 'Match Structures to Examples', conceptId: stacksChapter.id } });
-  if (!stacksMatchLesson) {
-    stacksMatchLesson = await prisma.lesson.create({ data: { conceptId: stacksChapter.id, title: 'Match Structures to Examples', description: 'Match each data structure to a real-world example.', sortOrder: 2, xpReward: 40 } });
-    await prisma.card.create({ data: { lessonId: stacksMatchLesson.id, title: 'Match Them Up', sortOrder: 1, cardType: 'CONCEPTUAL', content: "Let's connect each structure to something you'd recognize." } });
-    const dsMatchQ = await prisma.question.create({
-      data: {
-        subjectId: csSubject.id,
-        classId: gradeLevel.id,
-        questionType: 'interactive',
-        prompt: 'Match each data structure to its real-world example.',
-        correctAnswer: null,
-        widgetType: 'GRID_MATCHING',
-        isGraded: true,
-        explanation: 'A stack of plates is LIFO (Stack). A checkout line is FIFO (Queue). A numbered row of lockers is an Array.',
-        hints: ['Think about the order items are added and removed.'],
-        widgetConfig: {
-          left: [
-            { id: 'stack', text: 'Stack' },
-            { id: 'queue', text: 'Queue' },
-            { id: 'array', text: 'Array' },
-          ],
-          right: [
-            { id: 'plates', text: 'A stack of plates' },
-            { id: 'line', text: 'A checkout line' },
-            { id: 'lockers', text: 'Numbered lockers in a row' },
-          ],
-          correctPairs: [['stack', 'plates'], ['queue', 'line'], ['array', 'lockers']],
-        },
-      },
-    });
-    await prisma.card.create({ data: { lessonId: stacksMatchLesson.id, title: 'Match Them Up', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Tap a structure, then tap its matching example.', questionId: dsMatchQ.id } });
-  }
-
-  const dsPracticeChapter = await prisma.concept.upsert({
-    where: { name: 'Data Structures in Practice' },
-    update: { courseId: dsCourse.id, sortOrder: 3, kind: 'CHAPTER' },
-    create: { name: 'Data Structures in Practice', description: 'Apply what you learned through video, reading, discussion, and a practice quiz.', courseId: dsCourse.id, sortOrder: 3, kind: 'CHAPTER' },
-  });
-
-  let dsRecapLesson = await prisma.lesson.findFirst({ where: { title: 'Data Structures Everywhere', conceptId: dsPracticeChapter.id } });
-  if (!dsRecapLesson) {
-    dsRecapLesson = await prisma.lesson.create({ data: { conceptId: dsPracticeChapter.id, title: 'Data Structures Everywhere', description: 'Where these structures show up in real software.', sortOrder: 1, xpReward: 30 } });
-    await prisma.card.create({ data: { lessonId: dsRecapLesson.id, title: 'Under the Hood', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Your browser\'s "back" button uses a Stack. A printer queue uses a Queue. Your contacts list is stored as an Array.' } });
-  }
-
-  let dsVideoItem = await prisma.moduleItem.findFirst({ where: { conceptId: dsPracticeChapter.id, kind: 'VIDEO' } });
-  if (!dsVideoItem) {
-    dsVideoItem = await prisma.moduleItem.create({ data: { conceptId: dsPracticeChapter.id, kind: 'VIDEO', title: 'Watch: Stacks and Queues Explained', sortOrder: 2, status: 'PUBLISHED', videoUrl: 'https://www.youtube.com/watch?v=wjI1WNcIntg', videoDurationSeconds: 313 } });
-  }
-
-  let dsReadingItem = await prisma.moduleItem.findFirst({ where: { conceptId: dsPracticeChapter.id, kind: 'READING' } });
-  if (!dsReadingItem) {
-    dsReadingItem = await prisma.moduleItem.create({ data: { conceptId: dsPracticeChapter.id, kind: 'READING', title: 'Reading: Choosing a Data Structure', sortOrder: 3, status: 'PUBLISHED', readingContent: 'The right data structure depends on how you need to access data. Need order and fast lookups by position? Use an Array. Need to undo actions in reverse order? Use a Stack. Need to process items in the order they arrived? Use a Queue.' } });
-  }
-
-  let dsDiscussionItem = await prisma.moduleItem.findFirst({ where: { conceptId: dsPracticeChapter.id, kind: 'DISCUSSION' } });
-  if (!dsDiscussionItem) {
-    dsDiscussionItem = await prisma.moduleItem.create({ data: { conceptId: dsPracticeChapter.id, kind: 'DISCUSSION', title: 'Discuss: Stacks and Queues in Apps You Use', sortOrder: 4, status: 'PUBLISHED' } });
-    const dsThread = await prisma.discussionThread.create({ data: { moduleItemId: dsDiscussionItem.id, prompt: 'Can you think of an app or website feature that behaves like a Stack or a Queue? Describe it.' } });
-    if (charlotteProfile) {
-      await prisma.discussionPost.create({ data: { discussionThreadId: dsThread.id, studentProfileId: charlotteProfile.id, body: 'The undo button in a drawing app is a Stack — it undoes your most recent action first, then the one before that.' } });
-    }
-  }
-
-  const dsQuizQ = await makeQ(csSubject.id, gradeLevel.id, 'Which operation adds an item to the top of a Stack?', [{ label: 'A', text: 'Push', correct: true }, { label: 'B', text: 'Pull', correct: false }, { label: 'C', text: 'Enqueue', correct: false }], '"Push" adds an item to the top of a Stack; "Pop" removes the top item.');
-  let dsQuiz = await prisma.assessment.findFirst({ where: { title: 'Practice Quiz — Data Structures Basics' } });
-  if (!dsQuiz) {
-    dsQuiz = await prisma.assessment.create({ data: { assessmentTypeId: quizType.id, subjectId: csSubject.id, classId: gradeLevel.id, termId: term.id, title: 'Practice Quiz — Data Structures Basics', description: 'Low-stakes practice on arrays, stacks, and queues.', totalMarks: 10, estimatedDurationMinutes: 10, status: 'published', countsTowardGrade: false, maxAttempts: 2, weekNumber: 3, publishedAt: new Date() } });
-    const dsSection = await prisma.assessmentSection.create({ data: { assessmentId: dsQuiz.id, title: 'Section 1', sortOrder: 1 } });
-    await prisma.assessmentQuestion.create({ data: { assessmentId: dsQuiz.id, sectionId: dsSection.id, questionId: dsQuizQ.id, questionNumber: 1, marksAvailable: 10 } });
-  }
-  let dsAssessmentItem = await prisma.moduleItem.findFirst({ where: { conceptId: dsPracticeChapter.id, assessmentId: dsQuiz.id } });
-  if (!dsAssessmentItem) {
-    dsAssessmentItem = await prisma.moduleItem.create({ data: { conceptId: dsPracticeChapter.id, kind: 'ASSESSMENT', title: 'Practice Quiz: Data Structures Basics', sortOrder: 5, status: 'PUBLISHED', assessmentId: dsQuiz.id } });
-  }
-  if (charlotteProfile) {
-    const existingDsAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId: dsQuiz.id, studentProfileId: charlotteProfile.id } });
-    if (!existingDsAssignment) {
-      await prisma.assessmentAssignment.create({ data: { assessmentId: dsQuiz.id, studentProfileId: charlotteProfile.id, assignedByUserId: superAdminUser.id, opensAt, dueAt, status: 'assigned' } });
-    }
-  }
-
-  const dsCheckpoint = await prisma.concept.upsert({
-    where: { name: 'Data Structures Checkpoint' },
-    update: { courseId: dsCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
-    create: { name: 'Data Structures Checkpoint', description: 'A short checkpoint on arrays, stacks, and queues — pass at 70% or better on the first try.', courseId: dsCourse.id, sortOrder: 4, kind: 'CHECKPOINT', passThresholdPercent: 70 },
-  });
-  let dsCheckpointLesson = await prisma.lesson.findFirst({ where: { title: 'Checkpoint: Data Structures', conceptId: dsCheckpoint.id } });
-  if (!dsCheckpointLesson) {
-    dsCheckpointLesson = await prisma.lesson.create({ data: { conceptId: dsCheckpoint.id, title: 'Checkpoint: Data Structures', description: 'Confirm your understanding of arrays, stacks, and queues.', sortOrder: 1, xpReward: 80 } });
-    await prisma.card.create({ data: { lessonId: dsCheckpointLesson.id, title: 'Before You Start', sortOrder: 1, cardType: 'CONCEPTUAL', content: "This checkpoint checks first-try accuracy — retries won't count toward passing." } });
-    const dsCheckpointQ = await makeQ(csSubject.id, gradeLevel.id, 'Which structure removes items in the same order they were added?', [{ label: 'A', text: 'Queue', correct: true }, { label: 'B', text: 'Stack', correct: false }, { label: 'C', text: 'Neither', correct: false }], 'A Queue is First In, First Out — items leave in the same order they arrived.');
-    await prisma.card.create({ data: { lessonId: dsCheckpointLesson.id, title: 'Checkpoint Question', sortOrder: 2, cardType: 'CHECKPOINT', content: 'Solve this on your own, no hints.', questionId: dsCheckpointQ.id } });
-  }
-
-  console.log('✅ Seeded Data Structures Basics course');
 
   // ─── K-6 pilot: Pre-K/K Language Arts ─────────────────────────────────────────
   // Narrowest possible slice of the K-6 curriculum-expansion plan — alphabet
@@ -3156,7 +2884,6 @@ async function main() {
     const gatingConceptIds = [
       variablesChapter.id, linearEquationsChapter.id, practiceChapter.id, checkpointChapter.id,
       fractionsConc.id, algebraConc.id, fractionsPracticeChapter.id, fractionsCheckpoint.id,
-      sortingConc.id, complexityChapter.id, algorithmsPracticeChapter.id, algorithmsCheckpoint.id,
     ];
     const allGatingLessons = await prisma.lesson.findMany({ where: { conceptId: { in: gatingConceptIds } } });
     for (const lesson of allGatingLessons) {
@@ -3170,7 +2897,7 @@ async function main() {
 
     // First-try-correct StudentCardResponse rows for the two new checkpoint
     // cards, so computeConceptDoneMap's pass-threshold check succeeds too.
-    for (const checkpointLessonRow of [fracCheckpointLesson, algoCheckpointLesson]) {
+    for (const checkpointLessonRow of [fracCheckpointLesson]) {
       if (!checkpointLessonRow) continue;
       const attempt = await prisma.lessonAttempt.findFirst({ where: { lessonId: checkpointLessonRow.id, studentProfileId: charlotteProfile.id } });
       const card = await prisma.card.findFirst({ where: { lessonId: checkpointLessonRow.id, cardType: 'CHECKPOINT' } });
@@ -3266,9 +2993,9 @@ async function main() {
     });
   };
 
-  // Class 10 -> BSc Computer Science -> 3 courses
-  await linkProgramCourse(program.id, algorithmsCourse.id, 0);
-  await linkProgramCourse(program.id, dsCourse.id, 1);
+  // Grade 2 -> Early Years Foundation -> 3 courses
+  await linkProgramCourse(program.id, alphabetCourse.id, 0);
+  await linkProgramCourse(program.id, preKMathCourse.id, 1);
   await linkProgramCourse(program.id, algebraCourse.id, 2);
 
   // Class 10 -> BSc Mathematics -> 2 courses. `fractionsCourse` is deliberately
@@ -3317,7 +3044,7 @@ async function main() {
   // A LIVE course is unsellable without an open cohort, so the demo needs one.
   // `courseId` here is the weld that finally joins the catalogue tree to the
   // operational one — before it, Batch pointed only at a Term.
-  const liveCourse = algorithmsCourse;
+  const liveCourse = g34MathCourse;
   await prisma.course.update({
     where: { id: liveCourse.id },
     data: { deliveryMode: 'LIVE', priceOneTimeCents: 4900 },
@@ -3336,7 +3063,7 @@ async function main() {
   });
 
   await prisma.batch.upsert({
-    where: { code: 'ALGO-BATCH-1' },
+    where: { code: 'G34-MATH-LIVE-1' },
     update: {
       courseId: liveCourse.id,
       startDate: batchStart,
@@ -3349,9 +3076,9 @@ async function main() {
     create: {
       courseId: liveCourse.id,
       termId: null,
-      name: 'Intro to Algorithms — Spring Batch',
-      code: 'ALGO-BATCH-1',
-      description: 'Live cohort with weekly sessions.',
+      name: 'Multiplication & Fractions — Spring Batch',
+      code: 'G34-MATH-LIVE-1',
+      description: 'Small-group live maths, twice a week after school.',
       capacity: 20,
       isOpenForEnrollment: true,
       startDate: batchStart,
@@ -3384,6 +3111,146 @@ async function main() {
     });
   }
   console.log(`✅ Seeded a live batch and ${allTeachers.length} course teachers`);
+
+  // ─── Live class demo chain ──────────────────────────────────────────────────
+  // A LIVE_CLASS item is curriculum; the meeting that fulfils it belongs to a
+  // batch; and a student only reaches it through StudentCourseEnrollment. All
+  // three links have to exist or the feature demos as an empty panel.
+
+  // The term batches at the top of this file are created before any course
+  // exists, so they cannot be welded there.
+  for (const link of [
+    { code: 'G12-MATH-2026', courseId: g12MathCourse.id },
+    { code: 'G34-MATH-2026', courseId: g34MathCourse.id },
+    { code: 'G12-READ-2026', courseId: g12LaCourse.id },
+  ]) {
+    await prisma.batch.update({
+      where: { code: link.code },
+      data: { courseId: link.courseId },
+    });
+  }
+
+  // The live cohort needs seats filled, otherwise every batch-scoped view
+  // (teacher portal, gradebook, the learner's own session) renders empty.
+  const liveBatch = await prisma.batch.findUnique({
+    where: { code: 'G34-MATH-LIVE-1' },
+    select: { id: true, endDate: true },
+  });
+
+  if (liveBatch) {
+    const cohort = await prisma.studentProfile.findMany({
+      where: { deletedAt: null },
+      take: 4,
+      orderBy: { fullName: 'asc' },
+      select: { id: true },
+    });
+
+    for (const student of cohort) {
+      await prisma.studentCourseEnrollment.upsert({
+        where: {
+          studentProfileId_batchId: {
+            studentProfileId: student.id,
+            batchId: liveBatch.id,
+          },
+        },
+        update: {},
+        create: {
+          studentProfileId: student.id,
+          batchId: liveBatch.id,
+          status: 'ENROLLED',
+        },
+      });
+
+      // A live purchase grants both a seat and an entitlement, and the
+      // entitlement expires with the batch — mirror that, or the cohort can
+      // see the session but not open the course around it.
+      const held = await prisma.entitlement.findFirst({
+        where: { studentProfileId: student.id, courseId: liveCourse.id },
+        select: { id: true },
+      });
+      if (!held) {
+        await prisma.entitlement.create({
+          data: {
+            studentProfileId: student.id,
+            courseId: liveCourse.id,
+            source: 'ADMIN_GRANT',
+            status: 'ACTIVE',
+            accessExpiresAt: liveBatch.endDate,
+          },
+        });
+      }
+    }
+
+    // Restricted to a CHAPTER: the last concept in a course is a CHECKPOINT,
+    // a gated assessment, which is no place for a scheduled meeting.
+    const liveConcept = await prisma.concept.findFirst({
+      where: { courseId: liveCourse.id, kind: 'CHAPTER' },
+      orderBy: { sortOrder: 'desc' },
+      select: { id: true },
+    });
+
+    if (liveConcept) {
+      const liveItem =
+        (await prisma.moduleItem.findFirst({
+          where: { conceptId: liveConcept.id, kind: 'LIVE_CLASS' },
+          select: { id: true },
+        })) ??
+        (await prisma.moduleItem.create({
+          data: {
+            conceptId: liveConcept.id,
+            kind: 'LIVE_CLASS',
+            title: 'Live Session: Fractions Together',
+            sortOrder: 99,
+            status: 'PUBLISHED',
+          },
+          select: { id: true },
+        }));
+
+      // A course carrying a live item is LIVE-only.
+      await prisma.course.update({
+        where: { id: liveCourse.id },
+        data: { deliveryMode: 'LIVE' },
+      });
+
+      const sessionDay = new Date(batchStart);
+      sessionDay.setDate(sessionDay.getDate() + 7);
+      const sessionDate = new Date(
+        Date.UTC(
+          sessionDay.getUTCFullYear(),
+          sessionDay.getUTCMonth(),
+          sessionDay.getUTCDate(),
+        ),
+      );
+      const sessionStart = new Date(sessionDate);
+      sessionStart.setUTCHours(16, 0, 0, 0);
+      const sessionEnd = new Date(sessionDate);
+      sessionEnd.setUTCHours(17, 0, 0, 0);
+
+      const existingSession = await prisma.batchSession.findFirst({
+        where: { batchId: liveBatch.id, moduleItemId: liveItem.id },
+        select: { id: true },
+      });
+      if (!existingSession) {
+        await prisma.batchSession.create({
+          data: {
+            batchId: liveBatch.id,
+            moduleItemId: liveItem.id,
+            topic: 'Live Session: Fractions Together',
+            date: sessionDate,
+            startTime: sessionStart,
+            endTime: sessionEnd,
+            teacherUserId: null,
+            status: 'SCHEDULED',
+          },
+        });
+      }
+    }
+
+    console.log(
+      `✅ Live chain: ${cohort.length} seats in G34-MATH-LIVE-1, entitlements, and a scheduled session`,
+    );
+  }
+
 
   // ─── Free previews ──────────────────────────────────────────────────────────
   // The first item of each course is given away. A course page with nothing

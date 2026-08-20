@@ -48,7 +48,7 @@ export default function LoginPage() {
   // Guardian is the default account type across the product — a first-time
   // signer-in is a parent far more often than a learner, and this selection is
   // what a first Google/Apple sign-in creates the account as.
-  const [loginAs, setLoginAs] = useState<"student" | "guardian" | "admin">("guardian");
+  const [loginAs, setLoginAs] = useState<"guardian" | "admin">("guardian");
 
   const router = useRouter();
   // Read once on mount: the funnel destination, if this login was reached
@@ -155,7 +155,7 @@ export default function LoginPage() {
 
           {/* Role Switcher */}
           <div className="bg-muted mb-6 flex gap-1 rounded-xl p-1">
-            {(["student", "guardian", "admin"] as const).map((role) => (
+            {(["guardian", "admin"] as const).map((role) => (
               <button
                 key={role}
                 type="button"

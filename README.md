@@ -1,6 +1,8 @@
 # Eudora! An AI-powered Education OS
 
-**Live UI:** [client-production-a931.up.railway.app](https://client-production-a931.up.railway.app/)
+**Live UI:** [eudoraedu.netlify.app](https://eudoraedu.netlify.app/)
+
+![Clio, Eudora's AI learning companion](public/gifs/Clio_Mascot_walking.gif)
 
 Eudora is a full-stack education operating system that brings school operations, curriculum delivery, and student learning into one product. It is designed around a simple idea: give educators a clear operational workspace while making learning more personal, interactive, and measurable for students.
 
@@ -50,6 +52,12 @@ Course views provide a concise view of publishing state, milestones, instructors
 Timetable management connects academic years, terms, sections, teachers, rooms, and course schedules.
 
 ![Timetable and scheduling workspace](public/screens/5.jpg)
+
+### Interactive widgets that go beyond multiple choice
+
+Assessment authors can build coordinate-plotting and other interactive question types, not just static multiple choice.
+
+![Coordinate plotting interactive question widget](public/feature_screens/learning_feature_coordinate_ploting.jpg)
 
 ## Platform capabilities
 

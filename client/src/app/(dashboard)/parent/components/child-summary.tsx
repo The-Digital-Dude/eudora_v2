@@ -3,6 +3,7 @@
 import { AlertTriangle, CheckCircle2, GraduationCap } from "lucide-react";
 import React from "react";
 
+import { StatTile } from "@/components/stat-tile";
 import type { ChildRollup } from "@/features/parent/parentApi";
 
 import { initialsOf } from "./child-tabs";
@@ -79,32 +80,6 @@ export function ChildSummary({ child }: { child: ChildRollup }) {
           }
         />
       </div>
-    </div>
-  );
-}
-
-/**
- * Label, value, then one line of meaning. The value uses the font's default
- * proportional figures — tabular figures give every digit the width of a zero,
- * which reads loose at this size and is only worth it in a column of numbers
- * that must align.
- */
-function StatTile({
-  label,
-  value,
-  footer,
-}: {
-  label: string;
-  value: string;
-  footer: React.ReactNode;
-}) {
-  return (
-    <div className="border-border bg-card rounded-2xl border p-4">
-      <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-        {label}
-      </p>
-      <p className="text-foreground mt-1.5 text-2xl font-semibold">{value}</p>
-      <p className="text-muted-foreground mt-1 flex items-center text-[11px]">{footer}</p>
     </div>
   );
 }

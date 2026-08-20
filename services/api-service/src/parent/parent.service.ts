@@ -6,11 +6,30 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import type { Gender } from '@prisma/client';
+import type { Gender, GradeBand } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GuardianAccessService } from '../family/guardian-access.service';
 import { CatalogService } from '../catalog/catalog.service';
 import { StudentService } from '../student/student.service';
+
+/**
+ * Rough age-to-grade-band mapping, used only when a child has no class set.
+ * Ages are the typical US entry ages for each band; a child sitting on a
+ * boundary gets the lower band, which under-reaches rather than suggesting
+ * work that is too hard. Returns null when the age is outside K-6 entirely,
+ * so the caller falls back to unfiltered popular courses instead of showing
+ * nothing.
+ */
+function gradeBandForBirthDate(birthDate: Date | null): GradeBand | null {
+  if (!birthDate) return null;
+  const ageMs = Date.now() - birthDate.getTime();
+  const age = Math.floor(ageMs / (365.25 * 24 * 60 * 60 * 1000));
+  if (age < 4 || age > 12) return null;
+  if (age <= 5) return 'PRE_K_K';
+  if (age <= 7) return 'G1_2';
+  if (age <= 9) return 'G3_4';
+  return 'G5_6';
+}
 
 /** Course fields the learning-plan surfaces need — matches `listCourses`. */
 const ASSIGNED_COURSE_INCLUDE = {
@@ -51,8 +70,14 @@ export class ParentService {
       },
     });
 
+    // No profile means no children, not an error. This used to 404, which the
+    // portal surfaced as a broken page for any guardian whose profile had not
+    // been created yet — and since the portal's own "add your first child"
+    // form is the thing that fixes that, the panel could not repair itself.
+    // Registration now creates the profile up front, so this only covers
+    // accounts that predate that.
     if (!guardianProfile) {
-      throw new NotFoundException('Guardian profile not found');
+      return [];
     }
 
     const childrenData = [];
@@ -318,14 +343,112 @@ export class ParentService {
    * already in their learning plan. Reuses `CatalogService.listCourses` so the
    * PUBLISHED visibility rule stays in exactly one place rather than being
    * re-implemented here.
+   *
+   * Search and paging are passed straight through: listCourses has supported
+   * both all along, but this method used to discard them along with the count,
+   * which forced the client to pull the whole catalogue (a 500-row default) and
+   * filter in the browser.
    */
-  async getAvailableCourses(studentProfileId: string) {
-    const { items } = await this.catalogService.listCourses(
+  async getAvailableCourses(
+    studentProfileId: string,
+    opts: { search?: string; page?: number; limit?: number } = {},
+  ) {
+    return this.catalogService.listCourses(
       undefined,
       false,
       studentProfileId,
+      opts.page ?? 1,
+      opts.limit ?? 24,
+      opts.search,
     );
-    return items;
+  }
+
+  /**
+   * Courses worth suggesting for this child.
+   *
+   * Two signals, in order of confidence:
+   *   1. The child's class, walked through the programmes built on it
+   *      (Class -> Program -> ProgramCourse -> Course). This is a curriculum
+   *      decision someone actually made, so it beats any inference.
+   *   2. Failing that (no class set yet, which is the common case right after
+   *      sign-up), the course's own `gradeBand` mapped from the child's age.
+   *
+   * Deliberately the single place recommendations are resolved: swapping in
+   * placement-diagnostic results later means changing this method, not the
+   * controller or the UI.
+   */
+  async getRecommendedCourses(studentProfileId: string, limit = 6) {
+    const child = await this.prisma.studentProfile.findUnique({
+      where: { id: studentProfileId },
+      select: { id: true, classId: true, birthDate: true },
+    });
+    if (!child) throw new NotFoundException('Student profile not found');
+
+    // Anything already in the plan, or already owned, is not a suggestion.
+    const [assigned, entitled] = await Promise.all([
+      this.prisma.studentCourseAssignment.findMany({
+        where: { studentProfileId },
+        select: { courseId: true },
+      }),
+      this.prisma.entitlement.findMany({
+        where: { studentProfileId, status: 'ACTIVE', courseId: { not: null } },
+        select: { courseId: true },
+      }),
+    ]);
+    const excludeIds = [
+      ...assigned.map((a) => a.courseId),
+      ...entitled.map((e) => e.courseId as string),
+    ];
+
+    const baseWhere = {
+      deletedAt: null,
+      status: 'PUBLISHED' as const,
+      ...(excludeIds.length ? { id: { notIn: excludeIds } } : {}),
+    };
+
+    const select = {
+      id: true,
+      title: true,
+      slug: true,
+      description: true,
+      estimatedHours: true,
+      gradeBand: true,
+      thumbnailUrl: true,
+      learningSubject: { select: { id: true, name: true, code: true } },
+      _count: { select: { concepts: true } },
+    };
+
+    if (child.classId) {
+      const courses = await this.prisma.course.findMany({
+        where: {
+          ...baseWhere,
+          programCourses: {
+            some: { program: { classId: child.classId, status: 'PUBLISHED' } },
+          },
+        },
+        select,
+        orderBy: { sortOrder: 'asc' },
+        take: limit,
+      });
+      if (courses.length > 0) {
+        return { items: courses, basis: 'CLASS' as const };
+      }
+      // Fall through when the class has no published programmes yet, so a
+      // freshly-created class doesn't produce an empty panel.
+    }
+
+    const gradeBand = gradeBandForBirthDate(child.birthDate);
+    const courses = await this.prisma.course.findMany({
+      where: { ...baseWhere, ...(gradeBand ? { gradeBand } : {}) },
+      select,
+      orderBy: { sortOrder: 'asc' },
+      take: limit,
+    });
+
+    return {
+      items: courses,
+      basis: gradeBand ? ('GRADE_BAND' as const) : ('POPULAR' as const),
+    };
   }
 
   async getCourseAssignments(studentProfileId: string) {
@@ -494,6 +617,37 @@ export class ParentService {
    * own and reach content through the guardian's session. Giving them real
    * credentials is deliberately deferred.
    */
+  /**
+   * Returns the caller's guardian profile, creating it if this account somehow
+   * holds the GUARDIAN role without one. The name is seeded from the user
+   * record and is editable afterwards — a placeholder is strictly better than
+   * blocking the guardian from using their own portal.
+   */
+  private async ensureGuardianProfile(userId: string) {
+    const existing = await this.prisma.guardianProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (existing) return existing;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, firstName: true, lastName: true, deletedAt: true },
+    });
+    if (!user || user.deletedAt) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.prisma.guardianProfile.create({
+      data: {
+        userId,
+        fullName: `${user.firstName} ${user.lastName}`.trim() || user.email,
+        email: user.email,
+      },
+      select: { id: true },
+    });
+  }
+
   async createChild(
     guardianUserId: string,
     input: {
@@ -503,15 +657,12 @@ export class ParentService {
       gender?: Gender;
     },
   ) {
-    const guardian = await this.prisma.guardianProfile.findUnique({
-      where: { userId: guardianUserId },
-      select: { id: true },
-    });
-    if (!guardian) {
-      throw new NotFoundException(
-        'Guardian profile not found. Complete your profile details first.',
-      );
-    }
+    // Created on demand rather than demanded up front. The caller already
+    // holds the GUARDIAN role — that is what authorises this — and the profile
+    // is only data, so refusing to add a child until some other page has been
+    // visited was a dead end rather than a safeguard. Registration now writes
+    // the profile at signup; this covers accounts that predate that.
+    const guardian = await this.ensureGuardianProfile(guardianUserId);
 
     const birthDate = new Date(input.birthDate);
     if (Number.isNaN(birthDate.getTime())) {
@@ -554,13 +705,20 @@ export class ParentService {
         include: { class: { select: { id: true, name: true, slug: true } } },
       });
 
+      // First child added becomes the primary relationship. Counted inside the
+      // transaction so two children added concurrently cannot both come out
+      // primary. Previously this was hardcoded false directly beneath the
+      // comment saying otherwise, so no child was ever primary.
+      const existingLinks = await tx.guardianStudentRelationship.count({
+        where: { guardianProfileId: guardian.id },
+      });
+
       await tx.guardianStudentRelationship.create({
         data: {
           guardianProfileId: guardian.id,
           studentProfileId: profile.id,
           relationshipType: 'GUARDIAN',
-          // First child added becomes the primary relationship.
-          isPrimary: false,
+          isPrimary: existingLinks === 0,
           hasFinancialResponsibility: true,
           hasAcademicAccess: true,
         },

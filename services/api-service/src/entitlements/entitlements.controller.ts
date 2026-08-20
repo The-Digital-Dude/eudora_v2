@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Post,
   Query,
@@ -10,6 +11,7 @@ import {
 } from '@nestjs/common';
 import type { EntitlementStatus } from '@prisma/client';
 import { EntitlementsService } from './entitlements.service';
+import { ACTING_STUDENT_HEADER } from './acting-student.service';
 import {
   GrantEntitlementDto,
   RevokeEntitlementDto,
@@ -24,13 +26,24 @@ import { CurrentUserDto } from '../auth/dto/current-user.dto';
 export class EntitlementsController {
   constructor(private readonly entitlements: EntitlementsService) {}
 
-  /** What the signed-in student may consume. Drives "owned" badges in the UI. */
+  /**
+   * What the signed-in student may consume. Drives "owned" badges in the UI.
+   *
+   * Honours the acting-student header like every other entitlement-aware
+   * route: without it a guardian's badges reflected whichever child
+   * `resolve()` defaulted to rather than the one selected on screen, so a
+   * course owned for one child looked owned for all of them.
+   */
   @Get('me')
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
-  async myEntitlements(@CurrentUser() user: CurrentUserDto) {
+  async myEntitlements(
+    @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
+  ) {
     const { isStaff, courseIds } = await this.entitlements.entitledCourseIds(
       user.id,
       user.roles,
+      actingStudentId,
     );
     return { isStaff, courseIds: [...courseIds] };
   }

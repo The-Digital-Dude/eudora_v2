@@ -1,5 +1,24 @@
 export interface StorageProvider {
   uploadFile(file: any): Promise<{ key: string; url: string; bucket?: string }>;
+  /**
+   * Stores an object that must not be publicly readable — a CV carries a home
+   * address and phone number, so it cannot live in the same flat public
+   * namespace as course thumbnails. Returns no URL, because there is no URL to
+   * hand out; callers reach the object through getSignedUrl instead.
+   */
+  uploadPrivateFile(
+    file: any,
+    keyPrefix: string,
+  ): Promise<{ key: string; bucket?: string }>;
+  /**
+   * Time-limited read URL for a private object. Short-lived by default: these
+   * get pasted into browser history and support threads.
+   */
+  getSignedUrl(
+    key: string,
+    bucket: string | undefined,
+    expiresInSeconds: number,
+  ): Promise<string>;
   deleteFile(key: string, bucket?: string): Promise<void>;
 }
 

@@ -16,6 +16,19 @@ async function bootstrap() {
   // Global route prefix  →  /api/health, /api/...
   app.setGlobalPrefix('api');
 
+  // Every deployment target sits behind a load balancer, so req.ip is the
+  // proxy's address unless Express is told to read X-Forwarded-For. Rate
+  // limiting keys on that IP: without this, all traffic looks like one client
+  // and the first bot to hit /auth/register locks out every real user.
+  // Off in local development, where no proxy sets the header and trusting it
+  // would let a caller spoof their own address.
+  if (
+    process.env.TRUST_PROXY !== 'false' &&
+    process.env.NODE_ENV === 'production'
+  ) {
+    app.set('trust proxy', 1);
+  }
+
   // Restrict CORS to an explicit allowlist. Wildcard origins are unsafe for a
   // cookie-based auth scheme; set CORS_ORIGINS (comma-separated) in each env.
   const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:3000')

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -31,6 +32,7 @@ import { LeadsModule } from './leads/leads.module';
 import { CommunicationModule } from './communication/communication.module';
 import { MakeupModule } from './makeup/makeup.module';
 import { TeacherModule } from './teacher/teacher.module';
+import { TeacherApplicationsModule } from './teacher-applications/teacher-applications.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DeviceTokensModule } from './device-tokens/device-tokens.module';
 import { DevicePairingModule } from './auth/device-pairing/device-pairing.module';
@@ -50,6 +52,17 @@ import { AuditModule } from './common/audit/audit.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    /**
+     * A generous default ceiling — it is not meant to shape normal use, only to
+     * stop one IP from hammering the API. The endpoints that actually cost
+     * something when abused (signup, login, file upload) narrow it further with
+     * their own @Throttle decorators.
+     *
+     * Until this existed the public, unauthenticated /auth/register accepted
+     * unlimited requests, which is free account creation — and, once teacher
+     * applications began accepting PDFs, free object storage on our bill.
+     */
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     PrismaModule,
     AuditModule,
     HealthModule,
@@ -76,6 +89,7 @@ import { AuditModule } from './common/audit/audit.module';
     CommunicationModule,
     MakeupModule,
     TeacherModule,
+    TeacherApplicationsModule,
     NotificationsModule,
     DeviceTokensModule,
     DevicePairingModule,
@@ -89,6 +103,12 @@ import { AuditModule } from './common/audit/audit.module';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      // First in the chain deliberately: rejecting a flood should not cost a
+      // JWT verification or a database round trip per request.
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

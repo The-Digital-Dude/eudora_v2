@@ -134,8 +134,16 @@ describe('AuthService OAuth linking', () => {
 
     await link(profile(), 'TEACHER');
 
+    // The claim in this test's name: a privileged hint is never honoured.
+    // Asserted directly rather than inferred from the fallback, so it keeps
+    // holding if the fallback changes again.
+    expect(mockPrisma.role.findUnique).not.toHaveBeenCalledWith({
+      where: { name: 'TEACHER' },
+    });
+    // Fallback is GUARDIAN, not USER: self-signup is a parent setting up an
+    // account for a child. See resolveSelfSignupRole in oauth/types.ts.
     expect(mockPrisma.role.findUnique).toHaveBeenCalledWith({
-      where: { name: 'USER' },
+      where: { name: 'GUARDIAN' },
     });
   });
 

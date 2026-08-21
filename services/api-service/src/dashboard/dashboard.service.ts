@@ -4,6 +4,15 @@ import { DayOfWeek } from '@prisma/client';
 
 @Injectable()
 export class DashboardService {
+  /**
+   * `BatchSession.date` is a DATE column written at UTC midnight, so
+   * matching it needs a UTC day — not the local-midnight value the
+   * dailyAttendance queries alongside these use.
+   */
+  private utcDay(d: Date): Date {
+    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  }
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getAdminSnapshot(targetDate: Date) {
@@ -18,14 +27,13 @@ export class DashboardService {
     ];
     const dayOfWeek = days[targetDate.getDay()] as DayOfWeek;
 
-    // Timetable occupancy
-    const activeSlotsCount = await this.prisma.timetableSlot.count({
+    // Sessions happening today. Was a count of Timetable slots for this
+    // weekday; Timetable is gone, and a real session is a better signal than
+    // a recurrence rule anyway.
+    const activeSlotsCount = await this.prisma.batchSession.count({
       where: {
-        dayOfWeek,
-        status: 'ACTIVE',
-        timetable: {
-          status: { not: 'ARCHIVED' },
-        },
+        date: this.utcDay(targetDate),
+        status: { notIn: ['CANCELLED', 'ENDED'] },
       },
     });
 
@@ -119,22 +127,22 @@ export class DashboardService {
     );
 
     // 1. todaySchedule
-    const todaySchedule = await this.prisma.timetableSlot.findMany({
+    // Real meetings today, not recurrence rules: sessions this teacher hosts
+    // plus those belonging to a batch they lead.
+    const todaySchedule = await this.prisma.batchSession.findMany({
       where: {
-        teacherProfileId: teacherProfile.id,
-        dayOfWeek,
-        status: 'ACTIVE',
-        timetable: {
-          status: { not: 'ARCHIVED' },
-        },
+        date: this.utcDay(targetDate),
+        status: { notIn: ['CANCELLED', 'ENDED'] },
+        OR: [
+          { teacherUserId: teacherProfile.userId },
+          { batch: { leadTeacherProfileId: teacherProfile.id } },
+        ],
       },
       include: {
         batch: true,
-        classSection: true,
+        moduleItem: { select: { id: true, title: true } },
       },
-      orderBy: {
-        startTimeMinutes: 'asc',
-      },
+      orderBy: { startTime: 'asc' },
     });
 
     // 2. attendanceTasks
@@ -174,26 +182,34 @@ export class DashboardService {
       }));
 
     // 3. ungradedSubmissions
-    const teacherSlots = await this.prisma.timetableSlot.findMany({
+    // Which batches this teacher is responsible for. Was derived from the
+    // timetable slots they were rostered onto; now taken from the batches
+    // they lead or whose course they teach — the same source the teacher
+    // portal uses, so the two screens agree.
+    const courseIds = (
+      await this.prisma.courseTeacher.findMany({
+        where: { teacherProfileId: teacherProfile.id },
+        select: { courseId: true },
+      })
+    ).map((c) => c.courseId);
+
+    const teacherBatches = await this.prisma.batch.findMany({
       where: {
-        teacherProfileId: teacherProfile.id,
-        status: 'ACTIVE',
+        OR: [
+          { leadTeacherProfileId: teacherProfile.id },
+          ...(courseIds.length > 0 ? [{ courseId: { in: courseIds } }] : []),
+        ],
       },
-      select: { batchId: true },
+      select: { id: true },
     });
 
-    const assignedBatchIds = Array.from(
-      new Set(teacherSlots.map((s) => s.batchId).filter(Boolean)),
-    ) as string[];
+    const assignedBatchIds = teacherBatches.map((b) => b.id);
 
     const ungradedSubmissions = await this.prisma.homeworkSubmission.findMany({
       where: {
         status: { in: ['SUBMITTED', 'LATE'] },
         homework: {
-          OR: [
-            { batchId: { in: assignedBatchIds } },
-            { recordedById: userId },
-          ],
+          OR: [{ batchId: { in: assignedBatchIds } }, { recordedById: userId }],
         },
       },
       include: {
@@ -239,28 +255,23 @@ export class DashboardService {
     const classSectionIds = studentProfile.placements.map(
       (p) => p.classSectionId,
     );
-    const batchIds = studentProfile.enrollments.map(
-      (e) => e.batchId,
-    );
+    const batchIds = studentProfile.enrollments.map((e) => e.batchId);
 
     // 1. todaySchedule
-    const todaySchedule = await this.prisma.timetableSlot.findMany({
+    // Real meetings today for the batches this student is enrolled in. The
+    // ClassSection leg is gone: it made the schedule empty for any student
+    // who arrived through checkout, since they never get a placement.
+    const todaySchedule = await this.prisma.batchSession.findMany({
       where: {
-        classSectionId: { in: classSectionIds },
         batchId: { in: batchIds },
-        dayOfWeek,
-        status: 'ACTIVE',
-        timetable: {
-          status: { not: 'ARCHIVED' },
-        },
+        date: this.utcDay(targetDate),
+        status: { notIn: ['CANCELLED', 'ENDED'] },
       },
       include: {
         batch: true,
-        teacherProfile: true,
+        moduleItem: { select: { id: true, title: true } },
       },
-      orderBy: {
-        startTimeMinutes: 'asc',
-      },
+      orderBy: { startTime: 'asc' },
     });
 
     // 2. pendingHomework
@@ -412,22 +423,17 @@ export class DashboardService {
       const batchIds = child.enrollments.map((e) => e.batchId);
 
       // 1. todaySchedule
-      const todaySchedule = await this.prisma.timetableSlot.findMany({
+      const todaySchedule = await this.prisma.batchSession.findMany({
         where: {
-          classSectionId: { in: classSectionIds },
           batchId: { in: batchIds },
-          dayOfWeek,
-          status: 'ACTIVE',
-          timetable: {
-            status: { not: 'ARCHIVED' },
-          },
+          date: this.utcDay(targetDate),
+          status: { notIn: ['CANCELLED', 'ENDED'] },
         },
         include: {
           batch: true,
+          moduleItem: { select: { id: true, title: true } },
         },
-        orderBy: {
-          startTimeMinutes: 'asc',
-        },
+        orderBy: { startTime: 'asc' },
       });
 
       // 2. recentGrades (GradeBookEntry)

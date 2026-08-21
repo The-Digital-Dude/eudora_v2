@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BatchSessionsService } from '../batch-sessions/batch-sessions.service';
 import { LiveClassStatus, ModuleItemKind } from '@prisma/client';
 import {
   CreateLiveClassDto,
@@ -30,7 +31,10 @@ const INCLUDE = {
  */
 @Injectable()
 export class LiveClassesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly batchSessions: BatchSessionsService,
+  ) {}
 
   private assertValidWindow(start: Date, end: Date) {
     if (end <= start) {
@@ -100,16 +104,21 @@ export class LiveClassesService {
     // Zoom hook (WS-E follow-on): call the Zoom Server-to-Server OAuth API
     // here to create the meeting and populate provider/externalMeetingId/
     // joinUrl/startUrl. Not implemented yet — provider stays NONE.
-    return this.prisma.batchSession.create({
-      data: {
-        batchId: dto.batchId,
-        moduleItemId: dto.moduleItemId ?? null,
-        teacherUserId,
-        topic,
-        date: this.dayOf(startTime),
-        startTime,
-        endTime,
-      },
+    // Creation goes through BatchSessionsService so this row is validated the
+    // same way an attendance-created one is; re-read with INCLUDE afterwards
+    // because the shared create returns the bare row.
+    const created = await this.batchSessions.createSession({
+      batchId: dto.batchId,
+      moduleItemId: dto.moduleItemId ?? null,
+      teacherUserId,
+      topic,
+      date: startTime,
+      startTime,
+      endTime,
+    });
+
+    return this.prisma.batchSession.findUniqueOrThrow({
+      where: { id: created.id },
       include: INCLUDE,
     });
   }

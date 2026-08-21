@@ -4,6 +4,7 @@ import AppDownloadSection from "./components/app-download-section";
 import CoursesSection from "./components/courses-section";
 import FeaturesSection from "./components/features-section";
 import Footer from "./components/footer";
+import FooterCta from "./components/footer-cta";
 import HeroSection from "./components/hero-section";
 import Navbar from "./components/navbar";
 import StatsSection from "./components/stats-section";
@@ -29,6 +30,7 @@ export function LandingPageContent({
         <AppDownloadSection />
         <StatsSection />
         {pricing}
+        <FooterCta />
       </main>
 
       <Footer />

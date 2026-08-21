@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BatchSessionsService } from '../batch-sessions/batch-sessions.service';
 import { RecordDailyAttendanceDto } from './dto/record-daily-attendance.dto';
 import {
   CreateSessionDto,
@@ -13,7 +14,10 @@ import { AttendanceStatus } from '@prisma/client';
 
 @Injectable()
 export class AttendanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly batchSessions: BatchSessionsService,
+  ) {}
 
   // ─── Daily Attendance ───────────────────────────────────────────────────────
 
@@ -108,48 +112,18 @@ export class AttendanceService {
 
   // ─── Course Session Operations ──────────────────────────────────────────────
 
+  /**
+   * Delegates to BatchSessionsService so an attendance-created session is the
+   * same shape as a live-class one. This used to build its own row from
+   * date + "09:00" strings, set no teacher, and accept start === end.
+   */
   async createSession(dto: CreateSessionDto) {
-    const batch = await this.prisma.batch.findUnique({
-      where: { id: dto.batchId },
-    });
-    if (!batch) {
-      throw new NotFoundException('Course class not found');
-    }
-
-    const sessionDate = new Date(dto.date);
-    if (isNaN(sessionDate.getTime())) {
-      throw new BadRequestException('Invalid date format');
-    }
-
-    let start: Date | null = null;
-    let end: Date | null = null;
-
-    if (dto.startTime) {
-      start = new Date(`${dto.date}T${dto.startTime}`);
-      if (isNaN(start.getTime())) {
-        throw new BadRequestException('Invalid start time format');
-      }
-    }
-
-    if (dto.endTime) {
-      end = new Date(`${dto.date}T${dto.endTime}`);
-      if (isNaN(end.getTime())) {
-        throw new BadRequestException('Invalid end time format');
-      }
-    }
-
-    if (start && end && start > end) {
-      throw new BadRequestException('Start time cannot be after end time');
-    }
-
-    return this.prisma.batchSession.create({
-      data: {
-        batchId: dto.batchId,
-        date: sessionDate,
-        startTime: start,
-        endTime: end,
-        topic: dto.topic,
-      },
+    return this.batchSessions.createSession({
+      batchId: dto.batchId,
+      date: dto.date,
+      startTime: dto.startTime ? `${dto.date}T${dto.startTime}` : null,
+      endTime: dto.endTime ? `${dto.date}T${dto.endTime}` : null,
+      topic: dto.topic,
     });
   }
 

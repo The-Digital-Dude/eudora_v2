@@ -22,6 +22,7 @@ import { HomeworkModule } from './homework/homework.module';
 import { EvaluationModule } from './evaluation/evaluation.module';
 import { DiagnosticsModule } from './diagnostics/diagnostics.module';
 import { LiveClassesModule } from './live-classes/live-classes.module';
+import { BatchSessionsModule } from './batch-sessions/batch-sessions.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { CatalogModule } from './catalog/catalog.module';
@@ -37,7 +38,6 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { DeviceTokensModule } from './device-tokens/device-tokens.module';
 import { DevicePairingModule } from './auth/device-pairing/device-pairing.module';
 import { UploadsModule } from './uploads/uploads.module';
-import { TimetableModule } from './timetable/timetable.module';
 import { GradebookModule } from './gradebook/gradebook.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { GamificationModule } from './gamification/gamification.module';
@@ -79,6 +79,7 @@ import { AuditModule } from './common/audit/audit.module';
     EvaluationModule,
     DiagnosticsModule,
     LiveClassesModule,
+    BatchSessionsModule,
     AssessmentsModule,
     LessonsModule,
     CatalogModule,
@@ -94,7 +95,6 @@ import { AuditModule } from './common/audit/audit.module';
     DeviceTokensModule,
     DevicePairingModule,
     UploadsModule,
-    TimetableModule,
     GradebookModule,
     DashboardModule,
     GamificationModule,

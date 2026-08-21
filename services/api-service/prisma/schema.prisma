@@ -45,6 +45,7 @@ model User {
   grantedEntitlements     Entitlement[]             @relation("GrantedEntitlements")
   orders                  Order[]                   @relation("GuardianOrders")
   teacherApplication      TeacherApplication?       @relation("TeacherApplicant")
+  homeworkSubmissionsMade HomeworkSubmission[]      @relation("HomeworkSubmittedBy")
   reviewedTeacherApplications TeacherApplication[]  @relation("TeacherApplicationReviewer")
 
   @@map("users")
@@ -490,7 +491,6 @@ model AcademicYear {
   classSections     ClassSection[]
   terms             Term[]
   studentPlacements StudentClassPlacement[]
-  timetables        Timetable[]
 
   @@map("academic_years")
 }
@@ -525,8 +525,6 @@ model ClassSection {
   placements               StudentClassPlacement[]
   dailyAttendance          DailyAttendance[]
   teachers                 ClassTeacher[]
-  timetables               Timetable[]
-  timetableSlots           TimetableSlot[]
   placementRecommendations PlacementRecommendation[]
 
   @@index([learningSubjectId])
@@ -548,7 +546,6 @@ model Term {
   academicYear     AcademicYear     @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   batches    Batch[]
   assessments      Assessment[]
-  timetables       Timetable[]
   gradeBookEntries GradeBookEntry[]
 
   @@map("terms")
@@ -585,6 +582,15 @@ model Batch {
   /// the batch, unlike self-paced which is permanent once paid.
   startDate          DateTime?
   endDate            DateTime?
+  /// The weekly pattern this cohort meets on. Sessions are not implied by it —
+  /// it is the rule used to *generate* BatchSession rows across startDate..endDate,
+  /// after which each session is edited independently. Empty means ad-hoc only.
+  meetingDays            DayOfWeek[]
+  /// Minutes past local midnight, so a pattern survives daylight-saving shifts
+  /// in a way a stored timestamp would not.
+  meetingStartMinutes    Int?
+  meetingDurationMinutes Int?
+
   /// After this, the batch stops accepting new seats even if capacity remains.
   enrollmentDeadline DateTime?
 
@@ -603,7 +609,6 @@ model Batch {
   sessions         BatchSession[]
   homeworks        Homework[]
   makeupRequests   MakeupRequest[]
-  timetableSlots   TimetableSlot[]
   gradeBookEntries GradeBookEntry[]
 
   @@index([courseId, status])
@@ -822,7 +827,6 @@ model TeacherProfile {
   classAssignments ClassTeacher[]
   courseTeachers   CourseTeacher[]
   leadBatches      Batch[]   @relation("LeadBatchTeacher")
-  timetableSlots   TimetableSlot[]
 
   @@map("teacher_profiles")
 }
@@ -982,19 +986,35 @@ enum SubmissionStatus {
   LATE
 }
 
+/// A piece of work to hand in.
+///
+/// Reachable two ways, and exactly one of them is set:
+///   - `moduleItemId` — a checkpoint inside a chapter, which is how a
+///     self-paced learner gets homework at all.
+///   - `batchId` — homework set for one cohort, the original shape.
+///
+/// Deliberately one model rather than two. The submission, grading and
+/// gradebook paths are identical either way, and forking them would make every
+/// count and every query ask "which kind?" forever.
 model Homework {
   id             String   @id @default(uuid())
-  batchId  String
+  moduleItemId   String?  @unique
+  /// Was required. A self-paced buyer has no cohort, so demanding one meant
+  /// they could not be set homework at all.
+  batchId        String?
   title          String
   description    String?
-  dueDate        DateTime
+  /// Null for a self-paced checkpoint, which is worked through whenever the
+  /// learner reaches it. Cohort homework still sets one.
+  dueDate        DateTime?
   maxPoints      Int
   attachmentUrls String[] @default([])
   recordedById   String? // User ID of teacher who created it
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  batch Batch          @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  moduleItem  ModuleItem?          @relation(fields: [moduleItemId], references: [id], onDelete: Cascade)
+  batch       Batch?               @relation(fields: [batchId], references: [id], onDelete: Cascade)
   submissions HomeworkSubmission[]
 
   @@map("homeworks")
@@ -1004,9 +1024,14 @@ model HomeworkSubmission {
   id               String           @id @default(uuid())
   homeworkId       String
   studentProfileId String
+  /// Who actually handed it in, which is not always whose work it is: a child
+  /// created through the family portal has no password and cannot sign in, so
+  /// their guardian uploads on their behalf. The teacher marking this should be
+  /// able to see that, rather than have it silently attributed to the child.
+  /// Null for submissions predating this column.
+  submittedByUserId String?
   submissionDate   DateTime         @default(now())
   content          String? // Submitted text or solution links
-  attachmentUrls   String[]         @default([])
   status           SubmissionStatus @default(SUBMITTED)
   pointsEarned     Int?
   feedback         String?
@@ -1017,10 +1042,38 @@ model HomeworkSubmission {
 
   homework           Homework            @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
   studentProfile     StudentProfile      @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  submittedBy        User?               @relation("HomeworkSubmittedBy", fields: [submittedByUserId], references: [id], onDelete: SetNull)
+  attachments        HomeworkSubmissionAttachment[]
   assessmentEvidence AssessmentEvidence?
 
   @@unique([homeworkId, studentProfileId])
   @@map("homework_submissions")
+}
+
+/// A file handed in as part of a submission.
+///
+/// A join rather than a column on FileUpload, so a submission can carry several
+/// files in a stated order, and so FileUpload stays a generic store rather than
+/// accumulating a foreign key per feature that uses it.
+///
+/// The file itself is private: student work carries a child's name and often
+/// their face or handwriting, so it must never sit in the public namespace the
+/// rest of our uploads use. Reached only through the download route, which
+/// checks who is asking.
+model HomeworkSubmissionAttachment {
+  id           String @id @default(uuid())
+  submissionId String
+  fileUploadId String @unique
+  sortOrder    Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  submission HomeworkSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  file       FileUpload         @relation("HomeworkAttachment", fields: [fileUploadId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, fileUploadId])
+  @@index([submissionId])
+  @@map("homework_submission_attachments")
 }
 
 // ─── Evaluation & Mastery ───────────────────────────────────────────────────
@@ -1227,6 +1280,10 @@ enum ModuleItemKind {
   READING
   DISCUSSION
   ASSESSMENT
+  /// Work handed in for a person to read, as a chapter checkpoint. The item is
+  /// the slot; the `Homework` row hanging off it carries the brief, and each
+  /// learner's `HomeworkSubmission` carries the answer.
+  HOMEWORK
   /// The curriculum *slot* for a live session, not the meeting itself. One
   /// LIVE_CLASS item resolves to a different `BatchSession` for every cohort
   /// that buys the course, so the date and join link live there, not here.
@@ -1259,6 +1316,8 @@ model ModuleItem {
   discussion DiscussionThread?
   /// Populated only for LIVE_CLASS items — one row per cohort meeting.
   sessions   BatchSession[]
+  /// Populated only for HOMEWORK items — the brief for this checkpoint.
+  homework   Homework?
 
   @@map("module_items")
 }
@@ -2044,19 +2103,9 @@ model FileUpload {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   programSyllabi  Program[] @relation("ProgramSyllabus")
   teacherApplication TeacherApplication? @relation("TeacherApplicationResume")
+  homeworkAttachment HomeworkSubmissionAttachment? @relation("HomeworkAttachment")
 
   @@map("file_uploads")
-}
-
-enum TimetableStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
-enum TimetableSlotStatus {
-  ACTIVE
-  CANCELLED
 }
 
 enum DayOfWeek {
@@ -2069,57 +2118,6 @@ enum DayOfWeek {
   SUNDAY
 }
 
-model Timetable {
-  id             String          @id @default(uuid())
-  academicYearId String
-  termId         String?
-  classSectionId String?
-  name           String
-  status         TimetableStatus @default(DRAFT)
-  effectiveFrom  DateTime        @db.Date
-  effectiveTo    DateTime?       @db.Date
-  createdById    String?
-  publishedAt    DateTime?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-
-  academicYear AcademicYear    @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  term         Term?           @relation(fields: [termId], references: [id], onDelete: SetNull)
-  classSection ClassSection?   @relation(fields: [classSectionId], references: [id], onDelete: Cascade)
-  slots        TimetableSlot[]
-
-  @@index([academicYearId, termId])
-  @@index([classSectionId, status])
-  @@map("timetables")
-}
-
-model TimetableSlot {
-  id               String              @id @default(uuid())
-  timetableId      String
-  dayOfWeek        DayOfWeek
-  periodIndex      Int
-  startTimeMinutes Int
-  endTimeMinutes   Int
-  room             String?
-  classSectionId   String
-  batchId    String?
-  teacherProfileId String?
-  status           TimetableSlotStatus @default(ACTIVE)
-  notes            String?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-
-  timetable      Timetable       @relation(fields: [timetableId], references: [id], onDelete: Cascade)
-  classSection   ClassSection    @relation(fields: [classSectionId], references: [id], onDelete: Cascade)
-  batch    Batch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
-  teacherProfile TeacherProfile? @relation(fields: [teacherProfileId], references: [id], onDelete: SetNull)
-
-  @@index([dayOfWeek, startTimeMinutes, endTimeMinutes])
-  @@index([teacherProfileId, dayOfWeek])
-  @@index([classSectionId, dayOfWeek])
-  @@index([room, dayOfWeek])
-  @@map("timetable_slots")
-}
 
 enum GradeSourceType {
   HOMEWORK_SUBMISSION

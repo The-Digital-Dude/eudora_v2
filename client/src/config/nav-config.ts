@@ -107,12 +107,6 @@ export const navGroups: NavGroup[] = [
         icon: CalendarRange,
         children: [
           {
-            title: "Timetable",
-            url: "/timetable",
-            icon: CalendarRange,
-            requirement: { type: "permission", action: "read", subject: "Timetable" },
-          },
-          {
             title: "Live Classes",
             url: "/live-classes",
             icon: Radio,

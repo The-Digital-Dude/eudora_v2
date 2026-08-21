@@ -10,6 +10,7 @@ import { useGetCourseDetailQuery } from "@/features/catalog/catalogApi";
 import { AssessmentItemView } from "./components/AssessmentItemView";
 import { CourseOutlineSidebar } from "./components/CourseOutlineSidebar";
 import { DiscussionView } from "./components/DiscussionView";
+import { HomeworkItemView } from "./components/HomeworkItemView";
 import { LiveClassView } from "./components/LiveClassView";
 import { ReadingView } from "./components/ReadingView";
 import { VideoLectureView } from "./components/VideoLectureView";
@@ -118,6 +119,9 @@ export default function CourseOutlinePage() {
             )}
             {selectedItem.kind === "ASSESSMENT" && (
               <AssessmentItemView item={selectedItem} />
+            )}
+            {selectedItem.kind === "HOMEWORK" && (
+              <HomeworkItemView item={selectedItem} />
             )}
             {selectedItem.kind === "LIVE_CLASS" && (
               <LiveClassView item={selectedItem} />

@@ -4,7 +4,6 @@ import { Paperclip,Send } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 
-import { FileUploader } from "@/components/file-uploader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +16,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
-import { useSubmitHomeworkMutation } from "../homeworkApi";
+import {
+  useSubmitHomeworkMutation,
+  useUploadHomeworkAttachmentMutation,
+} from "../homeworkApi";
 
 interface HomeworkSubmitDialogProps {
   open: boolean;
@@ -33,19 +35,28 @@ export function HomeworkSubmitDialog({
   onSubmitSuccess,
 }: HomeworkSubmitDialogProps) {
   const [submissionContent, setSubmissionContent] = React.useState("");
-  const [submissionAttachments, setSubmissionAttachments] = React.useState<string[]>([]);
+  /**
+   * Files already stored privately, held as ids rather than URLs. The old
+   * version kept public URLs the browser had been handed, which is what made a
+   * child's work readable by anyone with the link.
+   */
+  const [attachments, setAttachments] = React.useState<
+    { id: string; originalName: string }[]
+  >([]);
   const [submitHomework, { isLoading: isSubmitting }] = useSubmitHomeworkMutation();
+  const [uploadAttachment, { isLoading: isUploading }] =
+    useUploadHomeworkAttachmentMutation();
 
   React.useEffect(() => {
     if (!open) {
       setSubmissionContent("");
-      setSubmissionAttachments([]);
+      setAttachments([]);
     }
   }, [open]);
 
   const handleSubmitHomework = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!submissionContent && submissionAttachments.length === 0) {
+    if (!submissionContent && attachments.length === 0) {
       toast.error("Please type a response or upload at least one submission file.");
       return;
     }
@@ -54,7 +65,7 @@ export function HomeworkSubmitDialog({
       await submitHomework({
         homeworkId,
         content: submissionContent || undefined,
-        attachmentUrls: submissionAttachments,
+        attachmentFileIds: attachments.map((a) => a.id),
       }).unwrap();
 
       toast.success("Homework submitted successfully!");
@@ -98,28 +109,52 @@ export function HomeworkSubmitDialog({
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               File Attachments
             </Label>
-            <FileUploader
-              onUploadSuccess={(url) => {
-                setSubmissionAttachments((prev) => [...prev, url]);
-                toast.success("File uploaded successfully.");
+            {/*
+              A plain file input rather than the shared FileUploader: that one
+              posts to the public /uploads endpoint and hands back a public URL,
+              which is precisely what must not happen to a child's work. This
+              goes to the private homework endpoint and keeps only the id.
+            */}
+            <input
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/heic"
+              disabled={isUploading || attachments.length >= 5}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  const stored = await uploadAttachment(file).unwrap();
+                  setAttachments((prev) => [
+                    ...prev,
+                    { id: stored.id, originalName: stored.originalName },
+                  ]);
+                } catch (err: any) {
+                  toast.error(err?.data?.message || "Could not upload that file.");
+                } finally {
+                  e.target.value = "";
+                }
               }}
-              label="Upload submission file"
+              className="w-full cursor-pointer rounded-xl border border-dashed border-border bg-muted/30 p-3 text-[10px] file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-foreground file:px-3 file:py-1.5 file:text-[10px] file:font-semibold file:text-background"
             />
+            <p className="text-[10px] text-muted-foreground">
+              PDF or a photo, up to 15MB each. Only you, your teacher and
+              {" "}Eudora staff can open what you upload.
+            </p>
 
-            {submissionAttachments.length > 0 && (
+            {attachments.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-2">
-                {submissionAttachments.map((url, i) => (
+                {attachments.map((attachment, i) => (
                   <Badge
                     key={i}
                     variant="secondary"
                     className="flex items-center gap-1.5 rounded-lg border-none bg-muted px-2 py-1 text-[9px] text-foreground hover:bg-muted"
                   >
                     <Paperclip className="h-3 w-3" />
-                    Attachment {i + 1}
+                    <span className="max-w-[16ch] truncate">{attachment.originalName}</span>
                     <button
                       type="button"
                       onClick={() =>
-                        setSubmissionAttachments((prev) => prev.filter((_, idx) => idx !== i))
+                        setAttachments((prev) => prev.filter((_, idx) => idx !== i))
                       }
                       className="ml-1 text-xs font-bold hover:text-destructive"
                     >

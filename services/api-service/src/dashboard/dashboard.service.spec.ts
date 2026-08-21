@@ -7,8 +7,14 @@ describe('DashboardService', () => {
   let service: DashboardService;
 
   const mockPrismaService = {
-    timetableSlot: {
+    batchSession: {
       count: jest.fn(),
+      findMany: jest.fn(),
+    },
+    courseTeacher: {
+      findMany: jest.fn(),
+    },
+    batch: {
       findMany: jest.fn(),
     },
     studentClassPlacement: {
@@ -57,6 +63,10 @@ describe('DashboardService', () => {
 
     service = module.get<DashboardService>(DashboardService);
     jest.clearAllMocks();
+    mockPrismaService.courseTeacher.findMany.mockResolvedValue([]);
+    mockPrismaService.batch.findMany.mockResolvedValue([]);
+    mockPrismaService.batchSession.findMany.mockResolvedValue([]);
+    mockPrismaService.batchSession.count.mockResolvedValue(0);
   });
 
   describe('getAdminSnapshot', () => {
@@ -64,7 +74,7 @@ describe('DashboardService', () => {
       // 2026-06-22 is a Monday
       const mondayDate = new Date('2026-06-22T10:00:00.000Z');
 
-      mockPrismaService.timetableSlot.count.mockResolvedValue(10);
+      mockPrismaService.batchSession.count.mockResolvedValue(10);
       mockPrismaService.studentClassPlacement.count.mockResolvedValue(100);
       mockPrismaService.dailyAttendance.count.mockResolvedValue(90);
       mockPrismaService.homework.count.mockResolvedValue(5);
@@ -85,13 +95,12 @@ describe('DashboardService', () => {
         gradebookSnapshot: { draftEntries: 12 },
       });
 
-      expect(mockPrismaService.timetableSlot.count).toHaveBeenCalledWith({
+      // Counts meetings actually happening that day rather than
+      // recurrence rules for the weekday.
+      expect(mockPrismaService.batchSession.count).toHaveBeenCalledWith({
         where: {
-          dayOfWeek: 'MONDAY',
-          status: 'ACTIVE',
-          timetable: {
-            status: { not: 'ARCHIVED' },
-          },
+          date: new Date('2026-06-22T00:00:00.000Z'),
+          status: { notIn: ['CANCELLED', 'ENDED'] },
         },
       });
     });
@@ -102,13 +111,12 @@ describe('DashboardService', () => {
 
       await service.getAdminSnapshot(sundayDate);
 
-      expect(mockPrismaService.timetableSlot.count).toHaveBeenCalledWith({
+      // Counts meetings actually happening that day rather than
+      // recurrence rules for the weekday.
+      expect(mockPrismaService.batchSession.count).toHaveBeenCalledWith({
         where: {
-          dayOfWeek: 'SUNDAY',
-          status: 'ACTIVE',
-          timetable: {
-            status: { not: 'ARCHIVED' },
-          },
+          date: new Date('2026-06-21T00:00:00.000Z'),
+          status: { notIn: ['CANCELLED', 'ENDED'] },
         },
       });
     });
@@ -141,7 +149,7 @@ describe('DashboardService', () => {
       const mockSlots = [
         { id: 'slot-1', batchId: 'batch-1', dayOfWeek: 'MONDAY' },
       ];
-      mockPrismaService.timetableSlot.findMany.mockResolvedValue(mockSlots);
+      mockPrismaService.batchSession.findMany.mockResolvedValue(mockSlots);
 
       // Section 1 has placements, Section 2 has placements
       const mockSections = [
@@ -208,7 +216,7 @@ describe('DashboardService', () => {
       const mockSlots = [
         { id: 'slot-1', batchId: 'batch-1', dayOfWeek: 'MONDAY' },
       ];
-      mockPrismaService.timetableSlot.findMany.mockResolvedValue(mockSlots);
+      mockPrismaService.batchSession.findMany.mockResolvedValue(mockSlots);
 
       const mockHomework = [
         {
@@ -291,7 +299,7 @@ describe('DashboardService', () => {
       const mockSlots = [
         { id: 'slot-1', batchId: 'batch-1', dayOfWeek: 'MONDAY' },
       ];
-      mockPrismaService.timetableSlot.findMany.mockResolvedValue(mockSlots);
+      mockPrismaService.batchSession.findMany.mockResolvedValue(mockSlots);
 
       const mockGrades = [
         { id: 'grade-1', title: 'Algebra Quiz', percentage: 90 },

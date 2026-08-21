@@ -1,11 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LiveClassesService } from './live-classes.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { BatchSessionsService } from '../batch-sessions/batch-sessions.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { LiveClassStatus, ModuleItemKind } from '@prisma/client';
 
 describe('LiveClassesService', () => {
   let service: LiveClassesService;
+
+  const mockBatchSessions = { createSession: jest.fn() };
 
   const mockPrismaService = {
     batch: {
@@ -16,6 +19,7 @@ describe('LiveClassesService', () => {
     },
     batchSession: {
       create: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
@@ -41,11 +45,18 @@ describe('LiveClassesService', () => {
       providers: [
         LiveClassesService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: BatchSessionsService, useValue: mockBatchSessions },
       ],
     }).compile();
 
     service = module.get<LiveClassesService>(LiveClassesService);
     jest.clearAllMocks();
+    // Creation is delegated to BatchSessionsService; the service then
+    // re-reads the row with its relations.
+    mockBatchSessions.createSession.mockResolvedValue({ id: 'session-1' });
+    mockPrismaService.batchSession.findUniqueOrThrow.mockResolvedValue(
+      baseSession,
+    );
   });
 
   describe('scheduleLiveClass', () => {
@@ -101,18 +112,16 @@ describe('LiveClassesService', () => {
         'teacher-1',
       );
 
-      expect(mockPrismaService.batchSession.create).toHaveBeenCalledWith(
+      expect(mockBatchSessions.createSession).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
-            batchId: 'batch-1',
-            teacherUserId: 'teacher-1',
-            topic: 'Fractions Review',
-            // The DATE column is the day the meeting falls on, derived from
-            // the start instant.
-            date: new Date('2026-07-08T00:00:00.000Z'),
-            startTime: new Date('2026-07-08T10:00:00.000Z'),
-            endTime: new Date('2026-07-08T11:00:00.000Z'),
-          }),
+          batchId: 'batch-1',
+          teacherUserId: 'teacher-1',
+          topic: 'Fractions Review',
+          // The instant is handed over as-is; reducing it to a DATE is
+          // BatchSessionsService's job, covered by its own spec.
+          date: new Date('2026-07-08T10:00:00.000Z'),
+          startTime: new Date('2026-07-08T10:00:00.000Z'),
+          endTime: new Date('2026-07-08T11:00:00.000Z'),
         }),
       );
       expect(result).toEqual(baseSession);
@@ -194,12 +203,10 @@ describe('LiveClassesService', () => {
         'teacher-1',
       );
 
-      expect(mockPrismaService.batchSession.create).toHaveBeenCalledWith(
+      expect(mockBatchSessions.createSession).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
-            moduleItemId: 'item-1',
-            topic: 'Plot a Triangle',
-          }),
+          moduleItemId: 'item-1',
+          topic: 'Plot a Triangle',
         }),
       );
     });

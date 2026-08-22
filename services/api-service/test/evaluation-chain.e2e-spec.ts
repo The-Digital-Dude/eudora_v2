@@ -62,9 +62,10 @@ describe('Evaluation chain: evidence -> mastery (e2e)', () => {
       .get(`/api/evaluation/mastery/student/${studentProfileId}`)
       .set(asAdmin())
       .expect(200);
-    const rows = unwrap<
-      Array<{ competencyId: string; masteryScore: number; status: string }>
-    >(res);
+    const rows =
+      unwrap<
+        Array<{ competencyId: string; masteryScore: number; status: string }>
+      >(res);
     const row = rows.find((r) => r.competencyId === competencyId);
     expect(row).toBeDefined();
     return row!;

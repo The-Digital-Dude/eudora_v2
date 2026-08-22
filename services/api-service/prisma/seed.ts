@@ -78,7 +78,7 @@ async function main() {
   // and cannot sign in, so the guardian hands work in on their behalf. Without
   // it the submit route passes @Roles('GUARDIAN') and is then refused by the
   // permissions guard, which is a 403 nobody can explain from the outside.
-  for (const k of ['read:User','read:Student','read:Attendance','read:Homework','attempt:Homework','read:ReportCard','read:Gradebook']) {
+  for (const k of ['read:User','read:Student','read:Timetable','read:Attendance','read:Homework','attempt:Homework','read:ReportCard','read:Gradebook']) {
     const pid = permissionIds[k];
     if (pid) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: guardianRole.id, permissionId: pid } }, update: {}, create: { roleId: guardianRole.id, permissionId: pid } });
   }
@@ -3227,6 +3227,118 @@ async function main() {
       }
     }
     console.log('✅ Seeded entitlements for Charlotte');
+  }
+
+  // ─── Homework checkpoint (course-attached) ──────────────────────────────────
+  //
+  // The cohort homework above hangs off a batch, which a self-paced learner
+  // never has. This is the other shape: a HOMEWORK item inside a chapter, with
+  // the brief on the Homework row and no batch at all.
+  //
+  // Seeded with one submission still waiting to be marked and one already
+  // marked, because the three screens that read this — the course player, the
+  // teacher's review list, and the course progress grid — each render a
+  // different one of those states, and with an empty table they all show the
+  // same empty box.
+  const checkpointCourse = await prisma.course.findFirst({
+    where: { title: 'Multiplication, Division & Fractions' },
+    select: { id: true },
+  });
+  if (checkpointCourse) {
+    // The FIRST chapter, not the last. Chapters unlock in sequence, so a
+    // checkpoint in the final one is disabled in the player for any learner
+    // who has not worked through everything before it — which is every seeded
+    // learner, making the seed useless for exercising the flow.
+    const checkpointChapter = await prisma.concept.findFirst({
+      where: { courseId: checkpointCourse.id },
+      orderBy: { sortOrder: 'asc' },
+      select: { id: true },
+    });
+
+    if (checkpointChapter) {
+      let hwItem = await prisma.moduleItem.findFirst({
+        where: { conceptId: checkpointChapter.id, kind: 'HOMEWORK' },
+        include: { homework: true },
+      });
+
+      if (!hwItem) {
+        hwItem = await prisma.moduleItem.create({
+          data: {
+            conceptId: checkpointChapter.id,
+            kind: 'HOMEWORK',
+            title: 'Show your working: sharing 24 sweets',
+            sortOrder: 99,
+            status: 'PUBLISHED',
+            homework: {
+              create: {
+                title: 'Show your working: sharing 24 sweets',
+                description:
+                  'Share 24 sweets equally between 4 friends, then between 6. ' +
+                  'Draw or photograph your working and upload it. Write one ' +
+                  'sentence saying what you noticed about the two answers.',
+                maxPoints: 20,
+                // No dueDate on purpose: this is the self-paced shape.
+              },
+            },
+          },
+          include: { homework: true },
+        });
+      }
+
+      // Two learners already entitled to this course, in different states.
+      const entitled = await prisma.entitlement.findMany({
+        where: { courseId: checkpointCourse.id, status: 'ACTIVE' },
+        select: { studentProfile: { select: { id: true, fullName: true } } },
+      });
+      // By name, so a reseed always produces the same two learners rather than
+      // whichever id happened to sort first.
+      entitled.sort((a, b) =>
+        a.studentProfile.fullName.localeCompare(b.studentProfile.fullName),
+      );
+
+      if (hwItem.homework && entitled.length >= 2) {
+        const [waiting, marked] = entitled;
+
+        await prisma.homeworkSubmission.upsert({
+          where: {
+            homeworkId_studentProfileId: {
+              homeworkId: hwItem.homework.id,
+              studentProfileId: waiting.studentProfile.id,
+            },
+          },
+          update: {},
+          create: {
+            homeworkId: hwItem.homework.id,
+            studentProfileId: waiting.studentProfile.id,
+            content: 'I shared them out and got 6 each, then 4 each.',
+            status: 'SUBMITTED',
+          },
+        });
+
+        await prisma.homeworkSubmission.upsert({
+          where: {
+            homeworkId_studentProfileId: {
+              homeworkId: hwItem.homework.id,
+              studentProfileId: marked.studentProfile.id,
+            },
+          },
+          update: {},
+          create: {
+            homeworkId: hwItem.homework.id,
+            studentProfileId: marked.studentProfile.id,
+            content: 'More friends means fewer sweets each.',
+            status: 'GRADED',
+            pointsEarned: 18,
+            feedback: 'Exactly right, and a clear sentence. Show the division next time.',
+            gradedAt: new Date(),
+          },
+        });
+
+        console.log(
+          `✅ Seeded a homework checkpoint (1 to mark, 1 marked, ${entitled.length} entitled)`,
+        );
+      }
+    }
   }
 
   console.log('🎉 Seeding completed successfully!');

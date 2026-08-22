@@ -136,9 +136,18 @@ export async function loginAsSuperAdminFull(
 }
 
 /** Registers a fresh user (default USER role) and returns id + bearer token. */
+/**
+ * Registers a user. `role` is the self-signup hint, and it matters: signup
+ * now defaults to GUARDIAN, so a test that wants a plain learner has to ask
+ * for USER explicitly. Anything outside the allowlist falls back to GUARDIAN.
+ */
 export async function registerUser(
   ctx: TestContext,
-  overrides: { firstName?: string; lastName?: string } = {},
+  overrides: {
+    firstName?: string;
+    lastName?: string;
+    role?: 'USER' | 'GUARDIAN';
+  } = {},
 ): Promise<TestUser> {
   const email = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
   const res = await request(ctx.app.getHttpServer())
@@ -148,6 +157,7 @@ export async function registerUser(
       password: 'Password@123',
       firstName: overrides.firstName ?? 'E2E',
       lastName: overrides.lastName ?? 'User',
+      ...(overrides.role ? { role: overrides.role } : {}),
     })
     .expect(201);
 
@@ -159,7 +169,14 @@ export async function registerUser(
   return { id: dbUser!.id, email, token, csrf: cookieValue(res, 'csrf_token') };
 }
 
-/** Grants a seeded role (e.g. GUARDIAN, TEACHER) to a user via the users API. */
+/**
+ * Grants a seeded role (e.g. GUARDIAN, TEACHER) to a user via the users API.
+ *
+ * Idempotent: self-signup assigns GUARDIAN by default (commit c97b657), so a
+ * fixture that registers a guardian and then grants GUARDIAN would 409 on a
+ * role the user already holds. Already having the role is the desired end
+ * state, not a failure.
+ */
 export async function grantRole(
   ctx: TestContext,
   adminToken: string,
@@ -168,6 +185,12 @@ export async function grantRole(
 ): Promise<void> {
   const role = await ctx.prisma.role.findUnique({ where: { name: roleName } });
   expect(role).toBeTruthy();
+
+  const held = await ctx.prisma.userRole.findUnique({
+    where: { userId_roleId: { userId, roleId: role!.id } },
+  });
+  if (held) return;
+
   await request(ctx.app.getHttpServer())
     .post(`/api/users/${userId}/roles`)
     .set('Authorization', `Bearer ${adminToken}`)
@@ -253,9 +276,14 @@ export async function createStudent(
   adminToken: string,
   fullName: string,
 ): Promise<{ user: TestUser; studentProfileId: string }> {
+  // Explicitly USER. There is no STUDENT role — a student is a USER account
+  // owning a StudentProfile — and signup now defaults to GUARDIAN, which would
+  // otherwise give every "student" in these tests the wrong role and a 403 on
+  // anything role-gated to learners.
   const user = await registerUser(ctx, {
     firstName: fullName.split(' ')[0],
     lastName: fullName.split(' ').slice(1).join(' ') || 'Student',
+    role: 'USER',
   });
 
   const res = await request(ctx.app.getHttpServer())

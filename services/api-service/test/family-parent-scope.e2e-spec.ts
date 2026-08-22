@@ -33,7 +33,9 @@ describe('Family & parent portal scoping (e2e)', () => {
   beforeAll(async () => {
     ctx = await createTestApp();
     adminToken = await loginAsSuperAdmin(ctx.app);
-    plainUser = await registerUser(ctx);
+    // Explicitly USER: signup defaults to GUARDIAN, so registering without
+    // a role would hand this test a guardian and invert its 403 assertion.
+    plainUser = await registerUser(ctx, { role: 'USER' });
 
     const student = await createStudent(ctx, adminToken, `E2E Child ${tag}`);
     studentUser = student.user;
@@ -61,19 +63,20 @@ describe('Family & parent portal scoping (e2e)', () => {
     await ctx.app.close();
   });
 
-  it('creates guardian profiles for both guardian users', async () => {
-    const linkedRes = await http()
-      .post('/api/guardian-profiles')
-      .set(asAdmin())
-      .send({ userId: linkedGuardian.id, fullName: `E2E Guardian A ${tag}` })
-      .expect(201);
-    linkedGuardianProfileId = unwrap<{ id: string }>(linkedRes).id;
+  it('gets a guardian profile from registration, without a second create', async () => {
+    // Registration writes the GuardianProfile alongside the GUARDIAN role, so
+    // POST /guardian-profiles would 409 here. That endpoint keeps its conflict
+    // deliberately — an admin making a second profile for someone is a mistake.
+    const linked = await ctx.prisma.guardianProfile.findUnique({
+      where: { userId: linkedGuardian.id },
+    });
+    expect(linked).toBeTruthy();
+    linkedGuardianProfileId = linked!.id;
 
-    await http()
-      .post('/api/guardian-profiles')
-      .set(asAdmin())
-      .send({ userId: unlinkedGuardian.id, fullName: `E2E Guardian B ${tag}` })
-      .expect(201);
+    const unlinked = await ctx.prisma.guardianProfile.findUnique({
+      where: { userId: unlinkedGuardian.id },
+    });
+    expect(unlinked).toBeTruthy();
   });
 
   it('links guardian A to the student with a relationship', async () => {
@@ -128,21 +131,23 @@ describe('Family & parent portal scoping (e2e)', () => {
       householdName: string;
     }>(res);
     expect(family.householdName).toBe(`E2E Household ${tag}`);
-    expect(family.students.length + family.guardians.length).toBeGreaterThanOrEqual(2);
+    expect(
+      family.students.length + family.guardians.length,
+    ).toBeGreaterThanOrEqual(2);
   });
 
-  it('shows the linked child in guardian A\'s parent portal', async () => {
+  it("shows the linked child in guardian A's parent portal", async () => {
     const res = await http()
       .get('/api/parent/children')
       .set('Authorization', `Bearer ${linkedGuardian.token}`)
       .expect(200);
     const children = unwrap<Array<{ studentProfileId: string }>>(res);
-    expect(
-      children.some((c) => c.studentProfileId === studentProfileId),
-    ).toBe(true);
+    expect(children.some((c) => c.studentProfileId === studentProfileId)).toBe(
+      true,
+    );
   });
 
-  it('lets guardian A read the linked child\'s homework and attendance', async () => {
+  it("lets guardian A read the linked child's homework and attendance", async () => {
     await http()
       .get(`/api/parent/children/${studentProfileId}/homework`)
       .set('Authorization', `Bearer ${linkedGuardian.token}`)

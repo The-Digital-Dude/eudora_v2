@@ -1,9 +1,11 @@
 import {
+  IsDateString,
   IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Min,
 } from 'class-validator';
 import { CatalogStatus, ModuleItemKind } from '@prisma/client';
 
@@ -50,6 +52,24 @@ export class CreateModuleItemDto {
   @IsString()
   @IsOptional()
   discussionPrompt?: string;
+
+  // HOMEWORK — the brief for the auto-created Homework row
+  @IsString()
+  @IsOptional()
+  homeworkInstructions?: string;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  homeworkMaxPoints?: number;
+
+  /**
+   * Optional by design. A checkpoint reached at the learner's own pace has no
+   * deadline; a date is only meaningful when a cohort is working in step.
+   */
+  @IsDateString()
+  @IsOptional()
+  homeworkDueDate?: string;
 }
 
 export class UpdateModuleItemDto {

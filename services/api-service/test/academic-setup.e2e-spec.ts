@@ -112,10 +112,7 @@ describe('Academic setup chain (e2e)', () => {
       .set(asAdmin())
       .expect(200);
 
-    await http()
-      .get(`/api/batches/${disposableId}`)
-      .set(asAdmin())
-      .expect(404);
+    await http().get(`/api/batches/${disposableId}`).set(asAdmin()).expect(404);
   });
 
   /**

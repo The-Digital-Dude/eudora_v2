@@ -69,7 +69,7 @@ describe('RBAC Verification (e2e)', () => {
     await app.close();
   });
 
-  it('should successfully register a test user with default USER role', async () => {
+  it('should successfully register a test user with default GUARDIAN role', async () => {
     const uniqueEmail = `test-user-${Date.now()}@example.com`;
     const registerRes = await request(app.getHttpServer())
       .post('/api/auth/register')
@@ -103,7 +103,9 @@ describe('RBAC Verification (e2e)', () => {
     expect(dbUser).toBeDefined();
     testUserId = dbUser!.id;
     expect(dbUser!.roles.length).toBe(1);
-    expect(dbUser!.roles[0].role.name).toBe('USER');
+    // Self-signup defaults to GUARDIAN (c97b657): the common case is a parent
+    // setting up an account for a child, not a learner registering themselves.
+    expect(dbUser!.roles[0].role.name).toBe('GUARDIAN');
   });
 
   it('should deny the regular test user access to get all users', async () => {
@@ -137,7 +139,7 @@ describe('RBAC Verification (e2e)', () => {
       include: { roles: { include: { role: true } } },
     });
     const roleNames = dbUser!.roles.map((ur) => ur.role.name);
-    expect(roleNames).toContain('USER');
+    expect(roleNames).toContain('GUARDIAN');
     expect(roleNames).toContain('ADMIN');
   });
 
@@ -164,7 +166,7 @@ describe('RBAC Verification (e2e)', () => {
       include: { roles: { include: { role: true } } },
     });
     const roleNames = dbUser!.roles.map((ur) => ur.role.name);
-    expect(roleNames).toEqual(['USER']);
+    expect(roleNames).toEqual(['GUARDIAN']);
   });
 
   it('should deny the test user access to get all users again', async () => {

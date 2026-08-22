@@ -62,7 +62,12 @@ export class ModuleItemsController {
     @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
     await this.assertItemAccess(id, user, actingStudentId);
-    return this.moduleItemsService.upsertProgress(id, user.id, dto);
+    return this.moduleItemsService.upsertProgress(
+      id,
+      user.id,
+      dto,
+      actingStudentId,
+    );
   }
 
   @Get(':id/my-session')
@@ -87,6 +92,20 @@ export class ModuleItemsController {
   ) {
     await this.assertItemAccess(id, user, actingStudentId);
     return this.moduleItemsService.getMyAssignmentForItem(id, user.id);
+  }
+
+  @Get(':id/my-homework')
+  async getMyHomeworkForItem(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
+  ) {
+    await this.assertItemAccess(id, user, actingStudentId);
+    return this.moduleItemsService.getMyHomeworkForItem(
+      id,
+      user.id,
+      actingStudentId,
+    );
   }
 
   @Get(':id/discussion')

@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsNumber,
+  IsUUID,
   Min,
   IsArray,
 } from 'class-validator';
@@ -17,10 +18,15 @@ export class SubmitHomeworkDto {
   @IsOptional()
   content?: string; // Optional submitted text
 
+  /**
+   * Files already uploaded through POST /homework/attachments, referenced by
+   * id. Never a URL: the caller does not get to say where a learner's work
+   * lives, which is exactly what the old `attachmentUrls` array allowed.
+   */
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID('4', { each: true })
   @IsOptional()
-  attachmentUrls?: string[]; // Optional submission attachments
+  attachmentFileIds?: string[];
 }
 
 export class GradeSubmissionDto {

@@ -30,7 +30,11 @@ describe('Homework flow: assign -> submit -> grade -> gradebook (e2e)', () => {
     adminToken = await loginAsSuperAdmin(ctx.app);
     world = await buildAcademicWorld(ctx, adminToken, tag);
 
-    const student = await createStudent(ctx, adminToken, `E2E HW Student ${tag}`);
+    const student = await createStudent(
+      ctx,
+      adminToken,
+      `E2E HW Student ${tag}`,
+    );
     studentUser = student.user;
     studentProfileId = student.studentProfileId;
 
@@ -126,9 +130,7 @@ describe('Homework flow: assign -> submit -> grade -> gradebook (e2e)', () => {
       where: { studentProfileId },
     });
     expect(entries.length).toBeGreaterThanOrEqual(1);
-    const hwEntry = entries.find(
-      (e) => e.sourceType === 'HOMEWORK_SUBMISSION',
-    );
+    const hwEntry = entries.find((e) => e.sourceType === 'HOMEWORK_SUBMISSION');
     expect(hwEntry).toBeDefined();
   });
 

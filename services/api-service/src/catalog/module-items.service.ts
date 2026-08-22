@@ -50,6 +50,12 @@ export class ModuleItemsService {
       }
     }
 
+    if (dto.kind === 'HOMEWORK' && (dto.homeworkMaxPoints ?? 0) <= 0) {
+      throw new BadRequestException(
+        'homeworkMaxPoints is required for a HOMEWORK item',
+      );
+    }
+
     return this.prisma.$transaction(async (tx) => {
       const item = await tx.moduleItem.create({
         data: {
@@ -74,6 +80,22 @@ export class ModuleItemsService {
         });
       }
 
+      // Same shape as the discussion thread above: the item is the slot in the
+      // chapter, and the row created here is what the slot actually contains.
+      // No batchId — that is the whole point of a checkpoint, and the
+      // `homeworks_one_parent` constraint enforces the either/or.
+      if (dto.kind === 'HOMEWORK') {
+        await tx.homework.create({
+          data: {
+            moduleItemId: item.id,
+            title: dto.title,
+            description: dto.homeworkInstructions || null,
+            maxPoints: dto.homeworkMaxPoints!,
+            dueDate: dto.homeworkDueDate ? new Date(dto.homeworkDueDate) : null,
+          },
+        });
+      }
+
       // A course carrying a live item is LIVE-only: a self-paced buyer has no
       // batch, so the item would have no meeting to resolve to. Adding one
       // therefore moves the course rather than failing — the inverse guard
@@ -87,7 +109,7 @@ export class ModuleItemsService {
 
       return tx.moduleItem.findUniqueOrThrow({
         where: { id: item.id },
-        include: { discussion: true },
+        include: { discussion: true, homework: true },
       });
     });
   }
@@ -132,6 +154,7 @@ export class ModuleItemsService {
     moduleItemId: string,
     userId: string,
     dto: UpdateModuleItemProgressDto,
+    actingStudentId?: string | null,
   ) {
     const item = await this.prisma.moduleItem.findUnique({
       where: { id: moduleItemId },
@@ -145,10 +168,18 @@ export class ModuleItemsService {
     // skipped ahead (or any direct API call) could mark locked content done.
     await this.progression.assertConceptUnlocked(userId, item.conceptId);
 
-    const studentProfileId = await this.resolveStudentProfileId(userId);
+    // Resolved the same way getLiveSession below already does it. Using
+    // resolveStudentProfileId here meant a guardian could never mark anything
+    // complete — they have no student profile of their own — and the child
+    // they are working for has no password to sign in with, so nothing in a
+    // course could be ticked off for a family-portal learner at all.
+    const studentProfileId = await this.actingStudent.resolve(
+      userId,
+      actingStudentId ?? null,
+    );
     if (!studentProfileId) {
       throw new BadRequestException(
-        'Only students can record module item progress',
+        'Select which child this progress is for, or sign in as the learner',
       );
     }
 
@@ -208,6 +239,76 @@ export class ModuleItemsService {
       select: { id: true, status: true, dueAt: true },
     });
     return { assignment: assignment ?? null };
+  }
+
+  /**
+   * The brief for a HOMEWORK checkpoint, plus whatever this learner has already
+   * handed in for it.
+   *
+   * Resolved through the acting student rather than the caller's own profile:
+   * the person opening a course checkpoint is usually the guardian working as
+   * the child, since a child created through the family portal has no password.
+   */
+  async getMyHomeworkForItem(
+    moduleItemId: string,
+    userId: string,
+    actingStudentId?: string | null,
+  ) {
+    const item = await this.prisma.moduleItem.findUnique({
+      where: { id: moduleItemId },
+      select: {
+        homework: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            dueDate: true,
+            maxPoints: true,
+          },
+        },
+      },
+    });
+    if (!item?.homework) {
+      throw new NotFoundException('This item has no homework');
+    }
+
+    const studentProfileId = await this.actingStudent.resolve(
+      userId,
+      actingStudentId ?? null,
+    );
+    if (!studentProfileId) {
+      // Staff previewing the course, most likely. They see the brief; there is
+      // no submission of their own to show.
+      return { homework: item.homework, submission: null };
+    }
+
+    const submission = await this.prisma.homeworkSubmission.findUnique({
+      where: {
+        homeworkId_studentProfileId: {
+          homeworkId: item.homework.id,
+          studentProfileId,
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+        content: true,
+        submissionDate: true,
+        pointsEarned: true,
+        feedback: true,
+        gradedAt: true,
+        attachments: {
+          orderBy: { sortOrder: 'asc' },
+          select: {
+            fileUploadId: true,
+            sortOrder: true,
+            file: { select: { originalName: true, size: true, mimetype: true } },
+          },
+        },
+      },
+    });
+
+    return { homework: item.homework, submission: submission ?? null };
   }
 
   /**

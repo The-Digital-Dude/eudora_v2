@@ -17,6 +17,10 @@ describe('Education OS Administrative Modules (e2e)', () => {
 
   // Academic/Institution ID trackers
   let programId: string;
+  // Unique per run: these rows carry unique constraints, and without a tag
+  // the second run of this suite 409s on every create.
+  const tag = `EOS${Date.now()}`;
+
   let academicYearId: string;
   let termId: string;
   let classSectionId: string;
@@ -132,9 +136,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .catch(() => {});
     }
     if (batchId) {
-      await prisma.batch
-        .delete({ where: { id: batchId } })
-        .catch(() => {});
+      await prisma.batch.delete({ where: { id: batchId } }).catch(() => {});
     }
     if (classSectionId) {
       await prisma.classSection
@@ -170,8 +172,8 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .post('/api/programs')
         .set('Authorization', `Bearer ${regularUserToken}`)
         .send({
-          name: 'Computer Science',
-          code: 'CS101',
+          name: `Computer Science ${tag}`,
+          code: `CS101-${tag}`,
         })
         .expect(403);
     });
@@ -181,14 +183,14 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .post('/api/programs')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          name: 'Software Engineering',
-          code: 'SE-BSC',
+          name: `Software Engineering ${tag}`,
+          code: `SE-BSC-${tag}`,
         })
         .expect(201);
 
       const body = res.body as { data: { id: string; code: string } };
       expect(body.data).toHaveProperty('id');
-      expect(body.data.code).toBe('SE-BSC');
+      expect(body.data.code).toBe(`SE-BSC-${tag}`);
       programId = body.data.id;
     });
   });
@@ -199,7 +201,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .post('/api/academic-years')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          name: 'Academic Year 2026-2027 - E2E Test',
+          name: `Academic Year ${tag}`,
           startDate: '2026-09-01T00:00:00.000Z',
           endDate: '2027-06-30T00:00:00.000Z',
         })
@@ -216,7 +218,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
           academicYearId,
-          name: 'Term 1 Out of Bounds',
+          name: `Term Out of Bounds ${tag}`,
           startDate: '2026-08-15T00:00:00.000Z', // Starts before AY
           endDate: '2026-12-15T00:00:00.000Z',
         })
@@ -229,7 +231,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
           academicYearId,
-          name: 'Fall Term 2026',
+          name: `Fall Term ${tag}`,
           startDate: '2026-09-10T00:00:00.000Z',
           endDate: '2026-12-20T00:00:00.000Z',
         })
@@ -248,7 +250,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
           programId,
           academicYearId,
           name: 'SE Section A',
-          code: 'SE-2026-A',
+          code: `SE-A-${tag}`,
           class: 'Grade 10',
           classroom: 'Room 302',
         })
@@ -266,7 +268,7 @@ describe('Education OS Administrative Modules (e2e)', () => {
         .send({
           termId,
           name: 'Algorithms & Data Structures',
-          code: 'CS-DSA-2026-E2E',
+          code: `DSA-${tag}`,
         })
         .expect(201);
 
@@ -371,21 +373,14 @@ describe('Education OS Administrative Modules (e2e)', () => {
       guardianUserId = dbGuardian!.id;
     });
 
-    it('should allow creating a guardian profile', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/api/guardian-profiles')
-        .set('Authorization', `Bearer ${superAdminToken}`)
-        .send({
-          userId: guardianUserId,
-          fullName: 'Robert Doe',
-          phone: '+15550199',
-          email: 'robert@doe-family.com',
-        })
-        .expect(201);
-
-      const body = res.body as { data: { id: string } };
-      guardianProfileId = body.data.id;
-      expect(guardianProfileId).toBeDefined();
+    it('gets the guardian profile written at registration', async () => {
+      // POST /guardian-profiles keeps its 409 on purpose: a second profile for
+      // the same person is an admin mistake. Registration already made this one.
+      const profile = await prisma.guardianProfile.findUnique({
+        where: { userId: guardianUserId },
+      });
+      expect(profile).toBeTruthy();
+      guardianProfileId = profile!.id;
     });
 
     it('should allow defining a relationship between guardian and student', async () => {

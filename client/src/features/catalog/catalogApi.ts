@@ -40,7 +40,9 @@ export type ModuleItemKind =
   | "DISCUSSION"
   | "ASSESSMENT"
   /** Curriculum slot for a live session; the meeting itself is a BatchSession. */
-  | "LIVE_CLASS";
+  | "LIVE_CLASS"
+  /** Work handed in for a person to read; the brief is a Homework row. */
+  | "HOMEWORK";
 
 export interface ModuleItem {
   id: string;
@@ -85,6 +87,10 @@ export interface CreateModuleItemPayload {
   readingContent?: string;
   assessmentId?: string;
   discussionPrompt?: string;
+  homeworkInstructions?: string;
+  homeworkMaxPoints?: number;
+  /** Omitted for a self-paced checkpoint, which has no deadline. */
+  homeworkDueDate?: string;
 }
 
 export interface DiscussionPost {
@@ -466,6 +472,41 @@ export const catalogApi = authApi.injectEndpoints({
       query: (moduleItemId: string) => `/catalog/module-items/${moduleItemId}/my-assignment`,
     } as any),
 
+    /**
+     * The brief for a HOMEWORK checkpoint plus this learner's submission.
+     * Tagged so submitting refreshes it — the view flips from "hand it in" to
+     * "handed in" off the back of this.
+     */
+    getMyHomeworkForItem: builder.query<
+      {
+        homework: {
+          id: string;
+          title: string;
+          description: string | null;
+          dueDate: string | null;
+          maxPoints: number;
+        };
+        submission: {
+          id: string;
+          status: "PENDING" | "SUBMITTED" | "GRADED" | "LATE";
+          content: string | null;
+          submissionDate: string;
+          pointsEarned: number | null;
+          feedback: string | null;
+          gradedAt: string | null;
+          attachments: {
+            fileUploadId: string;
+            sortOrder: number;
+            file: { originalName: string; size: number; mimetype: string };
+          }[];
+        } | null;
+      },
+      string
+    >({
+      query: (moduleItemId: string) => `/catalog/module-items/${moduleItemId}/my-homework`,
+      providesTags: ["Homework"],
+    } as any),
+
     getMySessionForItem: builder.query<
       { session: MyLiveSession | null; reason: MyLiveSessionReason | null },
       string
@@ -515,6 +556,7 @@ export const {
   useDeleteModuleItemMutation,
   useUpdateModuleItemProgressMutation,
   useGetMyAssignmentForItemQuery,
+  useGetMyHomeworkForItemQuery,
   useGetMySessionForItemQuery,
   useGetDiscussionQuery,
   useAddDiscussionPostMutation,

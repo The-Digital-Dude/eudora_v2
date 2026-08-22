@@ -1,11 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AttendanceService } from './attendance.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { BatchSessionsService } from '../batch-sessions/batch-sessions.service';
 import { BadRequestException } from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
+
+  const mockBatchSessions = { createSession: jest.fn() };
 
   const mockPrismaService = {
     classSection: {
@@ -45,6 +48,10 @@ describe('AttendanceService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: BatchSessionsService,
+          useValue: mockBatchSessions,
         },
       ],
     }).compile();

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HomeworkService } from './homework.service';
+import { EntitlementsService } from '../entitlements/entitlements.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { GradebookService } from '../gradebook/gradebook.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
@@ -8,7 +9,9 @@ import { SubmissionStatus } from '@prisma/client';
 describe('HomeworkService', () => {
   let service: HomeworkService;
 
-  const mockPrismaService = {
+  // Annotated because $transaction hands this object back to the callback,
+  // which makes it self-referential and otherwise uninferable.
+  const mockPrismaService: any = {
     batch: {
       findUnique: jest.fn(),
     },
@@ -24,22 +27,48 @@ describe('HomeworkService', () => {
     homeworkSubmission: {
       upsert: jest.fn(),
       findUnique: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       update: jest.fn(),
       findMany: jest.fn(),
     },
     studentProfile: {
       findUnique: jest.fn(),
     },
+    fileUpload: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    homeworkSubmissionAttachment: {
+      deleteMany: jest.fn(),
+      upsert: jest.fn(),
+    },
+    moduleItemProgress: {
+      upsert: jest.fn(),
+    },
+    // Submitting is a transaction, so the mock has to behave like one:
+    // hand the callback this same mock and let it act as its own tx client.
+    $transaction: jest.fn((fn: any) => fn(mockPrismaService)),
   };
 
   const mockGradebookService = {
     upsertFromHomeworkSubmission: jest.fn(),
   };
 
+  /** Defaults to allowing access; individual tests override it. */
+  const mockEntitlementsService = {
+    canAccessModuleItem: jest.fn().mockResolvedValue(true),
+  };
+
+  /** Who is doing the submitting — a student acting for themselves, here. */
+  const ACTOR = { userId: 'user-1', roles: ['USER'] };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         HomeworkService,
+        {
+          provide: EntitlementsService,
+          useValue: mockEntitlementsService,
+        },
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -116,7 +145,7 @@ describe('HomeworkService', () => {
       await expect(
         service.submitHomework('student-1', {
           homeworkId: 'hw-1',
-        }),
+        }, ACTOR),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -126,7 +155,7 @@ describe('HomeworkService', () => {
         service.submitHomework('student-1', {
           homeworkId: 'non-existent',
           content: 'my solution',
-        }),
+        }, ACTOR),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -143,7 +172,7 @@ describe('HomeworkService', () => {
         service.submitHomework('student-1', {
           homeworkId: 'hw-1',
           content: 'my solution',
-        }),
+        }, ACTOR),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -161,11 +190,18 @@ describe('HomeworkService', () => {
         id: 'submission-1',
         status: SubmissionStatus.SUBMITTED,
       });
+      // The submission is re-read after its attachments are linked, so that
+      // read is what the caller actually receives.
+      mockPrismaService.homeworkSubmission.findUniqueOrThrow.mockResolvedValue({
+        id: 'submission-1',
+        status: SubmissionStatus.SUBMITTED,
+        attachments: [],
+      });
 
       const result = await service.submitHomework('student-1', {
         homeworkId: 'hw-1',
         content: 'my solution',
-      });
+      }, ACTOR);
 
       expect(result.status).toEqual(SubmissionStatus.SUBMITTED);
       expect(mockPrismaService.homeworkSubmission.upsert).toHaveBeenCalled();
@@ -182,16 +218,21 @@ describe('HomeworkService', () => {
         id: 'enroll-1',
       });
       mockPrismaService.homeworkSubmission.upsert.mockImplementation(
-        ({ create }) => ({
+        ({ create }: any) => ({
           id: 'submission-1',
           status: create.status,
         }),
       );
+      mockPrismaService.homeworkSubmission.findUniqueOrThrow.mockResolvedValue({
+        id: 'submission-1',
+        status: SubmissionStatus.LATE,
+        attachments: [],
+      });
 
       const result = await service.submitHomework('student-1', {
         homeworkId: 'hw-1',
         content: 'my solution',
-      });
+      }, ACTOR);
 
       expect(result.status).toEqual(SubmissionStatus.LATE);
     });

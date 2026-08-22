@@ -104,9 +104,9 @@ describe('Soft delete: archive -> invisible -> restore (e2e)', () => {
       .get('/api/student-profiles?limit=100&includeArchived=true')
       .set(asAdmin())
       .expect(200);
-    const list = unwrap<{ data: Array<{ id: string; deletedAt: string | null }> }>(
-      res,
-    );
+    const list = unwrap<{
+      data: Array<{ id: string; deletedAt: string | null }>;
+    }>(res);
     const archived = list.data.find((p) => p.id === studentProfileId);
     expect(archived).toBeDefined();
     expect(archived!.deletedAt).not.toBeNull();
@@ -171,7 +171,10 @@ describe('Soft delete: archive -> invisible -> restore (e2e)', () => {
       .expect(201);
     const programId = unwrap<{ id: string }>(programRes).id;
 
-    await http().delete(`/api/programs/${programId}`).set(asAdmin()).expect(200);
+    await http()
+      .delete(`/api/programs/${programId}`)
+      .set(asAdmin())
+      .expect(200);
 
     const program = await (ctx.prisma.program.findUnique as any)({
       where: { id: programId },

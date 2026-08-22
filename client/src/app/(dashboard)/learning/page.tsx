@@ -7,7 +7,7 @@ import React from "react";
 import { useGetLessonsQuery } from "@/features/clio/clioApi";
 
 /**
- * Active Learning hub — lives inside the portal shell so browsing lessons
+ * Lesson Library — the learner-facing Clio hub, inside the portal shell so
  * never feels like leaving the app. Only the lesson player (/learn/[id])
  * goes full-screen.
  */
@@ -22,10 +22,10 @@ export default function LearningHubPage() {
           <div className="rounded-xl bg-primary/10 p-2 text-primary">
             <Sparkles className="h-5 w-5" />
           </div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Active Learning</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">Lesson Library</h1>
         </div>
         <p className="text-sm text-muted-foreground">
-          Interactive journeys with instant feedback from Clio. Pick a lesson to begin — it opens
+          Interactive journeys with instant feedback from Clio. Pick a lesson to begin. It opens
           in focus mode.
         </p>
       </div>

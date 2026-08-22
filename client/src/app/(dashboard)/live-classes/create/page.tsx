@@ -55,7 +55,7 @@ export default function CreateLiveClassPage() {
           Schedule Live Class
         </h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          Set up a live session for a batch. Video hosting isn&apos;t wired up yet — this
+          Set up a live session for a batch. Video hosting isn&apos;t wired up yet. This
           schedules the session record.
         </p>
       </div>

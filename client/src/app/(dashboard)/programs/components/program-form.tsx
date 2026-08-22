@@ -190,7 +190,7 @@ export function ProgramForm({
             onChange={(e) => set("classId", e.target.value)}
             className={selectClass}
           >
-            <option value="">None — standalone bundle</option>
+            <option value="">None (standalone bundle)</option>
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -206,7 +206,7 @@ export function ProgramForm({
         <Input
           value={values.shortDescription}
           onChange={(e) => set("shortDescription", e.target.value)}
-          placeholder="One line — used as the search-result description"
+          placeholder="One line, used as the search-result description"
           className={inputClass}
           maxLength={160}
         />
@@ -299,7 +299,7 @@ export function ProgramForm({
         )}
         {belowFloor && (
           <p className="text-[10px] font-semibold text-destructive">
-            Minimum sellable price is $9.00 — below that, card fees erase the margin.
+            Minimum sellable price is $9.00. Below that, card fees erase the margin.
           </p>
         )}
         <p className={hintClass}>
@@ -314,8 +314,8 @@ export function ProgramForm({
           onChange={(e) => set("status", e.target.value as CatalogStatus)}
           className={selectClass}
         >
-          <option value="DRAFT">DRAFT — not visible publicly</option>
-          <option value="PUBLISHED">PUBLISHED — live in the catalog</option>
+          <option value="DRAFT">DRAFT (not visible publicly)</option>
+          <option value="PUBLISHED">PUBLISHED (live in the catalog)</option>
           <option value="ARCHIVED">ARCHIVED</option>
         </select>
       </div>

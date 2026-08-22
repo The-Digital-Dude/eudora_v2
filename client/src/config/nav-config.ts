@@ -1,11 +1,12 @@
 import {
   BookOpen,
   CalendarCheck,
-  CalendarRange,
   ClipboardCheck,
   ClipboardList,
+  Compass,
   GraduationCap,
   HeartHandshake,
+  Home,
   Layers,
   LayoutDashboard,
   Library,
@@ -26,13 +27,20 @@ import {
   UsersRound,
 } from "lucide-react";
 
-import type { NavRequirement } from "@/lib/access-control";
+import type { NavRequirement, PrimaryRole } from "@/lib/access-control";
 
 export interface NavLeaf {
   title: string;
   url: string;
   icon: LucideIcon;
   requirement: NavRequirement;
+  /**
+   * Per-role wording for the same destination. /gradebook is "Gradebook" to the
+   * staff writing marks into it and "Report Card" to the family reading them
+   * out — one page, two audiences, and the admin word is the wrong one to show
+   * a parent.
+   */
+  titleByRole?: Partial<Record<PrimaryRole, string>>;
   /** Feature has no backing page/API yet — shown greyed out with a "Soon" badge, not linked. */
   disabled?: boolean;
   /**
@@ -45,170 +53,191 @@ export interface NavLeaf {
   highlight?: boolean;
 }
 
-export interface NavParent {
-  title: string;
-  icon: LucideIcon;
-  children: NavLeaf[];
-}
-
-export type NavItem = NavLeaf | NavParent;
-
 export interface NavGroup {
   label: string;
-  items: NavItem[];
-}
-
-export function isNavParent(item: NavItem): item is NavParent {
-  return "children" in item;
+  items: NavLeaf[];
 }
 
 const ADMIN_ROLES = ["ADMIN", "SUPER_ADMIN"];
 
+/**
+ * Where each role lands after login. Never drawn as nav items — the logo and
+ * the single "Home" entry cover them — but they MUST stay enumerated here: the
+ * route guard in (dashboard)/layout.tsx treats a pathname with no matching leaf
+ * as "any authenticated role", so deleting these would open /parent and
+ * /teacher to every signed-in user. robots.ts reads the same list to keep them
+ * out of the index.
+ */
+export const portalHomeLeaves: NavLeaf[] = [
+  {
+    title: "Overview",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+    requirement: { type: "roles", roles: ADMIN_ROLES },
+  },
+  {
+    title: "Parent Portal",
+    url: "/parent",
+    icon: HeartHandshake,
+    // Admins used to see this too via ...ADMIN_ROLES; re-add the spread to restore that.
+    requirement: { type: "roles", roles: ["GUARDIAN"] /* , ...ADMIN_ROLES */ },
+  },
+  {
+    title: "Student Portal",
+    url: "/student",
+    icon: GraduationCap,
+    // Admins used to see this too via ...ADMIN_ROLES; re-add the spread to restore that.
+    requirement: { type: "roles", roles: ["USER"] /* , ...ADMIN_ROLES */ },
+  },
+  {
+    title: "Teacher Portal",
+    url: "/teacher",
+    icon: Presentation,
+    // Admins used to see this too via ...ADMIN_ROLES; re-add the spread to restore that.
+    requirement: { type: "roles", roles: ["TEACHER"] /* , ...ADMIN_ROLES */ },
+  },
+];
+
+/**
+ * One flat list per group — deliberately no sub-menus.
+ *
+ * Collapsible parents hid ten of an admin's twenty destinations behind a closed
+ * chevron on first paint, and hid them outright in icon-rail mode, where
+ * SidebarMenuSub carries `group-data-[collapsible=icon]:hidden` and the parent
+ * row is therefore a dead click. Groups here are visual separators only; every
+ * destination is one click from anywhere.
+ */
 export const navGroups: NavGroup[] = [
   {
-    label: "Academics",
+    label: "Teaching",
     items: [
       {
-        title: "Overview",
-        url: "/dashboard",
-        icon: LayoutDashboard,
-        requirement: { type: "roles", roles: ADMIN_ROLES },
+        title: "Live Classes",
+        url: "/live-classes",
+        icon: Radio,
+        requirement: { type: "permission", action: "read", subject: "LiveClass" },
       },
       {
-        title: "Parent Portal",
-        url: "/parent",
-        icon: HeartHandshake,
-        // Admins used to see this too via ...ADMIN_ROLES; re-add the spread to restore that.
-        requirement: { type: "roles", roles: ["GUARDIAN"] /* , ...ADMIN_ROLES */ },
+        title: "Attendance",
+        url: "/attendance",
+        icon: CalendarCheck,
+        requirement: { type: "permission", action: "read", subject: "Attendance" },
       },
       {
-        title: "Student Portal",
-        url: "/student",
-        icon: GraduationCap,
-        // Admins used to see this too via ...ADMIN_ROLES; re-add the spread to restore that.
-        requirement: { type: "roles", roles: ["USER"] /* , ...ADMIN_ROLES */ },
+        title: "Homework",
+        url: "/homework",
+        icon: NotebookPen,
+        requirement: { type: "permission", action: "read", subject: "Homework" },
       },
       {
-        title: "Teacher Portal",
-        url: "/teacher",
-        icon: Presentation,
-        // Admins used to see this too via ...ADMIN_ROLES; re-add the spread to restore that.
-        requirement: { type: "roles", roles: ["TEACHER"] /* , ...ADMIN_ROLES */ },
+        // "Report Card" used to sit beside this as a permanently-disabled entry pointing at
+        // /report-card, which has no page. The report-card view (GPA, term average, class rank,
+        // percentile) is the student/guardian branch of /gradebook — so it is a title, not a route.
+        title: "Gradebook",
+        url: "/gradebook",
+        icon: ClipboardCheck,
+        requirement: { type: "permission", action: "read", subject: "Gradebook" },
+        titleByRole: { GUARDIAN: "Report Card", STUDENT: "Report Card" },
       },
       {
-        title: "Active Learning",
+        title: "Assessments",
+        url: "/assessments",
+        icon: ClipboardList,
+        requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
+      },
+    ],
+  },
+  {
+    label: "Content",
+    items: [
+      {
+        title: "Courses",
+        url: "/courses",
+        icon: BookOpen,
+        requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
+      },
+      {
+        // The learner-facing Clio hub, named against "Lesson Builder" below: a teacher holds both,
+        // and "Active Learning" said nothing about which one opens the player and which edits it.
+        title: "Lesson Library",
         url: "/learning",
         icon: Sparkles,
         requirement: { type: "roles", roles: ["TEACHER", "USER", ...ADMIN_ROLES] },
         highlight: true,
       },
       {
-        title: "Schedule",
-        icon: CalendarRange,
-        children: [
-          {
-            title: "Timetable",
-            url: "/timetable",
-            icon: CalendarRange,
-            requirement: { type: "permission", action: "read", subject: "Timetable" },
-          },
-          {
-            title: "Live Classes",
-            url: "/live-classes",
-            icon: Radio,
-            requirement: { type: "permission", action: "read", subject: "LiveClass" },
-          },
-          {
-            title: "Attendance",
-            url: "/attendance",
-            icon: CalendarCheck,
-            requirement: { type: "permission", action: "read", subject: "Attendance" },
-          },
-        ],
-      },
-      {
-        title: "Coursework",
-        icon: NotebookPen,
-        children: [
-          {
-            title: "Homework",
-            url: "/homework",
-            icon: NotebookPen,
-            requirement: { type: "permission", action: "read", subject: "Homework" },
-          },
-          {
-            title: "Gradebook",
-            url: "/gradebook",
-            icon: ClipboardCheck,
-            requirement: { type: "permission", action: "read", subject: "Gradebook" },
-          },
-          {
-            title: "Assessments",
-            url: "/assessments",
-            icon: ClipboardList,
-            requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
-          },
-          // "Report Card" used to sit here as a permanently-disabled entry pointing at /report-card,
-          // which has no page. The report-card view (GPA, term average, class rank, percentile) is
-          // the student/guardian branch of /gradebook, so that entry only ever hid the real gap:
-          // GUARDIAN held read:ReportCard but not read:Gradebook, and so could reach neither.
-        ],
-      },
-      {
-        title: "Content Authoring",
+        title: "Lesson Builder",
+        url: "/lessons",
         icon: PencilRuler,
-        children: [
-          {
-            title: "Lesson Authoring",
-            url: "/lessons",
-            icon: PencilRuler,
-            requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
-          },
-          {
-            title: "Question Bank",
-            url: "/questions",
-            icon: Library,
-            requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
-          },
-          {
-            title: "Diagnostics",
-            url: "/diagnostics",
-            icon: Stethoscope,
-            requirement: { type: "permission", action: "read", subject: "Diagnostic" },
-            // Descoped: DiagnosticsService.scheduleDiagnostic() throws NotImplementedException, so
-            // the page can only ever list pre-existing seed attempts. Grouped with Placement,
-            // LearningGap and MasteryStatusChange for a later design pass.
-            hidden: true,
-          },
-          {
-            // The `Class` taxonomy master. Still titled "Grade Levels"
-            // rather than "Classes": the ClassSection admin pages are gone,
-            // but the model itself survives behind attendance and timetable,
-            // so the word stays ambiguous in the codebase.
-            title: "Grade Levels",
-            url: "/grade-levels",
-            icon: GraduationCap,
-            requirement: { type: "roles", roles: ADMIN_ROLES },
-          },
-          {
-            title: "Courses",
-            url: "/courses",
-            icon: BookOpen,
-            requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
-          },
-          {
-            title: "Learning Paths",
-            url: "/learning-paths",
-            icon: Route,
-            requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
-          },
-        ],
+        requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
       },
       {
-        // Learning Gaps and Next Actions (Student Insights' other two children) were removed
-        // entirely — nothing ever created a LearningGap row, the detection engine was never built.
-        // Placement is kept as a route (still reachable directly) but stays out of the nav: it's
-        // hidden for the same "depends on Diagnostics, which is also unbuilt" reason as before.
+        title: "Question Bank",
+        url: "/questions",
+        icon: Library,
+        requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
+      },
+      {
+        title: "Learning Paths",
+        url: "/learning-paths",
+        icon: Route,
+        requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
+      },
+      {
+        title: "Diagnostics",
+        url: "/diagnostics",
+        icon: Stethoscope,
+        requirement: { type: "permission", action: "read", subject: "Diagnostic" },
+        // Descoped: DiagnosticsService.scheduleDiagnostic() throws NotImplementedException, so the
+        // page can only ever list pre-existing seed attempts. Grouped with Placement below for a
+        // later design pass.
+        hidden: true,
+      },
+    ],
+  },
+  {
+    label: "Enrolment",
+    items: [
+      {
+        title: "Programs",
+        url: "/programs",
+        icon: School,
+        requirement: { type: "roles", roles: ADMIN_ROLES },
+      },
+      {
+        // The cohort a LIVE course is actually sold as a seat in.
+        title: "Batches",
+        url: "/batches",
+        icon: Layers,
+        requirement: { type: "roles", roles: ADMIN_ROLES },
+      },
+      {
+        // The `Class` taxonomy master (Class -> Program -> Course). Titled "Grades" to match the
+        // word the public catalog already uses ("Grades 1–2" on /explore). The model stays `Class`
+        // in code, where it still collides with the ClassSection surviving behind attendance.
+        title: "Grades",
+        url: "/grade-levels",
+        icon: GraduationCap,
+        requirement: { type: "roles", roles: ADMIN_ROLES },
+      },
+      {
+        // Support tooling for access: refunds, comps, and "I paid but I can't see it" tickets all
+        // get resolved here.
+        title: "Course Access",
+        url: "/entitlements",
+        icon: ShieldCheck,
+        requirement: { type: "roles", roles: ADMIN_ROLES },
+      },
+      {
+        title: "Leads",
+        url: "/leads",
+        icon: UserPlus,
+        requirement: { type: "roles", roles: ADMIN_ROLES },
+      },
+      {
+        // Learning Gaps and Next Actions were removed entirely — nothing ever created a LearningGap
+        // row, the detection engine was never built. Placement is kept as a route (still reachable
+        // directly) but stays out of the nav: it depends on Diagnostics, which is also unbuilt.
         title: "Placement",
         url: "/placement",
         icon: Layers,
@@ -218,26 +247,12 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Management",
+    label: "People",
     items: [
       {
-        title: "Leads & Enrolments",
-        url: "/leads",
-        icon: UserPlus,
-        requirement: { type: "roles", roles: ADMIN_ROLES },
-      },
-      {
-        title: "Student Roster",
+        title: "Students",
         url: "/students",
         icon: UsersRound,
-        requirement: { type: "roles", roles: ADMIN_ROLES },
-      },
-      {
-        // Support tooling for access: refunds, comps, and "I paid but I
-        // can't see it" tickets all get resolved here.
-        title: "Entitlements",
-        url: "/entitlements",
-        icon: ShieldCheck,
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
       {
@@ -247,33 +262,13 @@ export const navGroups: NavGroup[] = [
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
       {
-        // The cohort a LIVE course is actually sold as a seat in. Had no
-        // admin surface at all until now — batches could only be created by
-        // calling the API directly.
-        title: "Batches",
-        url: "/batches",
-        icon: Layers,
-        requirement: { type: "roles", roles: ADMIN_ROLES },
-      },
-      {
-        title: "Academic Programs",
-        url: "/programs",
-        icon: School,
-        requirement: { type: "roles", roles: ADMIN_ROLES },
-      },
-      {
         title: "Users & Roles",
         url: "/users",
         icon: UserCog,
         requirement: { type: "roles", roles: ADMIN_ROLES },
       },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
       {
-        title: "Communication",
+        title: "Announcements",
         url: "/communication",
         icon: MessageSquare,
         requirement: { type: "roles", roles: ADMIN_ROLES },
@@ -282,17 +277,34 @@ export const navGroups: NavGroup[] = [
   },
 ];
 
-/** Flattened leaves, used by the route guard to match a pathname to its access requirement. */
+/**
+ * The buy path, surfaced in the family portal header.
+ *
+ * Deliberately NOT a member of `navGroups`: robots.ts disallows every nav leaf URL, and /explore is
+ * the public, indexable catalog the whole acquisition funnel depends on. Guardian-only — the child
+ * cannot complete a purchase, so a buy CTA on the student portal would only generate pestering.
+ */
+export const browseCoursesLink: NavLeaf = {
+  title: "Browse Courses",
+  url: "/explore",
+  icon: Compass,
+  requirement: { type: "roles", roles: ["GUARDIAN"] },
+};
+
+/** The role's landing page as a single "Home" item, instead of one entry per portal. */
+export function homeLeaf(url: string): NavLeaf {
+  return { title: "Home", url, icon: Home, requirement: { type: "always" } };
+}
+
+/** The wording this role should see for a destination. */
+export function navTitle(leaf: NavLeaf, role: PrimaryRole): string {
+  return leaf.titleByRole?.[role] ?? leaf.title;
+}
+
+/**
+ * Every leaf the route guard and robots.txt need to know about: the rendered nav plus the role
+ * landing pages that are never drawn as items.
+ */
 export function flattenNavLeaves(groups: NavGroup[] = navGroups): NavLeaf[] {
-  const leaves: NavLeaf[] = [];
-  for (const group of groups) {
-    for (const item of group.items) {
-      if (isNavParent(item)) {
-        leaves.push(...item.children);
-      } else {
-        leaves.push(item);
-      }
-    }
-  }
-  return leaves;
+  return [...portalHomeLeaves, ...groups.flatMap((group) => group.items)];
 }

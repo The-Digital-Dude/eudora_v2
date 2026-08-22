@@ -184,7 +184,7 @@ function ApplicationRow({ application }: { application: TeacherApplication }) {
           {application.reviewedAt
             ? ` on ${new Date(application.reviewedAt).toLocaleDateString()}`
             : ""}
-          {application.reviewNotes ? ` — ${application.reviewNotes}` : ""}
+          {application.reviewNotes ? `: ${application.reviewNotes}` : ""}
         </p>
       ) : (
         <div className="mt-3 space-y-2 border-t border-border pt-3">

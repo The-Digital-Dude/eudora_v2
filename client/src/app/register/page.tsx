@@ -195,7 +195,7 @@ export default function RegisterPage() {
               Create your account
             </h1>
             <p className="text-muted-foreground mx-auto max-w-[280px] text-xs leading-normal">
-              Sign up to start designing student learning paths and curriculums.
+              Create a parent account to enrol your child and follow their progress.
             </p>
           </div>
 

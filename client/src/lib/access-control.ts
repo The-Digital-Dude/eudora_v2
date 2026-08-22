@@ -66,13 +66,13 @@ export function hasAccess(user: AuthUser | null | undefined, requirement: NavReq
   }
 }
 
+export type PrimaryRole = "ADMIN" | "TEACHER" | "GUARDIAN" | "STUDENT";
+
 /**
  * The role that decides which experience shell a user gets. Admin outranks
  * teacher outranks guardian; plain USER means student.
  */
-export function getPrimaryRole(
-  user: AuthUser | null | undefined,
-): "ADMIN" | "TEACHER" | "GUARDIAN" | "STUDENT" {
+export function getPrimaryRole(user: AuthUser | null | undefined): PrimaryRole {
   const roles = getUserRoles(user);
   if (roles.includes("SUPER_ADMIN") || roles.includes("ADMIN")) return "ADMIN";
   if (roles.includes("TEACHER")) return "TEACHER";
@@ -91,22 +91,5 @@ export function getRoleHome(user: AuthUser | null | undefined): string {
       return "/parent";
     default:
       return "/student";
-  }
-}
-
-/** Brand block per experience shell — keeps admin chrome out of learner/parent views. */
-export function getShellBrand(user: AuthUser | null | undefined): {
-  title: string;
-  subtitle: string;
-} {
-  switch (getPrimaryRole(user)) {
-    case "ADMIN":
-      return { title: "Eudora Admin", subtitle: "Console" };
-    case "TEACHER":
-      return { title: "Eudora", subtitle: "Teacher Studio" };
-    case "GUARDIAN":
-      return { title: "Eudora", subtitle: "Family Portal" };
-    default:
-      return { title: "Eudora", subtitle: "Learning Space" };
   }
 }

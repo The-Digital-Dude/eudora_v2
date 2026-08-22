@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Eudora — AI-powered Education OS";
+export const alt = "Eudora: interactive lessons and live cohorts for Pre-K to Grade 6";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -50,7 +50,7 @@ export default function Image() {
             maxWidth: 900,
           }}
         >
-          Learn intelligently. Teach effortlessly.
+          Screens your kids actually learn from.
         </div>
 
         <div
@@ -62,7 +62,7 @@ export default function Image() {
             maxWidth: 800,
           }}
         >
-          The AI-powered education operating system for schools.
+          An AI tutor that asks questions. Real teachers behind it.
         </div>
       </div>
     ),

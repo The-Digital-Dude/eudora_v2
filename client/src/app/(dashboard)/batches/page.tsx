@@ -1,6 +1,7 @@
 "use client";
 
-import { Layers, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarClock, Layers, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 import { toast } from "sonner";
 
@@ -62,7 +63,7 @@ export default function BatchesPage() {
       toast.success(
         batch.isOpenForEnrollment
           ? "Closed for enrolment."
-          : "Open for enrolment — guardians can now buy a seat.",
+          : "Open for enrolment. Guardians can now buy a seat.",
       );
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to update enrolment.");
@@ -140,7 +141,7 @@ export default function BatchesPage() {
                         {b.course ? (
                           b.course.title
                         ) : (
-                          <span className="text-warning">Not sellable — no course</span>
+                          <span className="text-warning">Not sellable: no course</span>
                         )}
                       </td>
                       <td className="px-5 py-3 text-xs text-muted-foreground">
@@ -162,6 +163,14 @@ export default function BatchesPage() {
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center justify-end gap-1">
+                          <Link
+                            href={`/batches/${b.id}`}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
+                            aria-label={`Schedule for ${b.name}`}
+                            title="Schedule"
+                          >
+                            <CalendarClock className="h-3.5 w-3.5" />
+                          </Link>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -196,7 +205,7 @@ export default function BatchesPage() {
             <DialogDescription>
               {editing
                 ? "Changing the end date moves when live access expires for everyone in this batch."
-                : "New batches start closed for enrolment — open them from the list when ready to sell."}
+                : "New batches start closed for enrolment. Open them from the list when ready to sell."}
             </DialogDescription>
           </DialogHeader>
           <BatchForm

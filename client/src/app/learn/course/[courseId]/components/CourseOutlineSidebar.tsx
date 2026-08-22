@@ -9,6 +9,7 @@ import {
   FileText,
   Lock,
   MessageSquare,
+  PencilLine,
   PlayCircle,
   Radio,
   Sparkles,
@@ -26,6 +27,7 @@ const kindIcon: Record<ModuleItemKind, React.ElementType> = {
   DISCUSSION: MessageSquare,
   ASSESSMENT: ClipboardList,
   LIVE_CLASS: Radio,
+  HOMEWORK: PencilLine,
 };
 
 interface CourseOutlineSidebarProps {

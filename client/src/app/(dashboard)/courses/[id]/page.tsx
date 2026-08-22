@@ -10,6 +10,7 @@ import {
   Loader2,
   Lock,
   MessageSquare,
+  PencilLine,
   PlayCircle,
   Plus,
   Radio,
@@ -25,12 +26,15 @@ import type { ModuleItemKind } from "@/features/catalog/catalogApi";
 import { useCreateModuleItemMutation,useGetCourseDetailQuery } from "@/features/catalog/catalogApi";
 import { useCreateConceptMutation } from "@/features/clio/clioApi";
 
+import { CourseHomeworkProgress } from "./components/course-homework-progress";
+
 const kindIcon: Record<ModuleItemKind, React.ElementType> = {
   VIDEO: PlayCircle,
   READING: FileText,
   DISCUSSION: MessageSquare,
   ASSESSMENT: ClipboardList,
   LIVE_CLASS: Radio,
+  HOMEWORK: PencilLine,
 };
 
 const statusColors: Record<string, string> = {
@@ -47,6 +51,9 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
   const [readingContent, setReadingContent] = useState("");
   const [discussionPrompt, setDiscussionPrompt] = useState("");
   const [assessmentId, setAssessmentId] = useState("");
+  const [homeworkInstructions, setHomeworkInstructions] = useState("");
+  const [homeworkMaxPoints, setHomeworkMaxPoints] = useState("10");
+  const [homeworkDueDate, setHomeworkDueDate] = useState("");
   const { data: assessmentsData } = useGetAssessmentsQuery(undefined, { skip: kind !== "ASSESSMENT" });
   const [createModuleItem, { isLoading }] = useCreateModuleItemMutation();
 
@@ -56,6 +63,9 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
     setReadingContent("");
     setDiscussionPrompt("");
     setAssessmentId("");
+    setHomeworkInstructions("");
+    setHomeworkMaxPoints("10");
+    setHomeworkDueDate("");
     setIsOpen(false);
   };
 
@@ -64,6 +74,9 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
     if (!title.trim()) return toast.error("Title is required.");
     if (kind === "ASSESSMENT" && !assessmentId) {
       return toast.error("Select an assessment to link.");
+    }
+    if (kind === "HOMEWORK" && !(Number(homeworkMaxPoints) > 0)) {
+      return toast.error("Marks available must be greater than zero.");
     }
     try {
       await createModuleItem({
@@ -74,6 +87,11 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
         readingContent: kind === "READING" ? readingContent.trim() : undefined,
         discussionPrompt: kind === "DISCUSSION" ? discussionPrompt.trim() : undefined,
         assessmentId: kind === "ASSESSMENT" ? assessmentId : undefined,
+        homeworkInstructions:
+          kind === "HOMEWORK" ? homeworkInstructions.trim() || undefined : undefined,
+        homeworkMaxPoints: kind === "HOMEWORK" ? Number(homeworkMaxPoints) : undefined,
+        // Left off when blank: a self-paced checkpoint has no deadline.
+        homeworkDueDate: kind === "HOMEWORK" ? homeworkDueDate || undefined : undefined,
         status: "PUBLISHED",
       }).unwrap();
       toast.success("Item added.");
@@ -108,6 +126,7 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
           <option value="DISCUSSION">Discussion</option>
           <option value="ASSESSMENT">Assessment</option>
           <option value="LIVE_CLASS">Live Class</option>
+          <option value="HOMEWORK">Homework</option>
         </select>
         <input
           value={title}
@@ -155,11 +174,50 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
           ))}
         </select>
       )}
+      {kind === "HOMEWORK" && (
+        <div className="space-y-2">
+          <textarea
+            value={homeworkInstructions}
+            onChange={(e) => setHomeworkInstructions(e.target.value)}
+            placeholder="What should they do, and what does good look like?"
+            className="h-20 w-full resize-none rounded-lg border border-border bg-card p-2 text-[10px]"
+          />
+          <div className="flex gap-2">
+            <label className="flex-1">
+              <span className="mb-1 block text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
+                Marks available
+              </span>
+              <input
+                type="number"
+                min={1}
+                value={homeworkMaxPoints}
+                onChange={(e) => setHomeworkMaxPoints(e.target.value)}
+                className="h-8 w-full rounded-lg border border-border bg-card px-2 text-[10px]"
+              />
+            </label>
+            <label className="flex-1">
+              <span className="mb-1 block text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
+                Due date (optional)
+              </span>
+              <input
+                type="date"
+                value={homeworkDueDate}
+                onChange={(e) => setHomeworkDueDate(e.target.value)}
+                className="h-8 w-full rounded-lg border border-border bg-card px-2 text-[10px]"
+              />
+            </label>
+          </div>
+          <p className="rounded-lg bg-muted/60 p-2 text-[10px] leading-relaxed text-muted-foreground">
+            Leave the date blank for a self-paced course. The learner reaches this
+            checkpoint whenever they get there, so nothing can be late.
+          </p>
+        </div>
+      )}
       {kind === "LIVE_CLASS" && (
         <p className="rounded-lg bg-muted/60 p-2 text-[10px] leading-relaxed text-muted-foreground">
           This reserves a live session in the outline. Each batch schedules its own
           meeting time and join link against it from{" "}
-          <span className="font-semibold text-foreground">Live Classes</span> — adding
+          <span className="font-semibold text-foreground">Live Classes</span>. Adding
           one here switches the course to <span className="font-semibold text-foreground">LIVE</span> delivery.
         </p>
       )}
@@ -288,6 +346,7 @@ export default function CourseDetailPage() {
   const courseId = params?.id ?? "";
   const { data: course, isLoading } = useGetCourseDetailQuery(courseId, { skip: !courseId });
   const concepts = course?.concepts ?? [];
+  const [tab, setTab] = useState<"curriculum" | "progress">("curriculum");
 
   if (isLoading) {
     return (
@@ -337,6 +396,35 @@ export default function CourseDetailPage() {
         </p>
       </div>
 
+      {/* Two things happen on a course page: authoring it, and watching people
+          work through it. Tabs rather than one long scroll, because they are
+          different jobs done at different times. */}
+      <div className="border-border flex gap-1 border-b">
+        {(
+          [
+            ["curriculum", "Curriculum"],
+            ["progress", "Homework progress"],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setTab(value)}
+            aria-current={tab === value ? "page" : undefined}
+            className={`-mb-px cursor-pointer border-b-2 px-3 py-2 text-xs font-bold transition-all ${
+              tab === value
+                ? "border-foreground text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "progress" && <CourseHomeworkProgress courseId={course.id} />}
+
+      {tab === "curriculum" && (
       <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
         {concepts.length === 0 ? (
           <div className="py-2">
@@ -430,8 +518,9 @@ export default function CourseDetailPage() {
           </div>
         )}
       </div>
+      )}
 
-      <CourseTeachersPanel courseId={courseId} />
+      {tab === "curriculum" && <CourseTeachersPanel courseId={courseId} />}
     </div>
   );
 }

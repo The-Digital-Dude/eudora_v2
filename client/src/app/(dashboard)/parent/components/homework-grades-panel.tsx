@@ -106,9 +106,15 @@ export function HomeworkGradesPanel({
                         </span>
                         <span className="text-xs font-semibold text-muted-foreground">
                           {status === "GRADED" ? (
-                            <span className="font-extrabold text-sm text-success">{sub.score} / {hw.pointsPossible} pts</span>
+                            // `sub.score` never existed — the field is
+                            // `pointsEarned`, on both the column and the API
+                            // response — so a marked piece of homework showed
+                            // a guardian "/ 100 pts" with the mark missing.
+                            <span className="font-extrabold text-sm text-success">
+                              {sub.pointsEarned} / {hw.pointsPossible} pts
+                            </span>
                           ) : (
-                            `${hw.pointsPossible} pts possibles`
+                            `${hw.pointsPossible} pts possible`
                           )}
                         </span>
                       </div>

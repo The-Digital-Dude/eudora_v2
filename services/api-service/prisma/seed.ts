@@ -11,7 +11,7 @@ async function main() {
   console.log('🌱 Starting database seeding...');
 
   // ─── Permissions & Roles ─────────────────────────────────────────────────────
-  const subjects = ['User', 'Role', 'Permission', 'Teacher', 'Student', 'Assessment', 'Timetable', 'Attendance', 'Homework', 'Gradebook', 'ReportCard', 'LearningGap', 'NextAction', 'Diagnostic', 'Placement', 'LiveClass'];
+  const subjects = ['User', 'Role', 'Permission', 'Teacher', 'Student', 'Assessment', 'Attendance', 'Homework', 'Gradebook', 'ReportCard', 'LearningGap', 'NextAction', 'Diagnostic', 'Placement', 'LiveClass'];
   const actions = ['create', 'read', 'update', 'delete', 'manage', 'attempt', 'mark', 'assign'];
   const permissionIds: Record<string, string> = {};
 
@@ -47,7 +47,6 @@ async function main() {
     'read:Permission','create:Teacher','read:Teacher','update:Teacher','delete:Teacher','manage:Teacher',
     'create:Student','read:Student','update:Student','delete:Student','manage:Student',
     'read:Assessment','manage:Assessment','assign:Assessment',
-    'create:Timetable','read:Timetable','update:Timetable','delete:Timetable','manage:Timetable',
     'create:Attendance','read:Attendance','update:Attendance','delete:Attendance','manage:Attendance',
     'create:Homework','read:Homework','update:Homework','delete:Homework','manage:Homework',
     'create:Gradebook','read:Gradebook','update:Gradebook','delete:Gradebook','manage:Gradebook',
@@ -62,11 +61,11 @@ async function main() {
     const pid = permissionIds[k];
     if (pid) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: adminRole.id, permissionId: pid } }, update: {}, create: { roleId: adminRole.id, permissionId: pid } });
   }
-  for (const k of ['read:User','read:Student','read:Assessment','attempt:Assessment','read:Timetable','read:Attendance','read:Homework','attempt:Homework','read:Gradebook','read:ReportCard']) {
+  for (const k of ['read:User','read:Student','read:Assessment','attempt:Assessment','read:Attendance','read:Homework','attempt:Homework','read:Gradebook','read:ReportCard']) {
     const pid = permissionIds[k];
     if (pid) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: userRole.id, permissionId: pid } }, update: {}, create: { roleId: userRole.id, permissionId: pid } });
   }
-  for (const k of ['read:User','read:Teacher','read:Student','update:Student','manage:Student','read:Assessment','attempt:Assessment','mark:Assessment','assign:Assessment','read:Timetable','create:Attendance','read:Attendance','update:Attendance','manage:Attendance','create:Homework','read:Homework','update:Homework','delete:Homework','manage:Homework','create:Gradebook','read:Gradebook','update:Gradebook','manage:Gradebook','read:LearningGap','update:LearningGap','create:NextAction','read:NextAction','update:NextAction','create:Diagnostic','read:Diagnostic','update:Diagnostic','create:Placement','read:Placement','update:Placement','create:LiveClass','read:LiveClass','update:LiveClass']) {
+  for (const k of ['read:User','read:Teacher','read:Student','update:Student','manage:Student','read:Assessment','attempt:Assessment','mark:Assessment','assign:Assessment','create:Attendance','read:Attendance','update:Attendance','manage:Attendance','create:Homework','read:Homework','update:Homework','delete:Homework','manage:Homework','create:Gradebook','read:Gradebook','update:Gradebook','manage:Gradebook','read:LearningGap','update:LearningGap','create:NextAction','read:NextAction','update:NextAction','create:Diagnostic','read:Diagnostic','update:Diagnostic','create:Placement','read:Placement','update:Placement','create:LiveClass','read:LiveClass','update:LiveClass']) {
     const pid = permissionIds[k];
     if (pid) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: teacherRole.id, permissionId: pid } }, update: {}, create: { roleId: teacherRole.id, permissionId: pid } });
   }
@@ -74,7 +73,12 @@ async function main() {
   // Academic Ledger" view (GPA, term average, class rank, percentile) is the guardian branch of
   // /gradebook, and both gradebook student endpoints require read:Gradebook. Without it a guardian
   // held read:ReportCard while the only page serving it returned Access Denied.
-  for (const k of ['read:User','read:Student','read:Timetable','read:Attendance','read:Homework','read:ReportCard','read:Gradebook']) {
+  // attempt:Homework is a *write* in a list that is otherwise all reads, and it
+  // is deliberate: a child created through the family portal has no password
+  // and cannot sign in, so the guardian hands work in on their behalf. Without
+  // it the submit route passes @Roles('GUARDIAN') and is then refused by the
+  // permissions guard, which is a 403 nobody can explain from the outside.
+  for (const k of ['read:User','read:Student','read:Timetable','read:Attendance','read:Homework','attempt:Homework','read:ReportCard','read:Gradebook']) {
     const pid = permissionIds[k];
     if (pid) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: guardianRole.id, permissionId: pid } }, update: {}, create: { roleId: guardianRole.id, permissionId: pid } });
   }
@@ -195,7 +199,7 @@ async function main() {
 
   // ─── Subjects & Levels ───────────────────────────────────────────────────────
   const mathSubject = await prisma.subject.upsert({ where: { code: 'MATH' }, update: {}, create: { code: 'MATH', name: 'Mathematics' } });
-  const csSubject = await prisma.subject.upsert({ where: { code: 'SCI' }, update: {}, create: { code: 'SCI', name: 'Science' } });
+  const sciSubject = await prisma.subject.upsert({ where: { code: 'SCI' }, update: {}, create: { code: 'SCI', name: 'Science' } });
   const engSubject = await prisma.subject.upsert({ where: { code: 'ENG' }, update: {}, create: { code: 'ENG', name: 'English' } });
 
 
@@ -262,8 +266,7 @@ async function main() {
 
   const fractionsConc = await prisma.concept.upsert({ where: { name: 'Fractions' }, update: {}, create: { name: 'Fractions', description: 'Understanding fraction concepts, operations, and applications' } });
   const algebraConc = await prisma.concept.upsert({ where: { name: 'Algebra Fundamentals' }, update: {}, create: { name: 'Algebra Fundamentals', description: 'Basic algebraic thinking and expressions' } });
-  const sortingConc = await prisma.concept.upsert({ where: { name: 'Sorting Algorithms' }, update: {}, create: { name: 'Sorting Algorithms', description: 'Understanding comparison-based and non-comparison-based sorting' } });
-  const htmlConc = await prisma.concept.upsert({ where: { name: 'HTML & CSS Basics' }, update: {}, create: { name: 'HTML & CSS Basics', description: 'Building the structure and style of web pages' } });
+  const sortingConc = await prisma.concept.upsert({ where: { name: 'Sorting & Patterns' }, update: {}, create: { name: 'Sorting & Patterns', description: 'Putting things in order by size or number, and spotting what comes next' } });
 
   // Competencies
   let compFractions = await prisma.competency.findFirst({ where: { name: 'Compare Fractions', conceptId: fractionsConc.id } });
@@ -272,8 +275,8 @@ async function main() {
   let compAlgebra = await prisma.competency.findFirst({ where: { name: 'Solve Linear Equations', conceptId: algebraConc.id } });
   if (!compAlgebra) compAlgebra = await prisma.competency.create({ data: { conceptId: algebraConc.id, name: 'Solve Linear Equations', description: 'Solve one-variable linear equations' } });
 
-  let compSorting = await prisma.competency.findFirst({ where: { name: 'Implement Bubble Sort', conceptId: sortingConc.id } });
-  if (!compSorting) compSorting = await prisma.competency.create({ data: { conceptId: sortingConc.id, name: 'Implement Bubble Sort', description: 'Implement and trace bubble sort algorithm' } });
+  let compSorting = await prisma.competency.findFirst({ where: { name: 'Order Numbers and Objects', conceptId: sortingConc.id } });
+  if (!compSorting) compSorting = await prisma.competency.create({ data: { conceptId: sortingConc.id, name: 'Order Numbers and Objects', description: 'Put numbers and objects in order from smallest to largest' } });
 
   // Lessons
   let lesson1 = await prisma.lesson.findFirst({ where: { title: 'Intro to Comparing Fractions' } });
@@ -307,15 +310,15 @@ async function main() {
     await prisma.card.create({ data: { lessonId: lesson3.id, title: 'Substituting Values', sortOrder: 1, cardType: 'INTERACTIVE', content: 'A variable is a symbol that stands for a number. Let\'s practice substitution.', questionId: q4.id } });
   }
 
-  let lesson4 = await prisma.lesson.findFirst({ where: { title: 'Bubble Sort Step by Step' } });
+  let lesson4 = await prisma.lesson.findFirst({ where: { title: 'Putting Things in Order' } });
   if (!lesson4) {
-    lesson4 = await prisma.lesson.create({ data: { conceptId: sortingConc.id, title: 'Bubble Sort Step by Step', description: 'Trace through the bubble sort algorithm and understand its complexity.', sortOrder: 1, xpReward: 75 } });
-    const q5 = await prisma.question.create({ data: { subjectId: csSubject.id, classId: gradeLevel.id, questionType: 'mcq', prompt: 'What is the time complexity of Bubble Sort in the worst case?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'Bubble Sort compares each pair of adjacent elements, resulting in O(n²) operations in the worst case.', hints: ['Think about nested loops.'] } });
-    await prisma.questionOption.create({ data: { questionId: q5.id, optionLabel: 'A', optionText: 'O(n²)', isCorrect: true } });
-    await prisma.questionOption.create({ data: { questionId: q5.id, optionLabel: 'B', optionText: 'O(n log n)', isCorrect: false } });
-    await prisma.questionOption.create({ data: { questionId: q5.id, optionLabel: 'C', optionText: 'O(n)', isCorrect: false } });
-    await prisma.card.create({ data: { lessonId: lesson4.id, title: 'Comparing Pairs', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'Bubble Sort repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.' } });
-    await prisma.card.create({ data: { lessonId: lesson4.id, title: 'Complexity Quiz', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Test your understanding of Bubble Sort\'s time complexity.', questionId: q5.id } });
+    lesson4 = await prisma.lesson.create({ data: { conceptId: sortingConc.id, title: 'Putting Things in Order', description: 'Sort numbers from smallest to largest and spot what comes next.', sortOrder: 1, xpReward: 75 } });
+    const q5 = await prisma.question.create({ data: { subjectId: mathSubject.id, classId: gradeLevel.id, questionType: 'mcq', prompt: 'Which row is in order from smallest to largest?', correctAnswer: null, widgetType: 'STANDARD_MCQ', isGraded: true, explanation: 'Start with the smallest number and check that each one after it is bigger.', hints: ['Find the smallest number first. Does it come first?'] } });
+    await prisma.questionOption.create({ data: { questionId: q5.id, optionLabel: 'A', optionText: '2, 5, 9', isCorrect: true } });
+    await prisma.questionOption.create({ data: { questionId: q5.id, optionLabel: 'B', optionText: '9, 2, 5', isCorrect: false } });
+    await prisma.questionOption.create({ data: { questionId: q5.id, optionLabel: 'C', optionText: '5, 9, 2', isCorrect: false } });
+    await prisma.card.create({ data: { lessonId: lesson4.id, title: 'Smallest to Largest', sortOrder: 1, cardType: 'CONCEPTUAL', content: 'To put numbers in order, look for the smallest one and write it first. Then find the next smallest, and keep going.' } });
+    await prisma.card.create({ data: { lessonId: lesson4.id, title: 'Your Turn', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Look at each row and pick the one that goes from smallest to largest.', questionId: q5.id } });
   }
 
   // Rubric for fractions competency
@@ -355,9 +358,9 @@ async function main() {
   const mathQ1 = await makeQ(mathSubject.id, gradeLevel.id, 'Solve: 2x + 6 = 14. What is x?', [{ label: 'A', text: '4', correct: true }, { label: 'B', text: '3', correct: false }, { label: 'C', text: '10', correct: false }, { label: 'D', text: '5', correct: false }], 'Subtract 6 from both sides: 2x = 8. Divide by 2: x = 4.');
   const mathQ2 = await makeQ(mathSubject.id, gradeLevel.id, 'Which of these is equivalent to $$\\frac{4}{6}$$?', [{ label: 'A', text: '$$\\frac{2}{3}$$', correct: true }, { label: 'B', text: '$$\\frac{3}{4}$$', correct: false }, { label: 'C', text: '$$\\frac{1}{2}$$', correct: false }], 'Divide numerator and denominator by 2: 4÷2 / 6÷2 = 2/3.');
   const mathQ3 = await makeQ(mathSubject.id, gradeLevel.id, 'What is 15% of 200?', [{ label: 'A', text: '30', correct: true }, { label: 'B', text: '25', correct: false }, { label: 'C', text: '40', correct: false }], '15% × 200 = 0.15 × 200 = 30.');
-  const csQ1 = await makeQ(csSubject.id, gradeLevel.id, 'Which data structure uses LIFO (Last In First Out)?', [{ label: 'A', text: 'Stack', correct: true }, { label: 'B', text: 'Queue', correct: false }, { label: 'C', text: 'Array', correct: false }], 'A Stack uses LIFO — the last element pushed is the first one popped.');
-  const csQ2 = await makeQ(csSubject.id, gradeLevel.id, 'What does HTML stand for?', [{ label: 'A', text: 'HyperText Markup Language', correct: true }, { label: 'B', text: 'High-Level Text Markup Language', correct: false }, { label: 'C', text: 'HyperText Machine Language', correct: false }], 'HTML = HyperText Markup Language, the standard language for web pages.');
-  const csQ3 = await makeQ(csSubject.id, gradeLevel.id, 'What is the output of: console.log(typeof null)?', [{ label: 'A', text: '"object"', correct: true }, { label: 'B', text: '"null"', correct: false }, { label: 'C', text: '"undefined"', correct: false }], 'This is a long-standing JavaScript quirk: typeof null returns "object".');
+  const sciQ1 = await makeQ(sciSubject.id, gradeLevel.id, 'Which shape has exactly three sides?', [{ label: 'A', text: 'Triangle', correct: true }, { label: 'B', text: 'Square', correct: false }, { label: 'C', text: 'Circle', correct: false }], 'A triangle has three straight sides and three corners.');
+  const sciQ2 = await makeQ(sciSubject.id, gradeLevel.id, 'How many corners does a square have?', [{ label: 'A', text: '4', correct: true }, { label: 'B', text: '3', correct: false }, { label: 'C', text: '6', correct: false }], 'A square has four equal sides and four corners.');
+  const sciQ3 = await makeQ(sciSubject.id, gradeLevel.id, 'Which unit would you use to measure the length of your desk?', [{ label: 'A', text: 'Centimetres', correct: true }, { label: 'B', text: 'Litres', correct: false }, { label: 'C', text: 'Grams', correct: false }], 'Length is measured in centimetres and metres. Litres measure liquid and grams measure weight.');
 
   // Create assessments
   const createAssessment = async (typeId: string, subjectId: string, classId: string, tId: string, title: string, totalMarks: number, status: string, weekNumber: number | null) => {
@@ -378,15 +381,15 @@ async function main() {
   await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: mathQuiz1.id, questionId: mathQ2.id } }, update: {}, create: { assessmentId: mathQuiz1.id, sectionId: mathQ1Section.id, questionId: mathQ2.id, questionNumber: 2, marksAvailable: 10 } });
   await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: mathQuiz1.id, questionId: mathQ3.id } }, update: {}, create: { assessmentId: mathQuiz1.id, sectionId: mathQ1Section.id, questionId: mathQ3.id, questionNumber: 3, marksAvailable: 10 } });
 
-  const { assessment: csQuiz1, section: csQ1Section } = await createAssessment(quizType.id, csSubject.id, gradeLevel.id, term.id, 'Week 2 CS Quiz — Data Structures', 30, 'published', 2);
-  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: csQuiz1.id, questionId: csQ1.id } }, update: {}, create: { assessmentId: csQuiz1.id, sectionId: csQ1Section.id, questionId: csQ1.id, questionNumber: 1, marksAvailable: 10 } });
-  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: csQuiz1.id, questionId: csQ2.id } }, update: {}, create: { assessmentId: csQuiz1.id, sectionId: csQ1Section.id, questionId: csQ2.id, questionNumber: 2, marksAvailable: 10 } });
-  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: csQuiz1.id, questionId: csQ3.id } }, update: {}, create: { assessmentId: csQuiz1.id, sectionId: csQ1Section.id, questionId: csQ3.id, questionNumber: 3, marksAvailable: 10 } });
+  const { assessment: sciQuiz1, section: sciQ1Section } = await createAssessment(quizType.id, sciSubject.id, gradeLevel.id, term.id, 'Week 2 Science Quiz — Shapes', 30, 'published', 2);
+  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: sciQuiz1.id, questionId: sciQ1.id } }, update: {}, create: { assessmentId: sciQuiz1.id, sectionId: sciQ1Section.id, questionId: sciQ1.id, questionNumber: 1, marksAvailable: 10 } });
+  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: sciQuiz1.id, questionId: sciQ2.id } }, update: {}, create: { assessmentId: sciQuiz1.id, sectionId: sciQ1Section.id, questionId: sciQ2.id, questionNumber: 2, marksAvailable: 10 } });
+  await prisma.assessmentQuestion.upsert({ where: { assessmentId_questionId: { assessmentId: sciQuiz1.id, questionId: sciQ3.id } }, update: {}, create: { assessmentId: sciQuiz1.id, sectionId: sciQ1Section.id, questionId: sciQ3.id, questionNumber: 3, marksAvailable: 10 } });
 
   const { assessment: mathMidterm } = await createAssessment(midtermType.id, mathSubject.id, gradeLevel.id, term.id, 'Fall Midterm — Mathematics', 100, 'published', 8);
-  const { assessment: csMidterm } = await createAssessment(midtermType.id, csSubject.id, gradeLevel.id, term.id, 'Autumn Check-in — Science', 100, 'published', 8);
+  const { assessment: sciMidterm } = await createAssessment(midtermType.id, sciSubject.id, gradeLevel.id, term.id, 'Autumn Check-in — Science', 100, 'published', 8);
   const { assessment: mathFinal } = await createAssessment(finalType.id, mathSubject.id, gradeLevel.id, term.id, 'Final Exam — Mathematics', 100, 'draft', 16);
-  const { assessment: csHw } = await createAssessment(hwType.id, csSubject.id, gradeLevel.id, term.id, 'CS Homework Assessment — Algorithms', 20, 'published', 3);
+  const { assessment: sciHw } = await createAssessment(hwType.id, sciSubject.id, gradeLevel.id, term.id, 'Science Homework — Sorting & Patterns', 20, 'published', 3);
   console.log('✅ Seeded assessments');
 
   // ─── Students ─────────────────────────────────────────────────────────────────
@@ -501,94 +504,24 @@ async function main() {
   }
   console.log('✅ Seeded attendance');
 
-  // ─── Timetable ────────────────────────────────────────────────────────────────
-  console.log('🌱 Seeding timetable...');
-  let timetable = await prisma.timetable.findFirst({ where: { name: 'Fall 2026 — CS Section A', classSectionId: sectionA.id } });
-  if (!timetable) {
-    timetable = await prisma.timetable.create({
-      data: {
-        academicYearId: academicYear.id,
-        termId: term.id,
-        classSectionId: sectionA.id,
-        name: 'Fall 2026 — CS Section A',
-        status: 'PUBLISHED',
-        effectiveFrom: new Date('2026-09-10'),
-        effectiveTo: new Date('2026-12-20'),
-        publishedAt: new Date(),
-        createdById: superAdminUser.id,
-      },
-    });
-  }
-
-  // Weekly timetable: Mon-Fri, 5 periods each day
-  // startTimeMinutes: 480 = 8:00am, 540 = 9:00am, 600 = 10:00am, 660 = 11:00am, 750 = 12:30pm, 810 = 13:30pm
-  const slotDefinitions = [
-    // MONDAY
-    { day: 'MONDAY', period: 1, start: 480, end: 540, room: 'Room A', batchId: dsaClass.id, teacherCode: 'EMP-MITCHELL' },
-    { day: 'MONDAY', period: 2, start: 540, end: 620, room: 'Room D', batchId: algClass.id, teacherCode: 'EMP-DASILVA' },
-    { day: 'MONDAY', period: 3, start: 640, end: 720, room: 'Room B', batchId: webClass.id, teacherCode: 'EMP-MITCHELL' },
-    { day: 'MONDAY', period: 4, start: 750, end: 830, room: 'Room C', batchId: calcClass.id, teacherCode: 'EMP-NGUYEN' },
-    // TUESDAY
-    { day: 'TUESDAY', period: 1, start: 480, end: 540, room: 'Room E', batchId: engClass.id, teacherCode: 'EMP-DASILVA' },
-    { day: 'TUESDAY', period: 2, start: 540, end: 620, room: 'Room A', batchId: dsaClass.id, teacherCode: 'EMP-MITCHELL' },
-    { day: 'TUESDAY', period: 3, start: 640, end: 720, room: 'Room D', batchId: algClass.id, teacherCode: 'EMP-DASILVA' },
-    { day: 'TUESDAY', period: 4, start: 750, end: 830, room: 'Room B', batchId: webClass.id, teacherCode: 'EMP-MITCHELL' },
-    // WEDNESDAY
-    { day: 'WEDNESDAY', period: 1, start: 480, end: 540, room: 'Room C', batchId: calcClass.id, teacherCode: 'EMP-NGUYEN' },
-    { day: 'WEDNESDAY', period: 2, start: 540, end: 620, room: 'Room E', batchId: engClass.id, teacherCode: 'EMP-OKAFOR' },
-    { day: 'WEDNESDAY', period: 3, start: 640, end: 720, room: 'Room A', batchId: dsaClass.id, teacherCode: 'EMP-MITCHELL' },
-    { day: 'WEDNESDAY', period: 4, start: 750, end: 830, room: 'Room D', batchId: algClass.id, teacherCode: 'EMP-DASILVA' },
-    // THURSDAY
-    { day: 'THURSDAY', period: 1, start: 480, end: 540, room: 'Room B', batchId: webClass.id, teacherCode: 'EMP-MITCHELL' },
-    { day: 'THURSDAY', period: 2, start: 540, end: 620, room: 'Room C', batchId: calcClass.id, teacherCode: 'EMP-NGUYEN' },
-    { day: 'THURSDAY', period: 3, start: 640, end: 720, room: 'Room E', batchId: engClass.id, teacherCode: 'EMP-OKAFOR' },
-    { day: 'THURSDAY', period: 4, start: 750, end: 830, room: 'Room A', batchId: dsaClass.id, teacherCode: 'EMP-MITCHELL' },
-    // FRIDAY
-    { day: 'FRIDAY', period: 1, start: 480, end: 540, room: 'Room D', batchId: algClass.id, teacherCode: 'EMP-DASILVA' },
-    { day: 'FRIDAY', period: 2, start: 540, end: 620, room: 'Room B', batchId: webClass.id, teacherCode: 'EMP-MITCHELL' },
-    { day: 'FRIDAY', period: 3, start: 640, end: 720, room: 'Room C', batchId: calcClass.id, teacherCode: 'EMP-NGUYEN' },
-    { day: 'FRIDAY', period: 4, start: 750, end: 830, room: 'Room E', batchId: engClass.id, teacherCode: 'EMP-OKAFOR' },
-  ] as const;
-
-  for (const s of slotDefinitions) {
-    const existing = await prisma.timetableSlot.findFirst({ where: { timetableId: timetable.id, dayOfWeek: s.day, periodIndex: s.period } });
-    if (!existing) {
-      await prisma.timetableSlot.create({
-        data: {
-          timetableId: timetable.id,
-          dayOfWeek: s.day,
-          periodIndex: s.period,
-          startTimeMinutes: s.start,
-          endTimeMinutes: s.end,
-          room: s.room,
-          classSectionId: sectionA.id,
-          batchId: s.batchId,
-          teacherProfileId: teacherProfiles[s.teacherCode].id,
-          status: 'ACTIVE',
-        },
-      });
-    }
-  }
-  console.log('✅ Seeded timetable');
-
   // ─── Homework ─────────────────────────────────────────────────────────────────
   console.log('🌱 Seeding homework...');
-  const turingUser = teacherUsers['EMP-MITCHELL'];
+  const mitchellUser = teacherUsers['EMP-MITCHELL'];
 
   const hw1 = await prisma.homework.upsert({
-    where: { id: (await prisma.homework.findFirst({ where: { title: 'DSA Problem Set 1', batchId: dsaClass.id } }))?.id ?? 'nonexistent-id' },
+    where: { id: (await prisma.homework.findFirst({ where: { title: 'Times Tables Practice 1', batchId: dsaClass.id } }))?.id ?? 'nonexistent-id' },
     update: {},
-    create: { batchId: dsaClass.id, title: 'DSA Problem Set 1', description: 'Implement a linked list with insert, delete, and search operations.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: turingUser.id },
+    create: { batchId: dsaClass.id, title: 'Times Tables Practice 1', description: 'Practise the 2, 5 and 10 times tables. Write each answer out in full.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: mitchellUser.id },
   }).catch(async () => {
-    const existing = await prisma.homework.findFirst({ where: { title: 'DSA Problem Set 1', batchId: dsaClass.id } });
+    const existing = await prisma.homework.findFirst({ where: { title: 'Times Tables Practice 1', batchId: dsaClass.id } });
     if (existing) return existing;
-    return prisma.homework.create({ data: { batchId: dsaClass.id, title: 'DSA Problem Set 1', description: 'Implement a linked list with insert, delete, and search operations.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: turingUser.id } });
+    return prisma.homework.create({ data: { batchId: dsaClass.id, title: 'Times Tables Practice 1', description: 'Practise the 2, 5 and 10 times tables. Write each answer out in full.', dueDate: new Date('2026-09-25'), maxPoints: 100, recordedById: mitchellUser.id } });
   });
 
   const hw2 = await (async () => {
-    const existing = await prisma.homework.findFirst({ where: { title: 'Web Dev Project 1', batchId: webClass.id } });
+    const existing = await prisma.homework.findFirst({ where: { title: 'Shape Hunt Project', batchId: webClass.id } });
     if (existing) return existing;
-    return prisma.homework.create({ data: { batchId: webClass.id, title: 'Web Dev Project 1', description: 'Build a responsive landing page using HTML and CSS.', dueDate: new Date('2026-09-30'), maxPoints: 100, recordedById: turingUser.id } });
+    return prisma.homework.create({ data: { batchId: webClass.id, title: 'Shape Hunt Project', description: 'Find five different shapes around your home and draw each one.', dueDate: new Date('2026-09-30'), maxPoints: 100, recordedById: mitchellUser.id } });
   })();
 
   const hw3 = await (async () => {
@@ -613,7 +546,7 @@ async function main() {
       const existing = await prisma.homeworkSubmission.findFirst({ where: { homeworkId: hwObj.id, studentProfileId: profile.id } });
       if (!existing) {
         await prisma.homeworkSubmission.create({
-          data: { homeworkId: hwObj.id, studentProfileId: profile.id, status: 'GRADED', content: `Submission by ${profile.firstName}`, pointsEarned: score, feedback: score >= 85 ? 'Excellent work!' : score >= 70 ? 'Good effort.' : 'Needs improvement.', gradedById: turingUser.id, gradedAt: new Date() },
+          data: { homeworkId: hwObj.id, studentProfileId: profile.id, status: 'GRADED', content: `Submission by ${profile.firstName}`, pointsEarned: score, feedback: score >= 85 ? 'Excellent work!' : score >= 70 ? 'Good effort.' : 'Needs improvement.', gradedById: mitchellUser.id, gradedAt: new Date() },
         });
       }
     }
@@ -626,22 +559,22 @@ async function main() {
   const dueAt = new Date('2026-09-16');
 
   const attemptScores: Record<string, Record<string, number>> = {
-    'Charlotte': { mathQuiz1: 27, csQuiz1: 24, mathMidterm: 85, csMidterm: 91 },
-    'Aria': { mathQuiz1: 30, csQuiz1: 28, mathMidterm: 92, csMidterm: 88 },
-    'Lucas': { mathQuiz1: 21, csQuiz1: 20, mathMidterm: 72, csMidterm: 74 },
-    'Noah': { mathQuiz1: 26, csQuiz1: 25, mathMidterm: 80, csMidterm: 83 },
-    'Emma': { mathQuiz1: 28, csQuiz1: 26, mathMidterm: 88, csMidterm: 86 },
+    'Charlotte': { mathQuiz1: 27, sciQuiz1: 24, mathMidterm: 85, sciMidterm: 91 },
+    'Aria': { mathQuiz1: 30, sciQuiz1: 28, mathMidterm: 92, sciMidterm: 88 },
+    'Lucas': { mathQuiz1: 21, sciQuiz1: 20, mathMidterm: 72, sciMidterm: 74 },
+    'Noah': { mathQuiz1: 26, sciQuiz1: 25, mathMidterm: 80, sciMidterm: 83 },
+    'Emma': { mathQuiz1: 28, sciQuiz1: 26, mathMidterm: 88, sciMidterm: 86 },
   };
 
   const assessmentMap: Record<string, { id: string; totalMarks: number }> = {
     mathQuiz1: { id: mathQuiz1.id, totalMarks: 30 },
-    csQuiz1: { id: csQuiz1.id, totalMarks: 30 },
+    sciQuiz1: { id: sciQuiz1.id, totalMarks: 30 },
     mathMidterm: { id: mathMidterm.id, totalMarks: 100 },
-    csMidterm: { id: csMidterm.id, totalMarks: 100 },
+    sciMidterm: { id: sciMidterm.id, totalMarks: 100 },
   };
 
   for (const profile of sectionAPlacedStudents) {
-    const scores = attemptScores[profile.firstName] ?? { mathQuiz1: 20, csQuiz1: 18, mathMidterm: 70, csMidterm: 70 };
+    const scores = attemptScores[profile.firstName] ?? { mathQuiz1: 20, sciQuiz1: 18, mathMidterm: 70, sciMidterm: 70 };
     for (const [key, { id: assessmentId, totalMarks }] of Object.entries(assessmentMap)) {
       const existingAssignment = await prisma.assessmentAssignment.findFirst({ where: { assessmentId, studentProfileId: profile.id } });
       let assignment = existingAssignment;
@@ -675,10 +608,10 @@ async function main() {
     const g = gradeData.find(d => d.name === profile.firstName) ?? { mathQ: 75, csQ: 70, mathM: 75, csM: 70, hw: 75 };
     const entries = [
       { title: 'Week 1 Math Quiz', category: 'QUIZ', points: g.mathQ, possible: 100, srcType: 'ASSESSMENT_ATTEMPT' as const, srcId: `mq1-${profile.id}` },
-      { title: 'Week 2 CS Quiz', category: 'QUIZ', points: g.csQ, possible: 100, srcType: 'ASSESSMENT_ATTEMPT' as const, srcId: `csq1-${profile.id}` },
+      { title: 'Week 2 Science Quiz', category: 'QUIZ', points: g.csQ, possible: 100, srcType: 'ASSESSMENT_ATTEMPT' as const, srcId: `csq1-${profile.id}` },
       { title: 'Fall Midterm — Math', category: 'MIDTERM', points: g.mathM, possible: 100, srcType: 'ASSESSMENT_ATTEMPT' as const, srcId: `mm-${profile.id}` },
       { title: 'Fall Midterm — CS', category: 'MIDTERM', points: g.csM, possible: 100, srcType: 'ASSESSMENT_ATTEMPT' as const, srcId: `csm-${profile.id}` },
-      { title: 'DSA Problem Set 1', category: 'HOMEWORK', points: g.hw, possible: 100, srcType: 'HOMEWORK_SUBMISSION' as const, srcId: `hw1-${profile.id}` },
+      { title: 'Times Tables Practice 1', category: 'HOMEWORK', points: g.hw, possible: 100, srcType: 'HOMEWORK_SUBMISSION' as const, srcId: `hw1-${profile.id}` },
     ];
     for (const e of entries) {
       const existing = await prisma.gradeBookEntry.findFirst({ where: { studentProfileId: profile.id, sourceType: e.srcType, sourceId: e.srcId } });
@@ -796,7 +729,7 @@ async function main() {
       { userId: superAdminUser.id, type: 'WARNING', title: 'High Makeup Request Volume', body: 'There are 3 pending makeup requests that require your attention.', readAt: null },
       { userId: superAdminUser.id, type: 'SYSTEM', title: 'Backup Successful', body: 'System database backup completed successfully.', readAt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
       { userId: superAdminUser.id, type: 'INFO', title: 'New Student Enrollment', body: 'Emma Davis has completed enrollment and has been placed in CS Section A.', readAt: null },
-      { userId: superAdminUser.id, type: 'INFO', title: 'Timetable Published', body: 'The Fall 2026 timetable for CS Section A has been published successfully.', readAt: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+      { userId: superAdminUser.id, type: 'INFO', title: 'Sessions Generated', body: 'Autumn sessions for Grade 2 Morning Group have been generated.', readAt: new Date(Date.now() - 2 * 60 * 60 * 1000) },
       { userId: superAdminUser.id, type: 'WARNING', title: 'Assessment Due Soon', body: 'The Fall Midterm — Mathematics closes in 24 hours. 2 students have not yet submitted.', readAt: null },
     ],
   });
@@ -805,20 +738,20 @@ async function main() {
   // ─── Course Class Sessions & Session Attendance ─────────────────────────────
   console.log('🌱 Seeding course class sessions...');
   const sessionDefs = [
-    { batchId: dsaClass.id, date: '2026-09-15', topic: 'Introduction to Linked Lists', start: '08:00', end: '09:00' },
-    { batchId: dsaClass.id, date: '2026-09-18', topic: 'Stacks and Queues', start: '08:00', end: '09:00' },
-    { batchId: dsaClass.id, date: '2026-09-22', topic: 'Binary Trees', start: '08:00', end: '09:00' },
-    { batchId: dsaClass.id, date: '2026-09-25', topic: 'Tree Traversal Algorithms', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-15', topic: 'Counting in Twos', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-18', topic: 'Times Tables: 2 and 5', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-22', topic: 'Times Tables: 10', start: '08:00', end: '09:00' },
+    { batchId: dsaClass.id, date: '2026-09-25', topic: 'Word Problems with Times Tables', start: '08:00', end: '09:00' },
     { batchId: dsaClass.id, date: '2026-09-29', topic: 'Hash Tables', start: '08:00', end: '09:00' },
     { batchId: dsaClass.id, date: '2026-10-02', topic: 'Graph Representation', start: '08:00', end: '09:00' },
     { batchId: dsaClass.id, date: '2026-10-06', topic: 'BFS and DFS', start: '08:00', end: '09:00' },
     { batchId: dsaClass.id, date: '2026-10-09', topic: 'Dynamic Programming Introduction', start: '08:00', end: '09:00' },
     { batchId: algClass.id, date: '2026-09-15', topic: 'Big-O Notation', start: '09:10', end: '10:20' },
     { batchId: algClass.id, date: '2026-09-18', topic: 'Divide and Conquer', start: '09:10', end: '10:20' },
-    { batchId: algClass.id, date: '2026-09-22', topic: 'Sorting Algorithms', start: '09:10', end: '10:20' },
+    { batchId: algClass.id, date: '2026-09-22', topic: 'Putting Numbers in Order', start: '09:10', end: '10:20' },
     { batchId: algClass.id, date: '2026-09-25', topic: 'Merge Sort & Quick Sort', start: '09:10', end: '10:20' },
-    { batchId: webClass.id, date: '2026-09-15', topic: 'HTML Structure & Semantics', start: '10:40', end: '12:00' },
-    { batchId: webClass.id, date: '2026-09-18', topic: 'CSS Selectors & Box Model', start: '10:40', end: '12:00' },
+    { batchId: webClass.id, date: '2026-09-15', topic: 'Measuring with a Ruler', start: '10:40', end: '12:00' },
+    { batchId: webClass.id, date: '2026-09-18', topic: 'Comparing Lengths', start: '10:40', end: '12:00' },
     { batchId: webClass.id, date: '2026-09-22', topic: 'Responsive Design', start: '10:40', end: '12:00' },
     { batchId: calcClass.id, date: '2026-09-15', topic: 'Limits and Continuity', start: '12:30', end: '13:50' },
     { batchId: calcClass.id, date: '2026-09-18', topic: 'Introduction to Derivatives', start: '12:30', end: '13:50' },
@@ -881,14 +814,14 @@ async function main() {
   const mathQ1Opts = await prisma.questionOption.findMany({ where: { questionId: mathQ1.id } });
   const mathQ2Opts = await prisma.questionOption.findMany({ where: { questionId: mathQ2.id } });
   const mathQ3Opts = await prisma.questionOption.findMany({ where: { questionId: mathQ3.id } });
-  const csQ1Opts = await prisma.questionOption.findMany({ where: { questionId: csQ1.id } });
-  const csQ2Opts = await prisma.questionOption.findMany({ where: { questionId: csQ2.id } });
-  const csQ3Opts = await prisma.questionOption.findMany({ where: { questionId: csQ3.id } });
+  const sciQ1Opts = await prisma.questionOption.findMany({ where: { questionId: sciQ1.id } });
+  const sciQ2Opts = await prisma.questionOption.findMany({ where: { questionId: sciQ2.id } });
+  const sciQ3Opts = await prisma.questionOption.findMany({ where: { questionId: sciQ3.id } });
 
   const cOpt = (opts: any[]) => opts.find((o: any) => o.isCorrect);
   const wOpt = (opts: any[]) => opts.find((o: any) => !o.isCorrect);
 
-  // [mathQ1, mathQ2, mathQ3, csQ1, csQ2, csQ3] — true = correct answer
+  // [mathQ1, mathQ2, mathQ3, sciQ1, sciQ2, sciQ3] — true = correct answer
   const responsePattern: Record<string, boolean[]> = {
     Charlotte: [true,  true,  false, true,  true,  false],
     Aria:      [true,  true,  true,  true,  true,  true],
@@ -915,10 +848,10 @@ async function main() {
     }
 
     const csAttempt = await prisma.assessmentAttempt.findFirst({
-      where: { studentProfileId: profile.id, assignment: { assessmentId: csQuiz1.id } },
+      where: { studentProfileId: profile.id, assignment: { assessmentId: sciQuiz1.id } },
     });
     if (csAttempt) {
-      for (const [i, { q, opts }] of [[3, { q: csQ1, opts: csQ1Opts }], [4, { q: csQ2, opts: csQ2Opts }], [5, { q: csQ3, opts: csQ3Opts }]] as [number, {q:any;opts:any[]}][]) {
+      for (const [i, { q, opts }] of [[3, { q: sciQ1, opts: sciQ1Opts }], [4, { q: sciQ2, opts: sciQ2Opts }], [5, { q: sciQ3, opts: sciQ3Opts }]] as [number, {q:any;opts:any[]}][]) {
         const isCorrect = pat[i];
         const selOpt = isCorrect ? cOpt(opts) : wOpt(opts);
         const exists = await prisma.studentResponse.findFirst({ where: { assessmentAttemptId: csAttempt.id, questionId: q.id } });
@@ -976,7 +909,7 @@ async function main() {
           competencyId: compFractions.id,
           homeworkSubmissionId: submission.id,
           sourceType: 'HOMEWORK',
-          metadata: { submissionId: submission.id, homeworkTitle: 'DSA Problem Set 1' },
+          metadata: { submissionId: submission.id, homeworkTitle: 'Times Tables Practice 1' },
         },
       });
       const score = rubricScores[profile.firstName] ?? 3;
@@ -1128,32 +1061,10 @@ async function main() {
   console.log('✅ Seeded family invoices & payments');
 
   // Teacher shortcuts used below for audit-log and notification seeding.
-  const turingU = teacherUsers['EMP-MITCHELL'];
+  const mitchellU = teacherUsers['EMP-MITCHELL'];
   const okaforU = teacherUsers['EMP-OKAFOR'];
 
-  // ─── Section B Timetable & Attendance ────────────────────────────────────────
-  console.log('🌱 Seeding Section B timetable & attendance...');
-  let timetableB = await prisma.timetable.findFirst({ where: { classSectionId: sectionB.id } });
-  if (!timetableB) {
-    timetableB = await prisma.timetable.create({
-      data: { academicYearId: academicYear.id, termId: term.id, classSectionId: sectionB.id, name: 'Fall 2026 — CS Section B', status: 'PUBLISHED', effectiveFrom: new Date('2026-09-10'), effectiveTo: new Date('2026-12-20'), publishedAt: new Date(), createdById: superAdminUser.id },
-    });
-    const bSlots = [
-      { day: 'MONDAY',    period: 1, start: 540,  end: 620,  room: 'Lab 3',    ccId: dsaClass.id,  tc: 'EMP-DASILVA' },
-      { day: 'MONDAY',    period: 2, start: 640,  end: 720,  room: 'Room 102', ccId: algClass.id,  tc: 'EMP-OKAFOR' },
-      { day: 'TUESDAY',   period: 1, start: 480,  end: 560,  room: 'Lab 3',    ccId: webClass.id,  tc: 'EMP-DASILVA' },
-      { day: 'TUESDAY',   period: 2, start: 640,  end: 720,  room: 'Room 204', ccId: calcClass.id, tc: 'EMP-NGUYEN' },
-      { day: 'WEDNESDAY', period: 1, start: 540,  end: 620,  room: 'Lab 3',    ccId: dsaClass.id,  tc: 'EMP-DASILVA' },
-      { day: 'WEDNESDAY', period: 2, start: 640,  end: 720,  room: 'Room 102', ccId: engClass.id,  tc: 'EMP-OKAFOR' },
-      { day: 'THURSDAY',  period: 1, start: 480,  end: 560,  room: 'Room 204', ccId: calcClass.id, tc: 'EMP-NGUYEN' },
-      { day: 'THURSDAY',  period: 2, start: 640,  end: 720,  room: 'Lab 3',    ccId: webClass.id,  tc: 'EMP-DASILVA' },
-      { day: 'FRIDAY',    period: 1, start: 540,  end: 620,  room: 'Room 102', ccId: algClass.id,  tc: 'EMP-OKAFOR' },
-      { day: 'FRIDAY',    period: 2, start: 640,  end: 720,  room: 'Room E', ccId: engClass.id,  tc: 'EMP-OKAFOR' },
-    ] as const;
-    for (const s of bSlots) {
-      await prisma.timetableSlot.create({ data: { timetableId: timetableB.id, dayOfWeek: s.day, periodIndex: s.period, startTimeMinutes: s.start, endTimeMinutes: s.end, room: s.room, classSectionId: sectionB.id, batchId: s.ccId, teacherProfileId: teacherProfiles[s.tc].id, status: 'ACTIVE' } });
-    }
-  }
+  // ─── Section B Attendance ────────────────────────────────────────────────────
 
   // Section B daily attendance (same date range)
   const sectionBStudents = studentProfiles.filter(p => p.sectionId === sectionB.id);
@@ -1184,7 +1095,7 @@ async function main() {
       });
     }
   }
-  console.log('✅ Seeded Section B timetable & attendance');
+  console.log('✅ Seeded Section B attendance');
 
   // ─── GradeBook for Section B ─────────────────────────────────────────────────
   console.log('🌱 Seeding Section B gradebook...');
@@ -1199,7 +1110,7 @@ async function main() {
     if (!g) continue;
     const entries = [
       { title: 'Week 1 Math Quiz', cat: 'QUIZ', pts: g.mathQ, srcId: `mq1-b-${profile.id}`, srcType: 'ASSESSMENT_ATTEMPT' as const },
-      { title: 'Week 2 CS Quiz',   cat: 'QUIZ', pts: g.csQ,   srcId: `csq1-b-${profile.id}`, srcType: 'ASSESSMENT_ATTEMPT' as const },
+      { title: 'Week 2 Science Quiz',   cat: 'QUIZ', pts: g.csQ,   srcId: `csq1-b-${profile.id}`, srcType: 'ASSESSMENT_ATTEMPT' as const },
     ];
     for (const e of entries) {
       const exists = await prisma.gradeBookEntry.findFirst({ where: { studentProfileId: profile.id, sourceType: e.srcType, sourceId: e.srcId } });
@@ -1214,16 +1125,16 @@ async function main() {
   console.log('🌱 Seeding audit logs...');
   await prisma.auditLog.createMany({
     data: [
-      { actorUserId: superAdminUser.id, event: 'TIMETABLE_PUBLISHED', targetType: 'Timetable', targetId: timetable.id, ipAddress: '127.0.0.1', metadata: { name: 'Fall 2026 — CS Section A' } },
+      { actorUserId: superAdminUser.id, event: 'SESSIONS_GENERATED', targetType: 'Batch', targetId: null, ipAddress: '127.0.0.1', metadata: { name: 'Grade 2 Morning Group' } },
       { actorUserId: superAdminUser.id, event: 'ASSESSMENT_PUBLISHED', targetType: 'Assessment', targetId: mathQuiz1.id, ipAddress: '127.0.0.1', metadata: { title: 'Week 1 Math Quiz — Fractions' } },
-      { actorUserId: superAdminUser.id, event: 'ASSESSMENT_PUBLISHED', targetType: 'Assessment', targetId: csQuiz1.id, ipAddress: '127.0.0.1', metadata: { title: 'Week 2 CS Quiz — Data Structures' } },
+      { actorUserId: superAdminUser.id, event: 'ASSESSMENT_PUBLISHED', targetType: 'Assessment', targetId: sciQuiz1.id, ipAddress: '127.0.0.1', metadata: { title: 'Week 2 Science Quiz — Shapes' } },
       { actorUserId: superAdminUser.id, event: 'STUDENT_ENROLLED', targetType: 'StudentProfile', targetId: studentProfiles[0]?.id, ipAddress: '127.0.0.1', metadata: { name: 'Charlotte Harris', section: 'CS Section A' } },
       { actorUserId: superAdminUser.id, event: 'STUDENT_ENROLLED', targetType: 'StudentProfile', targetId: studentProfiles[4]?.id, ipAddress: '127.0.0.1', metadata: { name: 'Noah Johnson', section: 'CS Section A' } },
-      { actorUserId: turingU.id, event: 'HOMEWORK_CREATED', targetType: 'Homework', targetId: hw1.id, ipAddress: '10.0.0.1', metadata: { title: 'DSA Problem Set 1' } },
-      { actorUserId: turingU.id, event: 'GRADE_PUBLISHED', targetType: 'GradeBookEntry', targetId: null, ipAddress: '10.0.0.1', metadata: { assessment: 'Week 1 Math Quiz', studentCount: 5 } },
-      { actorUserId: turingU.id, event: 'SESSION_CREATED', targetType: 'BatchSession', targetId: sessions[0]?.id ?? null, ipAddress: '10.0.0.1', metadata: { topic: 'Introduction to Linked Lists' } },
+      { actorUserId: mitchellU.id, event: 'HOMEWORK_CREATED', targetType: 'Homework', targetId: hw1.id, ipAddress: '10.0.0.1', metadata: { title: 'Times Tables Practice 1' } },
+      { actorUserId: mitchellU.id, event: 'GRADE_PUBLISHED', targetType: 'GradeBookEntry', targetId: null, ipAddress: '10.0.0.1', metadata: { assessment: 'Week 1 Math Quiz', studentCount: 5 } },
+      { actorUserId: mitchellU.id, event: 'SESSION_CREATED', targetType: 'BatchSession', targetId: sessions[0]?.id ?? null, ipAddress: '10.0.0.1', metadata: { topic: 'Counting in Twos' } },
       { actorUserId: teacherUsers['EMP-OKAFOR'].id, event: 'HOMEWORK_GRADED', targetType: 'Homework', targetId: hw3.id, ipAddress: '10.0.0.2', metadata: { title: 'Fractions Worksheet 1' } },
-      { actorUserId: teacherUsers['EMP-DASILVA'].id, event: 'TIMETABLE_PUBLISHED', targetType: 'Timetable', targetId: null, ipAddress: '10.0.0.3', metadata: { name: 'Fall 2026 — CS Section B' } },
+      { actorUserId: teacherUsers['EMP-DASILVA'].id, event: 'SESSIONS_GENERATED', targetType: 'Batch', targetId: null, ipAddress: '10.0.0.3', metadata: { name: 'Grade 2 Afternoon Group' } },
       { actorUserId: superAdminUser.id, event: 'ATTENDANCE_RECORDED', targetType: 'DailyAttendance', targetId: null, ipAddress: '127.0.0.1', metadata: { date: '2026-06-23', sections: ['CS-2026-A', 'CS-2026-B'], totalRecords: 11 } },
       { actorUserId: superAdminUser.id, event: 'RUBRIC_ASSESSMENT_CREATED', targetType: 'RubricAssessment', targetId: null, ipAddress: '127.0.0.1', metadata: { rubricName: 'Comparing Fractions Rubric', evaluatedCount: 4 } },
     ],
@@ -1234,14 +1145,14 @@ async function main() {
   console.log('🌱 Seeding teacher & guardian notifications...');
   await prisma.notification.createMany({
     data: [
-      { userId: turingU.id, type: 'INFO',    title: 'New Message from Robert Harris', body: "Robert Harris sent a message about Charlotte's June 12 absence.", readAt: null },
-      { userId: turingU.id, type: 'INFO',    title: 'Week 1 Quiz — All Submissions In', body: '5 students completed the Week 1 Math Quiz. Click to review.', readAt: new Date() },
-      { userId: turingU.id, type: 'WARNING', title: 'Makeup Request Pending', body: "Charlotte Harris has an unresolved makeup request for the June 12 DSA session.", readAt: null },
-      { userId: turingU.id, type: 'INFO',    title: 'Noah Johnson — Midterm Marked', body: "Noah's Fall Midterm has been marked. Score: 80/100.", readAt: null },
+      { userId: mitchellU.id, type: 'INFO',    title: 'New Message from Robert Harris', body: "Robert Harris sent a message about Charlotte's June 12 absence.", readAt: null },
+      { userId: mitchellU.id, type: 'INFO',    title: 'Week 1 Quiz — All Submissions In', body: '5 students completed the Week 1 Math Quiz. Click to review.', readAt: new Date() },
+      { userId: mitchellU.id, type: 'WARNING', title: 'Makeup Request Pending', body: "Charlotte Harris has an unresolved makeup request for the June 12 maths session.", readAt: null },
+      { userId: mitchellU.id, type: 'INFO',    title: 'Noah Johnson — Midterm Marked', body: "Noah's Fall Midterm has been marked. Score: 80/100.", readAt: null },
       { userId: okaforU.id, type: 'INFO',    title: 'New Message from Robert Harris', body: 'Robert Harris asked about Fall Midterm topics for Charlotte.', readAt: new Date() },
       { userId: okaforU.id, type: 'WARNING', title: 'Fractions Worksheet 1 — 3 Not Submitted', body: 'Fractions Worksheet 1 deadline passed. 3 students still outstanding.', readAt: null },
       { userId: okaforU.id, type: 'INFO',    title: 'Gradebook Published', body: 'Your Week 1 Math Quiz grades have been published to students and guardians.', readAt: null },
-      { userId: teacherUsers['EMP-DASILVA'].id, type: 'INFO',    title: 'Section B Timetable Active', body: 'Fall 2026 timetable for CS Section B is now live.', readAt: null },
+      { userId: teacherUsers['EMP-DASILVA'].id, type: 'INFO',    title: 'Afternoon Group Sessions Live', body: 'Autumn sessions for Grade 2 Afternoon Group are now scheduled.', readAt: null },
       { userId: teacherUsers['EMP-DASILVA'].id, type: 'INFO',    title: 'New Message from Sandra Brooks', body: 'Sandra Brooks inquired about support resources for Lucas.', readAt: null },
       { userId: teacherUsers['EMP-NGUYEN'].id,  type: 'WARNING', title: 'Low Attendance Alert', body: "William Anderson was absent 2 days this week (June 18–19). Consider reaching out.", readAt: null },
       { userId: guardian1User.id, type: 'INFO',    title: 'Grade Published — Week 1 Math Quiz', body: "Charlotte's Week 1 Math Quiz grade (90%) is now available.", readAt: null },
@@ -1655,7 +1566,7 @@ async function main() {
   // ─── Phase 3.5: Additional courses ────────────────────────────────────────────
   console.log('🌱 Seeding Phase 3.5 courses...');
 
-  const csLearningSubject = await prisma.learningSubject.upsert({
+  const sciLearningSubject = await prisma.learningSubject.upsert({
     where: { code: 'SCI' },
     update: {},
     create: { code: 'SCI', name: 'Science & Discovery', description: 'Shapes, measuring, patterns and how the world works.', sortOrder: 2 },
@@ -2679,7 +2590,7 @@ async function main() {
   const writingStructureChapter = await prisma.concept.upsert({
     where: { name: 'Multi-Paragraph Writing' },
     update: { courseId: g56LaCourse.id, sortOrder: 2, kind: 'CHAPTER' },
-    create: { name: 'Multi-Paragraph Writing', description: 'Structuring an essay with a clear thesis and organized paragraphs.', courseId: g56LaCourse.id, sortOrder: 2, kind: 'CHAPTER' },
+    create: { name: 'Multi-Paragraph Writing', description: 'Planning a piece of writing with a clear main idea and organised paragraphs.', courseId: g56LaCourse.id, sortOrder: 2, kind: 'CHAPTER' },
   });
 
   let thesisStatementsLesson = await prisma.lesson.findFirst({ where: { title: 'Thesis Statements', conceptId: writingStructureChapter.id } });
@@ -2928,14 +2839,14 @@ async function main() {
     // the actual submission flow with. One per class she doesn't already
     // have a homework in, so the "Due" list has real variety to tap into.
     const pendingHomeworkSpecs = [
-      { title: 'DSA Problem Set 2', batch: dsaClass, description: 'Implement a binary search tree with insert, delete, and in-order traversal.', dueDate: new Date('2026-08-20'), maxPoints: 100 },
-      { title: 'Algorithms Quiz Prep', batch: algClass, description: 'Write pseudocode for binary search and bubble sort, and note each one’s worst-case complexity.', dueDate: new Date('2026-08-13'), maxPoints: 50 },
+      { title: 'Times Tables Practice 2', batch: dsaClass, description: 'Practise the 3, 4 and 6 times tables, then check them with a partner.', dueDate: new Date('2026-08-20'), maxPoints: 100 },
+      { title: 'Sorting & Patterns Quiz Prep', batch: algClass, description: 'Put three sets of numbers in order from smallest to largest, then say what comes next.', dueDate: new Date('2026-08-13'), maxPoints: 50 },
       { title: 'Essay: Persuasive Writing', batch: engClass, description: 'Write a 500-word persuasive essay on a topic of your choice.', dueDate: new Date('2026-08-18'), maxPoints: 100 },
     ];
     for (const spec of pendingHomeworkSpecs) {
       const existingHw = await prisma.homework.findFirst({ where: { title: spec.title, batchId: spec.batch.id } });
       if (!existingHw) {
-        await prisma.homework.create({ data: { batchId: spec.batch.id, title: spec.title, description: spec.description, dueDate: spec.dueDate, maxPoints: spec.maxPoints, recordedById: turingUser.id } });
+        await prisma.homework.create({ data: { batchId: spec.batch.id, title: spec.title, description: spec.description, dueDate: spec.dueDate, maxPoints: spec.maxPoints, recordedById: mitchellUser.id } });
       }
     }
 
@@ -3081,6 +2992,10 @@ async function main() {
       description: 'Small-group live maths, twice a week after school.',
       capacity: 20,
       isOpenForEnrollment: true,
+      // The weekly pattern the Schedule page generates sessions from.
+      meetingDays: ['TUESDAY', 'THURSDAY'],
+      meetingStartMinutes: 16 * 60,
+      meetingDurationMinutes: 60,
       startDate: batchStart,
       endDate: batchEnd,
       enrollmentDeadline: batchDeadline,
@@ -3312,6 +3227,118 @@ async function main() {
       }
     }
     console.log('✅ Seeded entitlements for Charlotte');
+  }
+
+  // ─── Homework checkpoint (course-attached) ──────────────────────────────────
+  //
+  // The cohort homework above hangs off a batch, which a self-paced learner
+  // never has. This is the other shape: a HOMEWORK item inside a chapter, with
+  // the brief on the Homework row and no batch at all.
+  //
+  // Seeded with one submission still waiting to be marked and one already
+  // marked, because the three screens that read this — the course player, the
+  // teacher's review list, and the course progress grid — each render a
+  // different one of those states, and with an empty table they all show the
+  // same empty box.
+  const checkpointCourse = await prisma.course.findFirst({
+    where: { title: 'Multiplication, Division & Fractions' },
+    select: { id: true },
+  });
+  if (checkpointCourse) {
+    // The FIRST chapter, not the last. Chapters unlock in sequence, so a
+    // checkpoint in the final one is disabled in the player for any learner
+    // who has not worked through everything before it — which is every seeded
+    // learner, making the seed useless for exercising the flow.
+    const checkpointChapter = await prisma.concept.findFirst({
+      where: { courseId: checkpointCourse.id },
+      orderBy: { sortOrder: 'asc' },
+      select: { id: true },
+    });
+
+    if (checkpointChapter) {
+      let hwItem = await prisma.moduleItem.findFirst({
+        where: { conceptId: checkpointChapter.id, kind: 'HOMEWORK' },
+        include: { homework: true },
+      });
+
+      if (!hwItem) {
+        hwItem = await prisma.moduleItem.create({
+          data: {
+            conceptId: checkpointChapter.id,
+            kind: 'HOMEWORK',
+            title: 'Show your working: sharing 24 sweets',
+            sortOrder: 99,
+            status: 'PUBLISHED',
+            homework: {
+              create: {
+                title: 'Show your working: sharing 24 sweets',
+                description:
+                  'Share 24 sweets equally between 4 friends, then between 6. ' +
+                  'Draw or photograph your working and upload it. Write one ' +
+                  'sentence saying what you noticed about the two answers.',
+                maxPoints: 20,
+                // No dueDate on purpose: this is the self-paced shape.
+              },
+            },
+          },
+          include: { homework: true },
+        });
+      }
+
+      // Two learners already entitled to this course, in different states.
+      const entitled = await prisma.entitlement.findMany({
+        where: { courseId: checkpointCourse.id, status: 'ACTIVE' },
+        select: { studentProfile: { select: { id: true, fullName: true } } },
+      });
+      // By name, so a reseed always produces the same two learners rather than
+      // whichever id happened to sort first.
+      entitled.sort((a, b) =>
+        a.studentProfile.fullName.localeCompare(b.studentProfile.fullName),
+      );
+
+      if (hwItem.homework && entitled.length >= 2) {
+        const [waiting, marked] = entitled;
+
+        await prisma.homeworkSubmission.upsert({
+          where: {
+            homeworkId_studentProfileId: {
+              homeworkId: hwItem.homework.id,
+              studentProfileId: waiting.studentProfile.id,
+            },
+          },
+          update: {},
+          create: {
+            homeworkId: hwItem.homework.id,
+            studentProfileId: waiting.studentProfile.id,
+            content: 'I shared them out and got 6 each, then 4 each.',
+            status: 'SUBMITTED',
+          },
+        });
+
+        await prisma.homeworkSubmission.upsert({
+          where: {
+            homeworkId_studentProfileId: {
+              homeworkId: hwItem.homework.id,
+              studentProfileId: marked.studentProfile.id,
+            },
+          },
+          update: {},
+          create: {
+            homeworkId: hwItem.homework.id,
+            studentProfileId: marked.studentProfile.id,
+            content: 'More friends means fewer sweets each.',
+            status: 'GRADED',
+            pointsEarned: 18,
+            feedback: 'Exactly right, and a clear sentence. Show the division next time.',
+            gradedAt: new Date(),
+          },
+        });
+
+        console.log(
+          `✅ Seeded a homework checkpoint (1 to mark, 1 marked, ${entitled.length} entitled)`,
+        );
+      }
+    }
   }
 
   console.log('🎉 Seeding completed successfully!');

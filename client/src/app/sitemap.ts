@@ -28,6 +28,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.9,
     },
+    {
+      // Static, hand-written, and the main non-catalog entry point — it changes
+      // only when someone edits it, so it doesn't share /explore's cadence.
+      url: `${SITE_URL}/about-eudora`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
   ];
 
   // The catalog helpers swallow failures and return null. Emitting just the

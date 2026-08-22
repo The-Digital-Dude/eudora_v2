@@ -129,7 +129,7 @@ export class AttendanceController {
     if (isLinkedGuardian) return;
 
     throw new ForbiddenException(
-      'You do not have access to this student\'s attendance record.',
+      "You do not have access to this student's attendance record.",
     );
   }
 

@@ -1,25 +1,13 @@
 "use client";
 
 import { Command as CommandPrimitive } from "cmdk";
-import {
-  BookOpen,
-  CalendarDays,
-  ClipboardList,
-  CreditCard,
-  GraduationCap,
-  LayoutDashboard,
-  type LucideIcon,
-  MessageSquare,
-  PenTool,
-  School,
-  Search,
-  UserCheck,
-  Users,
-} from "lucide-react";
+import { type LucideIcon, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { navGroups, navTitle } from "@/config/nav-config";
+import { type AuthUser, getPrimaryRole, hasAccess } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 
 const Command = React.forwardRef<
@@ -116,46 +104,34 @@ interface SearchItem {
 interface CommandSearchProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  user: AuthUser | null | undefined;
 }
 
-export function CommandSearch({ open, onOpenChange }: CommandSearchProps) {
+export function CommandSearch({ open, onOpenChange, user }: CommandSearchProps) {
   const router = useRouter();
   const commandRef = React.useRef<HTMLDivElement>(null);
 
-  const searchItems: SearchItem[] = [
-    // Dashboard & Academics
-    { title: "Overview Dashboard", url: "/dashboard", group: "Dashboard", icon: LayoutDashboard },
-    { title: "Active Learning", url: "/learning", group: "Academics", icon: BookOpen },
-    { title: "Lesson Authoring", url: "/lessons", group: "Academics", icon: PenTool },
-    { title: "Diagnostics Tests", url: "/diagnostics", group: "Academics", icon: ClipboardList },
-
-    // Management
-    { title: "Leads & Enrolments", url: "/leads", group: "Management", icon: UserCheck },
-    { title: "Student Roster", url: "/students", group: "Management", icon: GraduationCap },
-    { title: "Classes & Attendance", url: "/classes", group: "Management", icon: CalendarDays },
-    { title: "Campuses & Programs", url: "/campuses", group: "Management", icon: School },
-    { title: "Users & Roles", url: "/users", group: "Management", icon: Users },
-
-    // Operations
-    {
-      title: "Communication Alerts",
-      url: "/communication",
-      group: "Operations",
-      icon: MessageSquare,
-    },
-    { title: "Billing & Plans", url: "/plans", group: "Operations", icon: CreditCard },
-  ];
-
-  const groupedItems = searchItems.reduce(
-    (acc, item) => {
-      if (!acc[item.group]) {
-        acc[item.group] = [];
-      }
-      acc[item.group].push(item);
-      return acc;
-    },
-    {} as Record<string, SearchItem[]>,
-  );
+  // Derived from nav-config, not hand-listed. The hand-written list this
+  // replaced had drifted into offering three routes that no longer exist
+  // (/classes, /campuses, /plans) and titles that no screen used any more.
+  const groupedItems = React.useMemo(() => {
+    const role = getPrimaryRole(user);
+    return navGroups.reduce(
+      (acc, group) => {
+        const items = group.items
+          .filter((leaf) => !leaf.hidden && !leaf.disabled && hasAccess(user, leaf.requirement))
+          .map<SearchItem>((leaf) => ({
+            title: navTitle(leaf, role),
+            url: leaf.url,
+            group: group.label,
+            icon: leaf.icon,
+          }));
+        if (items.length > 0) acc[group.label] = items;
+        return acc;
+      },
+      {} as Record<string, SearchItem[]>,
+    );
+  }, [user]);
 
   const handleSelect = (url: string) => {
     router.push(url);
@@ -177,7 +153,7 @@ export function CommandSearch({ open, onOpenChange }: CommandSearchProps) {
         <DialogTitle className="sr-only">Command Search</DialogTitle>
         <Command ref={commandRef} className="transition-transform duration-100 ease-out">
           <CommandInput
-            placeholder="Search system pages (e.g. Student Roster, Attendance)..."
+            placeholder="Search pages (e.g. Students, Attendance, Batches)..."
             autoFocus
           />
           <CommandList>

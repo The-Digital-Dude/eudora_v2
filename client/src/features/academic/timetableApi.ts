@@ -1,61 +1,30 @@
 import { authApi } from "../auth/authApi";
 
-export interface TimetableSlot {
-  id: string;
-  timetableId: string;
-  dayOfWeek: "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
-  periodIndex: number;
-  startTimeMinutes: number;
-  endTimeMinutes: number;
-  room?: string | null;
-  classSectionId: string;
-  batchId?: string | null;
-  teacherProfileId?: string | null;
-  status: "ACTIVE" | "CANCELLED";
-  notes?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  batch?: {
-    id: string;
-    name: string;
-    code: string;
-  };
-  teacherProfile?: {
-    id: string;
-    fullName: string;
-  };
-  classSection?: {
-    id: string;
-    name: string;
-    code: string;
-  };
-}
+/**
+ * What used to be the Timetable API.
+ *
+ * `Timetable` and `TimetableSlot` were retired: the weekly recurrence they
+ * expressed now lives on `Batch.meetingDays`, and the schedule reads resolved
+ * through `StudentClassPlacement`, so they returned nothing for any student who
+ * arrived through guardian checkout. Schedules now come from `BatchSession`.
+ *
+ * Terms and the teacher-me lookup stayed because other screens depend on them
+ * and neither had anything to do with the timetable.
+ */
 
-export interface Timetable {
+/** One real meeting, replacing the old weekly slot. */
+export interface ScheduledSession {
   id: string;
-  academicYearId: string;
-  termId?: string | null;
-  classSectionId?: string | null;
-  name: string;
-  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
-  effectiveFrom: string;
-  effectiveTo?: string | null;
-  createdById?: string | null;
-  publishedAt?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  slots?: TimetableSlot[];
-}
-
-export interface TimetableConflict {
-  type: "TEACHER" | "CLASS_SECTION" | "ROOM" | "INVALID_TIME";
-  message: string;
-  slotIndex?: number;
-  conflictingSlotId?: string;
-  conflictingTimetableId?: string;
-  dayOfWeek: string;
-  startTimeMinutes: number;
-  endTimeMinutes: number;
+  batchId: string;
+  topic: string | null;
+  date: string;
+  startTime: string | null;
+  endTime: string | null;
+  status: "SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED";
+  joinUrl: string | null;
+  batch?: { id: string; name: string; code: string };
+  moduleItem?: { id: string; title: string } | null;
+  teacher?: { id: string; firstName: string; lastName: string } | null;
 }
 
 export const timetableApi = authApi.injectEndpoints({
@@ -65,187 +34,57 @@ export const timetableApi = authApi.injectEndpoints({
       { items: any[]; total: number },
       { academicYearId?: string; page?: number; limit?: number } | void
     >({
-      query: (params) => {
-        const page = params?.page ?? 1;
-        const limit = params?.limit ?? 100;
-        const yearQuery = params?.academicYearId ? `&academicYearId=${params.academicYearId}` : "";
-        return `/terms?page=${page}&limit=${limit}${yearQuery}`;
+      query: (params: any) => {
+        const q = new URLSearchParams();
+        if (params?.academicYearId) q.set("academicYearId", params.academicYearId);
+        if (params?.page) q.set("page", String(params.page));
+        if (params?.limit) q.set("limit", String(params.limit));
+        const query = q.toString();
+        return `/terms${query ? `?${query}` : ""}`;
       },
       transformResponse: (response: any) => ({
-        items: response.data || [],
-        total: response.meta?.total ?? response.data?.length ?? 0,
+        items: response?.data ?? response?.items ?? [],
+        total: response?.meta?.total ?? response?.data?.length ?? 0,
       }),
-    }),
+    } as any),
 
     getTeacherMe: builder.query<any, void>({
       query: () => "/teacher-profiles/me",
-    }),
+    } as any),
 
-    getTimetables: builder.query<
-      Timetable[],
-      {
-        academicYearId?: string;
-        termId?: string;
-        classSectionId?: string;
-        status?: string;
-      } | void
+    getStudentSchedule: builder.query<
+      ScheduledSession[],
+      { studentProfileId: string; from?: string; to?: string }
     >({
-      query: (params) => {
-        const queryParts = [];
-        if (params?.academicYearId) queryParts.push(`academicYearId=${params.academicYearId}`);
-        if (params?.termId) queryParts.push(`termId=${params.termId}`);
-        if (params?.classSectionId) queryParts.push(`classSectionId=${params.classSectionId}`);
-        if (params?.status) queryParts.push(`status=${params.status}`);
-        const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
-        return `/timetables${queryString}`;
+      query: ({ studentProfileId, from, to }: any) => {
+        const q = new URLSearchParams();
+        if (from) q.set("from", from);
+        if (to) q.set("to", to);
+        const query = q.toString();
+        return `/schedule/student/${studentProfileId}${query ? `?${query}` : ""}`;
       },
-      providesTags: ["Timetables" as any],
-    }),
+      providesTags: ["BatchSessions" as any],
+    } as any),
 
-    getTimetableById: builder.query<Timetable, string>({
-      query: (id) => `/timetables/${id}`,
-      providesTags: (result, error, id) => [{ type: "Timetables" as any, id }],
-    }),
-
-    createTimetable: builder.mutation<Timetable, Partial<Timetable>>({
-      query: (body) => ({
-        url: "/timetables",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["Timetables" as any],
-    }),
-
-    updateTimetable: builder.mutation<Timetable, { id: string; body: Partial<Timetable> }>({
-      query: ({ id, body }) => ({
-        url: `/timetables/${id}`,
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: (result, error, { id }) => [
-        "Timetables" as any,
-        { type: "Timetables" as any, id },
-      ],
-    }),
-
-    deleteTimetable: builder.mutation<void, string>({
-      query: (id) => ({
-        url: `/timetables/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Timetables" as any],
-    }),
-
-    publishTimetable: builder.mutation<Timetable, string>({
-      query: (id) => ({
-        url: `/timetables/${id}/publish`,
-        method: "POST",
-      }),
-      invalidatesTags: (result, error, id) => [
-        "Timetables" as any,
-        { type: "Timetables" as any, id },
-      ],
-    }),
-
-    createTimetableSlot: builder.mutation<
-      TimetableSlot,
-      { timetableId: string; body: Partial<TimetableSlot> }
+    getTeacherSchedule: builder.query<
+      ScheduledSession[],
+      { teacherProfileId: string; from?: string; to?: string }
     >({
-      query: ({ timetableId, body }) => ({
-        url: `/timetables/${timetableId}/slots`,
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: (result, error, { timetableId }) => [
-        { type: "Timetables" as any, id: timetableId },
-        "TimetableSlots" as any,
-      ],
-    }),
-
-    updateTimetableSlot: builder.mutation<
-      TimetableSlot,
-      { timetableId: string; slotId: string; body: Partial<TimetableSlot> }
-    >({
-      query: ({ timetableId, slotId, body }) => ({
-        url: `/timetables/${timetableId}/slots/${slotId}`,
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: (result, error, { timetableId }) => [
-        { type: "Timetables" as any, id: timetableId },
-        "TimetableSlots" as any,
-      ],
-    }),
-
-    deleteTimetableSlot: builder.mutation<void, { timetableId: string; slotId: string }>({
-      query: ({ timetableId, slotId }) => ({
-        url: `/timetables/${timetableId}/slots/${slotId}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: (result, error, { timetableId }) => [
-        { type: "Timetables" as any, id: timetableId },
-        "TimetableSlots" as any,
-      ],
-    }),
-
-    bulkUpsertTimetableSlots: builder.mutation<
-      TimetableSlot[],
-      { timetableId: string; slots: Partial<TimetableSlot>[] }
-    >({
-      query: ({ timetableId, slots }) => ({
-        url: `/timetables/${timetableId}/slots/bulk-upsert`,
-        method: "POST",
-        body: { slots },
-      }),
-      invalidatesTags: (result, error, { timetableId }) => [
-        { type: "Timetables" as any, id: timetableId },
-        "TimetableSlots" as any,
-      ],
-    }),
-
-    checkTimetableConflicts: builder.mutation<
-      TimetableConflict[],
-      { timetableId: string; slots: Partial<TimetableSlot>[] }
-    >({
-      query: (body) => ({
-        url: "/timetables/conflicts",
-        method: "POST",
-        body,
-      }),
-    }),
-
-    getStudentSchedule: builder.query<TimetableSlot[], string>({
-      query: (studentProfileId) => `/timetables/schedule/student/${studentProfileId}`,
-      providesTags: ["TimetableSlots" as any],
-    }),
-
-    getTeacherSchedule: builder.query<TimetableSlot[], string>({
-      query: (teacherProfileId) => `/timetables/schedule/teacher/${teacherProfileId}`,
-      providesTags: ["TimetableSlots" as any],
-    }),
-
-    getClassSectionSchedule: builder.query<TimetableSlot[], string>({
-      query: (classSectionId) => `/timetables/schedule/class-section/${classSectionId}`,
-      providesTags: ["TimetableSlots" as any],
-    }),
+      query: ({ teacherProfileId, from, to }: any) => {
+        const q = new URLSearchParams();
+        if (from) q.set("from", from);
+        if (to) q.set("to", to);
+        const query = q.toString();
+        return `/schedule/teacher/${teacherProfileId}${query ? `?${query}` : ""}`;
+      },
+      providesTags: ["BatchSessions" as any],
+    } as any),
   }),
 });
 
 export const {
   useGetTermsQuery,
   useGetTeacherMeQuery,
-  useGetTimetablesQuery,
-  useGetTimetableByIdQuery,
-  useCreateTimetableMutation,
-  useUpdateTimetableMutation,
-  useDeleteTimetableMutation,
-  usePublishTimetableMutation,
-  useCreateTimetableSlotMutation,
-  useUpdateTimetableSlotMutation,
-  useDeleteTimetableSlotMutation,
-  useBulkUpsertTimetableSlotsMutation,
-  useCheckTimetableConflictsMutation,
   useGetStudentScheduleQuery,
   useGetTeacherScheduleQuery,
-  useGetClassSectionScheduleQuery,
 } = timetableApi;

@@ -241,6 +241,10 @@ export class ParentService {
             status: true,
             submissionDate: true,
             feedback: true,
+            // The mark itself. Its absence is why the family portal rendered
+            // "/ 100 pts" with nothing before the slash for every graded piece
+            // of homework — the number a guardian opens the page to see.
+            pointsEarned: true,
           },
         },
       },
@@ -253,7 +257,11 @@ export class ParentService {
       description: hw.description,
       dueDate: hw.dueDate,
       pointsPossible: hw.maxPoints,
-      courseName: hw.batch.name,
+      // This query selects on batchId, so a row here always has a batch. The
+      // optional chain is for the type only, now that cohort membership is no
+      // longer guaranteed on the model. Course-checkpoint homework does not
+      // appear in this list yet.
+      courseName: hw.batch?.name ?? null,
       submission: hw.submissions[0] || null,
     }));
   }

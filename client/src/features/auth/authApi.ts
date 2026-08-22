@@ -109,6 +109,7 @@ export const authApi = createApi({
     "Roles",
     "Leads",
     "Batches",
+    "BatchSessions",
     "ClassSections",
     "MakeupRequests",
     "Attempts",

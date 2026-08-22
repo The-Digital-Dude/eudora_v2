@@ -5,8 +5,48 @@ import * as React from "react";
 
 import { useAppSelector } from "@/store/hooks";
 
+import { CourseHomeworkReview } from "./CourseHomeworkReview";
 import { StudentHomeworkView } from "./StudentHomeworkView";
 import { TeacherHomeworkView } from "./TeacherHomeworkView";
+
+/**
+ * Homework reaches a teacher two ways, and they are genuinely different
+ * shapes: set for a cohort with a shared deadline, or authored into a course
+ * as a checkpoint a self-paced learner works through alone. Until checkpoints
+ * existed there was only one, so this view had no need to ask.
+ */
+function TeacherHomeworkScopes() {
+  const [scope, setScope] = React.useState<"cohort" | "course">("cohort");
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-muted inline-flex gap-1 rounded-xl p-1">
+        {(
+          [
+            ["cohort", "Cohort homework"],
+            ["course", "Course checkpoints"],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setScope(value)}
+            aria-pressed={scope === value}
+            className={`cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+              scope === value
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {scope === "cohort" ? <TeacherHomeworkView /> : <CourseHomeworkReview />}
+    </div>
+  );
+}
 
 export function HomeworkContainer() {
   const auth = useAppSelector((state) => state.auth);
@@ -45,7 +85,7 @@ export function HomeworkContainer() {
   }
 
   if (isTeacher || isAdmin) {
-    return <TeacherHomeworkView />;
+    return <TeacherHomeworkScopes />;
   }
 
   return (

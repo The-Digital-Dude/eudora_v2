@@ -94,6 +94,11 @@ export interface Batch {
   /** After this the batch stops taking seats even if capacity remains. */
   enrollmentDeadline: string | null;
   leadTeacherProfileId: string | null;
+  /** Weekly pattern used to generate sessions; empty means ad-hoc only. */
+  meetingDays: DayOfWeek[];
+  /** Minutes past midnight — 16:00 is 960. */
+  meetingStartMinutes: number | null;
+  meetingDurationMinutes: number | null;
   course?: { id: string; title: string; deliveryMode: string } | null;
   leadTeacher?: { id: string; fullName: string } | null;
   _count?: { enrollments: number };
@@ -111,6 +116,45 @@ export interface Batch {
   };
 }
 
+export type DayOfWeek =
+  | "MONDAY"
+  | "TUESDAY"
+  | "WEDNESDAY"
+  | "THURSDAY"
+  | "FRIDAY"
+  | "SATURDAY"
+  | "SUNDAY";
+
+export interface BatchSession {
+  id: string;
+  batchId: string;
+  moduleItemId: string | null;
+  topic: string | null;
+  date: string;
+  startTime: string | null;
+  endTime: string | null;
+  status: "SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED";
+  joinUrl: string | null;
+  startUrl: string | null;
+  moduleItem: { id: string; title: string } | null;
+  teacher: { id: string; firstName: string; lastName: string } | null;
+  _count: { attendance: number };
+}
+
+/** One meeting the pattern implies — returned by the dry run. */
+export interface PlannedSession {
+  date: string;
+  startTime: string;
+  endTime: string;
+  topic: string | null;
+  alreadyScheduled: boolean;
+}
+
+export interface MeetingPatternPayload {
+  meetingDays: DayOfWeek[];
+  meetingStartMinutes: number;
+  meetingDurationMinutes: number;
+}
 export interface BatchPayload {
   name: string;
   code: string;
@@ -521,6 +565,52 @@ export const dashboardApi = authApi.injectEndpoints({
         total: response.meta?.total ?? response.data?.length ?? 0,
       }),
       providesTags: ["Batches"],
+    } as any),
+    getBatchSessions: builder.query<BatchSession[], string>({
+      query: (batchId: any) => `/batches/${batchId}/sessions`,
+      providesTags: ["BatchSessions" as any],
+    } as any),
+    updateMeetingPattern: builder.mutation<
+      Batch,
+      { batchId: string; body: MeetingPatternPayload }
+    >({
+      query: ({ batchId, body }: any) => ({
+        url: `/batches/${batchId}/meeting-pattern`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Batches"],
+    } as any),
+    previewBatchSessions: builder.mutation<
+      { planned: PlannedSession[]; from: string; to: string },
+      { batchId: string; body: { from?: string; to?: string; topic?: string } }
+    >({
+      query: ({ batchId, body }: any) => ({
+        url: `/batches/${batchId}/sessions/preview`,
+        method: "POST",
+        body,
+      }),
+    } as any),
+    generateBatchSessions: builder.mutation<
+      { created: number; skipped: number },
+      { batchId: string; body: { from?: string; to?: string; topic?: string } }
+    >({
+      query: ({ batchId, body }: any) => ({
+        url: `/batches/${batchId}/sessions/generate`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["BatchSessions" as any],
+    } as any),
+    deleteBatchSession: builder.mutation<
+      { message: string },
+      { batchId: string; sessionId: string }
+    >({
+      query: ({ batchId, sessionId }: any) => ({
+        url: `/batches/${batchId}/sessions/${sessionId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["BatchSessions" as any],
     } as any),
     createBatch: builder.mutation<Batch, BatchPayload>({
       query: (body: any) => ({
@@ -976,6 +1066,11 @@ export const {
   useDeleteLeadMutation,
   useGetBatchesQuery,
   useCreateBatchMutation,
+  useGetBatchSessionsQuery,
+  useUpdateMeetingPatternMutation,
+  usePreviewBatchSessionsMutation,
+  useGenerateBatchSessionsMutation,
+  useDeleteBatchSessionMutation,
   useDeleteBatchMutation,
   useUpdateBatchMutation,
   useGetClassSectionsQuery,

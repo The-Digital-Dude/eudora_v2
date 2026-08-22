@@ -22,6 +22,8 @@ import { useGetBatchesQuery } from "@/features/dashboard/dashboardApi";
 import { useAppSelector } from "@/store/hooks";
 
 import {
+  type HomeworkAttachment,
+  homeworkAttachmentUrl,
   useCreateHomeworkMutation,
   useGetBatchByIdQuery,
   useGetHomeworkForClassQuery,
@@ -242,7 +244,10 @@ export function TeacherHomeworkView() {
                   <div className="flex items-center justify-between border-t border-dashed border-border/20 pt-2 text-[9px]">
                     <span className="flex items-center gap-1 font-semibold">
                       <Clock className="h-3 w-3" />
-                      Due: {new Date(hw.dueDate).toLocaleDateString()}
+                      {/* A self-paced checkpoint has no deadline. */}
+                      {hw.dueDate
+                        ? `Due: ${new Date(hw.dueDate).toLocaleDateString()}`
+                        : "Self-paced"}
                     </span>
                     <span className="font-bold">{hw.maxPoints} Pts</span>
                   </div>
@@ -363,21 +368,26 @@ export function TeacherHomeworkView() {
                                     </div>
                                   )}
 
-                                  {sub.attachmentUrls && sub.attachmentUrls.length > 0 && (
+                                  {sub.attachments && sub.attachments.length > 0 && (
                                     <div className="flex flex-wrap items-center gap-1.5">
                                       <span className="text-[8px] font-bold uppercase text-muted-foreground">
                                         Student files:
                                       </span>
-                                      {sub.attachmentUrls.map((url: string, i: number) => (
+                                      {/* Goes through the gated endpoint, which
+                                          checks this teacher actually teaches
+                                          the course before serving anything. */}
+                                      {sub.attachments.map((attachment: HomeworkAttachment) => (
                                         <a
-                                          key={i}
-                                          href={url}
+                                          key={attachment.fileUploadId}
+                                          href={homeworkAttachmentUrl(attachment.fileUploadId)}
                                           target="_blank"
                                           rel="noreferrer"
                                           className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-0.5 text-[9px] text-muted-foreground"
                                         >
                                           <Download className="h-3 w-3 text-muted-foreground" />
-                                          Attachment {i + 1}
+                                          <span className="max-w-[14ch] truncate">
+                                            {attachment.file.originalName}
+                                          </span>
                                         </a>
                                       ))}
                                     </div>

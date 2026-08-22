@@ -274,8 +274,11 @@ export class GradebookService {
       },
       create: {
         studentProfileId: submission.studentProfileId,
+        // Both null for a course checkpoint: it belongs to a chapter, not to a
+        // cohort, so there is no batch to attribute the mark to and no term to
+        // inherit. The same shape assessment attempts already use.
         batchId: submission.homework.batchId,
-        termId: submission.homework.batch.termId,
+        termId: submission.homework.batch?.termId ?? null,
         sourceType: GradeSourceType.HOMEWORK_SUBMISSION,
         sourceId: submissionId,
         title: submission.homework.title,
@@ -289,7 +292,7 @@ export class GradebookService {
       },
       update: {
         batchId: submission.homework.batchId,
-        termId: submission.homework.batch.termId,
+        termId: submission.homework.batch?.termId ?? null,
         title: submission.homework.title,
         pointsEarned,
         pointsPossible: maxPoints,

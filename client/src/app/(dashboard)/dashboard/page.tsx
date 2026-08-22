@@ -188,7 +188,7 @@ export default function DashboardOverview() {
           <StatTile label="Students" value={students?.total ?? 0} />
           <StatTile label="Teachers" value={teachers?.total ?? 0} />
           <StatTile label="Programs" value={programs?.total ?? 0} />
-          <StatTile label="Classes" value={batches?.total ?? 0} />
+          <StatTile label="Batches" value={batches?.total ?? 0} />
         </div>
       </section>
 
@@ -201,7 +201,9 @@ export default function DashboardOverview() {
           <ManageLink href="/students" Icon={Users} label="Students" hint="Roster & placements" />
           <ManageLink href="/teachers" Icon={GraduationCap} label="Teachers" hint="Staff & applications" />
           <ManageLink href="/programs" Icon={Layers} label="Programs" hint="What you sell" />
-          <ManageLink href="/timetable" Icon={Calendar} label="Timetable" hint="Weekly schedule" />
+          {/* Was /timetable, which has no page and 404'd. Weekly schedules now
+              live per cohort, behind the calendar icon on a batch row. */}
+          <ManageLink href="/batches" Icon={Calendar} label="Batches" hint="Cohorts & schedules" />
           <ManageLink href="/attendance" Icon={UserCheck} label="Attendance" hint="Daily marking" />
           <ManageLink href="/gradebook" Icon={Award} label="Gradebook" hint="Marks & transcripts" />
           <ManageLink href="/homework" Icon={CheckSquare} label="Homework" hint="Tasks & submissions" />

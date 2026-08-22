@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import { formatPrice, getPublicPrograms } from "@/lib/public-catalog";
 
+import { LandingLottie } from "./landing-lottie";
+
 /**
  * Real programmes with real prices, read from the public catalog at build time.
  *
@@ -27,6 +29,12 @@ export default async function PricingSection() {
   return (
     <section id="pricing" className="mx-auto max-w-6xl px-4 py-20">
       <div className="mx-auto max-w-2xl text-center">
+        {/* Weighing up the options — the state a visitor is actually in when
+            they reach this section. */}
+        <LandingLottie
+          src="/lottie/boy-thinking.lottie"
+          className="mx-auto mb-2 h-28 w-28 md:h-32 md:w-32"
+        />
         <h2 className="font-display text-3xl font-bold tracking-tight text-foreground">
           Simple, one-time pricing
         </h2>
@@ -38,8 +46,10 @@ export default async function PricingSection() {
 
       <div className="mt-12 grid gap-5 md:grid-cols-3">
         {sellable.map((program, index) => {
-          // Middle card is the anchor — standard three-tier framing, and it is
-          // where we want attention when there are three real options.
+          // Middle card is the visual anchor — standard three-tier framing.
+          // It carried a "MOST POPULAR" badge until nobody could say which
+          // programme was most popular, because none of them had been bought.
+          // The emphasis stays; the claim doesn't.
           const featured = sellable.length === 3 && index === 1;
 
           return (
@@ -51,12 +61,6 @@ export default async function PricingSection() {
                   : "border-border shadow-sm"
               }`}
             >
-              {featured && (
-                <span className="mb-3 w-fit rounded-full bg-foreground px-2.5 py-1 text-[10px] font-bold text-background">
-                  MOST POPULAR
-                </span>
-              )}
-
               <h3 className="font-display text-base font-bold text-foreground">
                 {program.name}
               </h3>

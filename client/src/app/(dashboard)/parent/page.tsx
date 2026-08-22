@@ -185,7 +185,7 @@ export default function ParentPage() {
             <div>
               <h2 className="text-foreground text-base font-bold tracking-tight">Class enrolment</h2>
               <p className="text-muted-foreground mt-0.5 text-xs">
-                Scheduled classes with a teacher and a set term — separate from the self-paced plan
+                Scheduled classes with a teacher and a set term, separate from the self-paced plan
                 above.
               </p>
             </div>

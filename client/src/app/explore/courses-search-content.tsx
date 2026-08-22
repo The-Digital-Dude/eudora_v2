@@ -61,7 +61,7 @@ export function CoursesSearchContent() {
       <Navbar />
 
       <main className="flex-1">
-        <section className="relative overflow-hidden border-b border-border/50 bg-background px-6 pt-16 pb-12 md:pt-20 md:pb-16">
+        <section className="relative overflow-hidden border-b border-border/50 bg-background px-6 pt-16 pb-20 md:pt-20 md:pb-28">
           {/* Soft ambient gradient wash */}
           <div className="pointer-events-none absolute top-0 left-1/4 h-72 w-72 -translate-y-1/3 rounded-full bg-gradient-to-br from-[#241546]/[0.06] to-transparent blur-3xl" />
           <div className="pointer-events-none absolute right-0 bottom-0 h-64 w-64 translate-y-1/4 rounded-full bg-gradient-to-tl from-amber-300/[0.10] to-transparent blur-3xl" />
@@ -77,7 +77,7 @@ export function CoursesSearchContent() {
               src="/lottie/mascot-clio-going-to-school-with-bag-and-a-bird.lottie"
               loop
               autoplay
-              className="h-44 w-44 md:h-56 md:w-56"
+              className="h-60 w-60 md:h-80 md:w-80 lg:h-[22rem] lg:w-[22rem]"
             />
           </div>
 
@@ -86,7 +86,7 @@ export function CoursesSearchContent() {
               Find your next course
             </h1>
             <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-              Search our full course catalog — every course is taught with personalized, AI-guided
+              Search our full course catalog. Every course is taught with personalized, AI-guided
               lessons.
             </p>
 
@@ -138,7 +138,7 @@ export function CoursesSearchContent() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {submittedQuery
                   ? `Nothing matched "${submittedQuery}". Try a different search.`
-                  : "Check back soon — new courses are added regularly."}
+                  : "Check back soon. New courses are added regularly."}
               </p>
             </div>
           ) : (

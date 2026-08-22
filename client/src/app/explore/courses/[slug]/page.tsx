@@ -187,7 +187,7 @@ export default async function CoursePage({ params }: PageProps) {
                   href={`/explore/programs/${bundle.slug}`}
                   className="rounded-xl bg-foreground px-5 py-3 text-xs font-bold text-background hover:bg-foreground/90"
                 >
-                  View the programme —{" "}
+                  View the programme:{" "}
                   {formatPrice(bundle.priceOneTimeCents, bundle.currency)}
                 </Link>
                 {course.priceOneTimeCents && (
@@ -195,7 +195,7 @@ export default async function CoursePage({ params }: PageProps) {
                     href={`/checkout?type=course&slug=${course.slug}`}
                     className="text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                   >
-                    or buy just this course —{" "}
+                    or buy just this course:{" "}
                     {formatPrice(course.priceOneTimeCents, course.currency)}
                   </Link>
                 )}

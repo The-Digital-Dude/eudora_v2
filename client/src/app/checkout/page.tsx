@@ -223,7 +223,7 @@ export default function CheckoutPage() {
             <div className="mt-3 space-y-3">
               {!children?.length && (
                 <p className="text-xs text-muted-foreground">
-                  Add your child to continue — it takes a moment.
+                  Add your child to continue. It takes a moment.
                 </p>
               )}
               <AddChildForm
@@ -366,7 +366,7 @@ export default function CheckoutPage() {
                         resolved.amountPerInstallmentCents,
                         resolved.currency,
                       )}`}
-                      subtitle={`Monthly — final payment ${formatCents(
+                      subtitle={`Monthly, final payment ${formatCents(
                         resolved.finalInstallmentCents,
                         resolved.currency,
                       )}`}
@@ -423,7 +423,7 @@ export default function CheckoutPage() {
                   {/* Naming the child on the button is the cheapest guard
                       against buying for the wrong one. */}
                   {selectedChild
-                    ? `Enrol ${selectedChild.fullName} — ${formatCents(
+                    ? `Enrol ${selectedChild.fullName} for ${formatCents(
                         billingMode === "INSTALLMENT"
                           ? resolved.amountPerInstallmentCents
                           : resolved.priceCents,

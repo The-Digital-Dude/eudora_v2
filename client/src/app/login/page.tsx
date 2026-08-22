@@ -149,7 +149,7 @@ export default function LoginPage() {
               Sign in to your account
             </h1>
             <p className="text-muted-foreground mx-auto max-w-[280px] text-xs leading-normal">
-              Enter your email and password below to access your classrooms and learning paths.
+              Sign in to pick up where your child left off.
             </p>
           </div>
 

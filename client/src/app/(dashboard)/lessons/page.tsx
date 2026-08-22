@@ -121,7 +121,7 @@ export default function LessonAuthoringPage() {
         <div>
           <h1 className="font-display flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground">
             <BookOpen className="h-7 w-7 text-primary" />
-            Curriculum & Lesson Authoring
+            Lesson Builder
           </h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Design dynamic journey units, configure XP checkpoints, and build card-stepper workflows

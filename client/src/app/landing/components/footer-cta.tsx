@@ -20,7 +20,7 @@ export default function FooterCta() {
   return (
     <section className="relative isolate w-full overflow-hidden">
       <Image
-        src="/landing/Footer_Backdrop.jpg"
+        src="/landing/footer_backdrop_girl.jpg"
         alt=""
         fill
         // Full-bleed at every breakpoint, so the browser should never pick a

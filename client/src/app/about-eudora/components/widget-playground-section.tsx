@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, RotateCcw } from "lucide-react";
+import Image from "next/image";
 import * as React from "react";
 
 import { CoordinatePlotterWidget } from "@/features/clio/widgets/CoordinatePlotterWidget";
@@ -23,17 +24,10 @@ type PlaygroundId = "order" | "blanks" | "match" | "plot" | "shade";
 
 const TABS: { id: PlaygroundId; label: string; question: string; teaches: string }[] = [
   {
-    id: "order",
-    label: "Order the steps",
-    question:
-      "Maya has 12 stickers. She gives 4 to her brother, then buys 6 more. Put the steps in the right order.",
-    teaches: "working through a word problem one step at a time",
-  },
-  {
-    id: "blanks",
-    label: "Fill the blanks",
-    question: "Drag each word into the sentence where it belongs.",
-    teaches: "using what you know to complete a sentence",
+    id: "shade",
+    label: "Shade the shape",
+    question: "Shade two of the six slices, so two sixths of the circle is coloured in.",
+    teaches: "seeing a fraction as part of a whole",
   },
   {
     id: "match",
@@ -48,10 +42,17 @@ const TABS: { id: PlaygroundId; label: string; question: string; teaches: string
     teaches: "reading two numbers at once",
   },
   {
-    id: "shade",
-    label: "Shade the shape",
-    question: "Shade two of the six slices, so two sixths of the circle is coloured in.",
-    teaches: "seeing a fraction as part of a whole",
+    id: "order",
+    label: "Order the steps",
+    question:
+      "Maya has 12 stickers. She gives 4 to her brother, then buys 6 more. Put the steps in the right order.",
+    teaches: "working through a word problem one step at a time",
+  },
+  {
+    id: "blanks",
+    label: "Fill the blanks",
+    question: "Drag each word into the sentence where it belongs.",
+    teaches: "using what you know to complete a sentence",
   },
 ];
 
@@ -108,7 +109,7 @@ const SHADE_CONFIG = {
 };
 
 export function WidgetPlaygroundSection() {
-  const [tab, setTab] = React.useState<PlaygroundId>("order");
+  const [tab, setTab] = React.useState<PlaygroundId>("shade");
   const [checked, setChecked] = React.useState(false);
 
   const [stepOrder, setStepOrder] = React.useState<string[] | null>(null);
@@ -185,15 +186,32 @@ export function WidgetPlaygroundSection() {
   return (
     <SectionShell
       id="learning-is-doing"
-      eyebrow="Learning is doing"
-      title="Nothing here advances until they do something."
+      eyebrow="Built for attention"
+      title="Problems built to hold their attention."
       lede={
         <>
-          Every card ends in an interaction, not a Next button. These are five of the real widget
-          types, running the same components the lesson player uses. Go on, drag something.
+          Each one asks your child to notice something, make a decision, and act on it: drag a step
+          into place, shade a shape, plot a point. There is no Next button to press, so the only way
+          forward is to work it out. All five below are real interaction types, running the same
+          components the lesson player uses.
         </>
       }
     >
+      <figure className="mx-auto mb-10 max-w-lg">
+        <Image
+          src="/landing/kid_learning_with_parents.jpg"
+          alt="A parent leaning in to point at a laptop screen while their child works through a problem"
+          width={740}
+          height={415}
+          sizes="(min-width: 640px) 32rem, 100vw"
+          className="h-auto w-full rounded-3xl border border-border object-cover shadow-sm"
+        />
+        <figcaption className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
+          Most children start these sitting next to someone. That is the point: short enough to do
+          together, and hard enough to be worth talking about.
+        </figcaption>
+      </figure>
+
       <div className="mx-auto max-w-3xl">
         <div
           role="tablist"

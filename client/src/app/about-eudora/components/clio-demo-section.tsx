@@ -21,10 +21,9 @@ import { ShapeFigure } from "./shape-figure";
  * `reveal` rather than looping — a child who is stuck needs the answer and the
  * reason, not another turn of the same wheel.
  */
-type Phase = "intro" | "answering" | "wrong" | "hint" | "correct" | "reveal" | "complete";
+type Phase = "answering" | "wrong" | "hint" | "correct" | "reveal" | "complete";
 
 const MASCOT_BY_PHASE: Record<Phase, { state: MascotState; variant: "standing" | "chair" }> = {
-  intro: { state: "greeting", variant: "standing" },
   answering: { state: "thinking", variant: "chair" },
   wrong: { state: "wrong", variant: "chair" },
   hint: { state: "hint", variant: "chair" },
@@ -43,7 +42,7 @@ export function ClioDemoSection({
   onXpChange: (xp: number) => void;
   onComplete: (done: boolean) => void;
 }) {
-  const [phase, setPhase] = React.useState<Phase>("intro");
+  const [phase, setPhase] = React.useState<Phase>("answering");
   const [cardIndex, setCardIndex] = React.useState(0);
   const [choice, setChoice] = React.useState<string | null>(null);
   const [sliderValue, setSliderValue] = React.useState(0);
@@ -124,7 +123,7 @@ export function ClioDemoSection({
     setPlotted(null);
     setAttempts(0);
     setXp(0);
-    setPhase("intro");
+    setPhase("answering");
   };
 
   return (
@@ -132,7 +131,7 @@ export function ClioDemoSection({
       id="meet-clio"
       tinted
       eyebrow="Meet Clio"
-      title="A tutor that asks, waits, and explains."
+      title="An ever-patient tutor for your child's endless curiosity."
       lede={
         <>
           Clio is our AI tutor: pre-vetted, kept inside the curriculum, and never free-roaming into
@@ -174,20 +173,7 @@ export function ClioDemoSection({
           </div>
 
           <div className="min-w-0 sm:order-1">
-            {phase === "intro" ? (
-              <div className="flex h-full flex-col justify-center">
-                <p className="text-base leading-relaxed font-semibold text-foreground">
-                  {DEMO_LESSON.greeting}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setPhase("answering")}
-                  className="mt-6 flex h-11 w-fit cursor-pointer items-center gap-2 rounded-xl bg-foreground px-5 text-xs font-bold text-background transition-all hover:bg-foreground/90 active:scale-97"
-                >
-                  Start the lesson <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ) : phase === "complete" ? (
+            {phase === "complete" ? (
               <div className="flex h-full flex-col justify-center">
                 <p className="font-display text-lg font-extrabold text-foreground">
                   That&apos;s a lesson.

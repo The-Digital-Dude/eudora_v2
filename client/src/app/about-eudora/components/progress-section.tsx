@@ -49,13 +49,18 @@ export function ProgressSection({
     <SectionShell
       id="what-parents-see"
       tinted
-      eyebrow="For the person paying"
-      title="You get the receipts, not just a green checkmark."
+      backdrop={{
+        src: "/landing/raheel_learning_backdrop.jpg",
+        alt: "A child pointing at a monitor showing a Eudora coordinate question, with Clio in the corner of the screen",
+      }}
+      eyebrow="For parents"
+      title="A detailed record of every lesson and session."
       lede={
         <>
-          Your child sees XP and a streak. You see whether they actually turned up, what they scored
-          and what they still owe. Both views come from the same record. There is no separate
-          parent-friendly version of the truth.
+          Your child sees XP and a streak. You see the record behind it: attendance marked by their
+          teacher, marks by subject, and any work still outstanding. Both views are drawn from the
+          same underlying data, so there is one account of your child&apos;s progress rather than
+          two.
         </>
       }
     >
@@ -108,7 +113,12 @@ export function ProgressSection({
         </div>
 
         {/* The parent's view */}
-        <div className="rounded-3xl border-2 border-primary/30 bg-primary/[0.04] p-6 md:p-8">
+        {/* Opaque, not a 4% tint. This card used to be `bg-primary/[0.04]`,
+            which was fine over a plain section but lets the backdrop photo read
+            straight through the text now that there is one. `color-mix` keeps
+            the same faint primary wash while staying fully opaque, and still
+            follows whichever theme preset is active. */}
+        <div className="rounded-3xl border-2 border-primary/30 bg-[color-mix(in_oklab,var(--primary)_5%,var(--card))] p-6 md:p-8">
           <p className="text-[10px] font-bold tracking-widest text-primary uppercase">
             What you see
           </p>

@@ -35,7 +35,11 @@ export default async function CoursesSection() {
   const subjects = [...bySubject.entries()].sort((a, b) => b[1] - a[1]);
 
   return (
-    <section className="bg-background px-4 py-10 select-none sm:px-6 md:py-14">
+    /* Pulled up into the hero's tail. The dark card used to start 168px below
+       the hero content behind a band of plain white; overlapping it makes the
+       two read as layers instead of two things that failed to meet. `relative`
+       so it paints above the hero's ambient blur rather than under it. */
+    <section className="relative z-10 -mt-6 bg-background px-4 py-10 select-none sm:px-6 md:-mt-12 md:py-14">
       <div className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-[#241546] py-20 md:py-28">
         {/* Decorative ambient glows — colors pulled from the Eudora mark */}
         <div className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-fuchsia-500/20 blur-[110px]" />

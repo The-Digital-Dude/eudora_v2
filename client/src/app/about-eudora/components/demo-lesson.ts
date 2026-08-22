@@ -10,14 +10,18 @@ import type { QuestionOption } from "@/features/clio/clioApi";
  * This is MARKETING COPY, not seeded data. The real lesson API
  * (`/api/lessons/:id/flow`, `POST /api/lessons/cards/:id/submit`) sits behind
  * the global JwtAuthGuard and a role check, so a signed-out visitor cannot
- * reach it — and opening a public write route that mints LessonAttempt rows
- * for anyone who scrolls a marketing page is a bad trade.
+ * reach it, and opening a public write route that mints LessonAttempt rows for
+ * anyone who scrolls a marketing page is a bad trade.
  *
  * Consequence to keep in mind: this content can drift from what a real lesson
  * looks like. It is deliberately kept in one file so a single read tells you
- * everything the page claims Clio does. Keep it honest — every behaviour
+ * everything the page claims Clio does. Keep it honest: every behaviour
  * scripted here (hint on a miss, reveal on a second miss, XP on success) is
  * behaviour the real player actually has.
+ *
+ * Card order matters. The first card is what a visitor sees before they touch
+ * anything, so it leads with the shaded shape: the question can be understood
+ * from the picture alone, without reading a word.
  */
 
 interface DemoCardBase {
@@ -69,10 +73,24 @@ const mcqOption = (label: string, text: string, isCorrect = false): QuestionOpti
   isCorrect,
 });
 
-export const DEMO_LESSON: { title: string; greeting: string; cards: DemoCard[] } = {
+export const DEMO_LESSON: { title: string; cards: DemoCard[] } = {
   title: "Maths you can picture",
-  greeting: "Hi! I'm Clio. Let's do a few together. These are real lesson cards.",
   cards: [
+    {
+      kind: "shape-percent",
+      id: "demo-card-shape-percent",
+      concept: "Percentages",
+      title: "Reading a shaded shape",
+      clioIntro: "Hi, I'm Clio. Percent just means 'out of a hundred', so let's look at one.",
+      prompt: "Move the slider to show what percentage of this shape is shaded.",
+      shape: { total: 10, shaded: 3, columns: 5 },
+      config: { min: 0, max: 100, step: 10, unit: "%" },
+      correctValue: 30,
+      hint: "The shape has 10 equal squares, so one square is one tenth, and one tenth is 10%.",
+      explanation:
+        "10 equal squares means each one is worth 10%. Three of them are shaded, so 3 × 10% = 30%.",
+      xp: 20,
+    },
     {
       kind: "coordinate",
       id: "demo-card-coordinates",
@@ -93,21 +111,6 @@ export const DEMO_LESSON: { title: string; greeting: string; cards: DemoCard[] }
       hint: "Walk along the bottom line first and stop at 2. Only then start climbing.",
       explanation:
         "Across before up, every time. 2 along the bottom and 4 up from there is the point (2, 4).",
-      xp: 20,
-    },
-    {
-      kind: "shape-percent",
-      id: "demo-card-shape-percent",
-      concept: "Percentages",
-      title: "Reading a shaded shape",
-      clioIntro: "Percent just means 'out of a hundred'. Let's see it.",
-      prompt: "Move the slider to show what percentage of this shape is shaded.",
-      shape: { total: 10, shaded: 3, columns: 5 },
-      config: { min: 0, max: 100, step: 10, unit: "%" },
-      correctValue: 30,
-      hint: "The shape has 10 equal squares, so one square is one tenth, and one tenth is 10%.",
-      explanation:
-        "10 equal squares means each one is worth 10%. Three of them are shaded, so 3 × 10% = 30%.",
       xp: 20,
     },
     {

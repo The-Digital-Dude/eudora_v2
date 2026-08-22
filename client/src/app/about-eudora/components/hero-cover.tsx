@@ -20,9 +20,16 @@ export function HeroCover() {
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div className="absolute top-0 left-1/4 h-72 w-72 -translate-y-1/3 rounded-full bg-gradient-to-br from-[#241546]/[0.08] to-transparent blur-3xl" />
         <div className="absolute right-0 bottom-0 h-64 w-64 translate-y-1/4 rounded-full bg-gradient-to-tl from-amber-300/[0.14] to-transparent blur-3xl" />
+        {/* Scattered rather than evenly spaced, and thinned out on the left
+            below the halfway line so they never crowd Clio. */}
         <CloudShape className="top-8 left-[6%] h-10 w-28 text-[#241546]/[0.07] md:top-10" />
         <CloudShape className="top-20 right-[10%] h-8 w-24 text-amber-400/[0.16] md:top-16" />
         <CloudShape className="top-1/2 right-[4%] hidden h-9 w-24 text-fuchsia-400/[0.10] lg:block" />
+        <CloudShape className="top-[30%] left-[19%] hidden h-7 w-20 text-teal-400/[0.12] sm:block" />
+        <CloudShape className="top-4 left-[46%] hidden h-6 w-16 text-[#241546]/[0.05] md:block" />
+        <CloudShape className="right-[24%] bottom-24 hidden h-6 w-16 text-fuchsia-400/[0.09] md:block" />
+        <CloudShape className="right-[7%] bottom-10 hidden h-9 w-24 text-amber-400/[0.13] sm:block" />
+        <CloudShape className="top-[62%] left-[8%] hidden h-6 w-16 text-teal-400/[0.08] xl:block" />
       </div>
 
       <div className="relative mx-auto w-full max-w-4xl text-center">
@@ -51,7 +58,7 @@ export function HeroCover() {
       <LandingLottie
         src="/lottie/mascot-clio-going-to-school-with-bag-and-a-bird.lottie"
         ariaLabel="Clio, the Eudora tutor, walking to school with her bag and a bird"
-        className="pointer-events-none absolute bottom-0 left-6 hidden h-44 w-44 sm:block md:left-20 md:h-56 md:w-56"
+        className="pointer-events-none absolute bottom-0 left-0 hidden h-72 w-72 sm:block md:-left-8 md:h-96 md:w-96 lg:-left-12 lg:h-[26rem] lg:w-[26rem]"
       />
     </section>
   );

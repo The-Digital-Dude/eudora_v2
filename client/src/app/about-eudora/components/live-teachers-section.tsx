@@ -1,4 +1,5 @@
 import { CalendarRange, Radio, UserCheck, Users } from "lucide-react";
+import Image from "next/image";
 import * as React from "react";
 
 import { SectionShell } from "./section-shell";
@@ -30,7 +31,7 @@ export function LiveTeachersSection() {
     <SectionShell
       id="real-teachers"
       eyebrow="The other half"
-      title="Clio handles the practice. People do the teaching."
+      title="Clio handles the practice. Teachers do the teaching."
       lede={
         <>
           A real teacher writes the lesson, runs the live sessions and marks the register.
@@ -39,6 +40,40 @@ export function LiveTeachersSection() {
         </>
       }
     >
+      {/* The two photographs carry the claim the copy makes: a named person on
+          the other end, and few enough children that they all fit on one
+          screen. Both captions state something the product actually enforces
+          (a capacity, and a weekly meeting pattern) rather than a mood. */}
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+        <figure>
+          <Image
+            src="/landing/teacher_teaching_online_2.jpg"
+            alt="A teacher wearing a headset holds up a globe to her screen, where four children are watching on a video call"
+            width={1000}
+            height={667}
+            sizes="(min-width: 640px) 50vw, 100vw"
+            className="aspect-[3/2] w-full rounded-3xl border border-border object-cover shadow-sm"
+          />
+          <figcaption className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
+            Cohorts are capped, so the teacher can see everyone at once.
+          </figcaption>
+        </figure>
+
+        <figure>
+          <Image
+            src="/landing/teacher_teaching_online_1.jpg"
+            alt="A teacher holding a small whiteboard up to her laptop camera during a live lesson"
+            width={730}
+            height={473}
+            sizes="(min-width: 640px) 50vw, 100vw"
+            className="aspect-[3/2] w-full rounded-3xl border border-border object-cover shadow-sm"
+          />
+          <figcaption className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
+            Live sessions land on the same weekday and time every week.
+          </figcaption>
+        </figure>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-[1fr_1.1fr] md:gap-6">
         {/* A cohort's week, drawn the way a batch is actually configured */}
         <div className="rounded-3xl border border-border bg-card p-6 md:p-8">

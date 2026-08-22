@@ -12,10 +12,9 @@ import Link from "next/link";
  * `alt` is empty and screen readers skip straight to the text. A described
  * image here would just be noise between the pitch and its button.
  *
- * No app-store badges, unlike the design this follows. Our store links are not
- * live yet — app-download-section already says so and renders its badges as
- * inert markup rather than dead links — and putting fake ones at the very
- * bottom of the funnel is worse than leaving them out.
+ * No app-store badges, unlike the design this follows. The apps have not
+ * shipped, and putting badges for them at the bottom of the funnel would be
+ * advertising something a visitor cannot get.
  */
 export default function FooterCta() {
   return (
@@ -36,15 +35,17 @@ export default function FooterCta() {
 
       <div className="relative mx-auto flex min-h-[380px] max-w-3xl flex-col items-center justify-center gap-7 px-6 py-20 text-center md:min-h-[460px] md:py-28">
         <h2 className="font-display text-3xl leading-[1.15] font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
-          The best tutor your child will ever have
-          <br className="hidden sm:block" /> is already here
+          Same half hour.
+          <br className="hidden sm:block" /> Different habit.
         </h2>
 
+        {/* Catalogue before sign-up: a visitor at the bottom of the page wants
+            to know what it costs, not to make an account first. */}
         <Link
-          href="/register"
+          href="/explore"
           className="inline-flex h-12 cursor-pointer items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-neutral-900 shadow-lg transition-all hover:bg-white/90 active:scale-98"
         >
-          Get started
+          Browse courses
         </Link>
       </div>
     </section>

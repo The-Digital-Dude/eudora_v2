@@ -76,7 +76,7 @@ export function AssessmentItemView({ item }: AssessmentItemViewProps) {
         </button>
       ) : (
         <p className="text-xs text-muted-foreground">
-          This assignment hasn&apos;t been assigned to you yet — check with your teacher.
+          This assignment hasn&apos;t been assigned to you yet. Check with your teacher.
         </p>
       )}
     </div>

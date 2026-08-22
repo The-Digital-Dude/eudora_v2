@@ -218,7 +218,7 @@ export default function BatchSchedulePage() {
           Weekly meeting pattern
         </h2>
         <p className="mb-4 text-[11px] text-muted-foreground">
-          A rule, not a schedule. It is used to generate the sessions below — changing
+          A rule, not a schedule. It is used to generate the sessions below. Changing
           it never rewrites meetings that already exist.
         </p>
 

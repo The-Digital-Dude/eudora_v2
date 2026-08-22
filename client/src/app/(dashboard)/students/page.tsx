@@ -223,7 +223,7 @@ export default function StudentsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
-            Student Roster
+            Students
           </h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Administer student profiles, class section placements, and course enrollment registers.

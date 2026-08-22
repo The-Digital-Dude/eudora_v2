@@ -242,7 +242,7 @@ export function SiteHeader({ user, onLogout }: SiteHeaderProps) {
           </div>
         </div>
       </header>
-      <CommandSearch open={searchOpen} onOpenChange={setSearchOpen} />
+      <CommandSearch open={searchOpen} onOpenChange={setSearchOpen} user={user} />
     </>
   );
 }

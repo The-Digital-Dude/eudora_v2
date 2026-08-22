@@ -197,7 +197,7 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
             </label>
             <label className="flex-1">
               <span className="mb-1 block text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
-                Due date — optional
+                Due date (optional)
               </span>
               <input
                 type="date"
@@ -208,7 +208,7 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
             </label>
           </div>
           <p className="rounded-lg bg-muted/60 p-2 text-[10px] leading-relaxed text-muted-foreground">
-            Leave the date blank for a self-paced course — the learner reaches this
+            Leave the date blank for a self-paced course. The learner reaches this
             checkpoint whenever they get there, so nothing can be late.
           </p>
         </div>
@@ -217,7 +217,7 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
         <p className="rounded-lg bg-muted/60 p-2 text-[10px] leading-relaxed text-muted-foreground">
           This reserves a live session in the outline. Each batch schedules its own
           meeting time and join link against it from{" "}
-          <span className="font-semibold text-foreground">Live Classes</span> — adding
+          <span className="font-semibold text-foreground">Live Classes</span>. Adding
           one here switches the course to <span className="font-semibold text-foreground">LIVE</span> delivery.
         </p>
       )}

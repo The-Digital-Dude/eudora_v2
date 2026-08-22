@@ -14,6 +14,15 @@ import { ClassesOverview } from "./components/classes-overview";
 import { PerformanceAlerts } from "./components/performance-alerts";
 import { QuickAttendance } from "./components/quick-attendance";
 
+/** Sessions carry ISO instants; the old timetable slots carried "09:00". */
+function formatSessionTime(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 export default function TeacherPage() {
   const auth = useAppSelector((state) => state.auth);
   const user = auth.user as any;
@@ -164,11 +173,11 @@ export default function TeacherPage() {
                           {slot.batch?.name}
                         </h4>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
-                          Roster: {slot.classSection?.name}
+                          {slot.topic ?? slot.moduleItem?.title ?? slot.batch?.code}
                         </p>
                       </div>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 dark:bg-primary/10 text-primary font-mono">
-                        {slot.startTime} - {slot.endTime}
+                        {formatSessionTime(slot.startTime)} - {formatSessionTime(slot.endTime)}
                       </span>
                     </div>
                   ))}

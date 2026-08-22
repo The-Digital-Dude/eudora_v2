@@ -1,9 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 
+// "Metrics" used to sit here, pointing at a band of invented figures.
 const footerLinks = [
-  { label: "Features", href: "/#features" },
-  { label: "Metrics", href: "/#stats" },
+  { label: "How it works", href: "/about-eudora" },
+  { label: "Courses", href: "/explore" },
+  { label: "Pricing", href: "/#pricing" },
 ];
 
 export default function Footer() {
@@ -23,7 +25,7 @@ export default function Footer() {
               />
             </Link>
             <p className="max-w-[240px] leading-relaxed">
-              Orchestrate student paths, automate grading, and manage school districts with AI.
+              Interactive lessons and live cohorts for children from Pre-K to Grade 6.
             </p>
           </div>
 

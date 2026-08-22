@@ -141,7 +141,7 @@ export default function LeadsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
-            Leads & Enrolments
+            Leads
           </h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Track interest, onboard prospective students, and coordinate enroled classes.

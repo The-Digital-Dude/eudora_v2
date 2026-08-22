@@ -128,8 +128,8 @@ export default function CreateLearningPathPage() {
               onChange={(e) => setUnlockMode(e.target.value as "SEQUENTIAL" | "FREE_ROAM")}
               className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
             >
-              <option value="SEQUENTIAL">Sequential — courses unlock in order</option>
-              <option value="FREE_ROAM">Free roam — all courses open</option>
+              <option value="SEQUENTIAL">Sequential (courses unlock in order)</option>
+              <option value="FREE_ROAM">Free roam (all courses open)</option>
             </select>
           </div>
 

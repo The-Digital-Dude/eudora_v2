@@ -42,6 +42,23 @@ export default function Navbar() {
           />
         </Link>
 
+        {/* Section links. The navbar had none at all until now, which left
+            /about-eudora and /explore reachable only by typing the URL. */}
+        <nav className="hidden items-center gap-6 text-xs font-semibold sm:flex">
+          <Link
+            href="/about-eudora"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            How it works
+          </Link>
+          <Link
+            href="/explore"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Courses
+          </Link>
+        </nav>
+
         {/* Right CTA Links */}
         <div className="flex items-center gap-4 text-sm">
           {isAuthenticated ? (

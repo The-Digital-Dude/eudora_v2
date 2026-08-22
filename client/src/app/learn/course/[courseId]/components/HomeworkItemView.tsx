@@ -185,7 +185,7 @@ export function HomeworkItemView({ item }: { item: ModuleItem }) {
               <Upload className="text-muted-foreground h-4 w-4" />
             )}
             <span className="text-muted-foreground">
-              Add a photo or PDF — up to {MAX_FILES} files, 15MB each
+              Add a photo or PDF, up to {MAX_FILES} files, 15MB each
             </span>
             <input
               type="file"

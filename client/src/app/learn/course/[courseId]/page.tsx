@@ -85,7 +85,7 @@ export default function CourseOutlinePage() {
               You&apos;re previewing this course.
             </p>
             <p className="text-xs text-muted-foreground">
-              Items marked FREE are open — the rest unlock when you enrol.
+              Items marked FREE are open. The rest unlock when you enrol.
             </p>
           </div>
         )}

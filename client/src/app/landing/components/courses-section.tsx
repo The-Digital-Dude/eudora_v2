@@ -1,53 +1,38 @@
-"use client";
-
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { ArrowRight, GraduationCap } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
+import { getPublicCourseList } from "@/lib/public-catalog";
 
-// Presentational placeholders only — no course-category backend exists yet,
-// so these pills are static and don't filter the (also placeholder) cards
-// below. Swap both for real catalog data once that lands.
-const CATEGORIES = [
-  { label: "Popular Courses", count: 6, active: true },
-  { label: "Math Skills", count: 4 },
-  { label: "Science & Tech", count: 3 },
-  { label: "Language Arts", count: 3 },
-  { label: "Coding", count: 2 },
-  { label: "Early Learning", count: 2 },
-];
+import { CoursesCarousel } from "./courses-carousel";
+import { LandingLottie } from "./landing-lottie";
 
-const COURSES = [
-  { title: "Algebra Foundations", subject: "Mathematics", gradeBand: "Grades 5–6", mode: "Self-Paced", weeks: 8, chapters: 4 },
-  { title: "Phonics & Early Reading", subject: "Language Arts", gradeBand: "Pre-K–K", mode: "Live Cohort", weeks: 6, chapters: 3 },
-  { title: "Creative Coding Basics", subject: "Coding", gradeBand: "Grades 5–6", mode: "Self-Paced", weeks: 5, chapters: 4 },
-  { title: "Science Explorers", subject: "Science", gradeBand: "Grades 3–4", mode: "Live Cohort", weeks: 6, chapters: 4 },
-  { title: "Fractions & Decimals", subject: "Mathematics", gradeBand: "Grades 3–4", mode: "Self-Paced", weeks: 4, chapters: 4 },
-  { title: "Intro to Algorithms", subject: "Coding", gradeBand: "Grades 5–6", mode: "Live Cohort", weeks: 6, chapters: 4 },
-];
+/**
+ * Real published courses, read from the public catalog at build time.
+ *
+ * This section used to render six hardcoded titles and a row of category pills
+ * with invented counts, while the catalog API it now calls was already powering
+ * /explore and the pricing section. A visitor could be shown a course that did
+ * not exist and click through to nothing.
+ *
+ * A server component, like PricingSection and for the same reason: it has to
+ * render into the static HTML to be indexable, so it cannot use the
+ * cookie-bound RTK Query client.
+ */
+export default async function CoursesSection() {
+  const courses = await getPublicCourseList();
+  const published = (courses ?? []).slice(0, 8);
 
-export default function CoursesSection() {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+  // Nothing published yet — render nothing rather than an empty band that
+  // reads as a broken page.
+  if (published.length === 0) return null;
 
-  const handleScroll = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const card = el.children[0] as HTMLElement | undefined;
-    if (!card) return;
-    const step = card.offsetWidth + 20;
-    setActiveIndex(Math.min(COURSES.length - 1, Math.round(el.scrollLeft / step)));
-  };
-
-  const scrollToIndex = (index: number) => {
-    const el = scrollRef.current;
-    const card = el?.children[index] as HTMLElement | undefined;
-    if (!el || !card) return;
-    el.scrollTo({ left: card.offsetLeft - el.offsetLeft, behavior: "smooth" });
-  };
+  // Real counts, grouped from the same rows the cards below are built from.
+  const bySubject = new Map<string, number>();
+  for (const course of published) {
+    const name = course.learningSubject?.name;
+    if (name) bySubject.set(name, (bySubject.get(name) ?? 0) + 1);
+  }
+  const subjects = [...bySubject.entries()].sort((a, b) => b[1] - a[1]);
 
   return (
     <section className="bg-background px-4 py-10 select-none sm:px-6 md:py-14">
@@ -57,125 +42,52 @@ export default function CoursesSection() {
         <div className="pointer-events-none absolute top-1/4 -right-24 h-80 w-80 rounded-full bg-teal-400/20 blur-[110px]" />
         <div className="pointer-events-none absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-amber-400/10 blur-[110px]" />
 
-        {/* Clio, cheering about the catalog */}
         <div className="pointer-events-none absolute right-6 bottom-6 hidden lg:block">
-          <DotLottieReact
+          <LandingLottie
             src="/lottie/mascot-clio-cheering-with-winner-cup-standing.lottie"
-            loop
-            autoplay
             className="h-28 w-28"
           />
         </div>
 
         <div className="relative z-10 mx-auto max-w-6xl px-6">
-          {/* Heading */}
           <div className="flex flex-col items-center text-center">
             <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/95 shadow-lg">
               <GraduationCap className="h-7 w-7 text-[#241546]" />
             </div>
             <h2 className="font-display text-3xl font-extrabold text-white sm:text-4xl md:text-5xl">
-              All Courses <span className="text-amber-300">of Eudora</span>
+              What your child can <span className="text-amber-300">learn</span>
             </h2>
             <p className="mt-3 max-w-md text-sm text-white/70 sm:text-base">
-              A growing catalog of personalized, AI-guided courses for every learner.
+              Every course below is published and open for enrolment right now.
             </p>
           </div>
 
-          {/* Category pills */}
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
-            {CATEGORIES.map((cat) => (
-              <div
-                key={cat.label}
-                className={
-                  cat.active
-                    ? "flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-semibold text-[#241546] shadow-md"
-                    : "flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-medium text-white/85"
-                }
-              >
-                {cat.label}
-                <span className={cat.active ? "text-[#241546]/60" : "text-white/50"}>
-                  {cat.count} course{cat.count === 1 ? "" : "s"}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Course card carousel */}
-          <div
-            ref={scrollRef}
-            onScroll={handleScroll}
-            className="mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {COURSES.map((course) => (
-              <div
-                key={course.title}
-                className="w-64 shrink-0 snap-start overflow-hidden rounded-2xl bg-white text-left shadow-xl sm:w-72"
-              >
-                <div className="relative flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-neutral-50 to-neutral-100 p-8">
-                  <Image
-                    src="/landing/dummy-cover-1.png"
-                    alt={course.title}
-                    width={400}
-                    height={400}
-                    className="h-full w-full object-contain"
-                  />
-                  <span className="absolute top-3 left-3 rounded-full bg-[#241546] px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
-                    {course.gradeBand}
+          {subjects.length > 0 && (
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
+              {subjects.map(([name, count]) => (
+                <Link
+                  key={name}
+                  href={`/explore?q=${encodeURIComponent(name)}`}
+                  className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-medium text-white/85 transition-colors hover:bg-white/20"
+                >
+                  {name}
+                  <span className="text-white/50">
+                    {count} course{count === 1 ? "" : "s"}
                   </span>
-                  <span className="absolute top-3 right-3 rounded-full bg-amber-300 px-2.5 py-1 text-[10px] font-bold text-[#241546] shadow-sm">
-                    {course.weeks} Weeks
-                  </span>
-                </div>
+                </Link>
+              ))}
+            </div>
+          )}
 
-                <div className="p-5">
-                  <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-                    <span
-                      className={
-                        course.mode === "Live Cohort"
-                          ? "h-1.5 w-1.5 rounded-full bg-destructive"
-                          : "h-1.5 w-1.5 rounded-full bg-success"
-                      }
-                    />
-                    {course.mode}
-                  </div>
-                  <h3 className="text-base font-bold text-foreground">{course.title}</h3>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <Badge variant="secondary">{course.subject}</Badge>
-                    <span className="text-xs text-muted-foreground">{course.chapters} chapters</span>
-                  </div>
-                  <div className="mt-4 flex items-center gap-1 text-sm font-semibold text-[#241546]">
-                    View details
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <CoursesCarousel courses={published} />
 
-          {/* Pagination dots */}
-          <div className="mt-2 flex items-center justify-center gap-1.5">
-            {COURSES.map((course, i) => (
-              <button
-                key={course.title}
-                type="button"
-                aria-label={`Show course ${i + 1}`}
-                onClick={() => scrollToIndex(i)}
-                className={
-                  i === activeIndex
-                    ? "h-2 w-5 cursor-pointer rounded-full bg-amber-300 transition-all"
-                    : "h-2 w-2 cursor-pointer rounded-full bg-white/25 transition-all hover:bg-white/40"
-                }
-              />
-            ))}
-          </div>
-
-          {/* CTA */}
           <div className="mt-12 flex justify-center">
-            <Link href="/explore">
-              <button className="flex h-11 cursor-pointer items-center gap-2 rounded-full bg-amber-300 px-6 text-sm font-bold text-[#241546] shadow-lg transition-all hover:bg-amber-200 active:scale-97">
-                All Courses
-                <ArrowRight className="h-4 w-4" />
-              </button>
+            <Link
+              href="/explore"
+              className="flex h-11 cursor-pointer items-center gap-2 rounded-full bg-amber-300 px-6 text-sm font-bold text-[#241546] shadow-lg transition-all hover:bg-amber-200 active:scale-97"
+            >
+              Browse the full catalogue
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>

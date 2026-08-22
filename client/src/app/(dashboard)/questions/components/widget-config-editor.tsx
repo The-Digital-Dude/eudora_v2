@@ -210,7 +210,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                 </div>
               </div>
               <p className="text-[10px] text-muted-foreground">
-                Each attempt randomizes a new target within the range above — different students (and retries) see a different number to find.
+                Each attempt randomizes a new target within the range above, so different students (and retries) see a different number to find.
               </p>
               <GeneratePreviewButton widgetType="SLIDER_MANIPULATIVE" config={value} />
             </div>
@@ -355,7 +355,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
         return (
           <div className="space-y-4">
             <p className="text-[10px] text-muted-foreground">
-              A parameterized MCQ generates fresh numbers and answer options every attempt — no fixed Answer Options needed below.
+              A parameterized MCQ generates fresh numbers and answer options every attempt, so no fixed Answer Options are needed below.
             </p>
 
             {/* Given variables */}
@@ -381,7 +381,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
             {/* Secret variables */}
             <div className="space-y-2 border-t border-border pt-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-muted-foreground">Secret Variables (the answer — never shown)</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">Secret Variables (the answer, never shown)</Label>
                 <button type="button" onClick={() => addVar("secret")} className="flex items-center gap-1 text-[11px] font-bold text-primary">
                   <Plus className="h-3 w-3" /> Add
                 </button>
@@ -420,7 +420,7 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
             {/* Template + answer key */}
             <div className="space-y-2 border-t border-border pt-3">
               <Label className="text-xs font-semibold text-muted-foreground">
-                Prompt Template (use {"{name}"} for given/derived values — never a secret variable)
+                Prompt Template (use {"{name}"} for given/derived values, never a secret variable)
               </Label>
               <Input
                 placeholder="e.g. Solve: {a}x + {b} = {c}. What is x?"

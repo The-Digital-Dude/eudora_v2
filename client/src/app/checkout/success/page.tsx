@@ -77,7 +77,7 @@ export default function CheckoutSuccessPage() {
           </p>
           <p className="max-w-sm text-center text-xs text-muted-foreground">
             Setting up access is taking longer than usual. It will appear in
-            your dashboard shortly — no need to pay again.
+            your dashboard shortly. No need to pay again.
           </p>
           <Link
             href="/parent"
@@ -90,7 +90,7 @@ export default function CheckoutSuccessPage() {
         <>
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           <p className="text-sm font-bold text-foreground">
-            Payment received — setting up access
+            Payment received. Setting up access
           </p>
           <p className="text-xs text-muted-foreground">This takes a moment.</p>
         </>

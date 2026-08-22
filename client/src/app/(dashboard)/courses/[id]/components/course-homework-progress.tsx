@@ -36,7 +36,7 @@ export function CourseHomeworkProgress({ courseId }: { courseId: string }) {
   if (checkpoints.length === 0) {
     return (
       <p className="border-border bg-card rounded-2xl border px-5 py-4 text-[11px] text-muted-foreground">
-        No homework checkpoints in this course yet. Add one above — the item kind
+        No homework checkpoints in this course yet. Add one above. The item kind
         is &ldquo;Homework&rdquo;.
       </p>
     );

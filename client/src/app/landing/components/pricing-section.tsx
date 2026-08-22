@@ -46,8 +46,10 @@ export default async function PricingSection() {
 
       <div className="mt-12 grid gap-5 md:grid-cols-3">
         {sellable.map((program, index) => {
-          // Middle card is the anchor — standard three-tier framing, and it is
-          // where we want attention when there are three real options.
+          // Middle card is the visual anchor — standard three-tier framing.
+          // It carried a "MOST POPULAR" badge until nobody could say which
+          // programme was most popular, because none of them had been bought.
+          // The emphasis stays; the claim doesn't.
           const featured = sellable.length === 3 && index === 1;
 
           return (
@@ -59,12 +61,6 @@ export default async function PricingSection() {
                   : "border-border shadow-sm"
               }`}
             >
-              {featured && (
-                <span className="mb-3 w-fit rounded-full bg-foreground px-2.5 py-1 text-[10px] font-bold text-background">
-                  MOST POPULAR
-                </span>
-              )}
-
               <h3 className="font-display text-base font-bold text-foreground">
                 {program.name}
               </h3>

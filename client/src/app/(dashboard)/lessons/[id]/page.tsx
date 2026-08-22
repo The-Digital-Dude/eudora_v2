@@ -194,7 +194,7 @@ export default function LessonStudioPage() {
           </button>
           <div>
             <h1 className="flex items-center gap-1.5 text-sm font-bold text-foreground">
-              Lesson Authoring Studio: {lessonFlow?.lesson?.title}
+              Lesson Builder: {lessonFlow?.lesson?.title}
             </h1>
             <p className="text-[10px] font-semibold text-muted-foreground">
               Curriculum Concept: {lessonFlow?.lesson?.concept?.name}

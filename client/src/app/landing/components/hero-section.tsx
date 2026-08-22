@@ -42,20 +42,20 @@ export default function HeroSection() {
         {/* Right: Content */}
         <div className="order-1 text-center md:order-2 md:text-left">
           <div className="animate-fade-in-up mb-5 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1 text-[10px] font-bold tracking-widest text-muted-foreground uppercase shadow-sm select-none">
-            Personalized Learning
+            For Kids, Pre-K to Grade 6
           </div>
 
           <h1 className="font-display animate-fade-in-up mb-5 text-4xl leading-[1.1] font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl">
-            Learn intelligently. <br className="hidden sm:inline" />
-            Teach effortlessly.
+            Screens your kids <br className="hidden sm:inline" />
+            actually learn from.
           </h1>
 
           <p
             className="animate-fade-in-up mx-auto mb-8 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base md:mx-0"
             style={{ animationDelay: "0.1s" }}
           >
-            Eudora is the next-generation learning platform. Personalize student curriculums,
-            automate grading, and guide every learner at their own pace.
+            An AI tutor that stops and asks a question every few minutes, real teachers running
+            live cohorts, and a parent view that shows you what your child actually did.
           </p>
 
           {/* Course search */}

@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { flattenNavLeaves } from "@/config/nav-config";
+import { browseCoursesLink, navGroups, navTitle } from "@/config/nav-config";
 import {
   useDeleteNotificationMutation,
   useGetNotificationsQuery,
@@ -42,13 +42,18 @@ interface PortalTopbarProps {
 }
 
 // The handful of extra pages Guardian/Student can reach beyond their own
-// portal home — Timetable/Attendance/Homework/Gradebook (+ Learning for
+// portal home — Attendance/Homework/Report Card (+ Lesson Library for
 // students). Filtered live from nav-config.ts so this never drifts out of
 // sync with what AppSidebar shows admins/teachers for the same permissions.
+// Reads `navGroups` rather than `flattenNavLeaves()`, which also carries the
+// role landing pages that exist only for the route guard.
 function usePortalNavLinks(user: PortalTopbarProps["user"]) {
   const homeUrl = getRoleHome(user);
   return React.useMemo(
-    () => flattenNavLeaves().filter((leaf) => !leaf.hidden && leaf.url !== homeUrl && hasAccess(user, leaf.requirement)),
+    () =>
+      navGroups
+        .flatMap((group) => group.items)
+        .filter((leaf) => !leaf.hidden && leaf.url !== homeUrl && hasAccess(user, leaf.requirement)),
     [user, homeUrl],
   );
 }
@@ -56,10 +61,13 @@ function usePortalNavLinks(user: PortalTopbarProps["user"]) {
 export function PortalTopbar({ user, onLogout }: PortalTopbarProps) {
   const pathname = usePathname();
   const navLinks = usePortalNavLinks(user);
+  const primaryRole = getPrimaryRole(user);
   // Students reach content through their own profile and have no children to
   // switch between, so the picker (and its /parent/children fetch) is
   // guardian-only.
-  const isGuardian = getPrimaryRole(user) === "GUARDIAN";
+  const isGuardian = primaryRole === "GUARDIAN";
+  const canBrowse = hasAccess(user, browseCoursesLink.requirement);
+  const BrowseIcon = browseCoursesLink.icon;
 
   const { data: notifications = [] } = useGetNotificationsQuery();
   const { data: unreadData } = useGetUnreadNotificationsCountQuery();
@@ -98,6 +106,26 @@ export function PortalTopbar({ user, onLogout }: PortalTopbarProps) {
         </Link>
 
         <div className="flex items-center gap-2">
+          {/* The buy path. A guardian who has already paid once is the cheapest
+              customer to sell to again, and until now /explore was only
+              reachable from a panel part-way down the parent portal — so this
+              is a persistent header link, not a hamburger item. */}
+          {canBrowse && (
+            <Button
+              asChild
+              variant="outline"
+              className="h-9 cursor-pointer rounded-xl px-3 text-xs font-semibold"
+            >
+              <Link
+                href={browseCoursesLink.url}
+                aria-current={pathname === browseCoursesLink.url ? "page" : undefined}
+              >
+                <BrowseIcon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{browseCoursesLink.title}</span>
+              </Link>
+            </Button>
+          )}
+
           {/* Which child the session is scoped to. Self-hiding for guardians
               with one child, and absent entirely for students. */}
           {isGuardian && <ChildSwitcher />}
@@ -229,7 +257,7 @@ export function PortalTopbar({ user, onLogout }: PortalTopbarProps) {
                           className={isActive ? "flex items-center gap-2 text-foreground" : "flex items-center gap-2"}
                         >
                           <Icon className="h-3.5 w-3.5" />
-                          {leaf.title}
+                          {navTitle(leaf, primaryRole)}
                         </Link>
                       </DropdownMenuItem>
                     );

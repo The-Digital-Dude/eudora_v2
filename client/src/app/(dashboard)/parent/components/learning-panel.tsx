@@ -37,7 +37,7 @@ export function LearningPanel({ studentProfileId, childName }: LearningPanelProp
       <div className="mb-4 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
           <Sparkles className="h-4 w-4 text-primary" />
-          Active Learning
+          Lesson Library
         </h3>
         <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
           View only

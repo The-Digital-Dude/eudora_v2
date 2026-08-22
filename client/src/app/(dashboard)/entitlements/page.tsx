@@ -48,10 +48,10 @@ export default function EntitlementsPage() {
     <div className="animate-fade-in space-y-6">
       <div className="space-y-1">
         <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
-          Entitlements
+          Course Access
         </h1>
         <p className="text-xs text-muted-foreground">
-          Who can access what, and why. Revoking is a status change — the
+          Who can access what, and why. Revoking is a status change. The
           history is never deleted.
         </p>
       </div>

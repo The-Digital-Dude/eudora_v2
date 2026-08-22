@@ -210,7 +210,7 @@ export default function TeacherApplicationPage() {
               </span>
               <span className="text-muted-foreground block text-[10px]">
                 {resume
-                  ? `${(resume.size / 1024 / 1024).toFixed(1)}MB — click to replace`
+                  ? `${(resume.size / 1024 / 1024).toFixed(1)}MB, click to replace`
                   : "Only you and our reviewers will ever see this file."}
               </span>
             </span>

@@ -114,7 +114,7 @@ export function AddChildForm({
       </Button>
 
       <p className="text-center text-[10px] text-muted-foreground">
-        Your child doesn&apos;t need their own email or password — they learn
+        Your child doesn&apos;t need their own email or password. They learn
         through your account.
       </p>
     </form>

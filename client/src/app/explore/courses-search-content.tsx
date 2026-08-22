@@ -86,7 +86,7 @@ export function CoursesSearchContent() {
               Find your next course
             </h1>
             <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-              Search our full course catalog — every course is taught with personalized, AI-guided
+              Search our full course catalog. Every course is taught with personalized, AI-guided
               lessons.
             </p>
 
@@ -138,7 +138,7 @@ export function CoursesSearchContent() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {submittedQuery
                   ? `Nothing matched "${submittedQuery}". Try a different search.`
-                  : "Check back soon — new courses are added regularly."}
+                  : "Check back soon. New courses are added regularly."}
               </p>
             </div>
           ) : (

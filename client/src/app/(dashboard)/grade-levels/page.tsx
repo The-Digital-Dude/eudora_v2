@@ -19,14 +19,15 @@ import {
 /**
  * Admin surface for the `Class` taxonomy master.
  *
- * Titled "Grade Levels" on purpose. The model is `Class`, and every row in it
- * is literally a grade level, so the page is named after what it holds. The
+ * Titled "Grades" — the word the public catalogue already uses ("Grades 1–2"
+ * on /explore) — so a parent and an operator name the same thing the same way.
+ * The model stays `Class`, and every row in it is literally a grade level. The
  * cohort model has since been renamed `CourseClass` -> `Batch`, which leaves
  * only `ClassSection` (the roster behind /classes) still sharing the word.
  */
 const STATUS_LABELS: Record<CatalogStatus, string> = {
-  DRAFT: "Draft — hidden from the catalogue",
-  PUBLISHED: "Published — visible publicly",
+  DRAFT: "Draft, hidden from the catalogue",
+  PUBLISHED: "Published, visible publicly",
   ARCHIVED: "Archived",
 };
 
@@ -48,7 +49,7 @@ export default function GradeLevelsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
           <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
-            Grade Levels
+            Grades
           </h1>
           <p className="text-xs text-muted-foreground">
             The top of the catalogue: every programme hangs off one of these,
@@ -142,7 +143,7 @@ export default function GradeLevelsPage() {
       )}
 
       <p className="text-[10px] text-muted-foreground">
-        Grade levels can&apos;t be deleted — assessments, questions and
+        Grade levels can&apos;t be deleted, because assessments, questions and
         programmes reference them. Archive instead.
       </p>
     </div>
@@ -252,7 +253,7 @@ function ClassForm({
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Optional — shown on the public class page"
+            placeholder="Optional, shown on the public class page"
             className={inputClass}
             maxLength={500}
           />

@@ -46,7 +46,7 @@ export function DiscussionView({ item, onCompleted }: DiscussionViewProps) {
       <div className="flex-1 space-y-3 overflow-y-auto">
         {thread.posts.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            No replies yet — be the first to share your thoughts.
+            No replies yet. Be the first to share your thoughts.
           </p>
         ) : (
           thread.posts.map((post) => (

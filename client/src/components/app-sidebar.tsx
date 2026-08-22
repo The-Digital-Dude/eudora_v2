@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,7 +7,6 @@ import * as React from "react";
 
 import { Logo } from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -20,12 +18,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { isNavParent,type NavGroup, navGroups } from "@/config/nav-config";
-import { getRoleHome, hasAccess } from "@/lib/access-control";
+import { homeLeaf, type NavGroup, navGroups, navTitle } from "@/config/nav-config";
+import { getPrimaryRole, getRoleHome, hasAccess } from "@/lib/access-control";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: {
@@ -41,6 +36,8 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
   const pathname = usePathname();
+  const primaryRole = getPrimaryRole(user);
+  const roleHome = getRoleHome(user);
 
   const displayName =
     user.name || [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
@@ -51,30 +48,25 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     .toUpperCase()
     .slice(0, 2);
 
+  // One flat list per group. The first group is unlabelled and holds only Home,
+  // which replaced the four separate portal entries (Overview / Parent / Student
+  // / Teacher Portal) that all meant "your landing page".
   const filteredNavGroups = React.useMemo<NavGroup[]>(() => {
-    return navGroups
-      .map((group) => {
-        const items = group.items
-          .map((item) => {
-            if (isNavParent(item)) {
-              const children = item.children.filter(
-                (child) => !child.hidden && hasAccess(user, child.requirement),
-              );
-              return children.length > 0 ? { ...item, children } : null;
-            }
-            return !item.hidden && hasAccess(user, item.requirement) ? item : null;
-          })
-          .filter((item): item is NonNullable<typeof item> => item !== null);
-        return { ...group, items };
-      })
+    const home: NavGroup = { label: "", items: [homeLeaf(roleHome)] };
+    const groups = navGroups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => !item.hidden && hasAccess(user, item.requirement)),
+      }))
       .filter((group) => group.items.length > 0);
-  }, [user]);
+    return [home, ...groups];
+  }, [user, roleHome]);
 
   return (
     <Sidebar {...props}>
       <SidebarHeader className="border-sidebar-border/50 border-b p-0">
         <Link
-          href={getRoleHome(user)}
+          href={roleHome}
           className="flex items-center justify-center py-3 group-data-[collapsible=icon]:py-3"
         >
           {/* Icon-only mark, shown when the sidebar is collapsed to icon width */}
@@ -94,77 +86,46 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
 
       <SidebarContent className="py-4">
         {filteredNavGroups.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="mb-1 px-3 text-[10px] font-bold tracking-wider text-sidebar-foreground/50 uppercase">
-              {group.label}
-            </SidebarGroupLabel>
+          <SidebarGroup key={group.label || "home"}>
+            {group.label && (
+              <SidebarGroupLabel className="mb-1 px-3 text-[10px] font-bold tracking-wider text-sidebar-foreground/50 uppercase">
+                {group.label}
+              </SidebarGroupLabel>
+            )}
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
-                  if (isNavParent(item)) {
-                    const isChildActive = item.children.some((child) => pathname === child.url);
-                    const Icon = item.icon;
+                  const title = navTitle(item, primaryRole);
+                  const isActive = pathname === item.url;
+                  const Icon = item.icon;
+
+                  if (item.disabled) {
                     return (
-                      <Collapsible key={item.title} defaultOpen={isChildActive} className="group/collapsible">
-                        <SidebarMenuItem>
-                          <CollapsibleTrigger asChild>
-                            <SidebarMenuButton
-                              tooltip={item.title}
-                              className={`w-full rounded-xl transition-all duration-200 ${
-                                isChildActive
-                                  ? "font-bold text-sidebar-foreground"
-                                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                              }`}
-                            >
-                              <Icon className="h-4 w-4" />
-                              <span className="text-xs font-semibold">{item.title}</span>
-                              <ChevronRight className="ml-auto h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                            </SidebarMenuButton>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <SidebarMenuSub>
-                              {item.children.map((child) => {
-                                const isActive = pathname === child.url;
-                                const ChildIcon = child.icon;
-                                return (
-                                  <SidebarMenuSubItem key={child.title}>
-                                    {child.disabled ? (
-                                      <span className="flex h-7 min-w-0 cursor-not-allowed items-center gap-2 rounded-md px-2 text-xs text-sidebar-foreground/40">
-                                        <ChildIcon className="h-3.5 w-3.5 shrink-0" />
-                                        <span className="truncate">{child.title}</span>
-                                        <Badge
-                                          variant="outline"
-                                          className="ml-auto px-1.5 py-0 text-[9px] font-semibold tracking-wider uppercase"
-                                        >
-                                          Soon
-                                        </Badge>
-                                      </span>
-                                    ) : (
-                                      <SidebarMenuSubButton asChild size="sm" isActive={isActive}>
-                                        <Link href={child.url} aria-current={isActive ? "page" : undefined}>
-                                          <ChildIcon className="h-3.5 w-3.5" />
-                                          <span className="truncate">{child.title}</span>
-                                        </Link>
-                                      </SidebarMenuSubButton>
-                                    )}
-                                  </SidebarMenuSubItem>
-                                );
-                              })}
-                            </SidebarMenuSub>
-                          </CollapsibleContent>
-                        </SidebarMenuItem>
-                      </Collapsible>
+                      <SidebarMenuItem key={item.url}>
+                        <SidebarMenuButton
+                          tooltip={title}
+                          aria-disabled
+                          className="w-full cursor-not-allowed rounded-xl text-sidebar-foreground/40"
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span className="truncate text-xs font-semibold">{title}</span>
+                          <Badge
+                            variant="outline"
+                            className="ml-auto px-1.5 py-0 text-[9px] font-semibold tracking-wider uppercase"
+                          >
+                            Soon
+                          </Badge>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
                     );
                   }
 
-                  const isActive = pathname === item.url;
-                  const Icon = item.icon;
                   return (
-                    <SidebarMenuItem key={item.title}>
+                    <SidebarMenuItem key={item.url}>
                       <SidebarMenuButton
                         asChild
                         isActive={isActive}
-                        tooltip={item.title}
+                        tooltip={title}
                         className={`w-full rounded-xl transition-all duration-200 ${
                           isActive
                             ? "bg-sidebar-primary font-bold text-sidebar-primary-foreground shadow-sm"
@@ -177,7 +138,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                           aria-current={isActive ? "page" : undefined}
                         >
                           <Icon className="h-4 w-4" />
-                          <span className="text-xs font-semibold">{item.title}</span>
+                          <span className="truncate text-xs font-semibold">{title}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

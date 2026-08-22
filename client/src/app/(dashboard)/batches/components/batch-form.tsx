@@ -142,7 +142,7 @@ export function BatchForm({ existing, onDone, onCancel }: BatchFormProps) {
           </SelectContent>
         </Select>
         <p className="text-[10px] text-muted-foreground">
-          A batch with no course can never be sold — checkout finds batches by course.
+          A batch with no course can never be sold. Checkout finds batches by course.
         </p>
       </div>
 

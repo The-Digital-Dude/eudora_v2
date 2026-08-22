@@ -195,13 +195,27 @@ export const getPublicClasses = () =>
   getJson<PublicClassSummary[]>(`/catalog/public/classes`);
 
 /**
+ * Exactly the fields `CatalogService.listPublicCourses` selects — no more.
+ * The list payload has no `deliveryMode` and no `durationWeeks`, so anything
+ * rendering these cards has to do without them rather than print `undefined`.
+ */
+export interface PublicCourseListItem {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  estimatedHours: number | null;
+  gradeBand: GradeBand | null;
+  learningSubject: { id: string; name: string; code: string } | null;
+  _count: { concepts: number };
+}
+
+/**
  * Returns a bare array: the API's response envelope flattens paginated
  * payloads, lifting `items` to `data` and moving the counts into `meta`.
  */
 export const getPublicCourseList = () =>
-  getJson<Array<{ slug: string; title: string }>>(
-    `/catalog/public/courses?limit=200`,
-  );
+  getJson<PublicCourseListItem[]>(`/catalog/public/courses?limit=200`);
 
 /** Money is integer minor units end to end; format only at the edge. */
 export function formatPrice(cents: number | null, currency = "USD"): string {

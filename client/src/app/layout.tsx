@@ -24,7 +24,7 @@ const organizationJsonLd = {
   name: SITE_NAME,
   url: SITE_URL,
   description:
-    "AI-powered education operating system: personalized learning paths, automated grading, and school administration in one place.",
+    "Interactive lessons and live cohorts for children Pre-K to Grade 6. An AI tutor that asks questions instead of autoplaying, real teachers, and a parent view of every mark and session.",
 };
 
 // Curated font set — each exposes its own CSS variable so the customizer can
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     template: "%s | Eudora",
   },
   description:
-    "AI-powered education operating system: personalized learning paths, automated grading, and school administration in one place.",
+    "Interactive lessons and live cohorts for children Pre-K to Grade 6. An AI tutor that asks questions instead of autoplaying, real teachers, and a parent view of every mark and session.",
   alternates: {
     canonical: "/",
   },
@@ -63,14 +63,14 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: "Eudora",
     description:
-      "AI-powered education operating system: personalized learning paths, automated grading, and school administration in one place.",
+      "Interactive lessons and live cohorts for children Pre-K to Grade 6. An AI tutor that asks questions instead of autoplaying, real teachers, and a parent view of every mark and session.",
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
     title: "Eudora",
     description:
-      "AI-powered education operating system: personalized learning paths, automated grading, and school administration in one place.",
+      "Interactive lessons and live cohorts for children Pre-K to Grade 6. An AI tutor that asks questions instead of autoplaying, real teachers, and a parent view of every mark and session.",
   },
 };
 

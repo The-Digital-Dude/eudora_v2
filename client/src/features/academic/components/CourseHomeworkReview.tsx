@@ -87,7 +87,7 @@ export function CourseHomeworkReview() {
       ) : homeworkList.length === 0 ? (
         <p className="border-border bg-card rounded-2xl border px-5 py-4 text-[11px] text-muted-foreground">
           No homework checkpoints in this course yet. Add one from the course
-          builder — the item kind is &ldquo;Homework&rdquo;.
+          builder. The item kind is &ldquo;Homework&rdquo;.
         </p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[280px_1fr]">

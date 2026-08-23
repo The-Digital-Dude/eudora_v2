@@ -3,6 +3,7 @@ import type {
   SliderConfig,
 } from "@/features/assessments/widgetConfigSchemas";
 import type { QuestionOption } from "@/features/clio/clioApi";
+import type { ShapeShadingDisplayConfig } from "@/features/clio/widgets/ShapeShadingWidget";
 
 /**
  * The demo lesson, in full.
@@ -20,8 +21,8 @@ import type { QuestionOption } from "@/features/clio/clioApi";
  * behaviour the real player actually has.
  *
  * Card order matters. The first card is what a visitor sees before they touch
- * anything, so it leads with the shaded shape: the question can be understood
- * from the picture alone, without reading a word.
+ * anything, so it leads with the shade-a-shape: the task is pure picture — tap
+ * the parts to colour — and can be understood without reading a word.
  */
 
 interface DemoCardBase {
@@ -49,6 +50,11 @@ export interface DemoShapePercentCard extends DemoCardBase {
   correctValue: number;
 }
 
+export interface DemoShapeShadingCard extends DemoCardBase {
+  kind: "shape-shading";
+  config: ShapeShadingDisplayConfig;
+}
+
 export interface DemoMcqCard extends DemoCardBase {
   kind: "mcq";
   options: QuestionOption[];
@@ -63,6 +69,7 @@ export interface DemoSliderCard extends DemoCardBase {
 export type DemoCard =
   | DemoCoordinateCard
   | DemoShapePercentCard
+  | DemoShapeShadingCard
   | DemoMcqCard
   | DemoSliderCard;
 
@@ -76,6 +83,19 @@ const mcqOption = (label: string, text: string, isCorrect = false): QuestionOpti
 export const DEMO_LESSON: { title: string; cards: DemoCard[] } = {
   title: "Maths you can picture",
   cards: [
+    {
+      kind: "shape-shading",
+      id: "demo-card-shape-shading",
+      concept: "Fractions",
+      title: "Shade the fraction",
+      clioIntro: "Let's show a fraction by colouring in part of a shape.",
+      prompt: "Shade two of the six slices, so two sixths of the circle is coloured in.",
+      config: { shape: { kind: "polygon", regions: 6 }, targetNumerator: 2, requireContiguous: false },
+      hint: "There are six equal slices in the circle. You only need to colour two of them in.",
+      explanation:
+        "Two of the six equal slices are shaded, so the shape shows two sixths — that's 2/6 of the circle.",
+      xp: 20,
+    },
     {
       kind: "shape-percent",
       id: "demo-card-shape-percent",

@@ -11,9 +11,11 @@ import {
 import * as React from "react";
 
 import { ClioMascot, type MascotState } from "@/features/clio/ClioMascot";
+import { ClioVoicePicker } from "@/features/clio/sound/ClioVoicePicker";
 import { useClioVoice } from "@/features/clio/sound/useClioVoice";
 import { CoordinatePlotterWidget } from "@/features/clio/widgets/CoordinatePlotterWidget";
 import { MCQWidget } from "@/features/clio/widgets/MCQWidget";
+import { ShapeShadingWidget } from "@/features/clio/widgets/ShapeShadingWidget";
 import { SliderWidget } from "@/features/clio/widgets/SliderWidget";
 
 import { DEMO_LESSON } from "./demo-lesson";
@@ -55,6 +57,7 @@ export function ClioDemoSection({
   const [choice, setChoice] = React.useState<string | null>(null);
   const [sliderValue, setSliderValue] = React.useState(0);
   const [plotted, setPlotted] = React.useState<{ points: { x: number; y: number }[] } | null>(null);
+  const [shaded, setShaded] = React.useState<{ shadedRegionIds: string[] } | null>(null);
   const [attempts, setAttempts] = React.useState(0);
   const [xp, setXp] = React.useState(0);
 
@@ -97,7 +100,9 @@ export function ClioDemoSection({
       ? choice !== null
       : card.kind === "coordinate"
         ? (plotted?.points.length ?? 0) > 0
-        : sliderValue > 0;
+        : card.kind === "shape-shading"
+          ? (shaded?.shadedRegionIds.length ?? 0) > 0
+          : sliderValue > 0;
   const locked = phase === "wrong" || phase === "correct" || phase === "reveal";
   const isCorrect = phase === "correct" ? true : locked ? false : null;
 
@@ -114,6 +119,8 @@ export function ClioDemoSection({
         points.length === 1 &&
         Math.abs(points[0].x - target.x) <= card.config.tolerance &&
         Math.abs(points[0].y - target.y) <= card.config.tolerance;
+    } else if (card.kind === "shape-shading") {
+      correct = (shaded?.shadedRegionIds.length ?? 0) === card.config.targetNumerator;
     } else {
       correct = sliderValue === card.correctValue;
     }
@@ -139,6 +146,7 @@ export function ClioDemoSection({
     setChoice(null);
     setSliderValue(0);
     setPlotted(null);
+    setShaded(null);
     setAttempts(0);
     setPhase("answering");
   };
@@ -148,6 +156,7 @@ export function ClioDemoSection({
     setChoice(null);
     setSliderValue(0);
     setPlotted(null);
+    setShaded(null);
     setAttempts(0);
     setXp(0);
     setPhase("answering");
@@ -219,6 +228,10 @@ export function ClioDemoSection({
           </div>
         </div>
 
+        <div className="border-b border-border/60 px-5 py-3">
+          <ClioVoicePicker />
+        </div>
+
         <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:gap-6 sm:p-7">
           {/* Clio + what she's saying right now. She stays first in the DOM so
               a phone still stacks her above the question; `order` only moves her
@@ -288,6 +301,14 @@ export function ClioDemoSection({
                       config={card.config}
                       value={plotted}
                       onChange={setPlotted}
+                      locked={locked}
+                      isCorrect={isCorrect}
+                    />
+                  ) : card.kind === "shape-shading" ? (
+                    <ShapeShadingWidget
+                      config={card.config}
+                      value={shaded}
+                      onChange={setShaded}
                       locked={locked}
                       isCorrect={isCorrect}
                     />

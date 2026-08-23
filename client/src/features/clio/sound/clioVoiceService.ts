@@ -6,11 +6,18 @@ import {
 } from "./clioPhrases";
 
 const STORAGE_KEY_MUTED = "eudora_clio_voice_muted";
+const STORAGE_KEY_VOICE_URI = "eudora_clio_voice_uri";
+
+// Default voice preference used when the user has not made an explicit choice.
+// Prioritizes Google Hindi (hi-IN) so Clio defaults to that voice.
+const DEFAULT_VOICE_HINTS = ["google हिन्दी", "google hindi", "hi-in", "hindi"];
 
 export type ClioVoiceState = "idle" | "speaking" | "paused";
 
 type VoiceStateListener = (state: ClioVoiceState) => void;
 type MuteStateListener = (muted: boolean) => void;
+type VoiceListListener = (voices: SpeechSynthesisVoice[]) => void;
+type SelectedVoiceListener = (uri: string | null) => void;
 
 // Active utterance pool to prevent Chromium garbage collection from cancelling audio
 const activeUtterances = new Set<SpeechSynthesisUtterance>();
@@ -98,8 +105,11 @@ function playWebAudioChime(type: "correct" | "incorrect" | "hint" | "complete") 
 class ClioVoiceService {
   private isMuted: boolean = false;
   private currentState: ClioVoiceState = "idle";
+  private selectedVoiceURI: string | null = null;
   private voiceListeners = new Set<VoiceStateListener>();
   private muteListeners = new Set<MuteStateListener>();
+  private voiceListListeners = new Set<VoiceListListener>();
+  private selectedVoiceListeners = new Set<SelectedVoiceListener>();
   private resumeTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
@@ -110,6 +120,12 @@ class ClioVoiceService {
       } catch {
         this.isMuted = false;
       }
+      try {
+        const savedVoice = localStorage.getItem(STORAGE_KEY_VOICE_URI);
+        this.selectedVoiceURI = savedVoice || null;
+      } catch {
+        this.selectedVoiceURI = null;
+      }
       this.initVoiceLookup();
     }
   }
@@ -117,12 +133,75 @@ class ClioVoiceService {
   private initVoiceLookup() {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
+    const refreshVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      this.voiceListListeners.forEach((listener) => listener(voices));
+      this.applyDefaultVoiceIfNeeded();
+    };
+
+    refreshVoices();
     if (typeof window.speechSynthesis.onvoiceschanged !== "undefined") {
-      window.speechSynthesis.onvoiceschanged = () => {
-        // Trigger voice list refresh
-        window.speechSynthesis.getVoices();
-      };
+      window.speechSynthesis.onvoiceschanged = refreshVoices;
     }
+  }
+
+  private findVoiceByHints(
+    voices: SpeechSynthesisVoice[],
+    hints: string[]
+  ): SpeechSynthesisVoice | null {
+    for (const hint of hints) {
+      const found = voices.find((v) =>
+        `${v.name} ${v.lang}`.toLowerCase().includes(hint)
+      );
+      if (found) return found;
+    }
+    return null;
+  }
+
+  // Selects the default voice (Google Hindi hi-IN, then kid-friendly English)
+  // the first time voices are available, only if the user hasn't chosen one.
+  private applyDefaultVoiceIfNeeded() {
+    if (this.selectedVoiceURI !== null) return;
+    const voices = this.getAvailableVoices();
+    if (!voices.length) return;
+    const fallback =
+      this.findVoiceByHints(voices, CLIO_VOICE_CONFIG.preferredVoiceHints) ?? null;
+    const def = this.findVoiceByHints(voices, DEFAULT_VOICE_HINTS) ?? fallback;
+    if (def) this.setSelectedVoiceURI(def.voiceURI);
+  }
+
+  public getAvailableVoices(): SpeechSynthesisVoice[] {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return [];
+    return window.speechSynthesis.getVoices();
+  }
+
+  public getSelectedVoiceURI(): string | null {
+    return this.selectedVoiceURI;
+  }
+
+  public setSelectedVoiceURI(uri: string | null) {
+    this.selectedVoiceURI = uri;
+    if (typeof window !== "undefined") {
+      try {
+        if (uri) localStorage.setItem(STORAGE_KEY_VOICE_URI, uri);
+        else localStorage.removeItem(STORAGE_KEY_VOICE_URI);
+      } catch {
+        // ignore
+      }
+    }
+    this.selectedVoiceListeners.forEach((listener) => listener(uri));
+  }
+
+  public subscribeVoices(listener: VoiceListListener): () => void {
+    this.voiceListListeners.add(listener);
+    listener(this.getAvailableVoices());
+    return () => this.voiceListListeners.delete(listener);
+  }
+
+  public subscribeSelectedVoice(listener: SelectedVoiceListener): () => void {
+    this.selectedVoiceListeners.add(listener);
+    listener(this.selectedVoiceURI);
+    return () => this.selectedVoiceListeners.delete(listener);
   }
 
   private getBestVoice(): SpeechSynthesisVoice | null {
@@ -130,23 +209,21 @@ class ClioVoiceService {
     const voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) return null;
 
-    // 1. Try finding tuned kid-friendly / female voice candidates
-    for (const hint of CLIO_VOICE_CONFIG.preferredVoiceHints) {
-      const found = voices.find((v) => {
-        const combined = `${v.name} ${v.lang}`.toLowerCase();
-        return combined.includes(hint);
-      });
-      if (found) return found;
+    // 1. Honor the user's explicitly chosen voice (if still available)
+    if (this.selectedVoiceURI) {
+      const chosen = voices.find((v) => v.voiceURI === this.selectedVoiceURI);
+      if (chosen) return chosen;
     }
 
-    // 2. Try any English voice
-    const enUs = voices.find((v) => v.lang === "en-US" || v.lang === "en_US");
-    if (enUs) return enUs;
-
-    const anyEn = voices.find((v) => v.lang.toLowerCase().startsWith("en"));
-    if (anyEn) return anyEn;
-
-    return voices[0] || null;
+    // 2. Default (Auto): Google Hindi hi-IN, then kid-friendly English
+    return (
+      this.findVoiceByHints(voices, DEFAULT_VOICE_HINTS) ??
+      this.findVoiceByHints(voices, CLIO_VOICE_CONFIG.preferredVoiceHints) ??
+      voices.find((v) => v.lang === "en-US" || v.lang === "en_US") ??
+      voices.find((v) => v.lang.toLowerCase().startsWith("en")) ??
+      voices[0] ??
+      null
+    );
   }
 
   public getMuted(): boolean {

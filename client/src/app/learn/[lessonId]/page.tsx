@@ -36,6 +36,7 @@ import {
   setWidgetState,
   showExplanation,
 } from "@/features/clio/lessonSlice";
+import { ClioVoicePicker } from "@/features/clio/sound/ClioVoicePicker";
 import { useClioVoice } from "@/features/clio/sound/useClioVoice";
 import { WidgetSelector } from "@/features/clio/widgets/WidgetSelector";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -446,6 +447,8 @@ export default function LessonFlowPage() {
                 )}
               </button>
             </div>
+
+            <ClioVoicePicker />
 
             <div
               className="flex items-start gap-2.5 cursor-pointer"

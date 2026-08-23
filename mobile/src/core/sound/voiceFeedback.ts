@@ -10,20 +10,19 @@ import { PHRASES, type PhraseKey } from './phrases';
  */
 
 const FEMALE_VOICE_HINTS = [
-  'female',
+  'aria', // Windows/Edge natural, soft
   'samantha', // iOS en-US default female
   'victoria', // iOS en-US
+  'susan', // Android/Google TTS en-US (Neural2-ish)
   'kate', // iOS en-GB
   'serena', // iOS en-GB
   'moira', // iOS en-IE
   'karen', // iOS en-AU
   'tessa', // iOS en-ZA
   'zoe', // iOS en-US (newer)
-  'susan', // Android/Google TTS en-US
   'zira', // Windows/Edge en-US
   'hazel', // Windows/Edge en-GB
-  'eva', // Windows/Edge es-*
-  'catherine', // Windows/Edge en-AU
+  'female',
 ];
 
 let cachedVoiceId: string | null | undefined;
@@ -100,8 +99,8 @@ export async function playVoiceLine(key: PhraseKey, opts: { interrupt?: boolean 
   Speech.speak(phrase, {
     language: 'en-US',
     voice,
-    rate: 0.86,
-    pitch: 1.15,
+    rate: 0.68,
+    pitch: 1.35,
   });
 }
 
@@ -119,8 +118,8 @@ export async function playText(text: string, opts: { interrupt?: boolean; onDone
   Speech.speak(clean, {
     language: 'en-US',
     voice,
-    rate: 0.82,
-    pitch: 1.12,
+    rate: 0.66,
+    pitch: 1.32,
     onDone,
     onError: () => onDone?.(),
   });

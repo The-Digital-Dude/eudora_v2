@@ -50,6 +50,15 @@ services:
       - key: S3_PUBLIC_URL
         value: https://ssvxkxjoryudpvanzwfz.supabase.co/storage/v1/object/public/uploads
 
+      # Private uploads: teacher application CVs (home address, phone) and
+      # homework attachments (photographs of children's work). Without this
+      # key S3StorageService silently falls back to S3_BUCKET above, which is
+      # public — the object keys are random UUIDs, but a prefix is a naming
+      # convention, not access control. This bucket must exist in Supabase and
+      # must NOT have public access enabled.
+      - key: S3_PRIVATE_BUCKET
+        value: uploads-private
+
       # sync: false keeps these out of the repository — Render prompts for them
       # at deploy time and stores them encrypted.
       - key: DATABASE_URL
@@ -65,4 +74,13 @@ services:
       - key: CORS_ORIGINS
         sync: false
       - key: APP_URL
+        sync: false
+      # StripeService degrades rather than crashing when these are absent: it
+      # logs a warning and disables checkout and webhooks. So the API will boot
+      # without them and everything except buying a course will work, which is
+      # exactly the failure that goes unnoticed until someone tries to pay.
+      # Test-mode keys are fine for a showcase environment.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
         sync: false

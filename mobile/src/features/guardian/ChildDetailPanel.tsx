@@ -1,7 +1,6 @@
-import { useRouter } from 'expo-router';
-import { CalendarDays, CheckCircle2, ChevronRight, Circle, Flame, Gem, Star } from 'lucide-react-native';
+import { CheckCircle2, Circle, Flame, Gem, Star } from 'lucide-react-native';
 import React from 'react';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
@@ -28,7 +27,6 @@ interface ChildDetailPanelProps {
  */
 export function ChildDetailPanel({ studentProfileId }: ChildDetailPanelProps) {
   const t = useTheme();
-  const router = useRouter();
 
   const { data: learning, isLoading: loadingLearning } = useGetChildLearningQuery(
     studentProfileId,
@@ -93,20 +91,6 @@ export function ChildDetailPanel({ studentProfileId }: ChildDetailPanelProps) {
           )}
         </>
       )}
-
-      <View style={{ height: t.spacing.xxl }} />
-      <Pressable
-        onPress={() => router.push({ pathname: '/timetable', params: { studentProfileId } })}
-        accessibilityRole="button"
-      >
-        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
-          <CalendarDays size={18} color={t.colors.primary} />
-          <Text variant="label" style={{ flex: 1 }}>
-            Schedule
-          </Text>
-          <ChevronRight size={18} color={t.colors.mutedForeground} />
-        </Card>
-      </Pressable>
 
       <View style={{ height: t.spacing.xxl }} />
       <Text variant="heading">Homework</Text>
@@ -183,7 +167,7 @@ export function ChildDetailPanel({ studentProfileId }: ChildDetailPanelProps) {
               <View style={{ flex: 1 }}>
                 <Text variant="body">{g.title}</Text>
                 <Text variant="caption" color="mutedForeground">
-                  {g.courseClass?.name ?? g.category}
+                  {g.batch?.name ?? g.category}
                 </Text>
               </View>
               <Text variant="label" color="primary">

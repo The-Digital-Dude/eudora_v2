@@ -5,11 +5,13 @@ import { View } from 'react-native';
 import type { ModuleItem } from '@/core/contracts';
 import { extractYouTubeId } from '@/core/widgets/youtube';
 import { useUpdateModuleItemProgressMutation } from '@/features/catalog/catalogApi';
+import { LockedItemNotice } from '@/features/lesson/LockedItemNotice';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 import { YouTubeVideoView } from './YouTubeVideoView';
 
 interface VideoItemViewProps {
   item: ModuleItem;
+  courseId: string;
 }
 
 /**
@@ -21,7 +23,7 @@ interface VideoItemViewProps {
  * progress contract: position saves throttled to once per 5s, completion
  * marked once via a ref guard.
  */
-export function VideoItemView({ item }: VideoItemViewProps) {
+export function VideoItemView({ item, courseId }: VideoItemViewProps) {
   const youTubeId = useMemo(
     () => (item.videoUrl ? extractYouTubeId(item.videoUrl) : null),
     [item.videoUrl],
@@ -44,6 +46,13 @@ export function VideoItemView({ item }: VideoItemViewProps) {
       void updateProgress({ id: item.id, completed: true });
     }
   };
+
+  // `videoUrl` is nulled server-side (same reasoning as ReadingItemView)
+  // whenever `isContentLocked` — checked first so a locked item shows the
+  // unlock prompt rather than a silently blank player.
+  if (item.isContentLocked) {
+    return <LockedItemNotice courseId={courseId} what="video" />;
+  }
 
   if (!item.videoUrl) {
     return null;

@@ -140,7 +140,7 @@ export default function RegisterPage() {
     if (isAuthenticated) {
       router.push(destinationFor(user, accountType));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [isAuthenticated, user, accountType, router]);
 
   const handleRegister = async (values: RegisterFormValues) => {

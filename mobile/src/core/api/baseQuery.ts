@@ -6,6 +6,7 @@ import {
 } from '@reduxjs/toolkit/query';
 
 import type { TokenResponse } from '../contracts';
+import { getActingChildId } from './actingChildStore';
 import {
   clearTokens,
   getAccessToken,
@@ -33,6 +34,19 @@ const rawBaseQuery = fetchBaseQuery({
   prepareHeaders: (headers) => {
     const token = getAccessToken();
     if (token) headers.set('authorization', `Bearer ${token}`);
+
+    // Tells the API which child a guardian is acting for. Purely a hint — the
+    // server re-checks the guardian-child link on every request and ignores it
+    // entirely for callers who are themselves students, so sending it
+    // unconditionally is safe and keeps this off every individual call site.
+    //
+    // Sending the header is NOT sufficient on its own: RTK Query keys its cache
+    // on the endpoint argument, which knows nothing about this. Every
+    // child-varying query must also carry the child id in its arg, or two
+    // siblings share one cache entry. See `useActingChild`.
+    const actingChildId = getActingChildId();
+    if (actingChildId) headers.set('x-acting-student-id', actingChildId);
+
     return headers;
   },
 });

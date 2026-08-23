@@ -24,6 +24,12 @@ type PlaygroundId = "order" | "blanks" | "match" | "plot" | "shade";
 
 const TABS: { id: PlaygroundId; label: string; question: string; teaches: string }[] = [
   {
+    id: "plot",
+    label: "Plot the point",
+    question: "Plot the point that is 3 across and 2 up.",
+    teaches: "reading two numbers at once",
+  },
+  {
     id: "shade",
     label: "Shade the shape",
     question: "Shade two of the six slices, so two sixths of the circle is coloured in.",
@@ -34,12 +40,6 @@ const TABS: { id: PlaygroundId; label: string; question: string; teaches: string
     label: "Match the pairs",
     question: "Match each sum on the left to its answer on the right.",
     teaches: "number bonds, and recall under a little pressure",
-  },
-  {
-    id: "plot",
-    label: "Plot the point",
-    question: "Plot the point that is 3 across and 2 up.",
-    teaches: "reading two numbers at once",
   },
   {
     id: "order",
@@ -109,7 +109,7 @@ const SHADE_CONFIG = {
 };
 
 export function WidgetPlaygroundSection() {
-  const [tab, setTab] = React.useState<PlaygroundId>("shade");
+  const [tab, setTab] = React.useState<PlaygroundId>("plot");
   const [checked, setChecked] = React.useState(false);
 
   const [stepOrder, setStepOrder] = React.useState<string[] | null>(null);

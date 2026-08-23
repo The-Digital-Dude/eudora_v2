@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
-import { ArrowLeftRight, ChevronRight, CreditCard, MessageSquare, Settings, Users } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { ChevronRight, CreditCard, GraduationCap, Settings, UserPlus, Users } from 'lucide-react-native';
+import React from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,31 +11,40 @@ import { ProgressBar } from '@/ui/primitives/ProgressBar';
 import { Text } from '@/ui/primitives/Text';
 import { useFormFactor } from '@/ui/useFormFactor';
 import { useTheme } from '@/ui/theme/ThemeProvider';
-import { useGetUnreadMessageCountQuery } from '@/features/messaging/messagingApi';
 import { ChildDetailPanel } from './ChildDetailPanel';
 import { useGetChildrenQuery } from './guardianApi';
+import { useActingChild } from './useActingChild';
 
 interface GuardianHomeScreenProps {
-  /** Only passed by `app/index.tsx` when the account also has a StudentProfile. */
-  onSwitchToStudent?: () => void;
+  /**
+   * Opens the selected child's learning surface. Selecting a child here also
+   * sets the acting-child id, so what the guardian opens and what the API
+   * answers for are always the same learner.
+   */
+  onOpenChildView?: () => void;
 }
 
-export function GuardianHomeScreen({ onSwitchToStudent }: GuardianHomeScreenProps = {}) {
+export function GuardianHomeScreen({ onOpenChildView }: GuardianHomeScreenProps = {}) {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const formFactor = useFormFactor();
   const { data: me } = useGetMeQuery();
-  const { data: children, isLoading, isFetching, refetch } = useGetChildrenQuery();
-  const { data: unreadMessages } = useGetUnreadMessageCountQuery();
+  const { children, isLoading, activeChild, select } = useActingChild();
+  const { isFetching, refetch } = useGetChildrenQuery(undefined, {
+    skip: !me?.guardianProfile,
+  });
 
-  // Tablet only: which child's detail shows in the right-hand pane.
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
-  useEffect(() => {
-    if (!selectedChildId && children && children.length > 0) {
-      setSelectedChildId(children[0].studentProfileId);
-    }
-  }, [children, selectedChildId]);
+  // Tablet only: which child's detail shows in the right-hand pane. Kept in
+  // step with the acting child rather than tracked separately — a second
+  // source of truth for "which child" is exactly the bug `useActingChild`
+  // exists to prevent.
+  const selectedChildId = activeChild?.studentProfileId ?? null;
+
+  const openLearning = (studentProfileId: string) => {
+    select(studentProfileId);
+    onOpenChildView?.();
+  };
 
   if (isLoading) {
     return (
@@ -62,16 +71,6 @@ export function GuardianHomeScreen({ onSwitchToStudent }: GuardianHomeScreenProp
           <Text variant="title">{me?.firstName || me?.email || 'Guardian'}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: t.spacing.md }}>
-          {onSwitchToStudent ? (
-            <Pressable
-              onPress={onSwitchToStudent}
-              accessibilityRole="button"
-              accessibilityLabel="Switch to student view"
-              hitSlop={8}
-            >
-              <ArrowLeftRight size={22} color={t.colors.mutedForeground} />
-            </Pressable>
-          ) : null}
           <Pressable
             onPress={() => router.push('/settings')}
             accessibilityRole="button"
@@ -85,33 +84,6 @@ export function GuardianHomeScreen({ onSwitchToStudent }: GuardianHomeScreenProp
 
       <View style={{ height: t.spacing.xl }} />
       <View style={{ gap: t.spacing.md }}>
-        <Pressable onPress={() => router.push('/messages')} accessibilityRole="button">
-          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
-            <MessageSquare size={18} color={t.colors.primary} />
-            <Text variant="label" style={{ flex: 1 }}>
-              Messages
-            </Text>
-            {unreadMessages && unreadMessages.count > 0 ? (
-              <View
-                style={{
-                  minWidth: 20,
-                  height: 20,
-                  borderRadius: t.radius.pill,
-                  backgroundColor: t.colors.primary,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingHorizontal: 6,
-                }}
-              >
-                <Text variant="caption" style={{ color: t.colors.primaryForeground }}>
-                  {unreadMessages.count}
-                </Text>
-              </View>
-            ) : (
-              <ChevronRight size={18} color={t.colors.mutedForeground} />
-            )}
-          </Card>
-        </Pressable>
         <Pressable onPress={() => router.push('/billing')} accessibilityRole="button">
           <Card style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
             <CreditCard size={18} color={t.colors.primary} />
@@ -124,7 +96,17 @@ export function GuardianHomeScreen({ onSwitchToStudent }: GuardianHomeScreenProp
       </View>
 
       <View style={{ height: t.spacing.xl }} />
-      <Text variant="heading">Your children</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text variant="heading">Your children</Text>
+        <Pressable
+          onPress={() => router.push('/guardian/add-child')}
+          accessibilityRole="button"
+          accessibilityLabel="Add a child"
+          hitSlop={8}
+        >
+          <UserPlus size={20} color={t.colors.primary} />
+        </Pressable>
+      </View>
       <View style={{ height: t.spacing.md }} />
     </>
   );
@@ -135,8 +117,27 @@ export function GuardianHomeScreen({ onSwitchToStudent }: GuardianHomeScreenProp
         <Users size={28} color={t.colors.mutedForeground} />
         <View style={{ height: t.spacing.sm }} />
         <Text variant="body" color="mutedForeground" style={{ textAlign: 'center' }}>
-          No students linked to your account yet.
+          No children on your account yet.
         </Text>
+        <View style={{ height: t.spacing.lg }} />
+        <Pressable
+          onPress={() => router.push('/guardian/add-child')}
+          accessibilityRole="button"
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: t.spacing.sm,
+            backgroundColor: t.colors.primary,
+            borderRadius: t.radius.lg,
+            paddingHorizontal: t.spacing.xl,
+            paddingVertical: t.spacing.md,
+          }}
+        >
+          <UserPlus size={18} color={t.colors.primaryForeground} />
+          <Text variant="label" style={{ color: t.colors.primaryForeground }}>
+            Add your first child
+          </Text>
+        </Pressable>
       </Card>
     ) : (
       <View style={{ gap: t.spacing.md }}>
@@ -146,10 +147,15 @@ export function GuardianHomeScreen({ onSwitchToStudent }: GuardianHomeScreenProp
               key={child.studentProfileId}
               child={child}
               selected={child.studentProfileId === selectedChildId}
-              onPress={() => setSelectedChildId(child.studentProfileId)}
+              onPress={() => select(child.studentProfileId)}
+              onOpenLearning={() => openLearning(child.studentProfileId)}
             />
           ) : (
-            <ChildCard key={child.studentProfileId} child={child} />
+            <ChildCard
+              key={child.studentProfileId}
+              child={child}
+              onOpenLearning={() => openLearning(child.studentProfileId)}
+            />
           ),
         )}
       </View>
@@ -221,33 +227,45 @@ function ChildCard({
   child,
   selected,
   onPress,
+  onOpenLearning,
 }: {
   child: ChildSummary;
   /** Tablet mode only — highlights the card and calls `onPress` instead of navigating. */
   selected?: boolean;
   onPress?: () => void;
+  /** Opens this child's learning surface, making them the acting child. */
+  onOpenLearning?: () => void;
 }) {
   const t = useTheme();
   const router = useRouter();
 
   return (
-    <Pressable
-      onPress={
-        onPress ??
-        (() =>
-          router.push({
-            pathname: '/guardian/[studentProfileId]',
-            params: { studentProfileId: child.studentProfileId },
-          }))
+    <Card
+      style={
+        selected ? { borderColor: t.colors.primary, borderWidth: 2 } : undefined
       }
-      accessibilityRole="button"
     >
-      <Card
-        style={
-          selected
-            ? { borderColor: t.colors.primary, borderWidth: 2 }
-            : undefined
+      {/*
+        Two Pressables, siblings rather than nested — react-native-web renders
+        an `accessibilityRole="button"` Pressable as a real `<button>`, and a
+        `<button>` cannot legally contain another `<button>`; the previous
+        nested version rendered fine but hit React's hydration warning and
+        invalid-DOM console error on the web target the moment a real child
+        with `onOpenLearning` actually appeared. Splitting them keeps the two
+        destinations distinct on every platform — the card opens this child's
+        *records*, "Open learning" opens their *learning surface* — without
+        putting one tap target inside the other's DOM node.
+      */}
+      <Pressable
+        onPress={
+          onPress ??
+          (() =>
+            router.push({
+              pathname: '/guardian/[studentProfileId]',
+              params: { studentProfileId: child.studentProfileId },
+            }))
         }
+        accessibilityRole="button"
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.md }}>
           <View style={{ flex: 1 }}>
@@ -286,8 +304,31 @@ function ChildCard({
             </Text>
           ) : null}
         </View>
-      </Card>
-    </Pressable>
+      </Pressable>
+
+      {onOpenLearning ? (
+        <>
+          <View style={{ height: t.spacing.md }} />
+          <Pressable
+            onPress={onOpenLearning}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${child.fullName}'s learning`}
+            hitSlop={6}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: t.spacing.sm,
+              paddingVertical: t.spacing.sm,
+            }}
+          >
+            <GraduationCap size={16} color={t.colors.primary} />
+            <Text variant="label" color="primary">
+              Open learning
+            </Text>
+          </Pressable>
+        </>
+      ) : null}
+    </Card>
   );
 }
 

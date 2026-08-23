@@ -32,9 +32,11 @@ export const api = createApi({
     'Assignment',
     'AssessmentAttempt',
     'Billing',
-    'Messages',
     'Homework',
-    'Timetable',
+    'ItemHomework',
+    'LiveSession',
+    'Entitlements',
+    'Orders',
   ],
   endpoints: () => ({}),
 });

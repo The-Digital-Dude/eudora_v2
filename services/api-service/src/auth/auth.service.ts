@@ -76,7 +76,18 @@ export class AuthService {
     private readonly appleProvider: AppleOAuthProvider,
   ) {}
 
-  async register(dto: RegisterDto) {
+  /**
+   * `userAgent`/`ipAddress` are optional for the same reason they are on
+   * `login`: not every caller has a request to read them from. They are worth
+   * threading because the session this creates is the account's *first*, and
+   * without them it lands in `AuthSession` unattributable — so the device a
+   * user actually signed up on is the one row "your devices" cannot name.
+   */
+  async register(
+    dto: RegisterDto,
+    userAgent?: string | null,
+    ipAddress?: string | null,
+  ) {
     // Normalised the way login already looks it up. Without this, registering
     // with any uppercase character created a row that sign-in could never
     // match again — the account existed and was unreachable.
@@ -130,7 +141,11 @@ export class AuthService {
       include: AuthService.USER_SESSION_INCLUDE,
     });
 
-    const tokens = await this.createSessionTokens(user, null, null);
+    const tokens = await this.createSessionTokens(
+      user,
+      userAgent ?? null,
+      ipAddress ?? null,
+    );
     await this.audit(user.id, 'auth.signup.created', 'user', user.id);
 
     const { password: _, ...result } = user;

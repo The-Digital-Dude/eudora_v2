@@ -7,7 +7,9 @@ import {
   FileText,
   Lock,
   MessageSquare,
+  NotebookPen,
   PlayCircle,
+  Radio,
   Sparkles,
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -16,16 +18,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { CourseConcept, ModuleItem, ModuleItemKind } from '@/core/contracts';
 import { useGetCourseDetailQuery } from '@/features/catalog/catalogApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
+import { Button } from '@/ui/primitives/Button';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
 import { useFormFactor } from '@/ui/useFormFactor';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
+// Keyed by `ModuleItemKind` rather than indexed loosely, so adding a kind to
+// the union is a compile error here instead of a blank icon at runtime.
 const kindIcon: Record<ModuleItemKind, React.ElementType> = {
   VIDEO: PlayCircle,
   READING: FileText,
   DISCUSSION: MessageSquare,
   ASSESSMENT: ClipboardList,
+  HOMEWORK: NotebookPen,
+  LIVE_CLASS: Radio,
 };
 
 export default function CourseOutlineScreen() {
@@ -35,9 +43,11 @@ export default function CourseOutlineScreen() {
   const formFactor = useFormFactor();
   const { courseId } = useLocalSearchParams<{ courseId: string }>();
 
-  const { data: course, isLoading } = useGetCourseDetailQuery(courseId!, {
-    skip: !courseId,
-  });
+  const { actingChildId, isGuardian } = useActingChild();
+  const { data: course, isLoading } = useGetCourseDetailQuery(
+    { courseId: courseId!, actingChildId },
+    { skip: !courseId },
+  );
 
   // Tablet only: which chapter shows in the right-hand pane.
   const [selectedConceptId, setSelectedConceptId] = useState<string | null>(null);
@@ -89,6 +99,35 @@ export default function CourseOutlineScreen() {
       <Text variant="caption" color="mutedForeground" style={{ marginTop: t.spacing.xs }}>
         {course.learningSubject.name} · {course.concepts.length} chapters
       </Text>
+      {!course.isEntitled ? (
+        <Card
+          style={{
+            marginTop: t.spacing.lg,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: t.spacing.md,
+            backgroundColor: t.colors.accent,
+            borderColor: t.colors.primary,
+          }}
+        >
+          <Text variant="body" style={{ flex: 1, color: t.colors.accentForeground }}>
+            {isGuardian
+              ? 'Unlock this course to see everything past the free preview.'
+              : "This course isn't unlocked yet — ask your guardian to purchase it."}
+          </Text>
+          {isGuardian ? (
+            <Button
+              title="Unlock"
+              onPress={() =>
+                router.push({
+                  pathname: '/course/[courseId]/unlock',
+                  params: { courseId: courseId! },
+                })
+              }
+            />
+          ) : null}
+        </Card>
+      ) : null}
     </>
   );
 
@@ -138,6 +177,7 @@ export default function CourseOutlineScreen() {
               <View style={{ height: t.spacing.lg }} />
               <ChapterDetail
                 concept={selectedConcept}
+                courseId={courseId!}
                 onOpenLesson={openLesson}
                 onOpenItem={openItem}
               />
@@ -173,7 +213,12 @@ export default function CourseOutlineScreen() {
         >
           <ChapterHeader concept={concept} index={index} />
           <View style={{ marginTop: t.spacing.md }}>
-            <ChapterDetail concept={concept} onOpenLesson={openLesson} onOpenItem={openItem} />
+            <ChapterDetail
+              concept={concept}
+              courseId={courseId!}
+              onOpenLesson={openLesson}
+              onOpenItem={openItem}
+            />
           </View>
         </Card>
       ))}
@@ -229,10 +274,12 @@ function ChapterNavRow({
 /** The items+lessons body for one chapter — shared by the phone's inline card and the tablet's right pane. */
 function ChapterDetail({
   concept,
+  courseId,
   onOpenLesson,
   onOpenItem,
 }: {
   concept: CourseConcept;
+  courseId: string;
   onOpenLesson: (lessonId: string) => void;
   onOpenItem: (itemId: string) => void;
 }) {
@@ -258,7 +305,12 @@ function ChapterDetail({
   return (
     <View style={{ gap: t.spacing.sm }}>
       {concept.items.map((item) => (
-        <ItemRow key={item.id} item={item} onPress={() => onOpenItem(item.id)} />
+        <ItemRow
+          key={item.id}
+          item={item}
+          courseId={courseId}
+          onPress={() => onOpenItem(item.id)}
+        />
       ))}
       {concept.lessons.map((lesson) => (
         <Pressable
@@ -288,13 +340,34 @@ function ChapterDetail({
   );
 }
 
-function ItemRow({ item, onPress }: { item: ModuleItem; onPress: () => void }) {
+function ItemRow({
+  item,
+  courseId,
+  onPress,
+}: {
+  item: ModuleItem;
+  courseId: string;
+  onPress: () => void;
+}) {
   const t = useTheme();
+  const router = useRouter();
   const Icon = kindIcon[item.kind];
 
   return (
     <Pressable
-      onPress={onPress}
+      // A locked item still opens *something* — the unlock screen directly,
+      // rather than the item screen, which would just show the same prompt
+      // one tap later. Free-preview items are never `isContentLocked`, so
+      // they still open normally even in an unentitled course.
+      onPress={
+        item.isContentLocked
+          ? () =>
+              router.push({
+                pathname: '/course/[courseId]/unlock',
+                params: { courseId },
+              })
+          : onPress
+      }
       accessibilityRole="button"
       style={({ pressed }) => ({
         flexDirection: 'row',
@@ -310,6 +383,8 @@ function ItemRow({ item, onPress }: { item: ModuleItem; onPress: () => void }) {
     >
       {item.isDone ? (
         <CheckCircle2 size={16} color={t.colors.success} />
+      ) : item.isContentLocked ? (
+        <Lock size={16} color={t.colors.mutedForeground} />
       ) : (
         <Icon size={16} color={t.colors.mutedForeground} />
       )}

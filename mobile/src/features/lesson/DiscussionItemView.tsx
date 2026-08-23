@@ -7,6 +7,8 @@ import {
   useGetDiscussionQuery,
   useUpdateModuleItemProgressMutation,
 } from '@/features/catalog/catalogApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
+import { LockedItemNotice } from '@/features/lesson/LockedItemNotice';
 import { Button } from '@/ui/primitives/Button';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
@@ -14,6 +16,7 @@ import { useTheme } from '@/ui/theme/ThemeProvider';
 
 interface DiscussionItemViewProps {
   item: ModuleItem;
+  courseId: string;
 }
 
 /**
@@ -21,9 +24,15 @@ interface DiscussionItemViewProps {
  * once" — marked complete only on the student's first post, not on merely
  * viewing the thread.
  */
-export function DiscussionItemView({ item }: DiscussionItemViewProps) {
+export function DiscussionItemView({ item, courseId }: DiscussionItemViewProps) {
   const t = useTheme();
-  const { data: thread, isLoading } = useGetDiscussionQuery(item.id);
+  const { actingChildId } = useActingChild();
+  const { data: thread, isLoading } = useGetDiscussionQuery(
+    { moduleItemId: item.id, actingChildId },
+    // `getDiscussion` 403s on a locked item (`assertItemAccess`), so this
+    // must not even ask.
+    { skip: item.isContentLocked },
+  );
   const [addPost, { isLoading: posting }] = useAddDiscussionPostMutation();
   const [updateProgress] = useUpdateModuleItemProgressMutation();
   const [body, setBody] = useState('');
@@ -31,7 +40,11 @@ export function DiscussionItemView({ item }: DiscussionItemViewProps) {
   const handlePost = async () => {
     if (!body.trim()) return;
     try {
-      await addPost({ moduleItemId: item.id, body: body.trim() }).unwrap();
+      await addPost({
+        moduleItemId: item.id,
+        body: body.trim(),
+        actingChildId,
+      }).unwrap();
       setBody('');
       if (!item.isDone) {
         void updateProgress({ id: item.id, completed: true });
@@ -41,6 +54,10 @@ export function DiscussionItemView({ item }: DiscussionItemViewProps) {
       // in Phase 2 for a failed post.
     }
   };
+
+  if (item.isContentLocked) {
+    return <LockedItemNotice courseId={courseId} what="discussion" />;
+  }
 
   if (isLoading || !thread) {
     return <ActivityIndicator color={t.colors.primary} />;

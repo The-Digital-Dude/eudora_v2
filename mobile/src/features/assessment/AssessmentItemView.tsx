@@ -5,6 +5,8 @@ import { ActivityIndicator, View } from 'react-native';
 
 import type { ModuleItem } from '@/core/contracts';
 import { useGetMyAssignmentForItemQuery } from '@/features/catalog/catalogApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
+import { LockedItemNotice } from '@/features/lesson/LockedItemNotice';
 import { Button } from '@/ui/primitives/Button';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
@@ -12,6 +14,7 @@ import { useTheme } from '@/ui/theme/ThemeProvider';
 
 interface AssessmentItemViewProps {
   item: ModuleItem;
+  courseId: string;
 }
 
 /**
@@ -20,10 +23,20 @@ interface AssessmentItemViewProps {
  * standalone assessment player. The teacher-assigns-a-class-section workflow
  * that creates the assignment is unchanged/out of scope here.
  */
-export function AssessmentItemView({ item }: AssessmentItemViewProps) {
+export function AssessmentItemView({ item, courseId }: AssessmentItemViewProps) {
   const t = useTheme();
   const router = useRouter();
-  const { data, isLoading } = useGetMyAssignmentForItemQuery(item.id);
+  const { actingChildId } = useActingChild();
+  const { data, isLoading } = useGetMyAssignmentForItemQuery(
+    { moduleItemId: item.id, actingChildId },
+    // `getMyAssignmentForItem` 403s on a locked item, same as every other
+    // consumption route.
+    { skip: item.isContentLocked },
+  );
+
+  if (item.isContentLocked) {
+    return <LockedItemNotice courseId={courseId} what="assessment" />;
+  }
 
   if (isLoading || !data) {
     return <ActivityIndicator color={t.colors.primary} />;

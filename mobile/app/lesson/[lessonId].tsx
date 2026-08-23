@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { SubmitCardPayload, SubmitCardResult } from '@/core/contracts';
 import { playSoundEffect } from '@/core/sound/soundEffects';
 import { playText, playVoiceLine } from '@/core/sound/voiceFeedback';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { LessonCompleteOverlay } from '@/features/lesson/LessonCompleteOverlay';
 import { WidgetSelector } from '@/features/lesson/WidgetSelector';
 import {
@@ -32,9 +33,11 @@ export default function LessonPlayerScreen() {
   const insets = useSafeAreaInsets();
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
 
-  const { data: flow, isLoading } = useGetLessonFlowQuery(lessonId!, {
-    skip: !lessonId,
-  });
+  const { actingChildId } = useActingChild();
+  const { data: flow, isLoading } = useGetLessonFlowQuery(
+    { lessonId: lessonId!, actingChildId },
+    { skip: !lessonId },
+  );
   const [submitCard, { isLoading: submitting }] = useSubmitCardMutation();
 
   const [cardIndex, setCardIndex] = useState(0);
@@ -266,20 +269,34 @@ export default function LessonPlayerScreen() {
                 {hintShown ? (
                   <View
                     style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
                       padding: t.spacing.md,
                       borderRadius: t.radius.md,
                       backgroundColor: t.colors.accent + '1a',
                     }}
                   >
-                    <Text variant="caption" color="mutedForeground">
+                    <Text variant="caption" color="mutedForeground" style={{ flex: 1 }}>
                       💡 {card.question.hints[0]}
                     </Text>
+                    <Pressable
+                      onPress={() => playText(card.question?.hints?.[0] || '')}
+                      accessibilityRole="button"
+                      accessibilityLabel="Listen to hint"
+                      hitSlop={8}
+                    >
+                      <Volume2 size={16} color={t.colors.primary} />
+                    </Pressable>
                   </View>
                 ) : (
                   <Pressable
                     onPress={() => {
                       setHintShown(true);
-                      playVoiceLine('HINT_REVEALED');
+                      playVoiceLine('TAKE_A_HINT');
+                      if (card.question?.hints?.[0]) {
+                        playText(card.question.hints[0], { interrupt: false });
+                      }
                     }}
                     accessibilityRole="button"
                   >

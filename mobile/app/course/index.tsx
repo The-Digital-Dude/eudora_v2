@@ -4,7 +4,13 @@ import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useGetCoursesQuery, useGetSubjectsQuery } from '@/features/catalog/catalogApi';
+import {
+  useGetCoursesQuery,
+  useGetEntitlementsMeQuery,
+  useGetSubjectsQuery,
+} from '@/features/catalog/catalogApi';
+import { formatCents } from '@/features/billing/format';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
 import { useTheme } from '@/ui/theme/ThemeProvider';
@@ -28,9 +34,16 @@ export default function CourseBrowseScreen() {
   const [gradeBand, setGradeBand] = useState<string | null>(null);
 
   const { data: subjects } = useGetSubjectsQuery();
-  const { data: courses, isLoading } = useGetCoursesQuery(
-    subjectId ? { subjectId } : undefined,
-  );
+  const { actingChildId } = useActingChild();
+  const { data: courses, isLoading } = useGetCoursesQuery({
+    actingChildId,
+    ...(subjectId ? { subjectId } : {}),
+  });
+  // Cheap set-membership check for badging cards — full `isEntitled` /
+  // `isContentLocked` detail only exists once a course is actually opened
+  // (`getCourseDetail`), and fetching that per card would be a query per row.
+  const { data: entitlements } = useGetEntitlementsMeQuery({ actingChildId });
+  const ownedCourseIds = entitlements?.courseIds ?? [];
 
   const filtered = useMemo(() => {
     if (!courses) return [];
@@ -185,6 +198,11 @@ export default function CourseBrowseScreen() {
                     </>
                   ) : null}
                 </View>
+                <OwnershipBadge
+                  owned={ownedCourseIds.includes(course.id)}
+                  priceCents={course.priceOneTimeCents}
+                  currency={course.currency}
+                />
               </Card>
             </Pressable>
           ))}
@@ -197,6 +215,37 @@ export default function CourseBrowseScreen() {
         </Card>
       )}
     </ScrollView>
+  );
+}
+
+/**
+ * Owned takes priority over price when both are somehow true (shouldn't
+ * happen — an owned course wouldn't normally still carry a price to show —
+ * but ownership is the more important fact if it ever does). Neither badge
+ * renders for a bundle-only course (`priceCents === null`, not owned): there
+ * is nothing accurate to say about it from the list alone.
+ */
+function OwnershipBadge({
+  owned,
+  priceCents,
+  currency,
+}: {
+  owned: boolean;
+  priceCents: number | null;
+  currency: string;
+}) {
+  if (owned) {
+    return (
+      <Text variant="caption" color="success">
+        Owned
+      </Text>
+    );
+  }
+  if (priceCents == null) return null;
+  return (
+    <Text variant="label" color="primary">
+      {formatCents(priceCents, currency)}
+    </Text>
   );
 }
 

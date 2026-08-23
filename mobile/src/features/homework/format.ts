@@ -36,3 +36,12 @@ export function isOverdue(dueDate: string | null): boolean {
   if (Number.isNaN(parsed.getTime())) return false;
   return parsed < new Date();
 }
+
+/** Attachment sizes from the API arrive in bytes; nothing else on these
+ * screens needs binary-prefix formatting, so this stays local rather than a
+ * shared `core/` utility. */
+export function fileSizeLabel(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}

@@ -1,19 +1,56 @@
 /**
- * key -> spoken phrase(s). Kept as a flat map, deliberately separate from the
- * playback implementation (`voiceFeedback.ts`) — swapping on-device TTS for
- * static recorded/cloud-TTS audio files later only changes what's behind
- * `playVoiceLine(key)`, not this map or its call sites.
+ * Clio's Spoken Phrase Map (Mobile)
  *
- * CORRECT/INCORRECT are arrays — `playVoiceLine` picks one at random per
- * call so a lesson doesn't repeat the identical line on every card. The rest
- * stay single strings since they each fire at most once per lesson.
+ * key -> spoken phrase(s).
+ * Kept as a flat map, deliberately separate from playback implementation.
+ * Phrase keys match the web client catalog for consistent Clio personality.
  */
 export const PHRASES = {
-  CORRECT: ['Excellent!', 'Nice work!', 'Great job!'],
-  INCORRECT: ['Try again.', 'Not quite.', 'Close, but not correct.'],
-  ANSWER_REVEALED: "Here's the answer.",
-  HINT_REVEALED: 'Listen carefully.',
-  LESSON_COMPLETE: 'Great job, lesson complete!',
+  CORRECT: [
+    'Excellent!',
+    'Nice work!',
+    'Great job!',
+    'You got it!',
+    'Spot on!',
+    'Brilliant thinking!',
+  ],
+  INCORRECT: [
+    "Let's try again.",
+    'Not quite, give it another go.',
+    'Close! Check your numbers and try again.',
+    "Don't worry, you've got this. Try once more.",
+  ],
+  TRY_AGAIN: [
+    "Let's try again.",
+    'Not quite, give it another go.',
+    'Close! Check your numbers and try again.',
+    "Don't worry, you've got this. Try once more.",
+  ],
+  TAKE_A_HINT: [
+    'Maybe, take a hint.',
+    "Here's a little clue to help.",
+    "Listen carefully, let's look at this hint.",
+    "Let's break it down together.",
+  ],
+  HINT_REVEALED: [
+    'Maybe, take a hint.',
+    "Here's a little clue to help.",
+    'Listen carefully.',
+  ],
+  ANSWER_REVEALED: [
+    "Here's how we solve it.",
+    "Let's look at the answer together.",
+    "Here's the full explanation.",
+  ],
+  GREETING: [
+    "Hi, I'm Clio! Let's explore some maths together.",
+    "Welcome back! Ready for today's challenge?",
+  ],
+  LESSON_COMPLETE: [
+    'Great job, lesson complete!',
+    'Awesome work today! Look at all that XP!',
+    'You finished the lesson! Fantastic effort!',
+  ],
 } as const;
 
 export type PhraseKey = keyof typeof PHRASES;

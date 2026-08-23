@@ -4,7 +4,10 @@ import type {
   CourseSummary,
   DiscussionThread,
   LearningSubject,
+  ModuleItemHomework,
+  ModuleItemLiveClass,
   MyAssignmentForItem,
+  MyEntitlements,
   UpdateModuleItemProgressPayload,
 } from '@/core/contracts';
 
@@ -39,6 +42,21 @@ export const catalogApi = api.injectEndpoints({
       providesTags: ['Subjects'],
     }),
 
+    /**
+     * `GET /catalog/courses` is paginated server-side
+     * (`catalogService.listCourses` always returns `{items, total, page,
+     * pageSize}`), and the API's envelope interceptor detects that shape and
+     * flattens it: `data` becomes the bare items array, with the totals
+     * moved to `meta.pagination`. `baseQuery.ts`'s own `unwrap()` then
+     * reverses exactly that — `{items, pagination}` — so the *hook's* raw
+     * result is a wrapper object, never the bare array every caller here was
+     * written against (`StudentHomeScreen`, `app/course/index.tsx`, both call
+     * `.filter`/`.map` directly on it). `transformResponse` undoes the
+     * wrapping a second time, back to a plain array, matching what every
+     * consumer has always assumed. Caught by actually opening the course
+     * list in a browser — a crash no typecheck could have found, since
+     * `unwrap()`'s return type is `unknown` by design.
+     */
     getCourses: builder.query<
       CourseSummary[],
       ChildScoped & { subjectId?: string }
@@ -47,6 +65,8 @@ export const catalogApi = api.injectEndpoints({
         subjectId
           ? `/catalog/courses?subjectId=${subjectId}`
           : '/catalog/courses',
+      transformResponse: (response: CourseSummary[] | { items: CourseSummary[] }) =>
+        Array.isArray(response) ? response : response.items,
       providesTags: ['Courses'],
     }),
 
@@ -107,6 +127,39 @@ export const catalogApi = api.injectEndpoints({
         { type: 'Assignment', id: scopedId(moduleItemId, actingChildId) },
       ],
     }),
+
+    getMyHomeworkForItem: builder.query<
+      ModuleItemHomework,
+      ChildScoped & { moduleItemId: string }
+    >({
+      query: ({ moduleItemId }) =>
+        `/catalog/module-items/${moduleItemId}/my-homework`,
+      providesTags: (_r, _e, { moduleItemId, actingChildId }) => [
+        { type: 'ItemHomework', id: scopedId(moduleItemId, actingChildId) },
+      ],
+    }),
+
+    getMySessionForItem: builder.query<
+      ModuleItemLiveClass,
+      ChildScoped & { moduleItemId: string }
+    >({
+      query: ({ moduleItemId }) =>
+        `/catalog/module-items/${moduleItemId}/my-session`,
+      providesTags: (_r, _e, { moduleItemId, actingChildId }) => [
+        { type: 'LiveSession', id: scopedId(moduleItemId, actingChildId) },
+      ],
+    }),
+
+    /**
+     * The acting child's owned course ids, for badging the browse list without
+     * fetching full detail for every card. `GET /catalog/courses/:id` (above)
+     * carries the richer `isEntitled`/`isContentLocked` once a course is
+     * actually opened; this is the cheap set-membership check for the list.
+     */
+    getEntitlementsMe: builder.query<MyEntitlements, ChildScoped>({
+      query: () => '/entitlements/me',
+      providesTags: ['Entitlements'],
+    }),
   }),
 });
 
@@ -118,4 +171,7 @@ export const {
   useGetDiscussionQuery,
   useAddDiscussionPostMutation,
   useGetMyAssignmentForItemQuery,
+  useGetMyHomeworkForItemQuery,
+  useGetMySessionForItemQuery,
+  useGetEntitlementsMeQuery,
 } = catalogApi;

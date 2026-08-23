@@ -1,9 +1,17 @@
 "use client";
 
-import { ArrowRight, Lightbulb, RotateCcw, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Lightbulb,
+  RotateCcw,
+  Sparkles,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import * as React from "react";
 
 import { ClioMascot, type MascotState } from "@/features/clio/ClioMascot";
+import { useClioVoice } from "@/features/clio/sound/useClioVoice";
 import { CoordinatePlotterWidget } from "@/features/clio/widgets/CoordinatePlotterWidget";
 import { MCQWidget } from "@/features/clio/widgets/MCQWidget";
 import { SliderWidget } from "@/features/clio/widgets/SliderWidget";
@@ -50,6 +58,8 @@ export function ClioDemoSection({
   const [attempts, setAttempts] = React.useState(0);
   const [xp, setXp] = React.useState(0);
 
+  const { isMuted, isSpeaking, toggleMute, playPhrase, speakText, stop } = useClioVoice();
+
   const card = DEMO_LESSON.cards[cardIndex];
   const isLastCard = cardIndex === DEMO_LESSON.cards.length - 1;
   const mascot = MASCOT_BY_PHASE[phase];
@@ -58,15 +68,29 @@ export function ClioDemoSection({
   // mid-answer doesn't get a state update against a dead component.
   React.useEffect(() => {
     if (phase !== "wrong") return;
-    const timer = window.setTimeout(
-      () => setPhase(attempts >= 2 ? "reveal" : "hint"),
-      REACTION_MS,
-    );
+    const timer = window.setTimeout(() => {
+      const nextPhase = attempts >= 2 ? "reveal" : "hint";
+      setPhase(nextPhase);
+      if (nextPhase === "reveal") {
+        playPhrase("ANSWER_REVEALED");
+        speakText(card.explanation, { interrupt: false });
+      } else {
+        playPhrase("TAKE_A_HINT");
+        speakText(card.hint, { interrupt: false });
+      }
+    }, REACTION_MS);
     return () => window.clearTimeout(timer);
-  }, [phase, attempts]);
+  }, [phase, attempts, playPhrase, speakText, card.explanation, card.hint]);
 
   React.useEffect(() => onXpChange(xp), [xp, onXpChange]);
   React.useEffect(() => onComplete(phase === "complete"), [phase, onComplete]);
+
+  // Clean up ongoing voice only on true component unmount
+  React.useEffect(() => {
+    return () => {
+      stop();
+    };
+  }, []); // Empty deps so it only executes when navigating away
 
   const hasAnswer =
     card.kind === "mcq"
@@ -97,15 +121,18 @@ export function ClioDemoSection({
     if (correct) {
       setXp((prev) => prev + card.xp);
       setPhase("correct");
+      playPhrase("CORRECT");
     } else {
       setAttempts((prev) => prev + 1);
       setPhase("wrong");
+      playPhrase("TRY_AGAIN");
     }
   };
 
   const next = () => {
     if (isLastCard) {
       setPhase("complete");
+      playPhrase("LESSON_COMPLETE");
       return;
     }
     setCardIndex((i) => i + 1);
@@ -124,6 +151,7 @@ export function ClioDemoSection({
     setAttempts(0);
     setXp(0);
     setPhase("answering");
+    playPhrase("GREETING");
   };
 
   return (
@@ -150,6 +178,37 @@ export function ClioDemoSection({
             <p className="truncate text-xs font-semibold text-foreground">{DEMO_LESSON.title}</p>
           </div>
           <div className="flex shrink-0 items-center gap-3">
+            {/* Clio's voice mute toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                const isNowMuted = toggleMute();
+                if (!isNowMuted) {
+                  playPhrase("GREETING");
+                }
+              }}
+              title={isMuted ? "Unmute Clio's voice" : "Mute Clio's voice"}
+              className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-background/90 px-2.5 py-1 text-[11px] font-semibold text-foreground transition-all hover:bg-muted active:scale-95 cursor-pointer shadow-2xs"
+            >
+              {isMuted ? (
+                <>
+                  <VolumeX className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground">Voice Off</span>
+                </>
+              ) : (
+                <>
+                  <Volume2
+                    className={`h-3.5 w-3.5 ${
+                      isSpeaking ? "text-primary animate-pulse" : "text-foreground"
+                    }`}
+                  />
+                  <span className={isSpeaking ? "text-primary font-bold" : "text-foreground"}>
+                    {isSpeaking ? "Speaking…" : "Clio's Voice"}
+                  </span>
+                </>
+              )}
+            </button>
+
             <span className="flex items-center gap-1 rounded-lg border border-warning/20 bg-warning/10 px-2 py-1 text-[10px] font-extrabold text-warning">
               <Sparkles className="h-3 w-3" aria-hidden="true" />
               {xp} XP
@@ -166,9 +225,13 @@ export function ClioDemoSection({
               into the right-hand column once there are two columns to move
               between. */}
           <div className="flex flex-row items-center gap-4 sm:order-2 sm:flex-col sm:items-center">
-            <ClioMascot state={mascot.state} variant={mascot.variant} size={112} />
+            <ClioMascot
+              state={isSpeaking && phase === "answering" ? "hint" : mascot.state}
+              variant={mascot.variant}
+              size={112}
+            />
             <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase sm:text-center">
-              Clio · {phase === "answering" ? "waiting" : phase}
+              Clio · {isSpeaking ? "speaking" : phase === "answering" ? "waiting" : phase}
             </p>
           </div>
 
@@ -195,9 +258,21 @@ export function ClioDemoSection({
                 <p className="text-xs leading-relaxed font-medium text-muted-foreground italic">
                   {card.clioIntro}
                 </p>
-                <p className="mt-2 text-sm leading-relaxed font-semibold text-foreground sm:text-base">
-                  {card.prompt}
-                </p>
+
+                <div className="mt-2 flex items-start justify-between gap-3">
+                  <p className="text-sm leading-relaxed font-semibold text-foreground sm:text-base">
+                    {card.prompt}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => speakText(`${card.clioIntro} ${card.prompt}`)}
+                    title="Listen to Clio read this question"
+                    className="mt-0.5 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/20 active:scale-95"
+                  >
+                    <Volume2 className="h-3.5 w-3.5" />
+                    <span>Listen</span>
+                  </button>
+                </div>
 
                 <div className="mt-5">
                   {card.kind === "mcq" ? (
@@ -240,12 +315,22 @@ export function ClioDemoSection({
                 </div>
 
                 {phase === "hint" && (
-                  <div className="mt-5 flex items-start gap-2.5 rounded-2xl border border-warning/25 bg-warning/[0.07] p-4">
-                    <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-                    <p className="text-xs leading-relaxed font-medium text-foreground">
-                      <span className="font-bold">Not quite. Try again. </span>
-                      {card.hint}
-                    </p>
+                  <div className="mt-5 flex items-start justify-between gap-2.5 rounded-2xl border border-warning/25 bg-warning/[0.07] p-4">
+                    <div className="flex items-start gap-2.5">
+                      <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+                      <p className="text-xs leading-relaxed font-medium text-foreground">
+                        <span className="font-bold">Not quite. Try again. </span>
+                        {card.hint}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => speakText(`Not quite. Try again. ${card.hint}`)}
+                      title="Listen to hint"
+                      className="shrink-0 cursor-pointer p-1 text-warning hover:opacity-80 transition-opacity"
+                    >
+                      <Volume2 className="h-4 w-4" />
+                    </button>
                   </div>
                 )}
 
@@ -257,12 +342,26 @@ export function ClioDemoSection({
                         : "border-border bg-muted/50"
                     }`}
                   >
-                    <p className="text-xs leading-relaxed font-medium text-foreground">
-                      <span className="font-bold">
-                        {phase === "correct" ? "That's it. " : "Here's the answer. "}
-                      </span>
-                      {card.explanation}
-                    </p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-xs leading-relaxed font-medium text-foreground">
+                        <span className="font-bold">
+                          {phase === "correct" ? "That's it. " : "Here's the answer. "}
+                        </span>
+                        {card.explanation}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          speakText(
+                            `${phase === "correct" ? "That's it." : "Here's the answer."} ${card.explanation}`
+                          )
+                        }
+                        title="Listen to explanation"
+                        className="shrink-0 cursor-pointer p-1 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Volume2 className="h-4 w-4" />
+                      </button>
+                    </div>
                     {phase === "correct" && (
                       <p className="mt-2 text-[10px] font-bold tracking-widest text-success uppercase">
                         +{card.xp} XP

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   TextInput,
   View,
@@ -129,6 +130,22 @@ export default function LoginScreen() {
           loading={isLoading}
           fullWidth
         />
+
+        <View style={{ height: t.spacing.lg }} />
+
+        {/* `replace`, not `push`, on both this and register's reciprocal link:
+            login and register are alternate entry points into the same
+            unauthenticated state, not a forward-progressing flow, so toggling
+            between them repeatedly should not grow the navigation stack. */}
+        <Pressable
+          onPress={() => router.replace('/register')}
+          accessibilityRole="button"
+          style={{ alignSelf: 'center' }}
+        >
+          <Text variant="label" color="mutedForeground">
+            New here? <Text variant="label" color="primary">Create an account</Text>
+          </Text>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );

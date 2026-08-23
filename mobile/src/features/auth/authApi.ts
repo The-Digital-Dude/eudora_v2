@@ -4,6 +4,7 @@ import { clearTokens, setTokens } from '@/core/api/tokenStore';
 import type {
   AuthUser,
   LoginPayload,
+  RegisterPayload,
   TokenResponse,
   UpdateMyStudentProfilePayload,
 } from '@/core/contracts';
@@ -19,6 +20,25 @@ export const authApi = api.injectEndpoints({
     /** Native token login — returns tokens in the body, sets no cookies. */
     login: builder.mutation<TokenResponse, LoginPayload>({
       query: (body) => ({ url: '/auth/token', method: 'POST', body }),
+      async onQueryStarted(_arg, { queryFulfilled }) {
+        const { data } = await queryFulfilled;
+        await setTokens(data.accessToken, data.refreshToken);
+      },
+      invalidatesTags: ['Me'],
+    }),
+
+    /**
+     * Native signup. Same response shape as login — a fresh token pair — and
+     * the same `onQueryStarted` to store it, since a successful registration
+     * is a signed-in session, not a step before one.
+     *
+     * The account this creates already has its `GuardianProfile` (server-side,
+     * same write as the role grant), so there is no separate "create profile"
+     * step to chain afterward the way `GuardianOnboardingScreen` still needs
+     * to for accounts that predate that.
+     */
+    register: builder.mutation<TokenResponse, RegisterPayload>({
+      query: (body) => ({ url: '/auth/token/register', method: 'POST', body }),
       async onQueryStarted(_arg, { queryFulfilled }) {
         const { data } = await queryFulfilled;
         await setTokens(data.accessToken, data.refreshToken);
@@ -58,6 +78,7 @@ export const authApi = api.injectEndpoints({
 
 export const {
   useLoginMutation,
+  useRegisterMutation,
   useLogoutMutation,
   useGetMeQuery,
   useUpdateMyStudentProfileMutation,

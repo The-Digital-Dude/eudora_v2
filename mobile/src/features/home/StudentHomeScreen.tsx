@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ArrowLeftRight, Award, BookOpen, CalendarDays, ClipboardCheck, ClipboardList, Flame, Gem, Settings, Star, Trophy } from 'lucide-react-native';
+import { ArrowLeftRight, Award, BookOpen, ClipboardCheck, ClipboardList, Flame, Gem, Settings, Star, Trophy } from 'lucide-react-native';
 import React from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -206,12 +206,6 @@ export function StudentHomeScreen({ onExitChildView }: StudentHomeScreenProps = 
                 </Text>
               </View>
             ) : null}
-          </Card>
-        </Pressable>
-        <Pressable onPress={() => router.push('/timetable')} accessibilityRole="button" style={{ flex: 1 }}>
-          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
-            <CalendarDays size={18} color={t.colors.primary} />
-            <Text variant="label">Schedule</Text>
           </Card>
         </Pressable>
       </View>

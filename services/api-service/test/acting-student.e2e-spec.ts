@@ -16,15 +16,19 @@ const ACTING_HEADER = 'x-acting-student-id';
 
 /**
  * Covers `x-acting-student-id` on the surfaces that resolve a learner:
- * gamification and the course list.
+ * gamification, the course list, and `GET /entitlements/course/:id/access`.
  *
- * These two used to read the caller's own student profile and stop there,
- * which made them unreachable for the audience the product is now built
- * around — a guardian owns no student profile, and a child created through the
- * family portal has no password to sign in with. The interesting cases are not
- * the happy path but the two ways this can go wrong: a guardian reading a child
- * they are not linked to, and a *student* trying to use the header to read a
- * sibling.
+ * The first two used to read the caller's own student profile and stop
+ * there, which made them unreachable for the audience the product is now
+ * built around — a guardian owns no student profile, and a child created
+ * through the family portal has no password to sign in with. The third
+ * (added while building the mobile checkout flow) never read the header at
+ * all: `resolveCourseAccess`'s own doc comment says its 4th parameter exists
+ * for exactly this, but the controller route never supplied it, so every
+ * guardian caller resolved to "no student profile" regardless of what the
+ * child actually owned. The interesting cases are not the happy path but the
+ * ways this can go wrong: a guardian reading a child they are not linked to,
+ * and a *student* trying to use the header to read a sibling.
  */
 describe('Acting-student resolution (e2e)', () => {
   let ctx: TestContext;
@@ -192,6 +196,97 @@ describe('Acting-student resolution (e2e)', () => {
         .get('/api/catalog/courses')
         .set({ Authorization: `Bearer ${guardian.token}` })
         .expect(200);
+    });
+  });
+
+  describe('course access', () => {
+    let subjectId: string;
+    let courseId: string;
+
+    beforeAll(async () => {
+      const subject = await ctx.prisma.learningSubject.create({
+        data: { code: `AS-SUBJ-${tag}`, name: `Acting Subject ${tag}` },
+      });
+      subjectId = subject.id;
+
+      const course = await ctx.prisma.course.create({
+        data: {
+          learningSubjectId: subjectId,
+          title: `Acting Course ${tag}`,
+          slug: `acting-course-${tag}`,
+          status: 'PUBLISHED',
+        },
+      });
+      courseId = course.id;
+
+      // The linked child owns this course; the sibling and the unlinked
+      // guardian's child do not — that asymmetry is the point of every case
+      // below.
+      await ctx.prisma.entitlement.create({
+        data: {
+          studentProfileId: childProfileId,
+          courseId,
+          source: 'ADMIN_GRANT',
+          status: 'ACTIVE',
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await ctx.prisma.entitlement
+        .deleteMany({ where: { courseId } })
+        .catch(() => undefined);
+      await ctx.prisma.course.delete({ where: { id: courseId } }).catch(() => undefined);
+      await ctx.prisma.learningSubject
+        .delete({ where: { id: subjectId } })
+        .catch(() => undefined);
+    });
+
+    it('tells a guardian their linked child owns the course', async () => {
+      const res = await http()
+        .get(`/api/entitlements/course/${courseId}/access`)
+        .set(actingAs(guardian, childProfileId))
+        .expect(200);
+
+      // Before the header was threaded through, this was `false` for every
+      // guardian regardless of what the child owned.
+      expect(unwrap<{ allowed: boolean }>(res).allowed).toBe(true);
+    });
+
+    it('denies a guardian acting for a child they are not linked to', async () => {
+      // `ActingStudentService.resolve` throws before `resolveCourseAccess`
+      // gets a chance to answer gracefully — same 403 as gamification and the
+      // course list above, since all three resolve through it.
+      await http()
+        .get(`/api/entitlements/course/${courseId}/access`)
+        .set(actingAs(otherGuardian, childProfileId))
+        .expect(403);
+    });
+
+    it('denies a guardian who sent no header', async () => {
+      const res = await http()
+        .get(`/api/entitlements/course/${courseId}/access`)
+        .set({ Authorization: `Bearer ${guardian.token}` })
+        .expect(200);
+
+      expect(unwrap<{ allowed: boolean; reason?: string }>(res)).toMatchObject({
+        allowed: false,
+        reason: 'NO_STUDENT_PROFILE',
+      });
+    });
+
+    it('ignores the header for a student, who never owns the sibling’s entitlement', async () => {
+      const res = await http()
+        .get(`/api/entitlements/course/${courseId}/access`)
+        .set({
+          Authorization: `Bearer ${siblingUser.token}`,
+          [ACTING_HEADER]: childProfileId,
+        })
+        .expect(200);
+
+      // The sibling owns nothing here — resolving to *themselves* rather than
+      // the header's target is exactly what should make this false.
+      expect(unwrap<{ allowed: boolean }>(res).allowed).toBe(false);
     });
   });
 });

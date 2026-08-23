@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ChevronRight, CreditCard, GraduationCap, Settings, Users } from 'lucide-react-native';
+import { ChevronRight, CreditCard, GraduationCap, Settings, UserPlus, Users } from 'lucide-react-native';
 import React from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -82,15 +82,6 @@ export function GuardianHomeScreen({ onOpenChildView }: GuardianHomeScreenProps 
         </View>
       </View>
 
-      {/*
-        The Messages card that sat here has been removed: the API's messaging
-        module was deleted on 2026-08-16, so it rendered an unread badge off an
-        endpoint that 404s. Ordinarily that removal belongs to W3 with the rest
-        of the dead messaging code, but this screen is now the app's root and
-        shipping the spine with a broken card as its most prominent element is
-        not a defensible intermediate state. `src/features/messaging/` and
-        `app/messages/*` still await W3.
-      */}
       <View style={{ height: t.spacing.xl }} />
       <View style={{ gap: t.spacing.md }}>
         <Pressable onPress={() => router.push('/billing')} accessibilityRole="button">
@@ -105,7 +96,17 @@ export function GuardianHomeScreen({ onOpenChildView }: GuardianHomeScreenProps 
       </View>
 
       <View style={{ height: t.spacing.xl }} />
-      <Text variant="heading">Your children</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text variant="heading">Your children</Text>
+        <Pressable
+          onPress={() => router.push('/guardian/add-child')}
+          accessibilityRole="button"
+          accessibilityLabel="Add a child"
+          hitSlop={8}
+        >
+          <UserPlus size={20} color={t.colors.primary} />
+        </Pressable>
+      </View>
       <View style={{ height: t.spacing.md }} />
     </>
   );
@@ -116,8 +117,27 @@ export function GuardianHomeScreen({ onOpenChildView }: GuardianHomeScreenProps 
         <Users size={28} color={t.colors.mutedForeground} />
         <View style={{ height: t.spacing.sm }} />
         <Text variant="body" color="mutedForeground" style={{ textAlign: 'center' }}>
-          No students linked to your account yet.
+          No children on your account yet.
         </Text>
+        <View style={{ height: t.spacing.lg }} />
+        <Pressable
+          onPress={() => router.push('/guardian/add-child')}
+          accessibilityRole="button"
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: t.spacing.sm,
+            backgroundColor: t.colors.primary,
+            borderRadius: t.radius.lg,
+            paddingHorizontal: t.spacing.xl,
+            paddingVertical: t.spacing.md,
+          }}
+        >
+          <UserPlus size={18} color={t.colors.primaryForeground} />
+          <Text variant="label" style={{ color: t.colors.primaryForeground }}>
+            Add your first child
+          </Text>
+        </Pressable>
       </Card>
     ) : (
       <View style={{ gap: t.spacing.md }}>
@@ -220,23 +240,32 @@ function ChildCard({
   const router = useRouter();
 
   return (
-    <Pressable
-      onPress={
-        onPress ??
-        (() =>
-          router.push({
-            pathname: '/guardian/[studentProfileId]',
-            params: { studentProfileId: child.studentProfileId },
-          }))
+    <Card
+      style={
+        selected ? { borderColor: t.colors.primary, borderWidth: 2 } : undefined
       }
-      accessibilityRole="button"
     >
-      <Card
-        style={
-          selected
-            ? { borderColor: t.colors.primary, borderWidth: 2 }
-            : undefined
+      {/*
+        Two Pressables, siblings rather than nested — react-native-web renders
+        an `accessibilityRole="button"` Pressable as a real `<button>`, and a
+        `<button>` cannot legally contain another `<button>`; the previous
+        nested version rendered fine but hit React's hydration warning and
+        invalid-DOM console error on the web target the moment a real child
+        with `onOpenLearning` actually appeared. Splitting them keeps the two
+        destinations distinct on every platform — the card opens this child's
+        *records*, "Open learning" opens their *learning surface* — without
+        putting one tap target inside the other's DOM node.
+      */}
+      <Pressable
+        onPress={
+          onPress ??
+          (() =>
+            router.push({
+              pathname: '/guardian/[studentProfileId]',
+              params: { studentProfileId: child.studentProfileId },
+            }))
         }
+        accessibilityRole="button"
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.md }}>
           <View style={{ flex: 1 }}>
@@ -275,37 +304,31 @@ function ChildCard({
             </Text>
           ) : null}
         </View>
+      </Pressable>
 
-        {onOpenLearning ? (
-          <>
-            <View style={{ height: t.spacing.md }} />
-            {/*
-              Nested inside the card's Pressable deliberately: the card opens
-              this child's *records*, this opens their *learning surface*. Two
-              destinations, so the tap targets are separate rather than the
-              guardian guessing which one a single tap means.
-            */}
-            <Pressable
-              onPress={onOpenLearning}
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${child.fullName}'s learning`}
-              hitSlop={6}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: t.spacing.sm,
-                paddingVertical: t.spacing.sm,
-              }}
-            >
-              <GraduationCap size={16} color={t.colors.primary} />
-              <Text variant="label" color="primary">
-                Open learning
-              </Text>
-            </Pressable>
-          </>
-        ) : null}
-      </Card>
-    </Pressable>
+      {onOpenLearning ? (
+        <>
+          <View style={{ height: t.spacing.md }} />
+          <Pressable
+            onPress={onOpenLearning}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${child.fullName}'s learning`}
+            hitSlop={6}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: t.spacing.sm,
+              paddingVertical: t.spacing.sm,
+            }}
+          >
+            <GraduationCap size={16} color={t.colors.primary} />
+            <Text variant="label" color="primary">
+              Open learning
+            </Text>
+          </Pressable>
+        </>
+      ) : null}
+    </Card>
   );
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Loader2, Lock, Plus } from "lucide-react";
+import { Loader2, Lock, Plus } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";

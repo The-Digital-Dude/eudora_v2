@@ -48,13 +48,28 @@ export class EntitlementsController {
     return { isStaff, courseIds: [...courseIds] };
   }
 
+  /**
+   * `resolveCourseAccess`'s 4th parameter exists specifically for a guardian
+   * acting for one of their children (its own doc comment says so), but this
+   * route never read the header to supply it — every guardian caller resolved
+   * through `ActingStudentService` to "no student profile" and got `{allowed:
+   * false, reason: 'NO_STUDENT_PROFILE'}` regardless of what the child
+   * actually owns. Dormant today (nothing calls this route yet), caught while
+   * building the mobile checkout flow against it.
+   */
   @Get('course/:courseId/access')
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'USER', 'GUARDIAN')
   async checkCourseAccess(
     @Param('courseId') courseId: string,
     @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
-    return this.entitlements.resolveCourseAccess(user.id, user.roles, courseId);
+    return this.entitlements.resolveCourseAccess(
+      user.id,
+      user.roles,
+      courseId,
+      actingStudentId,
+    );
   }
 
   /** Support search across every entitlement — refunds, comps, access disputes. */

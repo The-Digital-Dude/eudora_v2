@@ -32,6 +32,9 @@ importers:
       expo-device:
         specifier: ~57.0.1
         version: 57.0.1(expo@57.0.10)
+      expo-document-picker:
+        specifier: ~57.0.1
+        version: 57.0.1(expo@57.0.10)
       expo-haptics:
         specifier: ~57.0.1
         version: 57.0.1(expo@57.0.10)
@@ -1642,6 +1645,11 @@ packages:
 
   expo-device@57.0.1:
     resolution: {integrity: sha512-jyEMDUticH+dhcL3GHa2aiifOvGXJsmb3oVT2R2q4i8bN7Bddy61+NkpMmuS2VAZrvoLQwf0TJJ/1vi1ukvutA==}
+    peerDependencies:
+      expo: '*'
+
+  expo-document-picker@57.0.1:
+    resolution: {integrity: sha512-qBwM5oxDZ3I9kwFD3pUE1oK/WNv9artoEKO6UpqhQgNRr0XA1ALRVWYjkF4+ge9lUNDRehjTm/jenINkzqg84g==}
     peerDependencies:
       expo: '*'
 
@@ -5051,6 +5059,10 @@ snapshots:
     dependencies:
       expo: 57.0.10(e04293c0a95eb2d5dc16a455a8122fb6)
       ua-parser-js: 0.7.41
+
+  expo-document-picker@57.0.1(expo@57.0.10):
+    dependencies:
+      expo: 57.0.10(e04293c0a95eb2d5dc16a455a8122fb6)
 
   expo-file-system@57.0.1(expo@57.0.10)(react-native@0.86.2(@babel/core@7.29.7(supports-color@10.2.2))(@react-native/metro-config@0.86.2(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2))(@types/react@19.2.18)(react@19.2.3)(supports-color@10.2.2)):
     dependencies:

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   AlertCircle,
@@ -8,6 +8,8 @@ import {
   Lightbulb,
   Loader2,
   Sparkles,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -34,6 +36,7 @@ import {
   setWidgetState,
   showExplanation,
 } from "@/features/clio/lessonSlice";
+import { useClioVoice } from "@/features/clio/sound/useClioVoice";
 import { WidgetSelector } from "@/features/clio/widgets/WidgetSelector";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
@@ -63,6 +66,8 @@ export default function LessonFlowPage() {
 
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
+  const { isMuted, isSpeaking, toggleMute, playPhrase, speakText, stop } = useClioVoice();
+
   const cards = React.useMemo(() => data?.lesson?.cards ?? [], [data]);
   const currentCard: ClioCard | undefined = cards[currentCardIndex];
 
@@ -83,13 +88,17 @@ export default function LessonFlowPage() {
         dispatch(jumpToCard(cards.length - 1));
       }
     }
-    dispatch(markCardStart());
-
     return () => {
       // Clean up lesson state on unmount
       dispatch(resetLesson());
     };
   }, [data, cards, dispatch]);
+
+  useEffect(() => {
+    return () => {
+      stop();
+    };
+  }, [stop]);
 
   // Set companion mascot reaction state
   useEffect(() => {
@@ -99,12 +108,14 @@ export default function LessonFlowPage() {
       } else {
         setMascotState("wrong");
       }
+    } else if (isSpeaking) {
+      setMascotState("hint");
     } else if (currentWidgetState) {
       setMascotState("thinking");
     } else {
       setMascotState("idle");
     }
-  }, [showExpPanel, lastResult, currentWidgetState]);
+  }, [showExpPanel, lastResult, isSpeaking, currentWidgetState]);
 
   if (isLoading) {
     return (
@@ -169,10 +180,17 @@ export default function LessonFlowPage() {
 
       dispatch(showExplanation(result));
 
+      if (result.isCorrect) {
+        playPhrase("CORRECT");
+      } else {
+        playPhrase("TRY_AGAIN");
+      }
+
       if (result.isLessonComplete) {
         // Delay opening modal slightly to let user celebrate/read correct state
         setTimeout(() => {
           setIsCompleteModalOpen(true);
+          playPhrase("LESSON_COMPLETE");
         }, 1500);
       }
     } catch (err) {
@@ -266,9 +284,20 @@ export default function LessonFlowPage() {
           {hasQuestion && currentCard.question && (
             <div className="border-border max-w-2xl border-t py-4">
               <div className="mb-4">
-                <span className="text-xs font-bold tracking-widest text-primary uppercase">
-                  Question
-                </span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold tracking-widest text-primary uppercase">
+                    Question
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => speakText(currentCard.question?.prompt || "")}
+                    title="Listen to question"
+                    className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/10 active:scale-95 cursor-pointer"
+                  >
+                    <Volume2 className="h-3.5 w-3.5" />
+                    <span>Listen</span>
+                  </button>
+                </div>
                 <div className="text-foreground mt-1 text-sm font-semibold">
                   <MathRenderer text={currentCard.question.prompt} />
                 </div>
@@ -297,20 +326,38 @@ export default function LessonFlowPage() {
                   return (
                     <div
                       key={idx}
-                      className="animate-fade-in flex gap-3 rounded-xl border border-warning/20 bg-warning/10 p-3.5 text-xs font-medium text-warning"
+                      className="animate-fade-in flex items-start justify-between gap-3 rounded-xl border border-warning/20 bg-warning/10 p-3.5 text-xs font-medium text-warning"
                     >
-                      <Lightbulb className="h-4.5 w-4.5 shrink-0 text-warning" />
-                      <div>
-                        <span className="font-bold">Hint {idx + 1}:</span> {hintText}
+                      <div className="flex items-start gap-2.5">
+                        <Lightbulb className="h-4.5 w-4.5 shrink-0 text-warning" />
+                        <div>
+                          <span className="font-bold">Hint {idx + 1}:</span> {hintText}
+                        </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => speakText(`Hint ${idx + 1}: ${hintText}`)}
+                        title="Listen to hint"
+                        className="shrink-0 cursor-pointer p-1 text-warning hover:opacity-80 transition-opacity"
+                      >
+                        <Volume2 className="h-4 w-4" />
+                      </button>
                     </div>
                   );
                 })}
 
                 {hintIndex < currentCard.question.hints.length - 1 && (
                   <button
-                    onClick={() => dispatch(revealNextHint())}
-                    className="flex items-center gap-1.5 py-1 text-xs font-bold text-warning transition-colors hover:text-warning focus:outline-none"
+                    onClick={() => {
+                      const nextIdx = hintIndex + 1;
+                      dispatch(revealNextHint());
+                      playPhrase("TAKE_A_HINT");
+                      const nextHintText = currentCard.question?.hints[nextIdx];
+                      if (nextHintText) {
+                        speakText(nextHintText);
+                      }
+                    }}
+                    className="flex cursor-pointer items-center gap-1.5 py-1 text-xs font-bold text-warning transition-colors hover:text-warning focus:outline-none"
                   >
                     <Lightbulb className="h-4 w-4" /> Get Hint
                   </button>
@@ -372,7 +419,39 @@ export default function LessonFlowPage() {
             <div className="border-border bg-background absolute bottom-6 -left-2 hidden h-4 w-4 rotate-45 border-b border-l md:block" />
             <div className="border-border bg-background absolute -bottom-2 left-6 h-4 w-4 rotate-45 border-r border-b md:hidden" />
 
-            <div className="flex items-start gap-2.5">
+            <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2 mb-2">
+              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                Clio AI Companion
+              </span>
+              <button
+                type="button"
+                onClick={toggleMute}
+                className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                title={isMuted ? "Unmute Clio's voice" : "Mute Clio's voice"}
+              >
+                {isMuted ? (
+                  <>
+                    <VolumeX className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>Muted</span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2
+                      className={`h-3.5 w-3.5 ${isSpeaking ? "text-primary animate-pulse" : ""}`}
+                    />
+                    <span className={isSpeaking ? "text-primary font-bold" : ""}>
+                      {isSpeaking ? "Speaking" : "Voice On"}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div
+              className="flex items-start gap-2.5 cursor-pointer"
+              onClick={() => speakText(getMascotSpeech())}
+              title="Click to hear Clio speak"
+            >
               <Sparkles className="mt-0.5 h-4.5 w-4.5 shrink-0 animate-pulse text-primary" />
               <p className="text-foreground/90 text-xs leading-relaxed font-medium">
                 {getMascotSpeech()}

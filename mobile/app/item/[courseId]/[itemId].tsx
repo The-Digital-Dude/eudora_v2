@@ -4,14 +4,43 @@ import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { ModuleItem } from '@/core/contracts';
 import { AssessmentItemView } from '@/features/assessment/AssessmentItemView';
 import { useGetCourseDetailQuery } from '@/features/catalog/catalogApi';
 import { useActingChild } from '@/features/guardian/useActingChild';
 import { DiscussionItemView } from '@/features/lesson/DiscussionItemView';
+import { HomeworkItemView } from '@/features/lesson/HomeworkItemView';
+import { LiveClassItemView } from '@/features/lesson/LiveClassItemView';
 import { ReadingItemView } from '@/features/lesson/ReadingItemView';
 import { VideoItemView } from '@/features/lesson/VideoItemView';
 import { Text } from '@/ui/primitives/Text';
 import { useTheme } from '@/ui/theme/ThemeProvider';
+
+/**
+ * Exhaustive rather than an `if/else` chain ending in a catch-all: the item
+ * screen used to fall through to `AssessmentItemView` for any kind it didn't
+ * name, so `HOMEWORK` and `LIVE_CLASS` silently rendered as a broken
+ * assessment for weeks after the API added them. A `switch` with no `default`
+ * makes the *next* new kind a compile error here instead — TypeScript's
+ * exhaustiveness check on `item.kind` fails the build the moment a case is
+ * missing, rather than shipping a wrong screen and waiting for a bug report.
+ */
+function renderItem(item: ModuleItem, courseId: string): React.ReactElement {
+  switch (item.kind) {
+    case 'VIDEO':
+      return <VideoItemView item={item} courseId={courseId} />;
+    case 'READING':
+      return <ReadingItemView item={item} courseId={courseId} />;
+    case 'DISCUSSION':
+      return <DiscussionItemView item={item} courseId={courseId} />;
+    case 'ASSESSMENT':
+      return <AssessmentItemView item={item} courseId={courseId} />;
+    case 'HOMEWORK':
+      return <HomeworkItemView item={item} courseId={courseId} />;
+    case 'LIVE_CLASS':
+      return <LiveClassItemView item={item} courseId={courseId} />;
+  }
+}
 
 /**
  * There is no `GET /catalog/module-items/:id` endpoint — a ModuleItem's full
@@ -81,15 +110,7 @@ export default function ModuleItemScreen() {
       <Text variant="title">{item.title}</Text>
       <View style={{ height: t.spacing.xl }} />
 
-      {item.kind === 'VIDEO' ? (
-        <VideoItemView item={item} />
-      ) : item.kind === 'READING' ? (
-        <ReadingItemView item={item} />
-      ) : item.kind === 'DISCUSSION' ? (
-        <DiscussionItemView item={item} />
-      ) : (
-        <AssessmentItemView item={item} />
-      )}
+      {renderItem(item, courseId!)}
     </ScrollView>
   );
 }

@@ -12,11 +12,22 @@ import {
 } from './guardianApi';
 
 /**
- * Mirrors the web guardian onboarding wizard (`/complete-profile`): step 1
- * creates the GuardianProfile (fullName/phone), step 2 links a student by
- * email. Finishing (or skipping step 2) navigates to `/`, which re-fetches
- * `getMe` on mount (`refetchOnMountOrArgChange` is on globally) and now
- * finds `guardianProfile` set, routing to `GuardianHomeScreen`.
+ * Repairs a legacy state, not the primary signup path. A fresh registration
+ * (`app/register.tsx` → `POST /auth/token/register`) writes the
+ * `GuardianProfile` in the same transaction as the role grant, so a new
+ * account never reaches this screen at all — `app/index.tsx` only renders it
+ * when `me.roles` includes GUARDIAN but `guardianProfile` is still absent,
+ * which by now means an account created before that seed existed.
+ *
+ * Step 1 creates the profile (fullName/phone) via the same `/me` upsert the
+ * web onboarding wizard uses. Step 2 links an *existing* student account by
+ * email — kept as-is here rather than folded into `AddChildForm`, since a
+ * guardian who reaches this screen already has a student account to link,
+ * where a fresh signup's guardian does not. Finishing (or skipping step 2)
+ * navigates to `/`, which re-fetches `getMe` on mount
+ * (`refetchOnMountOrArgChange` is on globally) and now finds `guardianProfile`
+ * set, routing to `GuardianHomeScreen` — whose own empty state is where
+ * `AddChildForm` lives for anyone who wants to add a new child instead.
  */
 export function GuardianOnboardingScreen() {
   const t = useTheme();

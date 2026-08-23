@@ -269,20 +269,34 @@ export default function LessonPlayerScreen() {
                 {hintShown ? (
                   <View
                     style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
                       padding: t.spacing.md,
                       borderRadius: t.radius.md,
                       backgroundColor: t.colors.accent + '1a',
                     }}
                   >
-                    <Text variant="caption" color="mutedForeground">
+                    <Text variant="caption" color="mutedForeground" style={{ flex: 1 }}>
                       💡 {card.question.hints[0]}
                     </Text>
+                    <Pressable
+                      onPress={() => playText(card.question?.hints?.[0] || '')}
+                      accessibilityRole="button"
+                      accessibilityLabel="Listen to hint"
+                      hitSlop={8}
+                    >
+                      <Volume2 size={16} color={t.colors.primary} />
+                    </Pressable>
                   </View>
                 ) : (
                   <Pressable
                     onPress={() => {
                       setHintShown(true);
-                      playVoiceLine('HINT_REVEALED');
+                      playVoiceLine('TAKE_A_HINT');
+                      if (card.question?.hints?.[0]) {
+                        playText(card.question.hints[0], { interrupt: false });
+                      }
                     }}
                     accessibilityRole="button"
                   >

@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { SubmitCardPayload, SubmitCardResult } from '@/core/contracts';
 import { playSoundEffect } from '@/core/sound/soundEffects';
 import { playText, playVoiceLine } from '@/core/sound/voiceFeedback';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { LessonCompleteOverlay } from '@/features/lesson/LessonCompleteOverlay';
 import { WidgetSelector } from '@/features/lesson/WidgetSelector';
 import {
@@ -32,9 +33,11 @@ export default function LessonPlayerScreen() {
   const insets = useSafeAreaInsets();
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
 
-  const { data: flow, isLoading } = useGetLessonFlowQuery(lessonId!, {
-    skip: !lessonId,
-  });
+  const { actingChildId } = useActingChild();
+  const { data: flow, isLoading } = useGetLessonFlowQuery(
+    { lessonId: lessonId!, actingChildId },
+    { skip: !lessonId },
+  );
   const [submitCard, { isLoading: submitting }] = useSubmitCardMutation();
 
   const [cardIndex, setCardIndex] = useState(0);

@@ -1,9 +1,17 @@
 /**
  * Hand-written mirrors of the api-service response shapes.
  *
- * The backend has no OpenAPI surface today (zero @nestjs/swagger decorators),
- * so these are maintained by hand — as the web client already does. When the
- * contract is generated instead, this directory is what gets replaced.
+ * The backend now serves OpenAPI at `/api/docs-json` (see api-service
+ * `main.ts`), but it carries exactly one @nestjs/swagger decorator, so the
+ * generated document describes routes and says nothing useful about response
+ * bodies. `generated/openapi.d.ts` is therefore stale, imported by nothing, and
+ * not the source of truth — this file is. Regenerating it only becomes
+ * worthwhile once the API's DTOs are actually annotated.
+ *
+ * Because these are hand-written, `tsc` cannot tell you when they drift from
+ * the API. It passed clean while four of the types below described endpoints
+ * that no longer existed. Treat a green typecheck here as proof of internal
+ * consistency only, never of contract accuracy.
  *
  * Nothing here may import React or react-native: `core` is deliberately
  * platform-free so it can be lifted into a shared package for the TV target.
@@ -117,7 +125,24 @@ export interface LoginPayload {
 
 // ─── Catalog ─────────────────────────────────────────────────────────────────
 
-export type ModuleItemKind = 'VIDEO' | 'READING' | 'DISCUSSION' | 'ASSESSMENT';
+/**
+ * `HOMEWORK` and `LIVE_CLASS` landed in the API on 2026-08-17/20 and were
+ * missing here, which mattered more than a missing union member usually does:
+ * the item screen's fallthrough sent both kinds to `AssessmentItemView`, so
+ * they rendered as a broken assessment rather than failing loudly.
+ *
+ * A `HOMEWORK` item is the *slot*; its brief comes from
+ * `GET /catalog/module-items/:id/my-homework`. A `LIVE_CLASS` item resolves to
+ * a different meeting per cohort, so its date and join link come from
+ * `GET /catalog/module-items/:id/my-session`, not from the item.
+ */
+export type ModuleItemKind =
+  | 'VIDEO'
+  | 'READING'
+  | 'DISCUSSION'
+  | 'ASSESSMENT'
+  | 'HOMEWORK'
+  | 'LIVE_CLASS';
 export type CatalogStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 export interface LearningSubject {
@@ -140,6 +165,22 @@ export interface ModuleItem {
   videoDurationSeconds: number | null;
   readingContent: string | null;
   assessmentId: string | null;
+  /**
+   * Ungated even for signed-out visitors. Distinguishing this from "locked"
+   * is what lets the outline say *why* an item will not open — without it a
+   * paywalled item is indistinguishable from an empty one.
+   */
+  isFreePreview: boolean;
+  /**
+   * Server-computed as `!(entitled || isFreePreview)`.
+   *
+   * When true the API deliberately nulls `videoUrl`, `readingContent` and
+   * `assessmentId` while still returning the row — the learner is meant to see
+   * that the item exists and be told to unlock it. Mobile has been receiving
+   * this and ignoring it, so paywalled items render as blank ones. Wiring it up
+   * is W6; having it in the contract is W1's job.
+   */
+  isContentLocked: boolean;
   isDone: boolean;
 }
 
@@ -545,12 +586,19 @@ export interface ChildGradeEntry {
   percentage: number | null;
   status: string;
   assessedAt: string | null;
-  courseClass: { name: string } | null;
+  batch: { name: string } | null;
   term: { name: string } | null;
 }
 
-// ─── Messaging (guardian ↔ teacher only — `/messages/*` is @Roles('GUARDIAN',
-// 'TEACHER', ...), students have no path into this) ────────────────────────
+// ─── Messaging — DEAD ────────────────────────────────────────────────────────
+//
+// The API's messaging module was deleted outright on 2026-08-16
+// (`20260816070000_remove_message_center`). There is no `/messages/*` route to
+// repoint at and no replacement endpoint. Everything below describes nothing.
+//
+// Left in place, unrenamed, so that W3 deletes it together with
+// `src/features/messaging/` and `app/messages/*` rather than this file quietly
+// keeping the feature alive. Do not "fix" these types.
 
 export interface MessageSender {
   id: string;
@@ -598,14 +646,38 @@ export interface CreateMessagePayload {
 // ─── Homework (student self-service — `/homework/*`'s student-facing routes
 // are @Roles('USER', 'GUARDIAN', ...) too, unlike messaging) ────────────────
 
+/**
+ * Homework became a *course checkpoint* on 2026-08-20, which loosened two
+ * fields that used to be guaranteed:
+ *
+ * - `batch` is null for a self-paced learner, who has no cohort at all.
+ * - `dueDate` is null for the same reason — a self-paced checkpoint is worked
+ *   through whenever the learner reaches it. Formatting it unconditionally
+ *   renders "Invalid Date".
+ *
+ * `attachmentUrls` here is the *brief's* files, attached by the teacher who set
+ * the work. It is unrelated to the learner's handed-in files, which are private
+ * and never exposed as URLs — see `SubmitHomeworkPayload`.
+ */
 export interface PendingHomeworkItem {
   id: string;
+  /** Set when this is a course checkpoint; null for standalone cohort homework. */
+  moduleItemId: string | null;
+  batchId: string | null;
   title: string;
   description: string | null;
-  dueDate: string;
+  dueDate: string | null;
   maxPoints: number;
   attachmentUrls: string[];
-  courseClass: { id: string; name: string };
+  batch: { id: string; name: string } | null;
+}
+
+/** One handed-in file, as returned by `POST /homework/attachments`. */
+export interface HomeworkAttachmentUpload {
+  id: string;
+  originalName: string;
+  size: number;
+  mimetype: string;
 }
 
 export interface HomeworkSubmissionRecord {
@@ -613,20 +685,56 @@ export interface HomeworkSubmissionRecord {
   homeworkId: string;
   submissionDate: string;
   content: string | null;
-  attachmentUrls: string[];
   status: string;
   pointsEarned: number | null;
   feedback: string | null;
-  homework: { title: string; maxPoints: number; dueDate: string; courseClass: { name: string } };
+  /**
+   * Present only on the `POST /homework/submit` response. The list read
+   * (`GET /homework/student/:id`) does not include attachments at all, so this
+   * is optional rather than a lie in one of the two directions.
+   *
+   * Files are served through `GET /homework/attachments/:fileId` with the
+   * caller's bearer token — they are private, and there is no public URL to
+   * hand to an `<Image>`.
+   */
+  attachments?: {
+    fileUploadId: string;
+    sortOrder: number;
+    file: { originalName: string; size: number; mimetype: string };
+  }[];
+  homework: {
+    title: string;
+    maxPoints: number;
+    dueDate: string | null;
+    batch: { name: string } | null;
+  };
 }
 
 export interface SubmitHomeworkPayload {
   homeworkId: string;
   content?: string;
-  attachmentUrls?: string[];
+  /**
+   * Ids from `POST /homework/attachments`, never URLs. The old `attachmentUrls`
+   * field let the caller say where a learner's work lived; the API dropped it,
+   * and because the field is simply ignored rather than rejected, sending it
+   * lost the attachments behind a successful 201.
+   */
+  attachmentFileIds?: string[];
 }
 
-// ─── Timetable (`GET /timetables/schedule/student/:studentProfileId`) ──────
+// ─── Timetable — DEAD ────────────────────────────────────────────────────────
+//
+// Retired on 2026-08-21 (`20260821120000_retire_timetable`). `TimetableSlot`
+// was a weekly recurrence rule; the API now materialises real meetings as
+// `BatchSession` and reads them through `GET /api/schedule/student/:id`, which
+// is a different shape — no `periodIndex`, no `room`, actual start/end
+// timestamps.
+//
+// `courseClass` below is deliberately NOT renamed to `batch`: renaming a field
+// on a deleted endpoint would only make the type look maintained. W3 deletes
+// this alongside `app/timetable.tsx` and `src/features/timetable/`. Bringing
+// back a "today's sessions" screen off the new endpoint is a new feature, and
+// gets a new type.
 
 export interface TimetableSlot {
   id: string;

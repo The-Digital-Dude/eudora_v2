@@ -7,6 +7,7 @@ import {
   useGetDiscussionQuery,
   useUpdateModuleItemProgressMutation,
 } from '@/features/catalog/catalogApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { Button } from '@/ui/primitives/Button';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
@@ -23,7 +24,11 @@ interface DiscussionItemViewProps {
  */
 export function DiscussionItemView({ item }: DiscussionItemViewProps) {
   const t = useTheme();
-  const { data: thread, isLoading } = useGetDiscussionQuery(item.id);
+  const { actingChildId } = useActingChild();
+  const { data: thread, isLoading } = useGetDiscussionQuery({
+    moduleItemId: item.id,
+    actingChildId,
+  });
   const [addPost, { isLoading: posting }] = useAddDiscussionPostMutation();
   const [updateProgress] = useUpdateModuleItemProgressMutation();
   const [body, setBody] = useState('');
@@ -31,7 +36,11 @@ export function DiscussionItemView({ item }: DiscussionItemViewProps) {
   const handlePost = async () => {
     if (!body.trim()) return;
     try {
-      await addPost({ moduleItemId: item.id, body: body.trim() }).unwrap();
+      await addPost({
+        moduleItemId: item.id,
+        body: body.trim(),
+        actingChildId,
+      }).unwrap();
       setBody('');
       if (!item.isDone) {
         void updateProgress({ id: item.id, completed: true });

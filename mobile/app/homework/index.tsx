@@ -5,8 +5,9 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { HomeworkSubmissionRecord, PendingHomeworkItem } from '@/core/contracts';
-import { useGetMeQuery } from '@/features/auth/authApi';
-import { useGetMyPendingHomeworkQuery, useGetMySubmissionsQuery } from '@/features/homework/homeworkApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
+import { batchLabel, dueLabel, isOverdue } from '@/features/homework/format';
+import { useGetPendingHomeworkQuery, useGetMySubmissionsQuery } from '@/features/homework/homeworkApi';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
 import { useTheme } from '@/ui/theme/ThemeProvider';
@@ -16,13 +17,14 @@ export default function HomeworkScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { data: me } = useGetMeQuery();
-  const studentProfileId = me?.studentProfile?.id;
+  // Resolves to the acting child for a guardian and to the caller's own
+  // profile for a student, so both audiences read the same endpoints.
+  const { learnerId } = useActingChild();
 
   const { data: pending, isLoading: loadingPending, isFetching, refetch: refetchPending } =
-    useGetMyPendingHomeworkQuery();
+    useGetPendingHomeworkQuery(learnerId!, { skip: !learnerId });
   const { data: submissions, isLoading: loadingSubmissions, refetch: refetchSubmissions } =
-    useGetMySubmissionsQuery(studentProfileId!, { skip: !studentProfileId });
+    useGetMySubmissionsQuery(learnerId!, { skip: !learnerId });
 
   return (
     <ScrollView
@@ -101,7 +103,7 @@ export default function HomeworkScreen() {
 function PendingRow({ homework }: { homework: PendingHomeworkItem }) {
   const t = useTheme();
   const router = useRouter();
-  const overdue = new Date(homework.dueDate) < new Date();
+  const overdue = isOverdue(homework.dueDate);
 
   return (
     <Pressable
@@ -113,11 +115,11 @@ function PendingRow({ homework }: { homework: PendingHomeworkItem }) {
           <View style={{ flex: 1 }}>
             <Text variant="label">{homework.title}</Text>
             <Text variant="caption" color="mutedForeground">
-              {homework.courseClass.name} · {homework.maxPoints} pts
+              {batchLabel(homework.batch)} · {homework.maxPoints} pts
             </Text>
             <View style={{ height: t.spacing.xs }} />
             <Text variant="caption" color={overdue ? 'destructive' : 'mutedForeground'}>
-              Due {new Date(homework.dueDate).toLocaleDateString()}
+              {dueLabel(homework.dueDate)}
             </Text>
           </View>
           <ChevronRight size={18} color={t.colors.mutedForeground} />
@@ -152,7 +154,7 @@ function SubmissionRow({ submission }: { submission: HomeworkSubmissionRecord })
       </View>
       <View style={{ height: t.spacing.xs }} />
       <Text variant="caption" color="mutedForeground">
-        {submission.homework.courseClass.name}
+        {batchLabel(submission.homework.batch)}
       </Text>
       {graded ? (
         <>

@@ -8,6 +8,25 @@ import type {
   UpdateModuleItemProgressPayload,
 } from '@/core/contracts';
 
+/**
+ * Every query below varies by which learner the request is about, and the
+ * server decides that from the `x-acting-student-id` header — which RTK Query
+ * knows nothing about when it builds a cache key.
+ *
+ * So the child id rides in the *argument* as well as the header. Without it a
+ * guardian with two children gets one cache entry for both: switch child and
+ * the screen shows the sibling's progress until something happens to refetch.
+ * `actingChildId` is null for a student acting as themselves, which is a
+ * distinct, valid key rather than a missing one.
+ */
+export interface ChildScoped {
+  actingChildId: string | null;
+}
+
+/** Keeps tag ids per-learner for the same reason the cache key is. */
+const scopedId = (id: string, actingChildId: string | null) =>
+  `${id}:${actingChildId ?? 'self'}`;
+
 export const catalogApi = api.injectEndpoints({
   // Metro Fast Refresh re-runs this module without tearing down the api
   // singleton, so a plain injectEndpoints would warn (and eventually diverge)
@@ -20,17 +39,22 @@ export const catalogApi = api.injectEndpoints({
       providesTags: ['Subjects'],
     }),
 
-    getCourses: builder.query<CourseSummary[], { subjectId?: string } | void>({
-      query: (params) =>
-        params?.subjectId
-          ? `/catalog/courses?subjectId=${params.subjectId}`
+    getCourses: builder.query<
+      CourseSummary[],
+      ChildScoped & { subjectId?: string }
+    >({
+      query: ({ subjectId }) =>
+        subjectId
+          ? `/catalog/courses?subjectId=${subjectId}`
           : '/catalog/courses',
       providesTags: ['Courses'],
     }),
 
-    getCourseDetail: builder.query<CourseDetail, string>({
-      query: (id) => `/catalog/courses/${id}`,
-      providesTags: (_r, _e, id) => [{ type: 'CourseDetail', id }],
+    getCourseDetail: builder.query<CourseDetail, ChildScoped & { courseId: string }>({
+      query: ({ courseId }) => `/catalog/courses/${courseId}`,
+      providesTags: (_r, _e, { courseId, actingChildId }) => [
+        { type: 'CourseDetail', id: scopedId(courseId, actingChildId) },
+      ],
     }),
 
     updateModuleItemProgress: builder.mutation<
@@ -48,34 +72,39 @@ export const catalogApi = api.injectEndpoints({
       invalidatesTags: ['CourseDetail', 'GamificationToday'],
     }),
 
-    getDiscussion: builder.query<DiscussionThread, string>({
-      query: (moduleItemId) => `/catalog/module-items/${moduleItemId}/discussion`,
-      providesTags: (_r, _e, moduleItemId) => [
-        { type: 'Discussion', id: moduleItemId },
+    getDiscussion: builder.query<
+      DiscussionThread,
+      ChildScoped & { moduleItemId: string }
+    >({
+      query: ({ moduleItemId }) =>
+        `/catalog/module-items/${moduleItemId}/discussion`,
+      providesTags: (_r, _e, { moduleItemId, actingChildId }) => [
+        { type: 'Discussion', id: scopedId(moduleItemId, actingChildId) },
       ],
     }),
 
     addDiscussionPost: builder.mutation<
       unknown,
-      { moduleItemId: string; body: string; parentPostId?: string }
+      ChildScoped & { moduleItemId: string; body: string; parentPostId?: string }
     >({
-      query: ({ moduleItemId, ...body }) => ({
+      query: ({ moduleItemId, actingChildId: _ignored, ...body }) => ({
         url: `/catalog/module-items/${moduleItemId}/discussion/posts`,
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_r, _e, { moduleItemId }) => [
-        { type: 'Discussion', id: moduleItemId },
+      invalidatesTags: (_r, _e, { moduleItemId, actingChildId }) => [
+        { type: 'Discussion', id: scopedId(moduleItemId, actingChildId) },
       ],
     }),
 
     getMyAssignmentForItem: builder.query<
       { assignment: MyAssignmentForItem | null },
-      string
+      ChildScoped & { moduleItemId: string }
     >({
-      query: (moduleItemId) => `/catalog/module-items/${moduleItemId}/my-assignment`,
-      providesTags: (_r, _e, moduleItemId) => [
-        { type: 'Assignment', id: moduleItemId },
+      query: ({ moduleItemId }) =>
+        `/catalog/module-items/${moduleItemId}/my-assignment`,
+      providesTags: (_r, _e, { moduleItemId, actingChildId }) => [
+        { type: 'Assignment', id: scopedId(moduleItemId, actingChildId) },
       ],
     }),
   }),

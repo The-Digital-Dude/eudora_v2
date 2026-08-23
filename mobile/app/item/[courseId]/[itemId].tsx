@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AssessmentItemView } from '@/features/assessment/AssessmentItemView';
 import { useGetCourseDetailQuery } from '@/features/catalog/catalogApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { DiscussionItemView } from '@/features/lesson/DiscussionItemView';
 import { ReadingItemView } from '@/features/lesson/ReadingItemView';
 import { VideoItemView } from '@/features/lesson/VideoItemView';
@@ -28,9 +29,11 @@ export default function ModuleItemScreen() {
     itemId: string;
   }>();
 
-  const { data: course, isLoading } = useGetCourseDetailQuery(courseId!, {
-    skip: !courseId,
-  });
+  const { actingChildId } = useActingChild();
+  const { data: course, isLoading } = useGetCourseDetailQuery(
+    { courseId: courseId!, actingChildId },
+    { skip: !courseId },
+  );
 
   const item = course?.concepts
     .flatMap((c) => c.items)

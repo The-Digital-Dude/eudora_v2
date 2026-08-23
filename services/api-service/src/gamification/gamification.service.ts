@@ -5,9 +5,9 @@ import { PrismaService } from '../prisma/prisma.service';
 export class GamificationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMe(userId: string) {
+  async getMe(studentProfileId: string) {
     const student = await this.prisma.studentProfile.findUnique({
-      where: { userId },
+      where: { id: studentProfileId },
       include: {
         experience: true,
         streak: true,
@@ -44,9 +44,9 @@ export class GamificationService {
   // already exist (LessonAttempt.completedAt, ModuleItemProgress.completedAt)
   // rather than a new persisted daily counter. Targets are hardcoded for v1;
   // admin-configurable targets are future work.
-  async getToday(userId: string) {
+  async getToday(studentProfileId: string) {
     const student = await this.prisma.studentProfile.findUnique({
-      where: { userId },
+      where: { id: studentProfileId },
       select: { id: true },
     });
     if (!student) {
@@ -114,9 +114,12 @@ export class GamificationService {
     };
   }
 
-  async getLeaderboard(userId: string, scope: 'class' | 'year' = 'class') {
+  async getLeaderboard(
+    studentProfileId: string,
+    scope: 'class' | 'year' = 'class',
+  ) {
     const student = await this.prisma.studentProfile.findUnique({
-      where: { userId },
+      where: { id: studentProfileId },
       include: {
         placements: true,
       },
@@ -174,9 +177,9 @@ export class GamificationService {
     };
   }
 
-  async getBadges(userId: string) {
+  async getBadges(studentProfileId: string) {
     const student = await this.prisma.studentProfile.findUnique({
-      where: { userId },
+      where: { id: studentProfileId },
       include: {
         experience: true,
         streak: true,

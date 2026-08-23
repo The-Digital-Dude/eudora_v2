@@ -7,7 +7,9 @@ import {
   FileText,
   Lock,
   MessageSquare,
+  NotebookPen,
   PlayCircle,
+  Radio,
   Sparkles,
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -16,16 +18,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { CourseConcept, ModuleItem, ModuleItemKind } from '@/core/contracts';
 import { useGetCourseDetailQuery } from '@/features/catalog/catalogApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
 import { useFormFactor } from '@/ui/useFormFactor';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
+// Keyed by `ModuleItemKind` rather than indexed loosely, so adding a kind to
+// the union is a compile error here instead of a blank icon at runtime.
 const kindIcon: Record<ModuleItemKind, React.ElementType> = {
   VIDEO: PlayCircle,
   READING: FileText,
   DISCUSSION: MessageSquare,
   ASSESSMENT: ClipboardList,
+  HOMEWORK: NotebookPen,
+  LIVE_CLASS: Radio,
 };
 
 export default function CourseOutlineScreen() {
@@ -35,9 +42,11 @@ export default function CourseOutlineScreen() {
   const formFactor = useFormFactor();
   const { courseId } = useLocalSearchParams<{ courseId: string }>();
 
-  const { data: course, isLoading } = useGetCourseDetailQuery(courseId!, {
-    skip: !courseId,
-  });
+  const { actingChildId } = useActingChild();
+  const { data: course, isLoading } = useGetCourseDetailQuery(
+    { courseId: courseId!, actingChildId },
+    { skip: !courseId },
+  );
 
   // Tablet only: which chapter shows in the right-hand pane.
   const [selectedConceptId, setSelectedConceptId] = useState<string | null>(null);

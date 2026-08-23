@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from 'react
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useGetCoursesQuery, useGetSubjectsQuery } from '@/features/catalog/catalogApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
 import { useTheme } from '@/ui/theme/ThemeProvider';
@@ -28,9 +29,11 @@ export default function CourseBrowseScreen() {
   const [gradeBand, setGradeBand] = useState<string | null>(null);
 
   const { data: subjects } = useGetSubjectsQuery();
-  const { data: courses, isLoading } = useGetCoursesQuery(
-    subjectId ? { subjectId } : undefined,
-  );
+  const { actingChildId } = useActingChild();
+  const { data: courses, isLoading } = useGetCoursesQuery({
+    actingChildId,
+    ...(subjectId ? { subjectId } : {}),
+  });
 
   const filtered = useMemo(() => {
     if (!courses) return [];

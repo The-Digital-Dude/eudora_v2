@@ -12,7 +12,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useGetMyPendingHomeworkQuery, useSubmitHomeworkMutation } from '@/features/homework/homeworkApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
+import { batchLabel, dueLabel } from '@/features/homework/format';
+import { useGetPendingHomeworkQuery, useSubmitHomeworkMutation } from '@/features/homework/homeworkApi';
 import { Button } from '@/ui/primitives/Button';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
@@ -27,7 +29,10 @@ export default function SubmitHomeworkScreen() {
   // Reuses the list screen's cached fetch rather than a dedicated
   // get-by-id endpoint — the pending list is small and RTK Query already
   // has it in cache from `/homework/index.tsx`.
-  const { data: pending, isLoading } = useGetMyPendingHomeworkQuery();
+  const { learnerId } = useActingChild();
+  const { data: pending, isLoading } = useGetPendingHomeworkQuery(learnerId!, {
+    skip: !learnerId,
+  });
   const homework = pending?.find((h) => h.id === homeworkId);
 
   const [content, setContent] = useState('');
@@ -87,8 +92,8 @@ export default function SubmitHomeworkScreen() {
             <Text variant="title">{homework.title}</Text>
             <View style={{ height: t.spacing.xs }} />
             <Text variant="caption" color="mutedForeground">
-              {homework.courseClass.name} · {homework.maxPoints} pts · Due{' '}
-              {new Date(homework.dueDate).toLocaleDateString()}
+              {batchLabel(homework.batch)} · {homework.maxPoints} pts ·{' '}
+              {dueLabel(homework.dueDate)}
             </Text>
 
             {homework.description ? (

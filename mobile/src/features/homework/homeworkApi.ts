@@ -12,14 +12,29 @@ export const homeworkApi = api.injectEndpoints({
   // client/src/features/*/*Api.ts on the web app.
   overrideExisting: true,
   endpoints: (builder) => ({
-    getMyPendingHomework: builder.query<PendingHomeworkItem[], void>({
-      query: () => '/homework/me/pending',
-      providesTags: ['Homework'],
+    /**
+     * Addressed by student id rather than `/homework/me/pending`, which
+     * resolves the caller's own profile and so throws for a guardian — who has
+     * none. The student-addressed route serves both: `assertCanAccessStudentRecord`
+     * short-circuits when the caller *is* that student, and otherwise verifies
+     * the guardian-child link.
+     *
+     * One endpoint instead of branching on role, so there is no second path to
+     * keep in step.
+     */
+    getPendingHomework: builder.query<PendingHomeworkItem[], string>({
+      query: (studentProfileId) =>
+        `/homework/student/${studentProfileId}/pending`,
+      providesTags: (_r, _e, studentProfileId) => [
+        { type: 'Homework', id: studentProfileId },
+      ],
     }),
 
     getMySubmissions: builder.query<HomeworkSubmissionRecord[], string>({
       query: (studentProfileId) => `/homework/student/${studentProfileId}`,
-      providesTags: ['Homework'],
+      providesTags: (_r, _e, studentProfileId) => [
+        { type: 'Homework', id: studentProfileId },
+      ],
     }),
 
     submitHomework: builder.mutation<HomeworkSubmissionRecord, SubmitHomeworkPayload>({
@@ -30,7 +45,7 @@ export const homeworkApi = api.injectEndpoints({
 });
 
 export const {
-  useGetMyPendingHomeworkQuery,
+  useGetPendingHomeworkQuery,
   useGetMySubmissionsQuery,
   useSubmitHomeworkMutation,
 } = homeworkApi;

@@ -183,7 +183,7 @@ export function ChildDetailPanel({ studentProfileId }: ChildDetailPanelProps) {
               <View style={{ flex: 1 }}>
                 <Text variant="body">{g.title}</Text>
                 <Text variant="caption" color="mutedForeground">
-                  {g.courseClass?.name ?? g.category}
+                  {g.batch?.name ?? g.category}
                 </Text>
               </View>
               <Text variant="label" color="primary">

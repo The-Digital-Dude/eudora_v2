@@ -1,3 +1,4 @@
+import { clearActingChild } from '@/core/api/actingChildStore';
 import { api } from '@/core/api/api';
 import { clearTokens, setTokens } from '@/core/api/tokenStore';
 import type {
@@ -35,6 +36,10 @@ export const authApi = api.injectEndpoints({
         } finally {
           await unregisterCurrentPushToken(dispatch);
           await clearTokens();
+          // A family tablet is the normal case here, so a left-behind child id
+          // would mean the next guardian's very first requests carry a student
+          // they have no link to — a 403 on an otherwise healthy sign-in.
+          clearActingChild();
         }
       },
     }),

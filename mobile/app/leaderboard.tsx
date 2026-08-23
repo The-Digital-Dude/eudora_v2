@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useGetLeaderboardQuery } from '@/features/gamification/gamificationApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
 import { useTheme } from '@/ui/theme/ThemeProvider';
@@ -16,7 +17,11 @@ export default function LeaderboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [scope, setScope] = useState<Scope>('class');
-  const { data, isLoading, isFetching } = useGetLeaderboardQuery(scope);
+  const { actingChildId } = useActingChild();
+  const { data, isLoading, isFetching } = useGetLeaderboardQuery({
+    actingChildId,
+    scope,
+  });
 
   return (
     <ScrollView

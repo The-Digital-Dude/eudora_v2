@@ -6,12 +6,14 @@ import { Card } from '@/ui/primitives/Card';
 import { ProgressBar } from '@/ui/primitives/ProgressBar';
 import { Text } from '@/ui/primitives/Text';
 import { useTheme } from '@/ui/theme/ThemeProvider';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { useGetTodaysGoalsQuery } from './gamificationApi';
 
 /** Mirrors the web home page's pinned `TodaysGoals` widget. */
 export function TodaysGoals() {
   const t = useTheme();
-  const { data } = useGetTodaysGoalsQuery();
+  const { actingChildId } = useActingChild();
+  const { data } = useGetTodaysGoalsQuery({ actingChildId });
 
   if (!data || data.goals.length === 0) return null;
 

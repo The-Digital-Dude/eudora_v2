@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from 'react-native';
 
 import type { ModuleItem } from '@/core/contracts';
 import { useGetMyAssignmentForItemQuery } from '@/features/catalog/catalogApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { Button } from '@/ui/primitives/Button';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
@@ -23,7 +24,11 @@ interface AssessmentItemViewProps {
 export function AssessmentItemView({ item }: AssessmentItemViewProps) {
   const t = useTheme();
   const router = useRouter();
-  const { data, isLoading } = useGetMyAssignmentForItemQuery(item.id);
+  const { actingChildId } = useActingChild();
+  const { data, isLoading } = useGetMyAssignmentForItemQuery({
+    moduleItemId: item.id,
+    actingChildId,
+  });
 
   if (isLoading || !data) {
     return <ActivityIndicator color={t.colors.primary} />;

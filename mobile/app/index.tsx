@@ -1,37 +1,48 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-import { getStoredView, setStoredView, type ProfileView } from '@/core/viewPreference';
 import { useGetMeQuery } from '@/features/auth/authApi';
 import { GuardianHomeScreen } from '@/features/guardian/GuardianHomeScreen';
 import { GuardianOnboardingScreen } from '@/features/guardian/GuardianOnboardingScreen';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { StudentHomeScreen } from '@/features/home/StudentHomeScreen';
 import { useRegisterPushToken } from '@/features/notifications/pushRegistration';
 import { useTheme } from '@/ui/theme/ThemeProvider';
 
 /**
- * Branches on `guardianProfile` presence, not role membership alone — a user
- * can hold both the GUARDIAN role and a student profile (the schema allows
- * it). When both `studentProfile` and `guardianProfile` are present, a small
- * switcher on each home screen (see `onSwitchView` below) picks which one
- * renders, persisted locally via `core/viewPreference.ts`; every other
- * account never touches `view` at all, so this is a no-op for the common
- * single-role case. Default is guardian, matching the pre-switcher behavior.
+ * Guardian-first. The guardian is the account; a child is a context inside it.
  *
- * A GUARDIAN-role user with no `guardianProfile` yet (freshly registered,
- * profile creation still pending) gets the onboarding wizard instead of
- * either home screen.
+ * This used to treat guardian and student as two coequal *view modes* on one
+ * account, persisted through `core/viewPreference.ts`, defaulting to guardian
+ * and toggled by a switcher on each home screen. That shape came from a
+ * product where a learner signed in for themselves. It no longer matches one
+ * where a guardian buys, a child created through the family portal has no
+ * password at all, and the API decides which learner a request is about from
+ * an `x-acting-student-id` header the guardian's client sends.
+ *
+ * So the branch is now on *who the account is*, not on a stored preference:
+ *
+ * - guardian → the family portal, from which they open one child's learning
+ *   surface. `useActingChild` owns which child that is, and the same value
+ *   feeds the request header, so the screen and the API cannot disagree.
+ * - student  → their own learning surface, unchanged. They send no header and
+ *   the server resolves them to themselves regardless.
+ *
+ * An account holding both a student and a guardian profile is rare but legal
+ * in the schema; it is treated as a guardian, since the family portal is the
+ * superset — their own learning surface is still one tap away.
  */
 export default function HomeScreen() {
   const t = useTheme();
   const { data: me, isLoading } = useGetMeQuery();
+  const { isGuardian } = useActingChild();
   useRegisterPushToken();
-  const [view, setView] = useState<ProfileView>(() => getStoredView() ?? 'guardian');
 
-  const handleSwitchView = (next: ProfileView) => {
-    setStoredView(next);
-    setView(next);
-  };
+  // Which child's learning surface is open, if any. Deliberately local and
+  // unpersisted: *which* child is persisted (that decides the header), but
+  // whether the guardian is currently inside a child's surface is navigation
+  // state, and reopening the app should land on the portal.
+  const [viewingChild, setViewingChild] = useState(false);
 
   if (isLoading || !me) {
     return (
@@ -48,15 +59,18 @@ export default function HomeScreen() {
     );
   }
 
-  if (me.studentProfile && me.guardianProfile) {
-    return view === 'student' ? (
-      <StudentHomeScreen onSwitchToGuardian={() => handleSwitchView('guardian')} />
+  if (isGuardian) {
+    return viewingChild ? (
+      <StudentHomeScreen onExitChildView={() => setViewingChild(false)} />
     ) : (
-      <GuardianHomeScreen onSwitchToStudent={() => handleSwitchView('student')} />
+      <GuardianHomeScreen onOpenChildView={() => setViewingChild(true)} />
     );
   }
 
-  if (me.guardianProfile) return <GuardianHomeScreen />;
+  // A GUARDIAN-role account whose profile creation did not complete. Rare now
+  // that registration seeds the profile in the same write, but accounts that
+  // predate that still exist and would otherwise land on a portal that 404s.
   if (me.roles.includes('GUARDIAN')) return <GuardianOnboardingScreen />;
+
   return <StudentHomeScreen />;
 }

@@ -46,9 +46,14 @@ export class AuthController {
   @Post('register')
   async register(
     @Body() dto: RegisterDto,
+    @Req() req: any,
     @Res({ passthrough: true }) res: any,
   ) {
-    const result = await this.authService.register(dto);
+    const result = await this.authService.register(
+      dto,
+      req.headers['user-agent'] || null,
+      req.ip || null,
+    );
     setAuthCookies(res, result.tokens);
     return { ...result.user, csrfToken: result.tokens.csrfToken };
   }

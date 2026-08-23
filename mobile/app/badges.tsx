@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useGetBadgesQuery } from '@/features/gamification/gamificationApi';
+import { useActingChild } from '@/features/guardian/useActingChild';
 import { Card } from '@/ui/primitives/Card';
 import { ProgressBar } from '@/ui/primitives/ProgressBar';
 import { Text } from '@/ui/primitives/Text';
@@ -14,7 +15,8 @@ export default function BadgesScreen() {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: badges, isLoading } = useGetBadgesQuery();
+  const { actingChildId } = useActingChild();
+  const { data: badges, isLoading } = useGetBadgesQuery({ actingChildId });
 
   return (
     <ScrollView

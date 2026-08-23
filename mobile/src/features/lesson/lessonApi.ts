@@ -4,6 +4,7 @@ import type {
   SubmitCardPayload,
   SubmitCardResult,
 } from '@/core/contracts';
+import type { ChildScoped } from '@/features/catalog/catalogApi';
 
 export const lessonApi = api.injectEndpoints({
   // Metro Fast Refresh re-runs this module without tearing down the api
@@ -17,10 +18,13 @@ export const lessonApi = api.injectEndpoints({
      * regenerated server-side per attempt from a deterministic seed, so the
      * parameters are stable across refetches within one attempt.
      */
-    getLessonFlow: builder.query<LessonFlow, string>({
-      query: (lessonId) => `/lessons/${lessonId}/flow`,
-      providesTags: (_r, _e, lessonId) => [
-        { type: 'LessonFlow', id: lessonId },
+    getLessonFlow: builder.query<LessonFlow, ChildScoped & { lessonId: string }>({
+      query: ({ lessonId }) => `/lessons/${lessonId}/flow`,
+      // The attempt inside this flow belongs to one learner, so the child id is
+      // part of the key — otherwise a guardian switching child would resume the
+      // sibling's attempt, and answers would be recorded against the wrong one.
+      providesTags: (_r, _e, { lessonId, actingChildId }) => [
+        { type: 'LessonFlow', id: `${lessonId}:${actingChildId ?? 'self'}` },
       ],
     }),
 

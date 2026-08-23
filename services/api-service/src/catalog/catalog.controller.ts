@@ -27,7 +27,10 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
-import { ACTING_STUDENT_HEADER } from '../entitlements/acting-student.service';
+import {
+  ACTING_STUDENT_HEADER,
+  ActingStudentService,
+} from '../entitlements/acting-student.service';
 
 const STAFF_ROLES = ['SUPER_ADMIN', 'ADMIN', 'TEACHER'];
 
@@ -39,7 +42,10 @@ function isStaff(user?: CurrentUserDto): boolean {
 @Controller('catalog')
 @UseGuards(RolesGuard)
 export class CatalogController {
-  constructor(private readonly catalogService: CatalogService) {}
+  constructor(
+    private readonly catalogService: CatalogService,
+    private readonly actingStudent: ActingStudentService,
+  ) {}
 
   // ─── Learning Subjects ───────────────────────────────────────────────────
 
@@ -119,6 +125,15 @@ export class CatalogController {
     return this.catalogService.listPublicClasses();
   }
 
+  /**
+   * The per-learner fields here (`isAssigned`, progress) used to come from
+   * `user.studentProfile.id`, which is null for a guardian — so the audience
+   * that actually picks courses saw a list with every personalised field
+   * blank. Resolved through the same acting-student rules as `courses/:id`
+   * below, which was already header-aware; the pair disagreeing meant a
+   * guardian could open a course and see progress the list had just told them
+   * did not exist.
+   */
   @Get('courses')
   async listCourses(
     @Query('subjectId') subjectId?: string,
@@ -128,11 +143,12 @@ export class CatalogController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
     @CurrentUser() user?: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
     return this.catalogService.listCourses(
       subjectId,
       isStaff(user),
-      user?.studentProfile?.id ?? null,
+      await this.actingStudent.resolve(user?.id, actingStudentId ?? null),
       page ? parseInt(page, 10) : undefined,
       limit ? parseInt(limit, 10) : undefined,
       search,

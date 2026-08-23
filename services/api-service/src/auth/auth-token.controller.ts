@@ -6,7 +6,9 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { GoogleLoginDto } from './dto/google.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -29,6 +31,32 @@ import { Public } from './decorators/public.decorator';
 @Controller('auth/token')
 export class AuthTokenController {
   constructor(private readonly authService: AuthService) {}
+
+  /**
+   * Native signup. Without this a native client could sign in but never create
+   * an account — `/auth/register` sets cookies and hands back a csrfToken,
+   * neither of which a bearer-token client can use.
+   *
+   * The throttle is not decoration and must not be dropped to match the other
+   * routes on this controller. They authenticate against rows that already
+   * exist; this one creates them, and the cookie route is rate-limited for
+   * exactly that reason. An unthrottled native twin would just be a wider door
+   * into the same room.
+   *
+   * No @HttpCode here, deliberately: unlike its neighbours this endpoint
+   * creates, so POST's default 201 is the honest status.
+   */
+  @Public()
+  @Throttle({ default: { ttl: 3_600_000, limit: 5 } })
+  @Post('register')
+  async register(@Body() dto: RegisterDto, @Req() req: any) {
+    const result = await this.authService.register(
+      dto,
+      req.headers['user-agent'] || null,
+      req.ip || null,
+    );
+    return toTokenResponse(result);
+  }
 
   @Public()
   @Post()

@@ -40,7 +40,6 @@ export function CodePlaygroundWidget({
   value,
   onChange,
   locked,
-  isCorrect,
 }: CodePlaygroundWidgetProps) {
   const language = config.language ?? "javascript";
   const starterCode = config.starterCode ?? "";
@@ -163,11 +162,15 @@ export function CodePlaygroundWidget({
           <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground font-mono capitalize">
             {language}
           </span>
-          {locked && isCorrect !== undefined && (
-            <span className={isCorrect ? "text-xs font-bold text-success" : "text-xs font-bold text-destructive"}>
-              {isCorrect ? "● Marked Correct" : "● Marked Incorrect"}
-            </span>
-          )}
+          {/*
+            No isCorrect-driven "Marked Correct/Incorrect" here on purpose:
+            this widget type is never graded server-side (see
+            widget-generator.ts's CODE_PLAYGROUND branch, which always
+            resolves UNSUPPORTED) — a badge that reacted to isCorrect would
+            claim a mark the server never gave. lastRunPassed reflects only
+            the tests that already ran in the sandboxed iframe below.
+          */}
+          <span className="text-xs font-semibold text-muted-foreground">Practice · not marked</span>
         </div>
 
         {!locked && (

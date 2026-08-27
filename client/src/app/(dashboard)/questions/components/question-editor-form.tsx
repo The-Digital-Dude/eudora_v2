@@ -350,7 +350,7 @@ export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEdit
                 <SelectItem value="DRAG_AND_DROP_LABELS">Drag and Drop Labels</SelectItem>
                 <SelectItem value="COORDINATE_PLOTTER">Coordinate Plotter</SelectItem>
                 <SelectItem value="GRID_MATCHING">Grid Matching</SelectItem>
-                <SelectItem value="CODE_PLAYGROUND">Code Playground</SelectItem>
+                <SelectItem value="CODE_PLAYGROUND">Code Playground (practice · not marked)</SelectItem>
                 <SelectItem value="SHAPE_SHADING">Shape Shading</SelectItem>
               </SelectContent>
             </Select>

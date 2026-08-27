@@ -999,6 +999,12 @@ model HomeworkSubmission {
   assessmentEvidence AssessmentEvidence?
 
   @@unique([homeworkId, studentProfileId])
+  // Declared to match what `20260821080000_homework_submitted_by` already
+  // created. The migration indexed this FK deliberately; the model just never
+  // said so, which left the migration chain and this schema permanently out of
+  // step — invisible while CI built its database with `db push` (which works
+  // from this file and never runs the migrations at all).
+  @@index([submittedByUserId])
   @@map("homework_submissions")
 }
 

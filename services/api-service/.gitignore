@@ -24,3 +24,9 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# Local-storage runtime uploads (see src/uploads/local-storage.service.ts) —
+# a stray committed upload was found and removed 2026-08-27; never commit
+# these again.
+/uploads/*
+!/uploads/.gitkeep

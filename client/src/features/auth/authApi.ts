@@ -130,8 +130,6 @@ export const authApi = createApi({
     "GamificationToday",
     "Teachers",
     "Notifications",
-    "Timetables",
-    "TimetableSlots",
     "Attendance",
     "Homework",
     "Gradebook",

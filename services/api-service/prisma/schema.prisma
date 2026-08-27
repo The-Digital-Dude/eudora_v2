@@ -603,7 +603,6 @@ model Batch {
   entitlements     Entitlement[]
   sessions         BatchSession[]
   homeworks        Homework[]
-  makeupRequests   MakeupRequest[]
   gradeBookEntries GradeBookEntry[]
 
   @@index([courseId, status])
@@ -667,7 +666,6 @@ model StudentProfile {
   assessmentAttempts       AssessmentAttempt[]
   assessmentAssignments    AssessmentAssignment[]
   gradeBookEntries         GradeBookEntry[]
-  makeupRequests           MakeupRequest[]
   lessonAttempts           LessonAttempt[]
   streak                   StudentStreak?
   experience               StudentExperience?
@@ -1841,23 +1839,6 @@ model Broadcast {
   updatedAt      DateTime @updatedAt
 
   @@map("broadcasts")
-}
-
-model MakeupRequest {
-  id               String    @id @default(uuid())
-  studentProfileId String
-  batchId    String
-  originalDate     DateTime  @db.Date
-  reason           String?
-  status           String    @default("Awaiting Action") // "Awaiting Action", "Scheduled", "Declined"
-  scheduledDate    DateTime? @db.Date
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  batch    Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
-
-  @@map("makeup_requests")
 }
 
 enum WidgetType {

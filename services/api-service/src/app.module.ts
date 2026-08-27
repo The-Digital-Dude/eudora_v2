@@ -31,7 +31,6 @@ import { EntitlementsModule } from './entitlements/entitlements.module';
 import { BillingModule } from './billing/billing.module';
 import { LeadsModule } from './leads/leads.module';
 import { CommunicationModule } from './communication/communication.module';
-import { MakeupModule } from './makeup/makeup.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { TeacherApplicationsModule } from './teacher-applications/teacher-applications.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -88,7 +87,6 @@ import { AuditModule } from './common/audit/audit.module';
     BillingModule,
     LeadsModule,
     CommunicationModule,
-    MakeupModule,
     TeacherModule,
     TeacherApplicationsModule,
     NotificationsModule,

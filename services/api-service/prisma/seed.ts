@@ -693,19 +693,6 @@ async function main() {
   });
   console.log('✅ Seeded broadcasts');
 
-  // ─── Makeup Requests ──────────────────────────────────────────────────────────
-  console.log('🌱 Seeding makeup requests...');
-  await prisma.makeupRequest.deleteMany();
-  const charlotteP = studentProfiles.find(p => p.firstName === 'Charlotte');
-  const elijahP = studentProfiles.find(p => p.firstName === 'Elijah');
-  const noahP = studentProfiles.find(p => p.firstName === 'Noah');
-
-  if (charlotteP) await prisma.makeupRequest.create({ data: { studentProfileId: charlotteP.id, batchId: dsaClass.id, originalDate: new Date('2026-06-12'), reason: 'Medical Leave', status: 'Awaiting Action' } });
-  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, batchId: dsaClass.id, originalDate: new Date('2026-06-16'), reason: 'Family Event', status: 'Scheduled', scheduledDate: new Date('2026-06-25') } });
-  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, batchId: algClass.id, originalDate: new Date('2026-06-17'), reason: 'Family Event', status: 'Awaiting Action' } });
-  if (noahP) await prisma.makeupRequest.create({ data: { studentProfileId: noahP.id, batchId: webClass.id, originalDate: new Date('2026-06-10'), reason: 'Doctor appointment', status: 'Declined' } });
-  console.log('✅ Seeded makeup requests');
-
   // ─── Notifications ────────────────────────────────────────────────────────────
   console.log('🌱 Seeding notifications...');
   await prisma.notification.deleteMany();

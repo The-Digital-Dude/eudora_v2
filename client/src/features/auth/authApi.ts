@@ -111,7 +111,6 @@ export const authApi = createApi({
     "Batches",
     "BatchSessions",
     "ClassSections",
-    "MakeupRequests",
     "Attempts",
     "Broadcasts",
     "Students",

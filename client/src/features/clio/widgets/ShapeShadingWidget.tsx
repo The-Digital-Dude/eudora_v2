@@ -7,13 +7,13 @@ import React from "react";
  *
  * Built to the contract the server already grades: `SHAPE_SHADING` has a config
  * schema, a generator and a full grader in `services/api-service/src/common/
- * widgets/` — including the contiguity rules below — but no client widget ever
- * existed, so a learner reaching one of these questions got the "coming soon"
- * placeholder. Region ids are `region-<0-based index>` because that is exactly
- * what `widget-grader.ts` parses out of `interactionState.shadedRegionIds`.
+ * widgets/` — including the contiguity rules below. Region ids are
+ * `region-<0-based index>` because that is exactly what `widget-grader.ts`
+ * parses out of `interactionState.shadedRegionIds`.
  *
- * Not yet listed in `WidgetSelector` — wiring it there is a one-line change and
- * belongs with the rest of that work, not with this marketing-page preview.
+ * Wired into `WidgetSelector` and the question editor's config editor as of
+ * the widget-matrix repair (2026-08). This is the same component used there
+ * for the author-facing preview, in `locked` mode.
  */
 export interface ShapeShadingDisplayConfig {
   shape: { kind: "bar" | "polygon"; regions: number };

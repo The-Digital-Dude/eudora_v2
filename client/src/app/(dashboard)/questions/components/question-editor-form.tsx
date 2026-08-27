@@ -104,6 +104,14 @@ export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEdit
       setWidgetConfig({ xRange: [-10, 10], yRange: [-10, 10], gridStep: 1, correctPoints: [], tolerance: 0.1 });
     } else if (type === "GRID_MATCHING") {
       setWidgetConfig({ left: [], right: [], correctPairs: [] });
+    } else if (type === "SHAPE_SHADING") {
+      setWidgetConfig({
+        configVersion: 2,
+        mode: "fixed",
+        shape: { kind: "bar", regions: 4 },
+        targetNumerator: 1,
+        requireContiguous: false,
+      });
     } else if (type === "CODE_PLAYGROUND") {
       setWidgetConfig({ language: "javascript", starterCode: "", tests: [] });
     } else {

@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePreviewWidgetInstanceMutation } from "@/features/assessments/questionsApi";
 import { CoordinatePlotterWidget } from "@/features/clio/widgets/CoordinatePlotterWidget";
+import { ShapeShadingWidget } from "@/features/clio/widgets/ShapeShadingWidget";
 
 // Shared "Generate Preview" control for parameterized widgets — hits the
 // stateless preview endpoint so authors can sanity-check a sample instance
@@ -683,6 +685,118 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                   value={{ points: correctPoints }}
                   onChange={handlePointsChange}
                   locked={false}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      case "SHAPE_SHADING": {
+        const shapeKind: "bar" | "polygon" = value?.shape?.kind ?? "bar";
+        const minRegions = shapeKind === "polygon" ? 3 : 2;
+        const regions: number = value?.shape?.regions ?? (shapeKind === "polygon" ? 3 : 4);
+        const targetNumerator: number = value?.targetNumerator ?? 1;
+        const requireContiguous: boolean = value?.requireContiguous ?? false;
+
+        // The grader compares the submitted shaded-region count to this
+        // field exactly — a target outside 0..regions can never be
+        // satisfied by any answer, so it's stopped here rather than saved
+        // as a silently unanswerable question.
+        const targetOutOfRange = targetNumerator < 0 || targetNumerator > regions;
+
+        const setShapeKind = (kind: "bar" | "polygon") => {
+          const clampedRegions = Math.max(regions, kind === "polygon" ? 3 : 2);
+          onChange({
+            ...value,
+            shape: { kind, regions: clampedRegions },
+            targetNumerator: Math.min(targetNumerator, clampedRegions),
+          });
+        };
+
+        const setRegions = (next: number) => {
+          const clamped = Math.max(minRegions, Math.min(12, next));
+          onChange({
+            ...value,
+            shape: { kind: shapeKind, regions: clamped },
+            targetNumerator: Math.min(targetNumerator, clamped),
+          });
+        };
+
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Shape</Label>
+                <Select value={shapeKind} onValueChange={(val) => setShapeKind(val as "bar" | "polygon")}>
+                  <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="bar">Bar (segments, no wrap)</SelectItem>
+                    <SelectItem value="polygon">Polygon (wedges, wraps)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">
+                  Total Parts ({minRegions}–12)
+                </Label>
+                <Input
+                  type="number"
+                  min={minRegions}
+                  max={12}
+                  value={regions}
+                  onChange={(e) => setRegions(Number(e.target.value))}
+                  className="h-10 rounded-xl text-xs"
+                />
+              </div>
+              <div className="col-span-2 space-y-1.5 border-t border-border pt-3">
+                <Label className="text-xs font-semibold text-muted-foreground">
+                  Parts to Shade (correct answer)
+                </Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={regions}
+                  value={targetNumerator}
+                  onChange={(e) => updateField("targetNumerator", Number(e.target.value))}
+                  className="h-10 rounded-xl text-xs"
+                />
+                {targetOutOfRange && (
+                  <p className="text-[10px] font-semibold text-destructive">
+                    Must be between 0 and {regions} — this shape only has {regions} part
+                    {regions === 1 ? "" : "s"} to shade.
+                  </p>
+                )}
+              </div>
+              <div className="col-span-2 flex h-10 items-center justify-between rounded-xl border border-border bg-muted/30 px-3">
+                <div>
+                  <Label className="text-xs font-semibold text-foreground">Require contiguous parts</Label>
+                  <p className="text-[10px] text-muted-foreground">
+                    Shaded parts must touch. {shapeKind === "polygon" ? "Wedges may wrap around." : "Bar segments don't wrap."}
+                  </p>
+                </div>
+                <Switch
+                  checked={requireContiguous}
+                  onCheckedChange={(checked) => updateField("requireContiguous", checked)}
+                />
+              </div>
+            </div>
+
+            <div className="border-t border-border pt-4 space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground block">Preview</Label>
+              <p className="text-[10px] text-muted-foreground mb-2">
+                What the learner sees. Correctness is judged on how many parts are shaded (and
+                whether they touch, if required) — not on which specific parts, so there is nothing
+                to click here.
+              </p>
+              <div className="flex justify-center bg-muted/50 p-4 rounded-2xl">
+                <ShapeShadingWidget
+                  config={{ shape: { kind: shapeKind, regions }, targetNumerator, requireContiguous }}
+                  value={null}
+                  onChange={() => {}}
+                  locked
                 />
               </div>
             </div>

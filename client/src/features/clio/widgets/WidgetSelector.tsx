@@ -9,6 +9,7 @@ import { CoordinatePlotterWidget } from "./CoordinatePlotterWidget";
 import { DragDropWidget } from "./DragDropWidget";
 import { GridMatchingWidget } from "./GridMatchingWidget";
 import { MCQWidget } from "./MCQWidget";
+import { ShapeShadingWidget } from "./ShapeShadingWidget";
 import { SliderWidget } from "./SliderWidget";
 
 export interface WidgetSelectorProps {
@@ -91,6 +92,17 @@ export function WidgetSelector({
       return (
         <CodePlaygroundWidget
           config={(question.widgetConfig as any) ?? { language: "javascript", starterCode: "", tests: [] }}
+          value={currentState}
+          onChange={(newValue) => onStateChange(newValue)}
+          locked={locked}
+          isCorrect={isCorrect}
+        />
+      );
+
+    case "SHAPE_SHADING":
+      return (
+        <ShapeShadingWidget
+          config={(question.widgetConfig as any) ?? { shape: { kind: "bar", regions: 4 }, targetNumerator: 1 }}
           value={currentState}
           onChange={(newValue) => onStateChange(newValue)}
           locked={locked}

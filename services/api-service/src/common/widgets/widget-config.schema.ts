@@ -80,16 +80,25 @@ export type SliderParameterizedConfig = z.infer<
 // authored field, so numerator/denominator can't drift out of sync with what
 // the shape can actually represent.
 
-export const ShapeShadingFixedConfigSchema = z.object({
-  configVersion: z.literal(2),
-  mode: z.literal('fixed'),
-  shape: z.discriminatedUnion('kind', [
-    z.object({ kind: z.literal('polygon'), regions: z.number().int().min(3).max(12) }),
-    z.object({ kind: z.literal('bar'), regions: z.number().int().min(2).max(12) }),
-  ]),
-  targetNumerator: z.number().int().min(0),
-  requireContiguous: z.boolean().default(false),
-});
+export const ShapeShadingFixedConfigSchema = z
+  .object({
+    configVersion: z.literal(2),
+    mode: z.literal('fixed'),
+    shape: z.discriminatedUnion('kind', [
+      z.object({ kind: z.literal('polygon'), regions: z.number().int().min(3).max(12) }),
+      z.object({ kind: z.literal('bar'), regions: z.number().int().min(2).max(12) }),
+    ]),
+    targetNumerator: z.number().int().min(0),
+    requireContiguous: z.boolean().default(false),
+  })
+  // The grader compares the submitted shaded-region count to targetNumerator
+  // exactly (widget-grader.ts's SHAPE_SHADING case) — a target above the
+  // shape's own region count could never be satisfied by any answer, so it's
+  // rejected here rather than saved as a silently unanswerable question.
+  .refine((data) => data.targetNumerator <= data.shape.regions, {
+    message: 'targetNumerator cannot exceed the shape\'s regions',
+    path: ['targetNumerator'],
+  });
 
 export type ShapeShadingFixedConfig = z.infer<
   typeof ShapeShadingFixedConfigSchema

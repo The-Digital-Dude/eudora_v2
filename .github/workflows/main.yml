@@ -1,12 +1,11 @@
 name: Eudora CI
 
 on:
+  # Every branch, not just main. Feature work is exactly where a broken
+  # build is cheap to fix; catching it only once it reaches main means the
+  # branch it came from has already moved on.
   push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
 
 jobs:
   frontend:
@@ -38,7 +37,6 @@ jobs:
 
       - name: Run lint
         run: pnpm run lint
-        continue-on-error: true
 
       - name: Build client
         run: pnpm run build
@@ -93,15 +91,31 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm run prisma:generate
 
-      - name: Sync database schema
-        run: npx prisma db push --accept-data-loss
+      # `migrate deploy`, not `db push`. db push builds the database straight
+      # from schema.prisma and never executes a migration, so the migration
+      # chain — the thing production actually runs — was never tested here at
+      # all. It had in fact drifted from the schema, undetected, until this
+      # step was changed.
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      # And having run them, assert they produce exactly what schema.prisma
+      # describes. Without this, a migration that is merely *valid SQL* passes
+      # while still leaving the database a different shape from the one every
+      # query is typed against. Exit code 2 means "not empty" — i.e. drift.
+      - name: Check migrations match the schema
+        run: |
+          npx prisma migrate diff \
+            --from-config-datasource \
+            --to-schema ./prisma/schema.prisma \
+            --exit-code \
+          && echo "Schema matches the migration chain."
 
       - name: Run seed database
         run: npx prisma db seed
 
       - name: Run lint
         run: pnpm run lint
-        continue-on-error: true
 
       - name: Build service
         run: pnpm run build
@@ -119,9 +133,45 @@ jobs:
           STRIPE_WEBHOOK_SECRET: whsec_REPLACE_WITH_YOUR_WEBHOOK_SECRET
           GOOGLE_CLIENT_ID: your-google-client-id-placeholder.apps.googleusercontent.com
 
+  # Mobile had no job at all, so nothing stopped a change that broke the app
+  # from landing. Typecheck is the whole of it: the project has no tests and
+  # no lint script, and `tsc --noEmit` is the only automated statement anyone
+  # can currently make about it. It catches the class of breakage that
+  # actually happens here — the hand-written `src/core/contracts` drifting
+  # from the API it describes.
+  mobile:
+    name: Mobile CI
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          cache-dependency-path: mobile/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
   deploy:
     name: Deploy to GCP
-    needs: [frontend, backend]
+    needs: [frontend, backend, mobile]
     # GCP deploy is paused while the app runs on Railway — flip on by setting
     # the GCP_DEPLOY_ENABLED repo variable to "true" once GCP billing/secrets are wired back up.
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.GCP_DEPLOY_ENABLED == 'true'

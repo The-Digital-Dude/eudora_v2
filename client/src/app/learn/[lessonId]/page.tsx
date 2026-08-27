@@ -21,7 +21,6 @@ import { GamificationHUD } from "@/features/clio/GamificationHUD";
 import { LessonCompleteModal } from "@/features/clio/LessonCompleteModal";
 import {
   jumpToCard,
-  markCardStart,
   nextCard,
   prevCard,
   resetLesson,

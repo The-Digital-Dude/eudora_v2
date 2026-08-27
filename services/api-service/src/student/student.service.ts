@@ -128,7 +128,6 @@ export class StudentService {
         placements: { include: { classSection: true, academicYear: true } },
         enrollments: { include: { batch: true } },
         guardians: { include: { guardianProfile: true } },
-        families: { include: { family: true } },
       },
     });
     if (!profile) {

@@ -26,7 +26,6 @@ import { Prisma, PrismaClient } from '@prisma/client';
  */
 export const SOFT_DELETE_MODELS: ReadonlySet<string> = new Set([
   'User',
-  'Campus',
   'Program',
   'AcademicYear',
   'ClassSection',
@@ -34,16 +33,11 @@ export const SOFT_DELETE_MODELS: ReadonlySet<string> = new Set([
   'Batch',
   'StudentProfile',
   'GuardianProfile',
-  'Family',
   'TeacherProfile',
-  'Invoice',
-  'Payment',
   'Assessment',
   'Question',
   'Lesson',
   'GradeBookEntry',
-  'FamilyInvoice',
-  'FamilyPayment',
 ]);
 
 /** Model delegate property names (camelCase) that must route through the extension. */

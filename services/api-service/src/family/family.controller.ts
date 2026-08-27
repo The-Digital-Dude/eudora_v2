@@ -17,11 +17,6 @@ import {
   UpdateGuardianProfileDto,
 } from './dto/guardian.dto';
 import {
-  CreateFamilyDto,
-  UpdateFamilyDto,
-  AddFamilyMemberDto,
-} from './dto/family.dto';
-import {
   CreateRelationshipDto,
   UpdateRelationshipDto,
 } from './dto/relationship.dto';
@@ -110,64 +105,6 @@ export class FamilyController {
   @Roles('ADMIN', 'SUPER_ADMIN')
   async deleteGuardianProfile(@Param('id') id: string) {
     return this.familyService.deleteGuardianProfile(id);
-  }
-
-  // --- Family Endpoints ---
-
-  @Post('families')
-  @Roles('ADMIN', 'SUPER_ADMIN')
-  async createFamily(@Body() dto: CreateFamilyDto) {
-    return this.familyService.createFamily(dto);
-  }
-
-  @Get('families')
-  async findAllFamilies(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.familyService.findAllFamilies(pageNum, limitNum);
-  }
-
-  @Get('families/:id')
-  async findFamilyById(@Param('id') id: string) {
-    return this.familyService.findFamilyById(id);
-  }
-
-  @Patch('families/:id')
-  @Roles('ADMIN', 'SUPER_ADMIN')
-  async updateFamily(@Param('id') id: string, @Body() dto: UpdateFamilyDto) {
-    return this.familyService.updateFamily(id, dto);
-  }
-
-  @Delete('families/:id')
-  @Roles('ADMIN', 'SUPER_ADMIN')
-  async deleteFamily(@Param('id') id: string) {
-    return this.familyService.deleteFamily(id);
-  }
-
-  @Post('families/:id/members')
-  @Roles('ADMIN', 'SUPER_ADMIN')
-  async addMemberToFamily(
-    @Param('id') familyId: string,
-    @Body() dto: AddFamilyMemberDto,
-  ) {
-    return this.familyService.addMemberToFamily(familyId, dto);
-  }
-
-  @Delete('families/:id/members')
-  @Roles('ADMIN', 'SUPER_ADMIN')
-  async removeMemberFromFamily(
-    @Param('id') familyId: string,
-    @Query('studentProfileId') studentProfileId?: string,
-    @Query('guardianProfileId') guardianProfileId?: string,
-  ) {
-    return this.familyService.removeMemberFromFamily(
-      familyId,
-      studentProfileId,
-      guardianProfileId,
-    );
   }
 
   // --- Guardian Student Relationship Endpoints ---

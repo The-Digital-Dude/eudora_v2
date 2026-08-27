@@ -188,14 +188,4 @@ export class ParentController {
   ) {
     return this.parentService.createChild(user.id, dto);
   }
-
-  @Get('billing/invoices')
-  async getInvoices(@CurrentUser() user: CurrentUserDto) {
-    return this.parentService.getInvoices(user.id);
-  }
-
-  @Get('billing/payments')
-  async getPayments(@CurrentUser() user: CurrentUserDto) {
-    return this.parentService.getPayments(user.id);
-  }
 }

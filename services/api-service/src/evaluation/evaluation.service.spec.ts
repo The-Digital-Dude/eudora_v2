@@ -11,7 +11,6 @@ describe('EvaluationService', () => {
     getLinkedStudentIds: jest.fn(),
     assertCanAccessStudent: jest.fn(),
     assertCanAccessStudentRecord: jest.fn(),
-    getGuardianFamilyId: jest.fn(),
   };
 
   const mockPrismaService: any = {

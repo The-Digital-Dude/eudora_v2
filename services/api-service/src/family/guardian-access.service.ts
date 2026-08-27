@@ -62,19 +62,4 @@ export class GuardianAccessService {
     }
     await this.assertCanAccessStudent(user.id, studentProfileId);
   }
-
-  async getGuardianFamilyId(userId: string): Promise<string | null> {
-    const guardianProfile = await this.prisma.guardianProfile.findUnique({
-      where: { userId },
-      include: {
-        families: true,
-      },
-    });
-
-    if (!guardianProfile || guardianProfile.families.length === 0) {
-      return null;
-    }
-
-    return guardianProfile.families[0].familyId;
-  }
 }

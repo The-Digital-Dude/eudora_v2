@@ -21,31 +21,6 @@ export interface ChildRollup {
   } | null;
 }
 
-export interface FamilyInvoice {
-  id: string;
-  familyId: string;
-  amount: number;
-  currency: string;
-  description: string | null;
-  issueDate: string;
-  dueDate: string;
-  status: "PENDING" | "PAID" | "OVERDUE";
-  createdAt: string;
-}
-
-export interface FamilyPayment {
-  id: string;
-  familyId: string;
-  invoiceId: string | null;
-  amount: number;
-  currency: string;
-  paymentDate: string;
-  method: string;
-  reference: string | null;
-  notes: string | null;
-  createdAt: string;
-}
-
 export interface ChildLearning {
   lessonsCompleted: number;
   currentStreak: number;
@@ -180,15 +155,6 @@ export const parentApi = authApi.injectEndpoints({
       query: (studentProfileId) => `/parent/children/${studentProfileId}/learning`,
       providesTags: (result, error, id) => [{ type: "ParentPortal", id: `LEARNING-${id}` }],
     }),
-    getInvoices: builder.query<FamilyInvoice[], void>({
-      query: () => "/parent/billing/invoices",
-      providesTags: ["ParentPortal"],
-    }),
-    getPayments: builder.query<FamilyPayment[], void>({
-      query: () => "/parent/billing/payments",
-      providesTags: ["ParentPortal"],
-    }),
-
     getAvailableCourses: builder.query<
       AvailableCoursesPage,
       { studentProfileId: string; search?: string; page?: number; limit?: number }
@@ -283,8 +249,6 @@ export const {
   useGetChildHomeworkQuery,
   useGetChildGradesQuery,
   useGetChildLearningQuery,
-  useGetInvoicesQuery,
-  useGetPaymentsQuery,
   useGetAvailableCoursesQuery,
   useGetRecommendedCoursesQuery,
   useGetCourseAssignmentsQuery,

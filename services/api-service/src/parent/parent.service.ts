@@ -8,7 +8,6 @@ import {
 import { randomUUID } from 'crypto';
 import type { Gender, GradeBand } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { GuardianAccessService } from '../family/guardian-access.service';
 import { CatalogService } from '../catalog/catalog.service';
 import { StudentService } from '../student/student.service';
 
@@ -45,7 +44,6 @@ const ASSIGNED_COURSE_INCLUDE = {
 export class ParentService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly guardianAccessService: GuardianAccessService,
     private readonly catalogService: CatalogService,
     private readonly studentService: StudentService,
   ) {}
@@ -310,36 +308,6 @@ export class ParentService {
         status: m.status,
       })),
     };
-  }
-
-  async getInvoices(userId: string) {
-    const familyId =
-      await this.guardianAccessService.getGuardianFamilyId(userId);
-    if (!familyId) {
-      return [];
-    }
-
-    const invoices = await this.prisma.familyInvoice.findMany({
-      where: { familyId },
-      orderBy: { dueDate: 'desc' },
-    });
-
-    return invoices;
-  }
-
-  async getPayments(userId: string) {
-    const familyId =
-      await this.guardianAccessService.getGuardianFamilyId(userId);
-    if (!familyId) {
-      return [];
-    }
-
-    const payments = await this.prisma.familyPayment.findMany({
-      where: { familyId },
-      orderBy: { paymentDate: 'desc' },
-    });
-
-    return payments;
   }
 
   // --- Learning plan (catalog course assignment) ---------------------------

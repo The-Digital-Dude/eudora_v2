@@ -820,29 +820,6 @@ export interface ChildHomeworkItem {
   } | null;
 }
 
-/** `GET /parent/billing/invoices` — `amount` is a Prisma Decimal, serialized as a string. */
-export interface FamilyInvoice {
-  id: string;
-  amount: string;
-  currency: string;
-  description: string | null;
-  issueDate: string;
-  dueDate: string;
-  status: 'PENDING' | 'PAID' | 'OVERDUE' | string;
-}
-
-/** `GET /parent/billing/payments` */
-export interface FamilyPayment {
-  id: string;
-  invoiceId: string | null;
-  amount: string;
-  currency: string;
-  paymentDate: string;
-  method: string;
-  reference: string | null;
-  notes: string | null;
-}
-
 export interface CreateGuardianProfilePayload {
   fullName: string;
   email?: string;

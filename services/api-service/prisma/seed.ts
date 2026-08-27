@@ -657,20 +657,6 @@ async function main() {
     if (!existingRel) {
       await prisma.guardianStudentRelationship.create({ data: { guardianProfileId: guardian1Profile.id, studentProfileId: charlotteProfile.id, relationshipType: 'FATHER', isPrimary: true, hasFinancialResponsibility: true, hasAcademicAccess: true, hasEmergencyContact: true } });
     }
-
-    const existingFamily = await prisma.family.findFirst({ where: { householdName: 'Harris Family' } });
-    const family = existingFamily ?? await prisma.family.create({ data: { householdName: 'Harris Family', status: 'ACTIVE' } });
-
-    const existingFS = await prisma.familyStudent.findFirst({ where: { familyId: family.id, studentProfileId: charlotteProfile.id } });
-    if (!existingFS) await prisma.familyStudent.create({ data: { familyId: family.id, studentProfileId: charlotteProfile.id } });
-
-    const existingFG = await prisma.familyGuardian.findFirst({ where: { familyId: family.id, guardianProfileId: guardian1Profile.id } });
-    if (!existingFG) await prisma.familyGuardian.create({ data: { familyId: family.id, guardianProfileId: guardian1Profile.id } });
-
-    const existingInv = await prisma.familyInvoice.findFirst({ where: { familyId: family.id } });
-    if (!existingInv) {
-      await prisma.familyInvoice.create({ data: { familyId: family.id, amount: 1500, currency: 'USD', description: 'Fall Semester 2026 Tuition', issueDate: new Date('2026-08-01'), dueDate: new Date('2026-09-01'), status: 'PAID' } });
-    }
   }
   console.log('✅ Seeded guardians & families');
 
@@ -988,77 +974,6 @@ async function main() {
     if (!existRel) await prisma.guardianStudentRelationship.create({ data: { guardianProfileId: guardian4Profile.id, studentProfileId: lucasProfile.id, relationshipType: 'MOTHER', isPrimary: true, hasFinancialResponsibility: true, hasAcademicAccess: true, hasEmergencyContact: false } });
   }
   console.log('✅ Seeded additional guardians');
-
-  // ─── Families ────────────────────────────────────────────────────────────────
-  console.log('🌱 Seeding families...');
-  // Watson family
-  const watsonFamily = await prisma.family.findFirst({ where: { householdName: 'Watson Family' } });
-  const watsonFam = watsonFamily ?? await prisma.family.create({ data: { householdName: 'Watson Family', status: 'ACTIVE' } });
-  if (ariaProfile) {
-    const existFS = await prisma.familyStudent.findFirst({ where: { familyId: watsonFam.id, studentProfileId: ariaProfile.id } });
-    if (!existFS) await prisma.familyStudent.create({ data: { familyId: watsonFam.id, studentProfileId: ariaProfile.id } });
-  }
-  const existFG2 = await prisma.familyGuardian.findFirst({ where: { familyId: watsonFam.id, guardianProfileId: guardian2Profile.id } });
-  if (!existFG2) await prisma.familyGuardian.create({ data: { familyId: watsonFam.id, guardianProfileId: guardian2Profile.id } });
-
-  // Johnson family
-  const johnsonFamily = await prisma.family.findFirst({ where: { householdName: 'Johnson Family' } });
-  const johnsonFam = johnsonFamily ?? await prisma.family.create({ data: { householdName: 'Johnson Family', status: 'ACTIVE' } });
-  if (noahProfile) {
-    const existFS = await prisma.familyStudent.findFirst({ where: { familyId: johnsonFam.id, studentProfileId: noahProfile.id } });
-    if (!existFS) await prisma.familyStudent.create({ data: { familyId: johnsonFam.id, studentProfileId: noahProfile.id } });
-  }
-  const existFG3 = await prisma.familyGuardian.findFirst({ where: { familyId: johnsonFam.id, guardianProfileId: guardian3Profile.id } });
-  if (!existFG3) await prisma.familyGuardian.create({ data: { familyId: johnsonFam.id, guardianProfileId: guardian3Profile.id } });
-
-  // Brooks family
-  const brooksFamily = await prisma.family.findFirst({ where: { householdName: 'Brooks Family' } });
-  const brooksFam = brooksFamily ?? await prisma.family.create({ data: { householdName: 'Brooks Family', status: 'ACTIVE' } });
-  if (lucasProfile) {
-    const existFS = await prisma.familyStudent.findFirst({ where: { familyId: brooksFam.id, studentProfileId: lucasProfile.id } });
-    if (!existFS) await prisma.familyStudent.create({ data: { familyId: brooksFam.id, studentProfileId: lucasProfile.id } });
-  }
-  const existFG4 = await prisma.familyGuardian.findFirst({ where: { familyId: brooksFam.id, guardianProfileId: guardian4Profile.id } });
-  if (!existFG4) await prisma.familyGuardian.create({ data: { familyId: brooksFam.id, guardianProfileId: guardian4Profile.id } });
-  console.log('✅ Seeded families');
-
-  // ─── Family Invoices & Payments ──────────────────────────────────────────────
-  console.log('🌱 Seeding family invoices & payments...');
-  const familyInvoiceData = [
-    { fam: watsonFam, desc: 'Fall Semester 2026 Tuition', amount: 1500, issue: '2026-08-01', due: '2026-09-01', status: 'OVERDUE', paidAmt: null as number | null },
-    { fam: johnsonFam, desc: 'Fall Semester 2026 Tuition', amount: 1500, issue: '2026-08-01', due: '2026-09-01', status: 'PAID', paidAmt: 1500 },
-    { fam: brooksFam, desc: 'Fall Semester 2026 Tuition', amount: 1500, issue: '2026-08-01', due: '2026-09-01', status: 'PAID', paidAmt: 1500 },
-    { fam: brooksFam, desc: 'Uniform & Supply Fee', amount: 120, issue: '2026-08-15', due: '2026-09-15', status: 'PAID', paidAmt: 120 },
-    { fam: watsonFam, desc: 'Library & Lab Fee', amount: 80, issue: '2026-08-15', due: '2026-09-15', status: 'PENDING', paidAmt: null },
-  ];
-
-  // Harris family — add Q2 invoice (not yet paid)
-  const harrisFamily = await prisma.family.findFirst({ where: { householdName: 'Harris Family' } });
-  if (harrisFamily) {
-    const existH = await prisma.familyInvoice.findFirst({ where: { familyId: harrisFamily.id } });
-    if (existH) {
-      const existPayH = await prisma.familyPayment.findFirst({ where: { familyId: harrisFamily.id } });
-      if (!existPayH) {
-        await prisma.familyPayment.create({ data: { familyId: harrisFamily.id, invoiceId: existH.id, amount: 1500, currency: 'USD', paymentDate: new Date('2026-08-28'), method: 'BANK_TRANSFER', reference: 'TXN-2026-H-001', notes: 'Fall 2026 tuition.' } });
-      }
-    }
-    const existQ2 = await prisma.familyInvoice.findFirst({ where: { familyId: harrisFamily.id, description: 'Spring Semester 2027 Tuition' } });
-    if (!existQ2) {
-      await prisma.familyInvoice.create({ data: { familyId: harrisFamily.id, amount: 1500, currency: 'USD', description: 'Spring Semester 2027 Tuition', issueDate: new Date('2026-12-01'), dueDate: new Date('2027-01-10'), status: 'PENDING' } });
-    }
-  }
-
-  for (const { fam, desc, amount, issue, due, status, paidAmt } of familyInvoiceData) {
-    const existInv = await prisma.familyInvoice.findFirst({ where: { familyId: fam.id, description: desc } });
-    const inv = existInv ?? await prisma.familyInvoice.create({ data: { familyId: fam.id, amount, currency: 'USD', description: desc, issueDate: new Date(issue), dueDate: new Date(due), status } });
-    if (paidAmt && status === 'PAID') {
-      const existPay = await prisma.familyPayment.findFirst({ where: { familyId: fam.id, invoiceId: inv.id } });
-      if (!existPay) {
-        await prisma.familyPayment.create({ data: { familyId: fam.id, invoiceId: inv.id, amount: paidAmt, currency: 'USD', paymentDate: new Date('2026-08-28'), method: 'BANK_TRANSFER', reference: `TXN-${fam.id.slice(0, 8)}`, notes: 'Paid via bank transfer.' } });
-      }
-    }
-  }
-  console.log('✅ Seeded family invoices & payments');
 
   // Teacher shortcuts used below for audit-log and notification seeding.
   const mitchellU = teacherUsers['EMP-MITCHELL'];
@@ -2867,22 +2782,6 @@ async function main() {
       if (!existingRel) {
         await prisma.guardianStudentRelationship.create({ data: { guardianProfileId: charlotteGuardianProfile.id, studentProfileId: ariaProfile.id, relationshipType: 'OTHER', isPrimary: false, hasFinancialResponsibility: false, hasAcademicAccess: true, hasEmergencyContact: false } });
       }
-    }
-
-    const existingCharlotteFamily = await prisma.family.findFirst({ where: { householdName: 'Harris Family (Test Guardian)' } });
-    const charlotteFamily = existingCharlotteFamily ?? await prisma.family.create({ data: { householdName: 'Harris Family (Test Guardian)', status: 'ACTIVE' } });
-    if (ariaProfile) {
-      const existingFS = await prisma.familyStudent.findFirst({ where: { familyId: charlotteFamily.id, studentProfileId: ariaProfile.id } });
-      if (!existingFS) await prisma.familyStudent.create({ data: { familyId: charlotteFamily.id, studentProfileId: ariaProfile.id } });
-    }
-    const existingFG = await prisma.familyGuardian.findFirst({ where: { familyId: charlotteFamily.id, guardianProfileId: charlotteGuardianProfile.id } });
-    if (!existingFG) await prisma.familyGuardian.create({ data: { familyId: charlotteFamily.id, guardianProfileId: charlotteGuardianProfile.id } });
-
-    const existingCharlotteInv = await prisma.familyInvoice.findFirst({ where: { familyId: charlotteFamily.id } });
-    const charlotteInvoice = existingCharlotteInv ?? await prisma.familyInvoice.create({ data: { familyId: charlotteFamily.id, amount: 800, currency: 'USD', description: 'Fall Semester 2026 Tuition (Test)', issueDate: new Date('2026-08-01'), dueDate: new Date('2026-09-01'), status: 'PAID' } });
-    const existingCharlottePay = await prisma.familyPayment.findFirst({ where: { familyId: charlotteFamily.id } });
-    if (!existingCharlottePay) {
-      await prisma.familyPayment.create({ data: { familyId: charlotteFamily.id, invoiceId: charlotteInvoice.id, amount: 800, currency: 'USD', paymentDate: new Date('2026-08-28'), method: 'BANK_TRANSFER', reference: 'TXN-TEST-CHARLOTTE-001', notes: 'Test guardian-view payment.' } });
     }
   }
 

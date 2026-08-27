@@ -191,11 +191,6 @@ enum RelationshipType {
   OTHER
 }
 
-enum FamilyStatus {
-  ACTIVE
-  INACTIVE
-}
-
 enum Gender {
   MALE
   FEMALE
@@ -664,7 +659,6 @@ model StudentProfile {
   placements               StudentClassPlacement[]
   enrollments              StudentCourseEnrollment[]
   guardians                GuardianStudentRelationship[]
-  families                 FamilyStudent[]
   dailyAttendance          DailyAttendance[]
   courseAttendance         BatchAttendance[]
   homeworkSubmissions      HomeworkSubmission[]
@@ -736,7 +730,6 @@ model GuardianProfile {
 
   user     User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
   students GuardianStudentRelationship[]
-  families FamilyGuardian[]
 
   @@map("guardian_profiles")
 }
@@ -758,47 +751,6 @@ model GuardianStudentRelationship {
 
   @@unique([guardianProfileId, studentProfileId])
   @@map("guardian_student_relationships")
-}
-
-model Family {
-  id            String       @id @default(uuid())
-  householdName String
-  status        FamilyStatus @default(ACTIVE)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  deletedAt     DateTime?
-  deletedById   String?
-
-  students  FamilyStudent[]
-  guardians FamilyGuardian[]
-  invoices  FamilyInvoice[]
-  payments  FamilyPayment[]
-
-  @@map("families")
-}
-
-model FamilyStudent {
-  familyId         String
-  studentProfileId String
-  createdAt        DateTime @default(now())
-
-  family         Family         @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-
-  @@id([familyId, studentProfileId])
-  @@map("family_students")
-}
-
-model FamilyGuardian {
-  familyId          String
-  guardianProfileId String
-  createdAt         DateTime @default(now())
-
-  family          Family          @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  guardianProfile GuardianProfile @relation(fields: [guardianProfileId], references: [id], onDelete: Cascade)
-
-  @@id([familyId, guardianProfileId])
-  @@map("family_guardians")
 }
 
 // ─── Teacher ────────────────────────────────────────────────────────────────
@@ -2164,44 +2116,4 @@ model GradeBookEntry {
   @@index([batchId, termId])
   @@index([studentProfileId, termId])
   @@map("gradebook_entries")
-}
-
-model FamilyInvoice {
-  id          String    @id @default(uuid())
-  familyId    String
-  amount      Decimal   @db.Decimal(10, 2)
-  currency    String    @default("USD")
-  description String? // "Term 1 Tuition", "Uniform Fee", etc.
-  issueDate   DateTime
-  dueDate     DateTime
-  status      String    @default("PENDING") // PENDING, PAID, OVERDUE
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  deletedById String?
-
-  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
-
-  @@index([familyId, dueDate])
-  @@map("family_invoices")
-}
-
-model FamilyPayment {
-  id          String    @id @default(uuid())
-  familyId    String
-  invoiceId   String? // optional: which invoice this paid off
-  amount      Decimal   @db.Decimal(10, 2)
-  currency    String    @default("USD")
-  paymentDate DateTime
-  method      String // "BANK_TRANSFER", "CASH", "CHECK", "MANUAL"
-  reference   String? // receipt/transaction id
-  notes       String?
-  createdAt   DateTime  @default(now())
-  deletedAt   DateTime?
-  deletedById String?
-
-  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
-
-  @@index([familyId, paymentDate])
-  @@map("family_payments")
 }

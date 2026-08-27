@@ -79,10 +79,7 @@ export function createScopingExtension(base: PrismaClient) {
             return query(a);
           }
 
-          if (
-            operation === 'findUnique' ||
-            operation === 'findUniqueOrThrow'
-          ) {
+          if (operation === 'findUnique' || operation === 'findUniqueOrThrow') {
             const includeArchived = a.includeArchived === true;
             delete a.includeArchived;
             if (includeArchived) {

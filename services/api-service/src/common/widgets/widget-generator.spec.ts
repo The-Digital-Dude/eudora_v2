@@ -112,7 +112,12 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
         widgetConfig: { min: 0, max: 10, step: 1, correctValue: 5 },
       });
       const result = generateWidgetInstance(question, 1);
-      expect(result.displayConfig).toEqual({ min: 0, max: 10, step: 1, unit: undefined });
+      expect(result.displayConfig).toEqual({
+        min: 0,
+        max: 10,
+        step: 1,
+        unit: undefined,
+      });
       expect(result.displayConfig).not.toHaveProperty('correctValue');
     });
   });
@@ -132,7 +137,10 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
     });
 
     it('defaults to an empty answer key when widgetConfig is null', () => {
-      const question = baseQuestion({ widgetType: 'COORDINATE_PLOTTER', widgetConfig: null });
+      const question = baseQuestion({
+        widgetType: 'COORDINATE_PLOTTER',
+        widgetConfig: null,
+      });
       const result = generateWidgetInstance(question, 1);
       expect(result.resolvedAnswer).toEqual({
         widgetType: 'COORDINATE_PLOTTER',
@@ -292,9 +300,9 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
         labels: ['A', 'B'],
         targets: [{ id: 't1', placeholder: '', label: undefined }],
       });
-      expect((result.displayConfig as { targets: unknown[] }).targets[0]).not.toHaveProperty(
-        'correctLabel',
-      );
+      expect(
+        (result.displayConfig as { targets: unknown[] }).targets[0],
+      ).not.toHaveProperty('correctLabel');
     });
   });
 
@@ -362,7 +370,12 @@ describe('generateWidgetInstance — v2 configs (already correct; the pattern S3
       },
     });
     const result = generateWidgetInstance(question, 1);
-    expect(result.displayConfig).toEqual({ min: 0, max: 100, step: 1, unit: '%' });
+    expect(result.displayConfig).toEqual({
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: '%',
+    });
     expect(result.resolvedAnswer).toEqual({
       widgetType: 'SLIDER_MANIPULATIVE',
       correctValue: 42,
@@ -441,7 +454,9 @@ describe('generateWidgetInstance — v2 configs (already correct; the pattern S3
     // The prompt interpolates only `given` (a, b) and `derived` (c) — the
     // secret `x` itself never reaches the template, which is the whole
     // point of the given/secret/derived split.
-    expect(result.displayConfig).toEqual({ prompt: 'Solve: 2x + 3 = 13. What is x?' });
+    expect(result.displayConfig).toEqual({
+      prompt: 'Solve: 2x + 3 = 13. What is x?',
+    });
     const options = result.options!;
     expect(options).toHaveLength(2);
     const correctOption = options.find((o) => o.isCorrect);

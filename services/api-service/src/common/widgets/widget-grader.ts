@@ -32,7 +32,8 @@ export function gradeWidgetSubmission(
   switch (resolvedAnswer.widgetType) {
     case 'STANDARD_MCQ':
       return {
-        isCorrect: submission.selectedOptionId === resolvedAnswer.correctOptionId,
+        isCorrect:
+          submission.selectedOptionId === resolvedAnswer.correctOptionId,
       };
 
     case 'SLIDER_MANIPULATIVE': {
@@ -43,7 +44,8 @@ export function gradeWidgetSubmission(
       }
       return {
         isCorrect:
-          Math.abs(inputVal - resolvedAnswer.correctValue) <= resolvedAnswer.tolerance,
+          Math.abs(inputVal - resolvedAnswer.correctValue) <=
+          resolvedAnswer.tolerance,
         correctReveal: { correctValue: resolvedAnswer.correctValue },
       };
     }
@@ -59,7 +61,9 @@ export function gradeWidgetSubmission(
         return { isCorrect: false, correctReveal };
       }
       const allMatched = correctPoints.every((cp) =>
-        studentPoints.some((sp) => Math.hypot(cp.x - sp.x, cp.y - sp.y) <= tolerance),
+        studentPoints.some(
+          (sp) => Math.hypot(cp.x - sp.x, cp.y - sp.y) <= tolerance,
+        ),
       );
       return { isCorrect: allMatched, correctReveal };
     }
@@ -75,7 +79,8 @@ export function gradeWidgetSubmission(
       }
       const allMatched = correctPairs.every(([left, right]) =>
         studentPairs.some(
-          ([sl, sr]) => (sl === left && sr === right) || (sl === right && sr === left),
+          ([sl, sr]) =>
+            (sl === left && sr === right) || (sl === right && sr === left),
         ),
       );
       return { isCorrect: allMatched, correctReveal };
@@ -96,7 +101,8 @@ export function gradeWidgetSubmission(
 
     case 'SHAPE_SHADING': {
       const shadedIds = submission.interactionState?.shadedRegionIds ?? [];
-      const { targetNumerator, totalRegions, shapeKind, requireContiguous } = resolvedAnswer;
+      const { targetNumerator, totalRegions, shapeKind, requireContiguous } =
+        resolvedAnswer;
 
       if (shadedIds.length !== targetNumerator) {
         return { isCorrect: false };

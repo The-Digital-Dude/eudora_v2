@@ -158,10 +158,7 @@ export class ParentController {
     @Param('studentProfileId') studentProfileId: string,
     @Body() dto: CreateClassEnrollmentDto,
   ) {
-    return this.parentService.enrollInClass(
-      studentProfileId,
-      dto.batchId,
-    );
+    return this.parentService.enrollInClass(studentProfileId, dto.batchId);
   }
 
   @Delete('children/:studentProfileId/class-enrollments/:enrollmentId')

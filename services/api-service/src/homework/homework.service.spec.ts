@@ -143,19 +143,27 @@ describe('HomeworkService', () => {
   describe('submitHomework', () => {
     it('should throw BadRequestException if submit text content and attachments are both missing', async () => {
       await expect(
-        service.submitHomework('student-1', {
-          homeworkId: 'hw-1',
-        }, ACTOR),
+        service.submitHomework(
+          'student-1',
+          {
+            homeworkId: 'hw-1',
+          },
+          ACTOR,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException if homework does not exist', async () => {
       mockPrismaService.homework.findUnique.mockResolvedValue(null);
       await expect(
-        service.submitHomework('student-1', {
-          homeworkId: 'non-existent',
-          content: 'my solution',
-        }, ACTOR),
+        service.submitHomework(
+          'student-1',
+          {
+            homeworkId: 'non-existent',
+            content: 'my solution',
+          },
+          ACTOR,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -169,10 +177,14 @@ describe('HomeworkService', () => {
       );
 
       await expect(
-        service.submitHomework('student-1', {
-          homeworkId: 'hw-1',
-          content: 'my solution',
-        }, ACTOR),
+        service.submitHomework(
+          'student-1',
+          {
+            homeworkId: 'hw-1',
+            content: 'my solution',
+          },
+          ACTOR,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -198,10 +210,14 @@ describe('HomeworkService', () => {
         attachments: [],
       });
 
-      const result = await service.submitHomework('student-1', {
-        homeworkId: 'hw-1',
-        content: 'my solution',
-      }, ACTOR);
+      const result = await service.submitHomework(
+        'student-1',
+        {
+          homeworkId: 'hw-1',
+          content: 'my solution',
+        },
+        ACTOR,
+      );
 
       expect(result.status).toEqual(SubmissionStatus.SUBMITTED);
       expect(mockPrismaService.homeworkSubmission.upsert).toHaveBeenCalled();
@@ -229,10 +245,14 @@ describe('HomeworkService', () => {
         attachments: [],
       });
 
-      const result = await service.submitHomework('student-1', {
-        homeworkId: 'hw-1',
-        content: 'my solution',
-      }, ACTOR);
+      const result = await service.submitHomework(
+        'student-1',
+        {
+          homeworkId: 'hw-1',
+          content: 'my solution',
+        },
+        ACTOR,
+      );
 
       expect(result.status).toEqual(SubmissionStatus.LATE);
     });

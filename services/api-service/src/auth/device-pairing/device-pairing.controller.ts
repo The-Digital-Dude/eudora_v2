@@ -1,4 +1,11 @@
-import { Controller, Post, Body, Req, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { DevicePairingService } from './device-pairing.service';
 import { ApproveDevicePairingDto } from './dto/approve-device-pairing.dto';
 import { PollDevicePairingDto } from './dto/poll-device-pairing.dto';

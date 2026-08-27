@@ -11,14 +11,21 @@ const exprParser = new Parser();
 
 export type ResolvedAnswer =
   | { widgetType: 'STANDARD_MCQ'; correctOptionId: string }
-  | { widgetType: 'SLIDER_MANIPULATIVE'; correctValue: number; tolerance: number }
+  | {
+      widgetType: 'SLIDER_MANIPULATIVE';
+      correctValue: number;
+      tolerance: number;
+    }
   | {
       widgetType: 'COORDINATE_PLOTTER';
       correctPoints: { x: number; y: number }[];
       tolerance: number;
     }
   | { widgetType: 'GRID_MATCHING'; correctPairs: [string, string][] }
-  | { widgetType: 'DRAG_AND_DROP_LABELS'; correctPlacements: Record<string, string> }
+  | {
+      widgetType: 'DRAG_AND_DROP_LABELS';
+      correctPlacements: Record<string, string>;
+    }
   | {
       widgetType: 'SHAPE_SHADING';
       targetNumerator: number;
@@ -26,7 +33,11 @@ export type ResolvedAnswer =
       shapeKind: 'polygon' | 'bar';
       requireContiguous: boolean;
     }
-  | { widgetType: 'NUMERIC_OR_TEXT'; correctAnswer: string | null; isNumeric: boolean }
+  | {
+      widgetType: 'NUMERIC_OR_TEXT';
+      correctAnswer: string | null;
+      isNumeric: boolean;
+    }
   | { widgetType: 'UNSUPPORTED' };
 
 export interface GeneratedOption {
@@ -62,7 +73,10 @@ export function generateWidgetInstance(
   const parsed = parseWidgetConfig(question.widgetType, question.widgetConfig);
 
   if (parsed.version === 2 && 'config' in parsed) {
-    if (parsed.widgetType === 'STANDARD_MCQ' && parsed.mode === 'parameterized') {
+    if (
+      parsed.widgetType === 'STANDARD_MCQ' &&
+      parsed.mode === 'parameterized'
+    ) {
       return generateMcqInstance(parsed.config, seed);
     }
 
@@ -99,7 +113,9 @@ export function generateWidgetInstance(
 // `fixed` branch above. The target fraction is inherently visible to the
 // student (it's the instruction text itself, e.g. "Color 1/2") — unlike
 // Slider's `correctValue`, there's nothing to keep secret pre-submission.
-function generateShapeShadingInstance(config: ShapeShadingFixedConfig): GeneratedInstance {
+function generateShapeShadingInstance(
+  config: ShapeShadingFixedConfig,
+): GeneratedInstance {
   return {
     displayConfig: {
       shape: config.shape,
@@ -185,10 +201,19 @@ function generateSliderInstance(
 ): GeneratedInstance {
   const rng = mulberry32(seed);
   const { given, hidden } = config.params;
-  const correctValue = randomInt(rng, hidden.correctValue.min, hidden.correctValue.max);
+  const correctValue = randomInt(
+    rng,
+    hidden.correctValue.min,
+    hidden.correctValue.max,
+  );
 
   return {
-    displayConfig: { min: given.min, max: given.max, step: given.step, unit: given.unit },
+    displayConfig: {
+      min: given.min,
+      max: given.max,
+      step: given.step,
+      unit: given.unit,
+    },
     resolvedAnswer: {
       widgetType: 'SLIDER_MANIPULATIVE',
       correctValue,
@@ -226,12 +251,23 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
       unit?: string;
     };
     const target =
-      question.correctAnswer !== null ? parseFloat(question.correctAnswer) : NaN;
+      question.correctAnswer !== null
+        ? parseFloat(question.correctAnswer)
+        : NaN;
     return {
-      displayConfig: { min: cfg.min, max: cfg.max, step: cfg.step, unit: cfg.unit },
+      displayConfig: {
+        min: cfg.min,
+        max: cfg.max,
+        step: cfg.step,
+        unit: cfg.unit,
+      },
       resolvedAnswer: Number.isNaN(target)
         ? { widgetType: 'UNSUPPORTED' }
-        : { widgetType: 'SLIDER_MANIPULATIVE', correctValue: target, tolerance: 0.1 },
+        : {
+            widgetType: 'SLIDER_MANIPULATIVE',
+            correctValue: target,
+            tolerance: 0.1,
+          },
     };
   }
 
@@ -247,7 +283,11 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
       // correctPoints/tolerance move to correctReveal (widget-grader.ts) so
       // CoordinatePlotterWidget's post-submission reveal marker still works
       // without the answer sitting in the pre-submission network payload.
-      displayConfig: { xRange: cfg.xRange, yRange: cfg.yRange, gridStep: cfg.gridStep },
+      displayConfig: {
+        xRange: cfg.xRange,
+        yRange: cfg.yRange,
+        gridStep: cfg.gridStep,
+      },
       resolvedAnswer: {
         widgetType: 'COORDINATE_PLOTTER',
         correctPoints: cfg.correctPoints ?? [],
@@ -280,9 +320,17 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
   // UNSUPPORTED rather than silently grading everything as wrong.
   if (widgetType === 'DRAG_AND_DROP_LABELS') {
     type RawTarget =
-      | { id?: string; placeholder?: string; label?: string; correctLabel?: string }
+      | {
+          id?: string;
+          placeholder?: string;
+          label?: string;
+          correctLabel?: string;
+        }
       | string;
-    const cfg = (rawConfig ?? {}) as { labels?: string[]; targets?: RawTarget[] };
+    const cfg = (rawConfig ?? {}) as {
+      labels?: string[];
+      targets?: RawTarget[];
+    };
     const correctPlacements: Record<string, string> = {};
     (cfg.targets ?? []).forEach((t, idx) => {
       if (typeof t === 'object' && t.correctLabel) {
@@ -293,7 +341,9 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
     // stays; correctLabel — the answer key DragDropWidget never reads and
     // has no reveal UI for — does not.
     const strippedTargets = (cfg.targets ?? []).map((t) =>
-      typeof t === 'string' ? t : { id: t.id, placeholder: t.placeholder, label: t.label },
+      typeof t === 'string'
+        ? t
+        : { id: t.id, placeholder: t.placeholder, label: t.label },
     );
     return {
       displayConfig: { labels: cfg.labels, targets: strippedTargets },
@@ -310,7 +360,10 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
   // (see the isGraded wiring in S4 of the widget-matrix repair plan) — the
   // enum value is kept so existing rows stay readable.
   if (widgetType === 'CODE_PLAYGROUND') {
-    return { displayConfig: rawConfig, resolvedAnswer: { widgetType: 'UNSUPPORTED' } };
+    return {
+      displayConfig: rawConfig,
+      resolvedAnswer: { widgetType: 'UNSUPPORTED' },
+    };
   }
 
   return {

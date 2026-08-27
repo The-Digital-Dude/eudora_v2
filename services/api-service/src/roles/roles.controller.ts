@@ -34,7 +34,10 @@ export class RolesController {
   @Post()
   @Roles('SUPER_ADMIN')
   @RequirePermissions({ action: 'create', subject: 'Role' })
-  async create(@Body() dto: CreateRoleDto, @CurrentUser() actor: CurrentUserDto) {
+  async create(
+    @Body() dto: CreateRoleDto,
+    @CurrentUser() actor: CurrentUserDto,
+  ) {
     return this.rolesService.create(dto, actor.id);
   }
 

@@ -1,4 +1,7 @@
-import { ShapeShadingFixedConfigSchema, parseWidgetConfig } from './widget-config.schema';
+import {
+  ShapeShadingFixedConfigSchema,
+  parseWidgetConfig,
+} from './widget-config.schema';
 
 describe('ShapeShadingFixedConfigSchema', () => {
   const valid = {
@@ -9,7 +12,7 @@ describe('ShapeShadingFixedConfigSchema', () => {
     requireContiguous: false,
   };
 
-  it('accepts a target within the shape\'s region count', () => {
+  it("accepts a target within the shape's region count", () => {
     expect(() => ShapeShadingFixedConfigSchema.parse(valid)).not.toThrow();
   });
 
@@ -61,7 +64,11 @@ describe('parseWidgetConfig — SHAPE_SHADING', () => {
       requireContiguous: false,
     });
     expect(result.version).toBe(2);
-    if (result.version === 2 && 'config' in result && result.widgetType === 'SHAPE_SHADING') {
+    if (
+      result.version === 2 &&
+      'config' in result &&
+      result.widgetType === 'SHAPE_SHADING'
+    ) {
       expect(result.config.targetNumerator).toBe(2);
     } else {
       throw new Error('expected a parsed v2 SHAPE_SHADING config');
@@ -81,7 +88,9 @@ describe('parseWidgetConfig — SHAPE_SHADING', () => {
   });
 
   it('treats an unversioned config as v1 passthrough, unvalidated', () => {
-    const result = parseWidgetConfig('SHAPE_SHADING', { shape: { kind: 'bar', regions: 4 } });
+    const result = parseWidgetConfig('SHAPE_SHADING', {
+      shape: { kind: 'bar', regions: 4 },
+    });
     expect(result.version).toBe(1);
   });
 });

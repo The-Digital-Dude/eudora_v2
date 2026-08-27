@@ -350,13 +350,20 @@ export class HomeworkService {
       // A resubmission replaces the previous files rather than adding to them:
       // what is marked should be what was last handed in.
       await tx.homeworkSubmissionAttachment.deleteMany({
-        where: { submissionId: submission.id, fileUploadId: { notIn: fileIds } },
+        where: {
+          submissionId: submission.id,
+          fileUploadId: { notIn: fileIds },
+        },
       });
       for (const [index, fileUploadId] of fileIds.entries()) {
         await tx.homeworkSubmissionAttachment.upsert({
           where: { fileUploadId },
           update: { submissionId: submission.id, sortOrder: index },
-          create: { submissionId: submission.id, fileUploadId, sortOrder: index },
+          create: {
+            submissionId: submission.id,
+            fileUploadId,
+            sortOrder: index,
+          },
         });
       }
 
@@ -387,7 +394,9 @@ export class HomeworkService {
             select: {
               fileUploadId: true,
               sortOrder: true,
-              file: { select: { originalName: true, size: true, mimetype: true } },
+              file: {
+                select: { originalName: true, size: true, mimetype: true },
+              },
             },
           },
         },
@@ -454,7 +463,9 @@ export class HomeworkService {
           select: {
             fileUploadId: true,
             sortOrder: true,
-            file: { select: { originalName: true, size: true, mimetype: true } },
+            file: {
+              select: { originalName: true, size: true, mimetype: true },
+            },
           },
         },
         // Whose hands typed it, when that is not the learner.
@@ -500,9 +511,7 @@ export class HomeworkService {
       throw new NotFoundException('Student profile not found');
     }
 
-    const enrolledBatchIds = student.enrollments.map(
-      (e) => e.batchId,
-    );
+    const enrolledBatchIds = student.enrollments.map((e) => e.batchId);
     if (enrolledBatchIds.length === 0) {
       return [];
     }

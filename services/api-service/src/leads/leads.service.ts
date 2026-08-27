@@ -3,7 +3,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { resolveSort } from '../common/sort.util';
 import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto';
 
-const LEAD_SORTABLE_FIELDS = ['name', 'email', 'status', 'source', 'createdAt'] as const;
+const LEAD_SORTABLE_FIELDS = [
+  'name',
+  'email',
+  'status',
+  'source',
+  'createdAt',
+] as const;
 
 @Injectable()
 export class LeadsService {
@@ -37,7 +43,13 @@ export class LeadsService {
       ];
     }
 
-    const orderBy = resolveSort(sortBy, sortOrder, LEAD_SORTABLE_FIELDS, 'createdAt', 'desc');
+    const orderBy = resolveSort(
+      sortBy,
+      sortOrder,
+      LEAD_SORTABLE_FIELDS,
+      'createdAt',
+      'desc',
+    );
 
     const [leads, total] = await Promise.all([
       this.prisma.lead.findMany({

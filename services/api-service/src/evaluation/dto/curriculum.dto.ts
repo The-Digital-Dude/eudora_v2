@@ -1,4 +1,10 @@
-import { IsEnum, IsInt, IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+} from 'class-validator';
 import { ConceptKind } from '@prisma/client';
 
 export class CreateConceptDto {

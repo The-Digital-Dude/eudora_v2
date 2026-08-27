@@ -40,7 +40,14 @@ export class LeadsController {
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.leadsService.findAll(pageNum, limitNum, status, search, sortBy, sortOrder);
+    return this.leadsService.findAll(
+      pageNum,
+      limitNum,
+      status,
+      search,
+      sortBy,
+      sortOrder,
+    );
   }
 
   @Get(':id')

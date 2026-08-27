@@ -20,7 +20,10 @@ export interface ExpoPushMessage {
 export class ExpoPushService {
   private readonly logger = new Logger(ExpoPushService.name);
 
-  async sendToTokens(tokens: string[], message: ExpoPushMessage): Promise<void> {
+  async sendToTokens(
+    tokens: string[],
+    message: ExpoPushMessage,
+  ): Promise<void> {
     if (tokens.length === 0) return;
 
     for (let i = 0; i < tokens.length; i += CHUNK_SIZE) {
@@ -43,7 +46,9 @@ export class ExpoPushService {
           ),
         });
         if (!res.ok) {
-          this.logger.warn(`Expo push request failed: ${res.status} ${await res.text()}`);
+          this.logger.warn(
+            `Expo push request failed: ${res.status} ${await res.text()}`,
+          );
         }
       } catch (err) {
         this.logger.warn(`Expo push request errored: ${err}`);

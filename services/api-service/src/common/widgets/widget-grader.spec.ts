@@ -3,16 +3,23 @@ import { ResolvedAnswer } from './widget-generator';
 
 describe('gradeWidgetSubmission', () => {
   describe('STANDARD_MCQ', () => {
-    const answer: ResolvedAnswer = { widgetType: 'STANDARD_MCQ', correctOptionId: 'opt-1' };
+    const answer: ResolvedAnswer = {
+      widgetType: 'STANDARD_MCQ',
+      correctOptionId: 'opt-1',
+    };
 
     it('is correct when the selected option matches', () => {
-      expect(gradeWidgetSubmission(answer, { selectedOptionId: 'opt-1' })).toEqual({
+      expect(
+        gradeWidgetSubmission(answer, { selectedOptionId: 'opt-1' }),
+      ).toEqual({
         isCorrect: true,
       });
     });
 
     it('is incorrect when the selected option does not match', () => {
-      expect(gradeWidgetSubmission(answer, { selectedOptionId: 'opt-2' })).toEqual({
+      expect(
+        gradeWidgetSubmission(answer, { selectedOptionId: 'opt-2' }),
+      ).toEqual({
         isCorrect: false,
       });
     });
@@ -43,7 +50,9 @@ describe('gradeWidgetSubmission', () => {
 
     it('is incorrect just outside tolerance', () => {
       expect(
-        gradeWidgetSubmission(answer, { interactionState: { finalValue: 52.1 } }),
+        gradeWidgetSubmission(answer, {
+          interactionState: { finalValue: 52.1 },
+        }),
       ).toEqual({ isCorrect: false, correctReveal: { correctValue: 50 } });
     });
 
@@ -83,7 +92,10 @@ describe('gradeWidgetSubmission', () => {
       tolerance: 0.5,
     };
 
-    const correctReveal = { correctPoints: answer.correctPoints, tolerance: answer.tolerance };
+    const correctReveal = {
+      correctPoints: answer.correctPoints,
+      tolerance: answer.tolerance,
+    };
 
     it('is correct when every point matches within tolerance, any order', () => {
       expect(
@@ -178,7 +190,9 @@ describe('gradeWidgetSubmission', () => {
 
     it('is incorrect when the count differs', () => {
       expect(
-        gradeWidgetSubmission(answer, { interactionState: { pairs: [['r1', 's1']] } }),
+        gradeWidgetSubmission(answer, {
+          interactionState: { pairs: [['r1', 's1']] },
+        }),
       ).toEqual({ isCorrect: false, correctReveal });
     });
 
@@ -214,14 +228,18 @@ describe('gradeWidgetSubmission', () => {
 
     it('is incorrect when a graded target is left empty', () => {
       expect(
-        gradeWidgetSubmission(answer, { interactionState: { placements: { t1: 'A' } } }),
+        gradeWidgetSubmission(answer, {
+          interactionState: { placements: { t1: 'A' } },
+        }),
       ).toEqual({ isCorrect: false });
     });
 
     it('ignores an extra placement on a target with no answer key', () => {
       expect(
         gradeWidgetSubmission(answer, {
-          interactionState: { placements: { t1: 'A', t2: 'B', decorative: 'X' } },
+          interactionState: {
+            placements: { t1: 'A', t2: 'B', decorative: 'X' },
+          },
         }),
       ).toEqual({ isCorrect: true });
     });
@@ -321,7 +339,9 @@ describe('gradeWidgetSubmission', () => {
         };
         expect(
           gradeWidgetSubmission(answer, {
-            interactionState: { shadedRegionIds: ['region-1', 'region-2', 'region-3'] },
+            interactionState: {
+              shadedRegionIds: ['region-1', 'region-2', 'region-3'],
+            },
           }),
         ).toEqual({ isCorrect: true });
       });
@@ -336,7 +356,9 @@ describe('gradeWidgetSubmission', () => {
         };
         expect(
           gradeWidgetSubmission(answer, {
-            interactionState: { shadedRegionIds: ['region-4', 'region-5', 'region-0'] },
+            interactionState: {
+              shadedRegionIds: ['region-4', 'region-5', 'region-0'],
+            },
           }),
         ).toEqual({ isCorrect: true });
       });
@@ -397,7 +419,9 @@ describe('gradeWidgetSubmission', () => {
         correctAnswer: 'Paris',
         isNumeric: false,
       };
-      expect(gradeWidgetSubmission(answer, { responseText: '  paris  ' })).toEqual({
+      expect(
+        gradeWidgetSubmission(answer, { responseText: '  paris  ' }),
+      ).toEqual({
         isCorrect: true,
       });
     });
@@ -408,9 +432,11 @@ describe('gradeWidgetSubmission', () => {
         correctAnswer: 'Paris',
         isNumeric: false,
       };
-      expect(gradeWidgetSubmission(answer, { responseText: 'London' })).toEqual({
-        isCorrect: false,
-      });
+      expect(gradeWidgetSubmission(answer, { responseText: 'London' })).toEqual(
+        {
+          isCorrect: false,
+        },
+      );
     });
 
     it('is correct on a numeric match within a small epsilon', () => {
@@ -419,9 +445,11 @@ describe('gradeWidgetSubmission', () => {
         correctAnswer: '3.14',
         isNumeric: true,
       };
-      expect(gradeWidgetSubmission(answer, { responseText: '3.1401' })).toEqual({
-        isCorrect: true,
-      });
+      expect(gradeWidgetSubmission(answer, { responseText: '3.1401' })).toEqual(
+        {
+          isCorrect: true,
+        },
+      );
     });
 
     it('is incorrect on a numeric mismatch', () => {
@@ -452,7 +480,9 @@ describe('gradeWidgetSubmission', () => {
         correctAnswer: null,
         isNumeric: false,
       };
-      expect(gradeWidgetSubmission(answer, { responseText: 'anything' })).toEqual({});
+      expect(
+        gradeWidgetSubmission(answer, { responseText: 'anything' }),
+      ).toEqual({});
     });
   });
 
@@ -460,7 +490,9 @@ describe('gradeWidgetSubmission', () => {
     it('returns an empty result — the widget-matrix gap this whole plan is about', () => {
       const answer: ResolvedAnswer = { widgetType: 'UNSUPPORTED' };
       expect(
-        gradeWidgetSubmission(answer, { interactionState: { placements: { t1: 'A' } } }),
+        gradeWidgetSubmission(answer, {
+          interactionState: { placements: { t1: 'A' } },
+        }),
       ).toEqual({});
     });
   });

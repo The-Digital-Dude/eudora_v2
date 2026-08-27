@@ -302,7 +302,9 @@ export class ModuleItemsService {
           select: {
             fileUploadId: true,
             sortOrder: true,
-            file: { select: { originalName: true, size: true, mimetype: true } },
+            file: {
+              select: { originalName: true, size: true, mimetype: true },
+            },
           },
         },
       },

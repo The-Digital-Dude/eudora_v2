@@ -5,22 +5,6 @@ import React from "react";
 
 import { useGetChildLearningQuery } from "@/features/parent/parentApi";
 
-const MASTERY_LABELS: Record<string, string> = {
-  NOT_STARTED: "Not started",
-  INTRODUCED: "Introduced",
-  DEVELOPING: "Developing",
-  NEAR_MASTERY: "Near mastery",
-  MASTERED: "Mastered",
-};
-
-const MASTERY_BAR: Record<string, string> = {
-  NOT_STARTED: "bg-border",
-  INTRODUCED: "bg-muted-foreground/40",
-  DEVELOPING: "bg-primary/60",
-  NEAR_MASTERY: "bg-primary",
-  MASTERED: "bg-success",
-};
-
 interface LearningPanelProps {
   studentProfileId: string;
   childName: string;
@@ -82,30 +66,6 @@ export function LearningPanel({ studentProfileId, childName }: LearningPanelProp
               <p className="mt-1 text-lg font-bold text-foreground">{data.totalXp}</p>
             </div>
           </div>
-
-          {data.mastery.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                Concept mastery
-              </p>
-              {data.mastery.map((m) => (
-                <div key={m.competencyName}>
-                  <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="font-semibold text-foreground">{m.competencyName}</span>
-                    <span className="font-medium text-muted-foreground">
-                      {MASTERY_LABELS[m.status] ?? m.status}
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-muted/60">
-                    <div
-                      className={`h-1.5 rounded-full ${MASTERY_BAR[m.status] ?? "bg-primary/60"}`}
-                      style={{ width: `${Math.round(Math.min(1, Math.max(0, m.masteryScore)) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
     </div>

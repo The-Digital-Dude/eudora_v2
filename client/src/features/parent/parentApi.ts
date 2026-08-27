@@ -28,11 +28,6 @@ export interface ChildLearning {
   longestStreak: number;
   totalXp: number;
   level: number;
-  mastery: {
-    competencyName: string;
-    masteryScore: number;
-    status: "NOT_STARTED" | "INTRODUCED" | "DEVELOPING" | "NEAR_MASTERY" | "MASTERED";
-  }[];
 }
 
 /** A catalog course as returned by the guardian-facing available-courses list. */

@@ -261,22 +261,12 @@ async function main() {
   }
   console.log('✅ Seeded teachers');
 
-  // ─── Concepts, Competencies, Lessons ─────────────────────────────────────────
+  // ─── Concepts, Lessons ────────────────────────────────────────────────────────
   console.log('🌱 Seeding curriculum...');
 
   const fractionsConc = await prisma.concept.upsert({ where: { name: 'Fractions' }, update: {}, create: { name: 'Fractions', description: 'Understanding fraction concepts, operations, and applications' } });
   const algebraConc = await prisma.concept.upsert({ where: { name: 'Algebra Fundamentals' }, update: {}, create: { name: 'Algebra Fundamentals', description: 'Basic algebraic thinking and expressions' } });
   const sortingConc = await prisma.concept.upsert({ where: { name: 'Sorting & Patterns' }, update: {}, create: { name: 'Sorting & Patterns', description: 'Putting things in order by size or number, and spotting what comes next' } });
-
-  // Competencies
-  let compFractions = await prisma.competency.findFirst({ where: { name: 'Compare Fractions', conceptId: fractionsConc.id } });
-  if (!compFractions) compFractions = await prisma.competency.create({ data: { conceptId: fractionsConc.id, name: 'Compare Fractions', description: 'Ability to compare and order fractions with like and unlike denominators' } });
-
-  let compAlgebra = await prisma.competency.findFirst({ where: { name: 'Solve Linear Equations', conceptId: algebraConc.id } });
-  if (!compAlgebra) compAlgebra = await prisma.competency.create({ data: { conceptId: algebraConc.id, name: 'Solve Linear Equations', description: 'Solve one-variable linear equations' } });
-
-  let compSorting = await prisma.competency.findFirst({ where: { name: 'Order Numbers and Objects', conceptId: sortingConc.id } });
-  if (!compSorting) compSorting = await prisma.competency.create({ data: { conceptId: sortingConc.id, name: 'Order Numbers and Objects', description: 'Put numbers and objects in order from smallest to largest' } });
 
   // Lessons
   let lesson1 = await prisma.lesson.findFirst({ where: { title: 'Intro to Comparing Fractions' } });
@@ -321,19 +311,6 @@ async function main() {
     await prisma.card.create({ data: { lessonId: lesson4.id, title: 'Your Turn', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Look at each row and pick the one that goes from smallest to largest.', questionId: q5.id } });
   }
 
-  // Rubric for fractions competency
-  let rubric = await prisma.rubric.findFirst({ where: { competencyId: compFractions.id } });
-  if (!rubric) {
-    rubric = await prisma.rubric.create({ data: { competencyId: compFractions.id, name: 'Comparing Fractions Rubric', description: 'Evaluates correctness and mathematical reasoning when comparing fractions' } });
-    const crit1 = await prisma.rubricCriterion.create({ data: { rubricId: rubric.id, title: 'Correctness', description: 'Accuracy of the comparison results', weight: 2.0 } });
-    for (const lvl of [{ level: 0, title: 'Not Demonstrated', score: 0 }, { level: 1, title: 'Emerging', score: 1 }, { level: 2, title: 'Developing', score: 2 }, { level: 3, title: 'Proficient', score: 3 }, { level: 4, title: 'Advanced', score: 4 }]) {
-      await prisma.rubricLevel.create({ data: { criterionId: crit1.id, level: lvl.level, title: lvl.title, description: `Level ${lvl.level} performance`, score: lvl.score } });
-    }
-    const crit2 = await prisma.rubricCriterion.create({ data: { rubricId: rubric.id, title: 'Reasoning', description: 'Justification of the comparison steps', weight: 1.0 } });
-    for (const lvl of [{ level: 0, title: 'Not Demonstrated', score: 0 }, { level: 1, title: 'Emerging', score: 1 }, { level: 2, title: 'Developing', score: 2 }, { level: 3, title: 'Proficient', score: 3 }, { level: 4, title: 'Advanced', score: 4 }]) {
-      await prisma.rubricLevel.create({ data: { criterionId: crit2.id, level: lvl.level, title: lvl.title, description: `Level ${lvl.level} reasoning`, score: lvl.score } });
-    }
-  }
   console.log('✅ Seeded curriculum');
 
   // ─── Assessment Types ─────────────────────────────────────────────────────────
@@ -453,18 +430,6 @@ async function main() {
       where: { studentProfileId: profile.id },
       update: {},
       create: { studentProfileId: profile.id, totalXp: Math.floor(Math.random() * 800) + 100, level: Math.floor(Math.random() * 5) + 1, nextLevelXp: 500 },
-    });
-
-    // CompetencyMastery
-    await prisma.competencyMastery.upsert({
-      where: { studentProfileId_competencyId: { studentProfileId: profile.id, competencyId: compFractions.id } },
-      update: {},
-      create: { studentProfileId: profile.id, competencyId: compFractions.id, masteryScore: Math.random() * 0.4 + 0.5, confidence: Math.random() * 0.3 + 0.6 },
-    });
-    await prisma.competencyMastery.upsert({
-      where: { studentProfileId_competencyId: { studentProfileId: profile.id, competencyId: compSorting.id } },
-      update: {},
-      create: { studentProfileId: profile.id, competencyId: compSorting.id, masteryScore: Math.random() * 0.5 + 0.3, confidence: Math.random() * 0.4 + 0.4 },
     });
   }
   console.log('✅ Seeded students');
@@ -864,49 +829,6 @@ async function main() {
   }
   console.log('✅ Seeded student card responses');
 
-  // ─── Assessment Evidence & Rubric Assessments ────────────────────────────────
-  console.log('🌱 Seeding assessment evidence & rubric assessments...');
-  const rubricCriteria = await prisma.rubricCriterion.findMany({ where: { rubricId: rubric.id } });
-
-  const evidenceStudents = sectionAPlacedStudents.slice(0, 4);
-  const rubricScores: Record<string, number> = { Charlotte: 3, Aria: 4, Lucas: 2, Noah: 3, Emma: 3 };
-
-  for (const profile of evidenceStudents) {
-    const submission = await prisma.homeworkSubmission.findFirst({ where: { homeworkId: hw1.id, studentProfileId: profile.id } });
-    if (!submission) continue;
-    const existing = await prisma.assessmentEvidence.findFirst({ where: { studentProfileId: profile.id, competencyId: compFractions.id } });
-    if (!existing) {
-      const evidence = await prisma.assessmentEvidence.create({
-        data: {
-          studentProfileId: profile.id,
-          competencyId: compFractions.id,
-          homeworkSubmissionId: submission.id,
-          sourceType: 'HOMEWORK',
-          metadata: { submissionId: submission.id, homeworkTitle: 'Times Tables Practice 1' },
-        },
-      });
-      const score = rubricScores[profile.firstName] ?? 3;
-      const ra = await prisma.rubricAssessment.create({
-        data: {
-          rubricId: rubric.id,
-          evidenceId: evidence.id,
-          evaluatorId: superAdminUser.id,
-          overallScore: score + 0.5,
-          feedback: score >= 4 ? 'Excellent demonstration of fraction mastery.' : score >= 3 ? 'Proficient. Minor gaps in reasoning.' : 'Developing — needs more practice with unlike denominators.',
-        },
-      });
-      for (const criterion of rubricCriteria) {
-        const exist = await prisma.rubricCriterionRating.findFirst({ where: { assessmentId: ra.id, criterionId: criterion.id } });
-        if (!exist) {
-          await prisma.rubricCriterionRating.create({
-            data: { assessmentId: ra.id, criterionId: criterion.id, selectedLevel: score, comments: `Level ${score} — ${criterion.title}` },
-          });
-        }
-      }
-    }
-  }
-  console.log('✅ Seeded assessment evidence');
-
   // ─── More Guardians ──────────────────────────────────────────────────────────
   console.log('🌱 Seeding additional guardians...');
   const ariaProfile = studentProfiles.find(p => p.firstName === 'Aria');
@@ -1038,7 +960,6 @@ async function main() {
       { actorUserId: teacherUsers['EMP-OKAFOR'].id, event: 'HOMEWORK_GRADED', targetType: 'Homework', targetId: hw3.id, ipAddress: '10.0.0.2', metadata: { title: 'Fractions Worksheet 1' } },
       { actorUserId: teacherUsers['EMP-DASILVA'].id, event: 'SESSIONS_GENERATED', targetType: 'Batch', targetId: null, ipAddress: '10.0.0.3', metadata: { name: 'Grade 2 Afternoon Group' } },
       { actorUserId: superAdminUser.id, event: 'ATTENDANCE_RECORDED', targetType: 'DailyAttendance', targetId: null, ipAddress: '127.0.0.1', metadata: { date: '2026-06-23', sections: ['CS-2026-A', 'CS-2026-B'], totalRecords: 11 } },
-      { actorUserId: superAdminUser.id, event: 'RUBRIC_ASSESSMENT_CREATED', targetType: 'RubricAssessment', targetId: null, ipAddress: '127.0.0.1', metadata: { rubricName: 'Comparing Fractions Rubric', evaluatedCount: 4 } },
     ],
   });
   console.log('✅ Seeded audit logs');

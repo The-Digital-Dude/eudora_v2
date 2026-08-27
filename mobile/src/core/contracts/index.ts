@@ -784,7 +784,6 @@ export interface ChildLearningSummary {
   longestStreak: number;
   totalXp: number;
   level: number;
-  mastery: { competencyName: string; masteryScore: number; status: string }[];
 }
 
 /** `GET /parent/children/:id/teachers` */

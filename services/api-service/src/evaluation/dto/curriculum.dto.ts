@@ -58,17 +58,3 @@ export class UpdateConceptDto {
   @IsOptional()
   passThresholdPercent?: number;
 }
-
-export class CreateCompetencyDto {
-  @IsString()
-  @IsNotEmpty()
-  conceptId: string;
-
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @IsString()
-  @IsOptional()
-  description?: string;
-}

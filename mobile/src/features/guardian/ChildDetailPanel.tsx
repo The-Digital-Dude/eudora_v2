@@ -19,8 +19,8 @@ interface ChildDetailPanelProps {
 }
 
 /**
- * The content of a child's drill-down — learning stats, mastery, homework,
- * grades, attendance, teachers. Shared between the phone route
+ * The content of a child's drill-down — learning stats, homework, grades,
+ * attendance, teachers. Shared between the phone route
  * (`app/guardian/[studentProfileId].tsx`, which wraps this with a Back
  * header) and the tablet two-pane layout in `GuardianHomeScreen` (which
  * renders this directly as the right-hand detail pane).
@@ -63,32 +63,6 @@ export function ChildDetailPanel({ studentProfileId }: ChildDetailPanelProps) {
               label="level"
             />
           </View>
-
-          <View style={{ height: t.spacing.xl }} />
-          <Text variant="heading">Mastery</Text>
-          <View style={{ height: t.spacing.md }} />
-
-          {learning.mastery.length === 0 ? (
-            <Card>
-              <Text variant="body" color="mutedForeground">
-                No mastery data yet.
-              </Text>
-            </Card>
-          ) : (
-            <View style={{ gap: t.spacing.sm }}>
-              {learning.mastery.map((m) => (
-                <Card
-                  key={m.competencyName}
-                  style={{ flexDirection: 'row', justifyContent: 'space-between' }}
-                >
-                  <Text variant="body">{m.competencyName}</Text>
-                  <Text variant="caption" color="mutedForeground">
-                    {m.status}
-                  </Text>
-                </Card>
-              ))}
-            </View>
-          )}
         </>
       )}
 

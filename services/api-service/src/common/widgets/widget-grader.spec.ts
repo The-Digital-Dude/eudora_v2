@@ -183,6 +183,47 @@ describe('gradeWidgetSubmission', () => {
     });
   });
 
+  describe('DRAG_AND_DROP_LABELS', () => {
+    const answer: ResolvedAnswer = {
+      widgetType: 'DRAG_AND_DROP_LABELS',
+      correctPlacements: { t1: 'A', t2: 'B' },
+    };
+
+    it('is correct when every graded target has the right label', () => {
+      expect(
+        gradeWidgetSubmission(answer, {
+          interactionState: { placements: { t1: 'A', t2: 'B' } },
+        }),
+      ).toEqual({ isCorrect: true });
+    });
+
+    it('is incorrect when a graded target has the wrong label', () => {
+      expect(
+        gradeWidgetSubmission(answer, {
+          interactionState: { placements: { t1: 'B', t2: 'B' } },
+        }),
+      ).toEqual({ isCorrect: false });
+    });
+
+    it('is incorrect when a graded target is left empty', () => {
+      expect(
+        gradeWidgetSubmission(answer, { interactionState: { placements: { t1: 'A' } } }),
+      ).toEqual({ isCorrect: false });
+    });
+
+    it('ignores an extra placement on a target with no answer key', () => {
+      expect(
+        gradeWidgetSubmission(answer, {
+          interactionState: { placements: { t1: 'A', t2: 'B', decorative: 'X' } },
+        }),
+      ).toEqual({ isCorrect: true });
+    });
+
+    it('is incorrect when interactionState is entirely absent', () => {
+      expect(gradeWidgetSubmission(answer, {})).toEqual({ isCorrect: false });
+    });
+  });
+
   describe('SHAPE_SHADING', () => {
     it('is correct when the shaded count matches and contiguity is not required', () => {
       const answer: ResolvedAnswer = {

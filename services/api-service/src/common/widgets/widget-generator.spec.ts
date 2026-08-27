@@ -190,20 +190,89 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
     });
   });
 
-  describe('DRAG_AND_DROP_LABELS — retired, resolves to UNSUPPORTED (pre-fix behaviour, see plan S4)', () => {
-    it('never grades, regardless of an authored answer key', () => {
+  describe('DRAG_AND_DROP_LABELS — graded as of the widget-matrix repair (S2)', () => {
+    it('resolves correctPlacements keyed by target id', () => {
       const question = baseQuestion({
         widgetType: 'DRAG_AND_DROP_LABELS',
         widgetConfig: {
           labels: ['A', 'B'],
-          targets: [{ id: 't1', placeholder: '', correctLabel: 'A' }],
+          targets: [
+            { id: 't1', placeholder: '', correctLabel: 'A' },
+            { id: 't2', placeholder: '', correctLabel: 'B' },
+          ],
+        },
+      });
+      const result = generateWidgetInstance(question, 1);
+      expect(result.resolvedAnswer).toEqual({
+        widgetType: 'DRAG_AND_DROP_LABELS',
+        correctPlacements: { t1: 'A', t2: 'B' },
+      });
+    });
+
+    it('falls back to a target-<index> id when a target has none', () => {
+      const question = baseQuestion({
+        widgetType: 'DRAG_AND_DROP_LABELS',
+        widgetConfig: {
+          labels: ['A'],
+          targets: [{ placeholder: '', correctLabel: 'A' }],
+        },
+      });
+      const result = generateWidgetInstance(question, 1);
+      expect(result.resolvedAnswer).toEqual({
+        widgetType: 'DRAG_AND_DROP_LABELS',
+        correctPlacements: { 'target-0': 'A' },
+      });
+    });
+
+    it('skips targets with no correctLabel — they are decorative, not part of the answer key', () => {
+      const question = baseQuestion({
+        widgetType: 'DRAG_AND_DROP_LABELS',
+        widgetConfig: {
+          labels: ['A'],
+          targets: [
+            { id: 't1', placeholder: '', correctLabel: 'A' },
+            { id: 't2', placeholder: '' },
+          ],
+        },
+      });
+      const result = generateWidgetInstance(question, 1);
+      expect(result.resolvedAnswer).toEqual({
+        widgetType: 'DRAG_AND_DROP_LABELS',
+        correctPlacements: { t1: 'A' },
+      });
+    });
+
+    it('resolves to UNSUPPORTED when no target carries a correctLabel at all', () => {
+      const question = baseQuestion({
+        widgetType: 'DRAG_AND_DROP_LABELS',
+        widgetConfig: {
+          labels: ['A', 'B'],
+          targets: [{ id: 't1', placeholder: '' }],
         },
       });
       const result = generateWidgetInstance(question, 1);
       expect(result.resolvedAnswer).toEqual({ widgetType: 'UNSUPPORTED' });
     });
 
-    it('LEAKS the answer today: displayConfig includes each target correctLabel', () => {
+    it('resolves to UNSUPPORTED when there are no targets at all', () => {
+      const question = baseQuestion({
+        widgetType: 'DRAG_AND_DROP_LABELS',
+        widgetConfig: { labels: ['A', 'B'], targets: [] },
+      });
+      const result = generateWidgetInstance(question, 1);
+      expect(result.resolvedAnswer).toEqual({ widgetType: 'UNSUPPORTED' });
+    });
+
+    it('ignores legacy plain-string targets rather than throwing', () => {
+      const question = baseQuestion({
+        widgetType: 'DRAG_AND_DROP_LABELS',
+        widgetConfig: { labels: ['A'], targets: ['Solve 3 + ___'] },
+      });
+      const result = generateWidgetInstance(question, 1);
+      expect(result.resolvedAnswer).toEqual({ widgetType: 'UNSUPPORTED' });
+    });
+
+    it('still LEAKS the answer for now: displayConfig includes each target correctLabel (fixed in S3)', () => {
       const question = baseQuestion({
         widgetType: 'DRAG_AND_DROP_LABELS',
         widgetConfig: {

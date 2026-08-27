@@ -587,6 +587,13 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
                   </div>
                 ))}
               </div>
+              {targets.length > 0 && !targets.some((t) => t.correctLabel) && (
+                <p className="text-[10px] font-semibold text-destructive">
+                  No slot has a correct label set — this question cannot be graded. Pick a
+                  correct label for at least one slot, or delete slots that are purely
+                  decorative.
+                </p>
+              )}
             </div>
           </div>
         );

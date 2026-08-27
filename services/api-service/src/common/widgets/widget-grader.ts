@@ -8,6 +8,7 @@ export interface WidgetSubmission {
     points?: { x: number; y: number }[];
     pairs?: [string, string][];
     shadedRegionIds?: string[];
+    placements?: Record<string, string>;
     [key: string]: unknown;
   } | null;
 }
@@ -69,6 +70,19 @@ export function gradeWidgetSubmission(
         studentPairs.some(
           ([sl, sr]) => (sl === left && sr === right) || (sl === right && sr === left),
         ),
+      );
+      return { isCorrect: allMatched };
+    }
+
+    case 'DRAG_AND_DROP_LABELS': {
+      const studentPlacements = submission.interactionState?.placements ?? {};
+      const { correctPlacements } = resolvedAnswer;
+      // Only the targets that carry an authored answer are graded — a
+      // target with no correctLabel is decorative (see widget-generator.ts)
+      // and a student placing something on it is neither rewarded nor
+      // penalised.
+      const allMatched = Object.entries(correctPlacements).every(
+        ([targetId, label]) => studentPlacements[targetId] === label,
       );
       return { isCorrect: allMatched };
     }

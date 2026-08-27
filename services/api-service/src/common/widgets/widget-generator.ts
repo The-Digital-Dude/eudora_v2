@@ -18,6 +18,7 @@ export type ResolvedAnswer =
       tolerance: number;
     }
   | { widgetType: 'GRID_MATCHING'; correctPairs: [string, string][] }
+  | { widgetType: 'DRAG_AND_DROP_LABELS'; correctPlacements: Record<string, string> }
   | {
       widgetType: 'SHAPE_SHADING';
       targetNumerator: number;
@@ -248,12 +249,36 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
     };
   }
 
-  // Retired widget types — intentionally unimplemented, not an oversight. Both
-  // enum values are kept (in Prisma and in the DTO) so existing rows stay
-  // readable, but neither has a generator or a grader: the server always
-  // resolves them to UNSUPPORTED, and widget-grader.ts scores UNSUPPORTED as
-  // ungraded. Don't wire these up without deciding the product question first.
-  if (widgetType === 'DRAG_AND_DROP_LABELS' || widgetType === 'CODE_PLAYGROUND') {
+  // DRAG_AND_DROP_LABELS: the answer key is each target's authored
+  // `correctLabel` (see widget-config-editor.tsx's target editor). A target
+  // with no correctLabel is ambiguous — decorative slot vs. half-authored
+  // question — so if *none* of them carry one, the question resolves to
+  // UNSUPPORTED rather than silently grading everything as wrong.
+  if (widgetType === 'DRAG_AND_DROP_LABELS') {
+    const cfg = (rawConfig ?? {}) as {
+      targets?: ({ id?: string; correctLabel?: string } | string)[];
+    };
+    const correctPlacements: Record<string, string> = {};
+    (cfg.targets ?? []).forEach((t, idx) => {
+      if (typeof t === 'object' && t.correctLabel) {
+        correctPlacements[t.id ?? `target-${idx}`] = t.correctLabel;
+      }
+    });
+    return {
+      displayConfig: rawConfig,
+      resolvedAnswer:
+        Object.keys(correctPlacements).length > 0
+          ? { widgetType: 'DRAG_AND_DROP_LABELS', correctPlacements }
+          : { widgetType: 'UNSUPPORTED' },
+    };
+  }
+
+  // CODE_PLAYGROUND stays retired: grading it honestly needs untrusted code
+  // executed server-side, which is out of proportion to the feature. Its
+  // client-side test-runner result is authored-only feedback, never a mark
+  // (see the isGraded wiring in S4 of the widget-matrix repair plan) — the
+  // enum value is kept so existing rows stay readable.
+  if (widgetType === 'CODE_PLAYGROUND') {
     return { displayConfig: rawConfig, resolvedAnswer: { widgetType: 'UNSUPPORTED' } };
   }
 

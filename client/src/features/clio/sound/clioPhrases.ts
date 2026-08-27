@@ -45,14 +45,16 @@ export const CLIO_PHRASES = {
 export type ClioPhraseKey = keyof typeof CLIO_PHRASES;
 
 export interface ClioVoiceConfig {
-  rate: number; // Speed of speech: 0.88 for children's clarity
-  pitch: number; // Tone pitch: 1.12 - 1.18 for cheerful mascot tone
+  rate: number; // Speed of speech — matches mobile's tuned playVoiceLine() value
+  pitch: number; // Tone pitch — matches mobile's tuned playVoiceLine() value
   preferredVoiceHints: string[];
 }
 
+// Synced to mobile's voiceFeedback.ts playVoiceLine() tuning so Clio sounds
+// like the same character on both platforms, not two different voices.
 export const CLIO_VOICE_CONFIG: ClioVoiceConfig = {
-  rate: 0.88,
-  pitch: 1.15,
+  rate: 0.68,
+  pitch: 1.35,
   preferredVoiceHints: [
     "google us english",
     "journey-f",

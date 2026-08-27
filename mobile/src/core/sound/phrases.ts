@@ -20,22 +20,11 @@ export const PHRASES = {
     'Close! Check your numbers and try again.',
     "Don't worry, you've got this. Try once more.",
   ],
-  TRY_AGAIN: [
-    "Let's try again.",
-    'Not quite, give it another go.',
-    'Close! Check your numbers and try again.',
-    "Don't worry, you've got this. Try once more.",
-  ],
   TAKE_A_HINT: [
     'Maybe, take a hint.',
     "Here's a little clue to help.",
     "Listen carefully, let's look at this hint.",
     "Let's break it down together.",
-  ],
-  HINT_REVEALED: [
-    'Maybe, take a hint.',
-    "Here's a little clue to help.",
-    'Listen carefully.',
   ],
   ANSWER_REVEALED: [
     "Here's how we solve it.",

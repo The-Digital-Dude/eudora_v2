@@ -9,8 +9,10 @@ const STORAGE_KEY_MUTED = "eudora_clio_voice_muted";
 const STORAGE_KEY_VOICE_URI = "eudora_clio_voice_uri";
 
 // Default voice preference used when the user has not made an explicit choice.
-// Prioritizes Google Hindi (hi-IN) so Clio defaults to that voice.
-const DEFAULT_VOICE_HINTS = ["google हिन्दी", "google hindi", "hi-in", "hindi"];
+// Every phrase in the catalog is English, so the default must be too — a
+// kid-friendly US English voice, matching the tone mobile's expo-speech
+// lookup targets (see FEMALE_VOICE_HINTS in mobile's voiceFeedback.ts).
+const DEFAULT_VOICE_HINTS = ["google us english", "samantha", "zira", "female"];
 
 export type ClioVoiceState = "idle" | "speaking" | "paused";
 
@@ -158,8 +160,8 @@ class ClioVoiceService {
     return null;
   }
 
-  // Selects the default voice (Google Hindi hi-IN, then kid-friendly English)
-  // the first time voices are available, only if the user hasn't chosen one.
+  // Selects the default voice (kid-friendly English) the first time voices
+  // are available, only if the user hasn't chosen one.
   private applyDefaultVoiceIfNeeded() {
     if (this.selectedVoiceURI !== null) return;
     const voices = this.getAvailableVoices();
@@ -215,7 +217,7 @@ class ClioVoiceService {
       if (chosen) return chosen;
     }
 
-    // 2. Default (Auto): Google Hindi hi-IN, then kid-friendly English
+    // 2. Default (Auto): kid-friendly English
     return (
       this.findVoiceByHints(voices, DEFAULT_VOICE_HINTS) ??
       this.findVoiceByHints(voices, CLIO_VOICE_CONFIG.preferredVoiceHints) ??

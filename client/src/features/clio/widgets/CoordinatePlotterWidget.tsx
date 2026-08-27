@@ -10,6 +10,13 @@ interface CoordinatePlotterWidgetProps {
   onChange: (newValue: { points: { x: number; y: number }[] }) => void;
   locked: boolean;
   isCorrect?: boolean | null;
+  // The answer key, sent by the server only after submission (see
+  // gradeWidgetSubmission's COORDINATE_PLOTTER case) — never present in
+  // `config` pre-submission, so there is nothing to leak before the student
+  // answers. The one exception is the question-authoring config editor,
+  // which passes the real config directly and always renders with
+  // `locked={false}`, so the reveal branch below never fires there.
+  correctReveal?: { correctPoints: { x: number; y: number }[]; tolerance: number };
 }
 
 export function CoordinatePlotterWidget({
@@ -18,16 +25,17 @@ export function CoordinatePlotterWidget({
   onChange,
   locked,
   isCorrect,
+  correctReveal,
 }: CoordinatePlotterWidgetProps) {
   const svgRef = useRef<SVGSVGElement>(null);
-  
+
   const xMin = config.xRange?.[0] ?? -10;
   const xMax = config.xRange?.[1] ?? 10;
   const yMin = config.yRange?.[0] ?? -10;
   const yMax = config.yRange?.[1] ?? 10;
   const gridStep = config.gridStep ?? 1;
-  const tolerance = config.tolerance ?? 0.1;
-  const correctPoints = config.correctPoints ?? [];
+  const tolerance = correctReveal?.tolerance ?? config.tolerance ?? 0.1;
+  const correctPoints = correctReveal?.correctPoints ?? config.correctPoints ?? [];
 
   const points = value?.points ?? [];
 

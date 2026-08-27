@@ -83,6 +83,8 @@ describe('gradeWidgetSubmission', () => {
       tolerance: 0.5,
     };
 
+    const correctReveal = { correctPoints: answer.correctPoints, tolerance: answer.tolerance };
+
     it('is correct when every point matches within tolerance, any order', () => {
       expect(
         gradeWidgetSubmission(answer, {
@@ -93,7 +95,7 @@ describe('gradeWidgetSubmission', () => {
             ],
           },
         }),
-      ).toEqual({ isCorrect: true });
+      ).toEqual({ isCorrect: true, correctReveal });
     });
 
     it('is incorrect when the count of points differs', () => {
@@ -101,7 +103,7 @@ describe('gradeWidgetSubmission', () => {
         gradeWidgetSubmission(answer, {
           interactionState: { points: [{ x: 1, y: 1 }] },
         }),
-      ).toEqual({ isCorrect: false });
+      ).toEqual({ isCorrect: false, correctReveal });
     });
 
     it('is incorrect when a point is outside tolerance', () => {
@@ -114,7 +116,7 @@ describe('gradeWidgetSubmission', () => {
             ],
           },
         }),
-      ).toEqual({ isCorrect: false });
+      ).toEqual({ isCorrect: false, correctReveal });
     });
 
     it('is incorrect (both empty counts equal, zero required) — no points submitted against a zero-point answer key', () => {
@@ -123,14 +125,17 @@ describe('gradeWidgetSubmission', () => {
         correctPoints: [],
         tolerance: 0.5,
       };
-      expect(gradeWidgetSubmission(emptyAnswer, {})).toEqual({ isCorrect: true });
+      expect(gradeWidgetSubmission(emptyAnswer, {})).toEqual({
+        isCorrect: true,
+        correctReveal: { correctPoints: [], tolerance: 0.5 },
+      });
     });
 
-    it('does not return correctReveal — the answer is already visible client-side today', () => {
+    it('always returns correctReveal now — narrowing displayConfig (S3) moved the answer here', () => {
       const result = gradeWidgetSubmission(answer, {
         interactionState: { points: [{ x: 1, y: 1 }] },
       });
-      expect(result.correctReveal).toBeUndefined();
+      expect(result.correctReveal).toEqual(correctReveal);
     });
   });
 
@@ -143,6 +148,8 @@ describe('gradeWidgetSubmission', () => {
       ],
     };
 
+    const correctReveal = { correctPairs: answer.correctPairs };
+
     it('is correct when pairs match regardless of left/right order within a pair', () => {
       expect(
         gradeWidgetSubmission(answer, {
@@ -153,7 +160,7 @@ describe('gradeWidgetSubmission', () => {
             ],
           },
         }),
-      ).toEqual({ isCorrect: true });
+      ).toEqual({ isCorrect: true, correctReveal });
     });
 
     it('is incorrect when a pair is wrong', () => {
@@ -166,20 +173,20 @@ describe('gradeWidgetSubmission', () => {
             ],
           },
         }),
-      ).toEqual({ isCorrect: false });
+      ).toEqual({ isCorrect: false, correctReveal });
     });
 
     it('is incorrect when the count differs', () => {
       expect(
         gradeWidgetSubmission(answer, { interactionState: { pairs: [['r1', 's1']] } }),
-      ).toEqual({ isCorrect: false });
+      ).toEqual({ isCorrect: false, correctReveal });
     });
 
-    it('does not return correctReveal today — the answer is already visible client-side', () => {
+    it('always returns correctReveal now — narrowing displayConfig (S3) moved the answer here', () => {
       const result = gradeWidgetSubmission(answer, {
         interactionState: { pairs: [['r1', 's1']] },
       });
-      expect(result.correctReveal).toBeUndefined();
+      expect(result.correctReveal).toEqual(correctReveal);
     });
   });
 
@@ -221,6 +228,13 @@ describe('gradeWidgetSubmission', () => {
 
     it('is incorrect when interactionState is entirely absent', () => {
       expect(gradeWidgetSubmission(answer, {})).toEqual({ isCorrect: false });
+    });
+
+    it('returns no correctReveal — DragDropWidget has no post-submission reveal UI to feed', () => {
+      const result = gradeWidgetSubmission(answer, {
+        interactionState: { placements: { t1: 'A', t2: 'B' } },
+      });
+      expect(result.correctReveal).toBeUndefined();
     });
   });
 

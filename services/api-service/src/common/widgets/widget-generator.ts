@@ -213,10 +213,22 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
   }
 
   if (widgetType === 'SLIDER_MANIPULATIVE') {
+    // Legacy shape carries other authoring-time fields (defaultValue,
+    // displayFormula, visualizationType, and sometimes a stray correctValue
+    // the editor never actually wires up here — see the v2 fixed-mode path
+    // above for the one that does) — none of them are read by SliderWidget,
+    // which only destructures min/max/step/unit. Narrowing to just those
+    // stops forwarding whatever else an author's config happened to carry.
+    const cfg = (rawConfig ?? {}) as {
+      min?: number;
+      max?: number;
+      step?: number;
+      unit?: string;
+    };
     const target =
       question.correctAnswer !== null ? parseFloat(question.correctAnswer) : NaN;
     return {
-      displayConfig: rawConfig,
+      displayConfig: { min: cfg.min, max: cfg.max, step: cfg.step, unit: cfg.unit },
       resolvedAnswer: Number.isNaN(target)
         ? { widgetType: 'UNSUPPORTED' }
         : { widgetType: 'SLIDER_MANIPULATIVE', correctValue: target, tolerance: 0.1 },
@@ -225,11 +237,17 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
 
   if (widgetType === 'COORDINATE_PLOTTER') {
     const cfg = (rawConfig ?? {}) as {
+      xRange?: [number, number];
+      yRange?: [number, number];
+      gridStep?: number;
       correctPoints?: { x: number; y: number }[];
       tolerance?: number;
     };
     return {
-      displayConfig: rawConfig,
+      // correctPoints/tolerance move to correctReveal (widget-grader.ts) so
+      // CoordinatePlotterWidget's post-submission reveal marker still works
+      // without the answer sitting in the pre-submission network payload.
+      displayConfig: { xRange: cfg.xRange, yRange: cfg.yRange, gridStep: cfg.gridStep },
       resolvedAnswer: {
         widgetType: 'COORDINATE_PLOTTER',
         correctPoints: cfg.correctPoints ?? [],
@@ -239,9 +257,15 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
   }
 
   if (widgetType === 'GRID_MATCHING') {
-    const cfg = (rawConfig ?? {}) as { correctPairs?: [string, string][] };
+    const cfg = (rawConfig ?? {}) as {
+      left?: unknown;
+      right?: unknown;
+      correctPairs?: [string, string][];
+    };
     return {
-      displayConfig: rawConfig,
+      // correctPairs moves to correctReveal (widget-grader.ts) — same reason
+      // as COORDINATE_PLOTTER above.
+      displayConfig: { left: cfg.left, right: cfg.right },
       resolvedAnswer: {
         widgetType: 'GRID_MATCHING',
         correctPairs: cfg.correctPairs ?? [],
@@ -255,17 +279,24 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
   // question — so if *none* of them carry one, the question resolves to
   // UNSUPPORTED rather than silently grading everything as wrong.
   if (widgetType === 'DRAG_AND_DROP_LABELS') {
-    const cfg = (rawConfig ?? {}) as {
-      targets?: ({ id?: string; correctLabel?: string } | string)[];
-    };
+    type RawTarget =
+      | { id?: string; placeholder?: string; label?: string; correctLabel?: string }
+      | string;
+    const cfg = (rawConfig ?? {}) as { labels?: string[]; targets?: RawTarget[] };
     const correctPlacements: Record<string, string> = {};
     (cfg.targets ?? []).forEach((t, idx) => {
       if (typeof t === 'object' && t.correctLabel) {
         correctPlacements[t.id ?? `target-${idx}`] = t.correctLabel;
       }
     });
+    // Every field DragDropWidget actually renders (id/placeholder/label)
+    // stays; correctLabel — the answer key DragDropWidget never reads and
+    // has no reveal UI for — does not.
+    const strippedTargets = (cfg.targets ?? []).map((t) =>
+      typeof t === 'string' ? t : { id: t.id, placeholder: t.placeholder, label: t.label },
+    );
     return {
-      displayConfig: rawConfig,
+      displayConfig: { labels: cfg.labels, targets: strippedTargets },
       resolvedAnswer:
         Object.keys(correctPlacements).length > 0
           ? { widgetType: 'DRAG_AND_DROP_LABELS', correctPlacements }

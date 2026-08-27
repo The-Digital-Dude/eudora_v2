@@ -97,7 +97,12 @@ export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEdit
         distractors: [{ expr: "x + 1" }, { expr: "x - 1" }],
       });
     } else if (type === "SLIDER_MANIPULATIVE") {
-      setWidgetConfig({ min: 0, max: 100, step: 1, unit: "", correctValue: 50 });
+      // configVersion: 2 routes this to widget-generator.ts's v2 fixed-mode
+      // branch, which grades against this correctValue directly. Without it,
+      // the config falls through to the legacy v1 path, which grades against
+      // a separate `correctAnswer` field this form never sets — an
+      // unwinnable question that looks fine in the editor.
+      setWidgetConfig({ configVersion: 2, mode: "fixed", min: 0, max: 100, step: 1, unit: "", correctValue: 50 });
     } else if (type === "DRAG_AND_DROP_LABELS") {
       setWidgetConfig({ labels: ["A", "B", "C"], targets: [] });
     } else if (type === "COORDINATE_PLOTTER") {

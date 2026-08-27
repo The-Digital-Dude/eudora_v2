@@ -121,7 +121,14 @@ export function WidgetConfigEditor({ widgetType, value, onChange }: WidgetConfig
 
         const setMode = (mode: "fixed" | "parameterized") => {
           if (mode === "fixed") {
-            onChange({ min: 0, max: 100, step: 1, unit: "", correctValue: 50 });
+            // configVersion: 2 routes this to widget-generator.ts's v2 fixed
+            // branch, which grades against this correctValue directly.
+            // Without it, the config falls through to the legacy v1 path,
+            // which grades against a separate `correctAnswer` field this
+            // editor never sets — an unwinnable question that looks fine
+            // here (see question-editor-form.tsx's initial default, fixed
+            // the same way).
+            onChange({ configVersion: 2, mode: "fixed", min: 0, max: 100, step: 1, unit: "", correctValue: 50 });
           } else {
             onChange({
               configVersion: 2,

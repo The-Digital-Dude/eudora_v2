@@ -1,15 +1,13 @@
 import { generateWidgetInstance, QuestionLike } from './widget-generator';
 
 /**
- * Characterisation tests, written before the widget-matrix repair
- * (see the "Widget Matrix Repair" plan). Several assertions here pin
- * behaviour that plan deliberately changes — most importantly, the
- * `displayConfig LEAKS ...` tests below currently pass because
- * `resolveLegacyInstance` forwards the author's raw config (including the
- * answer key) straight to the client. That is a real defect, tracked
- * separately, and those specific assertions are expected to flip (not be
- * deleted) once the fix lands. Every other assertion in this file should
- * still hold afterward.
+ * Characterisation tests, written before the widget-matrix repair (see the
+ * "Widget Matrix Repair" plan) to pin `resolveLegacyInstance`'s behaviour
+ * ahead of changing it. The answer-key leak the plan's S3 stage fixed — every
+ * legacy widget type's `displayConfig` forwarding the author's raw config,
+ * answer key included, straight to the client pre-submission — is now closed;
+ * the "no longer leaks the answer (S3)" tests below assert the narrowed shape
+ * each type's `displayConfig` is left with.
  */
 
 function baseQuestion(overrides: Partial<QuestionLike> = {}): QuestionLike {
@@ -81,12 +79,17 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
       });
     });
 
-    it('KNOWN BUG (see plan U3/S3): a widgetConfig.correctValue with no matching correctAnswer silently resolves to UNSUPPORTED', () => {
+    it('a v1-shaped config with correctValue but no correctAnswer still resolves to UNSUPPORTED (legacy data only)', () => {
+      // This was reachable through the config editor before S3 — "Fixed
+      // Value" mode wrote exactly this shape, with no configVersion, so it
+      // fell through to this v1 branch instead of the v2 one that reads
+      // correctValue. The editor now always emits configVersion: 2 for
+      // fixed mode (question-editor-form.tsx and widget-config-editor.tsx),
+      // so this shape should no longer be newly authored — this test pins
+      // the v1 branch's behaviour for any config that predates that fix.
       const question = baseQuestion({
         widgetType: 'SLIDER_MANIPULATIVE',
         correctAnswer: null,
-        // An author using the config-editor "Fixed Value" mode writes
-        // correctValue here — but the v1 legacy branch never reads it.
         widgetConfig: { min: 0, max: 100, step: 1, unit: '', correctValue: 50 },
       });
       const result = generateWidgetInstance(question, 1);
@@ -102,14 +105,15 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
       expect(result.resolvedAnswer).toEqual({ widgetType: 'UNSUPPORTED' });
     });
 
-    it('LEAKS the answer: displayConfig is the raw config including correctValue (pre-fix behaviour)', () => {
+    it('no longer leaks the answer (S3): displayConfig is narrowed to min/max/step/unit, correctValue stripped', () => {
       const question = baseQuestion({
         widgetType: 'SLIDER_MANIPULATIVE',
         correctAnswer: '5',
         widgetConfig: { min: 0, max: 10, step: 1, correctValue: 5 },
       });
       const result = generateWidgetInstance(question, 1);
-      expect(result.displayConfig).toEqual({ min: 0, max: 10, step: 1, correctValue: 5 });
+      expect(result.displayConfig).toEqual({ min: 0, max: 10, step: 1, unit: undefined });
+      expect(result.displayConfig).not.toHaveProperty('correctValue');
     });
   });
 
@@ -137,7 +141,7 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
       });
     });
 
-    it('LEAKS the answer: displayConfig includes correctPoints and tolerance (pre-fix behaviour)', () => {
+    it('no longer leaks the answer (S3): displayConfig is narrowed to xRange/yRange/gridStep, correctPoints and tolerance stripped', () => {
       const question = baseQuestion({
         widgetType: 'COORDINATE_PLOTTER',
         widgetConfig: {
@@ -151,9 +155,10 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
       expect(result.displayConfig).toEqual({
         xRange: [-10, 10],
         yRange: [-10, 10],
-        correctPoints: [{ x: 1, y: 2 }],
-        tolerance: 0.5,
+        gridStep: undefined,
       });
+      expect(result.displayConfig).not.toHaveProperty('correctPoints');
+      expect(result.displayConfig).not.toHaveProperty('tolerance');
     });
   });
 
@@ -174,7 +179,7 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
       });
     });
 
-    it('LEAKS the answer: displayConfig includes correctPairs (pre-fix behaviour, matches live seed data)', () => {
+    it('no longer leaks the answer (S3): displayConfig keeps left/right, correctPairs stripped', () => {
       const question = baseQuestion({
         widgetType: 'GRID_MATCHING',
         widgetConfig: {
@@ -184,9 +189,11 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
         },
       });
       const result = generateWidgetInstance(question, 1);
-      expect(result.displayConfig).toMatchObject({
-        correctPairs: [['r1', 's1']],
+      expect(result.displayConfig).toEqual({
+        left: [{ id: 'r1', text: '6:9' }],
+        right: [{ id: 's1', text: '2:3' }],
       });
+      expect(result.displayConfig).not.toHaveProperty('correctPairs');
     });
   });
 
@@ -272,7 +279,7 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
       expect(result.resolvedAnswer).toEqual({ widgetType: 'UNSUPPORTED' });
     });
 
-    it('still LEAKS the answer for now: displayConfig includes each target correctLabel (fixed in S3)', () => {
+    it('no longer leaks the answer (S3): displayConfig keeps id/placeholder/label, correctLabel stripped', () => {
       const question = baseQuestion({
         widgetType: 'DRAG_AND_DROP_LABELS',
         widgetConfig: {
@@ -281,9 +288,13 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
         },
       });
       const result = generateWidgetInstance(question, 1);
-      expect(result.displayConfig).toMatchObject({
-        targets: [{ id: 't1', placeholder: '', correctLabel: 'A' }],
+      expect(result.displayConfig).toEqual({
+        labels: ['A', 'B'],
+        targets: [{ id: 't1', placeholder: '', label: undefined }],
       });
+      expect((result.displayConfig as { targets: unknown[] }).targets[0]).not.toHaveProperty(
+        'correctLabel',
+      );
     });
   });
 

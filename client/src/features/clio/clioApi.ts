@@ -66,9 +66,16 @@ export interface SubmitCardResult {
   explanation: string;
   xpEarned: number;
   isLessonComplete: boolean;
-  // Only present once the student has answered incorrectly — never sent
-  // alongside a correct submission, and never before one exists.
-  correctReveal?: { correctValue?: number };
+  // Sent by gradeWidgetSubmission for the widget types with a post-answer
+  // reveal (slider, coordinate plotter, grid matching) — present whether the
+  // submission was right or wrong, but never before one exists. Absent
+  // entirely for widget types with no reveal UI.
+  correctReveal?: {
+    correctValue?: number;
+    correctPoints?: { x: number; y: number }[];
+    tolerance?: number;
+    correctPairs?: [string, string][];
+  };
 }
 
 export interface ConceptSummary {

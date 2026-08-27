@@ -26,3 +26,11 @@ export type StripeInvoice = Awaited<
 export type StripeSubscription = Awaited<
   ReturnType<StripeClient['subscriptions']['retrieve']>
 >;
+
+export type StripeCharge = Awaited<
+  ReturnType<StripeClient['charges']['retrieve']>
+>;
+
+export type StripeDispute = Awaited<
+  ReturnType<StripeClient['disputes']['retrieve']>
+>;

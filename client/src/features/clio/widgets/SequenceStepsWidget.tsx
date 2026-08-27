@@ -17,9 +17,13 @@ import React from "react";
  * HTML5 drag plus click-to-place in `DragDropWidget`, and matching it keeps one
  * pattern instead of two.
  *
- * Not yet listed in `WidgetSelector`: there is no `SEQUENCE_STEPS` widget type
- * on the server and no grader case for the drag-and-drop family at all, so
- * promoting this to a real question type is its own piece of work.
+ * Demo-only by decision (2026-08-27, widget-matrix repair plan). No
+ * `SEQUENCE_STEPS` `WidgetType` exists in the Prisma enum, and none of the
+ * config schema / generator / grader stack that a real question type needs
+ * has been built for it — that's a full new type, not a small addition, and
+ * nothing has asked for step-ordering as a graded question yet. Add the full
+ * stack when a lesson actually needs it; until then this stays a component
+ * used only by the marketing-page widget playground.
  */
 export interface SequenceStepsConfig {
   /** In the order they should be shown, which is not the answer order. */

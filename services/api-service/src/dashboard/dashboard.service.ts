@@ -356,10 +356,12 @@ export class DashboardService {
       where: { studentProfileId: studentProfile.id, status: 'EXCUSED' },
     });
 
+    // Null, not 100, when nothing has been recorded — see the same reasoning
+    // in ParentService.getChildren. No history is not perfect attendance.
     const attendanceRate =
       totalAttendance > 0
         ? Math.round(((presentCount + lateCount) / totalAttendance) * 100)
-        : 100;
+        : null;
 
     const attendanceSummary = {
       attendanceRate,

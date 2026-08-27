@@ -96,10 +96,15 @@ export class ParentService {
           status: { in: ['PRESENT', 'LATE'] },
         },
       });
+      // Null, not 100, when nothing has ever been recorded. A child with no
+      // attendance history is not a child with perfect attendance — and a
+      // guardian-created child never gets a ClassSection placement, so this
+      // is the normal case for a self-service customer, not an edge case.
+      // Callers render "not tracked" rather than a number.
       const attendanceRate =
         totalAttendance > 0
           ? Math.round((presentAttendance / totalAttendance) * 100)
-          : 100;
+          : null;
 
       // 2. Calculate Pending Homework Count
       let pendingHomeworkCount = 0;

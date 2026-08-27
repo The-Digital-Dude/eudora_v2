@@ -553,7 +553,9 @@ export default function AttendancePage() {
                 Daily Presence Rate
               </span>
               <p className="mt-0.5 text-xl font-black text-success">
-                {classSummary?.attendanceRate ?? 100}%
+                {classSummary?.attendanceRate == null
+                  ? "—"
+                  : `${classSummary.attendanceRate}%`}
               </p>
             </div>
             <div className="rounded-xl bg-success/10 p-2.5">
@@ -567,7 +569,9 @@ export default function AttendancePage() {
                 Monthly Rate ({selectedDate.substring(0, 7)})
               </span>
               <p className="mt-0.5 text-xl font-black text-primary">
-                {monthlySummary?.attendanceRate ?? 100}%
+                {monthlySummary?.attendanceRate == null
+                  ? "—"
+                  : `${monthlySummary.attendanceRate}%`}
               </p>
             </div>
             <div className="rounded-xl bg-primary/10 p-2.5">

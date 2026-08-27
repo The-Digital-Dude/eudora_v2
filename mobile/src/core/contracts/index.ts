@@ -771,7 +771,8 @@ export interface ChildSummary {
   birthDate: string;
   gender: string;
   classSection: ChildClassSection | null;
-  attendanceRate: number;
+  /** Null when nothing has been recorded — render "not tracked", never a number. */
+  attendanceRate: number | null;
   pendingHomeworkCount: number;
   latestGrade: ChildLatestGrade | null;
 }

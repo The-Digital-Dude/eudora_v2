@@ -10,7 +10,8 @@ export interface ChildRollup {
     name: string;
     code: string;
   } | null;
-  attendanceRate: number;
+  /** Null when nothing has been recorded — render "not tracked", never a number. */
+  attendanceRate: number | null;
   pendingHomeworkCount: number;
   latestGrade: {
     title: string;

@@ -21,7 +21,8 @@ export interface RecordDailyAttendancePayload {
 
 export interface AttendanceSummary {
   total: number;
-  attendanceRate: number;
+  /** Null when nothing has been recorded in the range — never invent 100%. */
+  attendanceRate: number | null;
   breakdown: {
     PRESENT: number;
     ABSENT: number;
@@ -33,7 +34,8 @@ export interface AttendanceSummary {
 export interface MonthlySummary {
   month: string;
   total: number;
-  attendanceRate: number;
+  /** Null when the month has no records — never invent 100%. */
+  attendanceRate: number | null;
   breakdown: {
     PRESENT: number;
     ABSENT: number;

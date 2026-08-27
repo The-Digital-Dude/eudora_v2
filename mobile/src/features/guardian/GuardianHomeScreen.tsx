@@ -283,14 +283,23 @@ function ChildCard({
           <Text variant="caption" color="mutedForeground">
             Attendance
           </Text>
-          <Text variant="caption">{child.attendanceRate}%</Text>
+          {/* Null means nothing recorded — a child added through the family
+              portal holds no class placement, so there is no register to mark
+              them on. A full bar reading 100% would be inventing a result. */}
+          <Text variant="caption" color={child.attendanceRate === null ? 'mutedForeground' : undefined}>
+            {child.attendanceRate === null ? 'Not tracked yet' : `${child.attendanceRate}%`}
+          </Text>
         </View>
-        <View style={{ height: t.spacing.xs }} />
-        <ProgressBar
-          value={child.attendanceRate / 100}
-          color={child.attendanceRate >= 90 ? 'success' : 'warning'}
-          height={5}
-        />
+        {child.attendanceRate !== null ? (
+          <>
+            <View style={{ height: t.spacing.xs }} />
+            <ProgressBar
+              value={child.attendanceRate / 100}
+              color={child.attendanceRate >= 90 ? 'success' : 'warning'}
+              height={5}
+            />
+          </>
+        ) : null}
 
         <View style={{ height: t.spacing.md }} />
 

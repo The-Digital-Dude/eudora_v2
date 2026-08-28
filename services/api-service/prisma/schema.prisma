@@ -1228,6 +1228,9 @@ enum ModuleItemKind {
   /// that buys the course, so the date and join link live there, not here.
   /// A course containing one of these is LIVE-only — see `assertDeliveryMode`.
   LIVE_CLASS
+  /// A narrated, illustrated story the child listens to. The slot; the `Story`
+  /// row hanging off it carries the chapters, segments and artwork.
+  STORY
 }
 
 model ModuleItem {
@@ -1257,6 +1260,8 @@ model ModuleItem {
   sessions   BatchSession[]
   /// Populated only for HOMEWORK items — the brief for this checkpoint.
   homework   Homework?
+  /// Populated only for STORY items — the narrated story this slot contains.
+  story      Story?
 
   @@map("module_items")
 }
@@ -1276,6 +1281,148 @@ model ModuleItemProgress {
 
   @@unique([moduleItemId, studentProfileId])
   @@map("module_item_progress")
+}
+
+// ─── Interactive stories ────────────────────────────────────────────────────
+// A narrated, illustrated story a child listens to and can later ask questions
+// about out loud. Hangs off `ModuleItem` the same way `Homework` does, so
+// entitlement checks, the catalog and progress tracking all keep working with
+// no new plumbing — a story is course content a family paid for, not a
+// separate world beside one.
+//
+// Deliberately absent at this stage: anything about the voice agent. The
+// conversation and turn records land with the agent itself, because their shape
+// depends on decisions (moderation verdict format, cost fields) that have not
+// been made yet, and guessing them now would bake the guess into a migration.
+
+model Story {
+  id           String @id @default(uuid())
+  moduleItemId String @unique
+
+  title       String
+  /// One or two lines, used on the card and in search results.
+  synopsis    String?
+  coverAssetId String? @unique
+
+  /// Who the story is written for. Same banding the public catalog filters on,
+  /// so a story can sit in the same browse experience as everything else.
+  gradeBand GradeBand?
+
+  /// Freeform notes the author writes for the voice agent — what this story is
+  /// about, what it is teaching, what to do with an off-topic question. These
+  /// become part of the agent's grounding once it exists; until then they are
+  /// simply the author's intent, written down while it is fresh.
+  agentGuidance String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  moduleItem ModuleItem       @relation(fields: [moduleItemId], references: [id], onDelete: Cascade)
+  cover      StoryAsset?      @relation("StoryCover", fields: [coverAssetId], references: [id], onDelete: SetNull)
+  chapters   StoryChapter[]
+  characters StoryCharacter[]
+  assets     StoryAsset[]     @relation("StoryAssets")
+
+  @@map("stories")
+}
+
+model StoryChapter {
+  id        String @id @default(uuid())
+  storyId   String
+  title     String
+  sortOrder Int    @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  story    Story          @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  segments StorySegment[]
+
+  @@unique([storyId, sortOrder])
+  @@index([storyId])
+  @@map("story_chapters")
+}
+
+/// One paragraph or beat of the story — the unit narration is generated per,
+/// and the unit playback position maps to.
+///
+/// This is the keystone for everything visual later. Because playback knows
+/// which segment is sounding, changing an illustration mid-narration, moving a
+/// camera or triggering a scene transition becomes "attach something to a
+/// segment" rather than a rebuild. That is the entire reason segments exist as
+/// rows rather than the chapter being one blob of text.
+model StorySegment {
+  id        String @id @default(uuid())
+  chapterId String
+  sortOrder Int    @default(1)
+
+  text String
+
+  /// Storage key for this segment's generated narration, and how long it runs.
+  /// Both null until narration is generated — the story is fully authorable and
+  /// readable without audio.
+  narrationAudioKey    String?
+  narrationDurationMs  Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chapter StoryChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  assets  StoryAsset[] @relation("SegmentAssets")
+
+  @@unique([chapterId, sortOrder])
+  @@index([chapterId])
+  @@map("story_segments")
+}
+
+/// Artwork and other media. An asset bound to a segment is what changes while
+/// that segment is being narrated; an unbound one is story-level art.
+model StoryAsset {
+  id      String @id @default(uuid())
+  storyId String
+  /// Null for story-level artwork such as the cover.
+  segmentId String?
+
+  kind StoryAssetKind @default(ILLUSTRATION)
+  /// Storage key, resolved to a signed URL at read time rather than stored as
+  /// one — signed URLs expire, so persisting them would rot.
+  storageKey String
+  /// Required for anything a child sees; stories are read by children who may
+  /// use a screen reader.
+  altText    String
+  sortOrder  Int @default(1)
+
+  createdAt DateTime @default(now())
+
+  story    Story         @relation("StoryAssets", fields: [storyId], references: [id], onDelete: Cascade)
+  segment  StorySegment? @relation("SegmentAssets", fields: [segmentId], references: [id], onDelete: Cascade)
+  coverOf  Story?        @relation("StoryCover")
+
+  @@index([storyId])
+  @@index([segmentId])
+  @@map("story_assets")
+}
+
+enum StoryAssetKind {
+  ILLUSTRATION
+  BACKGROUND
+  AUDIO
+}
+
+/// Named characters, so the agent can answer "who is Bramble?" from the story
+/// rather than from whatever a general model imagines.
+model StoryCharacter {
+  id          String  @id @default(uuid())
+  storyId     String
+  name        String
+  description String?
+  sortOrder   Int     @default(1)
+
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, name])
+  @@index([storyId])
+  @@map("story_characters")
 }
 
 model DiscussionThread {

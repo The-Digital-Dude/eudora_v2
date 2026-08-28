@@ -26,6 +26,7 @@ import { BatchSessionsModule } from './batch-sessions/batch-sessions.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { CatalogModule } from './catalog/catalog.module';
+import { StoriesModule } from './stories/stories.module';
 import { ClassesModule } from './classes/classes.module';
 import { EntitlementsModule } from './entitlements/entitlements.module';
 import { BillingModule } from './billing/billing.module';
@@ -82,6 +83,7 @@ import { AuditModule } from './common/audit/audit.module';
     AssessmentsModule,
     LessonsModule,
     CatalogModule,
+    StoriesModule,
     ClassesModule,
     EntitlementsModule,
     BillingModule,

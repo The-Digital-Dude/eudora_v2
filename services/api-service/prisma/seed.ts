@@ -3166,6 +3166,130 @@ async function main() {
     }
   }
 
+  // ─── Interactive story ────────────────────────────────────────────────────
+  // One real story, so the content model is exercised by something an author
+  // would actually write rather than by fixtures. No narration audio and no
+  // voice agent yet — a story is meant to be fully readable without either,
+  // and this is the check on that claim.
+  console.log('🌱 Seeding an interactive story...');
+
+  const storyChapterConcept = await prisma.concept.upsert({
+    where: { name: 'Story Time' },
+    update: { courseId: alphabetCourse.id, sortOrder: 4, kind: 'CHAPTER' },
+    create: {
+      name: 'Story Time',
+      description: 'A story to listen to, with pictures.',
+      courseId: alphabetCourse.id,
+      sortOrder: 4,
+      kind: 'CHAPTER',
+    },
+  });
+
+  let storyItem = await prisma.moduleItem.findFirst({
+    where: { conceptId: storyChapterConcept.id, kind: 'STORY' },
+  });
+  if (!storyItem) {
+    storyItem = await prisma.moduleItem.create({
+      data: {
+        conceptId: storyChapterConcept.id,
+        kind: 'STORY',
+        title: 'Bramble and the Too-Big Puddle',
+        sortOrder: 1,
+        status: 'PUBLISHED',
+        // Deliberately given away: a story is the best possible advert for
+        // this product, and it costs nothing extra to let a visitor hear one.
+        isFreePreview: true,
+      },
+    });
+  }
+
+  const existingStory = await prisma.story.findUnique({
+    where: { moduleItemId: storyItem.id },
+  });
+  if (!existingStory) {
+    const story = await prisma.story.create({
+      data: {
+        moduleItemId: storyItem.id,
+        title: 'Bramble and the Too-Big Puddle',
+        synopsis:
+          'Bramble the hedgehog meets a puddle far too wide to jump, and has to think of another way across.',
+        gradeBand: 'PRE_K_K',
+        // Written for the voice agent that does not exist yet. Capturing the
+        // author's intent while the story is being written is much easier than
+        // reconstructing it later.
+        agentGuidance:
+          'This story is about trying a different approach when the first one does not work. ' +
+          'Answer only from what happens in the story and who is in it. If a child asks about ' +
+          'something the story does not cover, say so warmly and offer to keep reading. Never ' +
+          'invent extra events, characters or endings.',
+      },
+    });
+
+    await prisma.storyCharacter.createMany({
+      data: [
+        {
+          storyId: story.id,
+          name: 'Bramble',
+          description: 'A small hedgehog who is braver than she thinks.',
+          sortOrder: 1,
+        },
+        {
+          storyId: story.id,
+          name: 'Pip',
+          description: 'A wren who watches from the hedge and asks good questions.',
+          sortOrder: 2,
+        },
+      ],
+    });
+
+    const chapters: { title: string; segments: string[] }[] = [
+      {
+        title: 'The Puddle',
+        segments: [
+          'Bramble the hedgehog set off down the lane one wet morning, humming a small hum.',
+          'She had not gone far when she stopped. Right across the path lay a puddle. It was a very wide puddle.',
+          '"I shall jump it," said Bramble. She backed up. She ran. She jumped — and landed with a splash, right in the middle.',
+        ],
+      },
+      {
+        title: 'Pip Has an Idea',
+        segments: [
+          'From the hedge came a small voice. "That did not work," said Pip the wren, tilting her head.',
+          '"I noticed," said Bramble, dripping.',
+          '"You tried going over," said Pip. "What else is there?"',
+          'Bramble sat and thought. Over had not worked. Through had not worked either, really. That left one thing.',
+        ],
+      },
+      {
+        title: 'Around',
+        segments: [
+          'Bramble walked to the edge of the puddle, and then along it, and then around it.',
+          'It took a little longer. She did not mind.',
+          '"You went around," said Pip, flying alongside. "That was clever."',
+          '"It was not clever," said Bramble. "It was just the next thing I tried." And she carried on down the lane, still damp, still humming.',
+        ],
+      },
+    ];
+
+    for (const [ci, chapter] of chapters.entries()) {
+      const chapterRow = await prisma.storyChapter.create({
+        data: { storyId: story.id, title: chapter.title, sortOrder: ci + 1 },
+      });
+      for (const [si, text] of chapter.segments.entries()) {
+        await prisma.storySegment.create({
+          data: { chapterId: chapterRow.id, text, sortOrder: si + 1 },
+        });
+      }
+    }
+
+    const segmentCount = chapters.reduce((n, c) => n + c.segments.length, 0);
+    console.log(
+      `✅ Seeded 1 story — ${chapters.length} chapters, ${segmentCount} segments, 2 characters (no audio yet)`,
+    );
+  } else {
+    console.log('✅ Story already present');
+  }
+
   console.log('🎉 Seeding completed successfully!');
 }
 

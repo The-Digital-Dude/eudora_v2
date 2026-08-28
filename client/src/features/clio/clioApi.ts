@@ -153,7 +153,11 @@ export const clioApi = authApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["LessonFlow" as any],
+      // Gamification too: completing a lesson updates the learner's streak and
+      // XP server-side (LessonsService), so without this the streak shown in
+      // the HUD and completion modal would be the value from page load — real,
+      // but one behind the lesson they just finished.
+      invalidatesTags: ["LessonFlow" as any, "Gamification" as any],
     } as any),
 
     // Fetch curriculum concepts for dropdown selection

@@ -23,13 +23,15 @@ export default function DiagnosticsPage() {
 
   // Calculate Average/Median Score of completed/marked runs
   const gradedAttempts = attemptsList.filter((a: any) => a.percentageScore != null);
+  // Null, not a placeholder. This fell back to 82 when nothing was graded,
+  // which is indistinguishable from a real average to anyone reading it.
   const avgScore =
     gradedAttempts.length > 0
       ? Math.round(
           gradedAttempts.reduce((acc: number, a: any) => acc + (a.percentageScore ?? 0), 0) /
             gradedAttempts.length,
         )
-      : 82; // Fallback placeholder if empty
+      : null;
 
   // Filter list by student name or subject title
   const filteredAttempts = attemptsList.filter((a: any) => {
@@ -77,9 +79,13 @@ export default function DiagnosticsPage() {
             <BarChart2 className="h-4 w-4 text-success" />
           </div>
           <p className="font-display text-2xl font-bold text-foreground">
-            {isLoading ? "..." : `${avgScore}%`}
+            {isLoading ? "..." : avgScore === null ? "—" : `${avgScore}%`}
           </p>
-          <p className="text-[10px] font-semibold text-success">Overall class average score</p>
+          <p className="text-[10px] font-semibold text-success">
+            {avgScore === null
+              ? "No graded attempts yet"
+              : "Overall class average score"}
+          </p>
         </Card>
 
         <Card className="space-y-2 rounded-2xl border border-border bg-card p-5">

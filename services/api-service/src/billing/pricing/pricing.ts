@@ -6,7 +6,17 @@
  * money: Stripe works in minor units and `0.1 + 0.2 !== 0.3`.
  */
 
-/** Below this, card fees plus one support interaction erase the margin. */
+/**
+ * Minimum price for anything sellable, in minor units (cents).
+ *
+ * At Stripe's international rate (4.4% + $0.30) a $5 sale loses 10.4% to fees;
+ * below roughly $9 the fee drag plus a single support interaction erases the
+ * margin entirely. Standalone micro-courses are expected to sit at $19+.
+ *
+ * This is the only declaration. It was previously duplicated in
+ * `institution/dto/program.dto.ts`, with checkout importing one copy and
+ * program validation the other — they agreed by luck, not by construction.
+ */
 export const MIN_SELLABLE_PRICE_CENTS = 900;
 
 /**

@@ -46,6 +46,11 @@ describe('CatalogService', () => {
     moduleItemProgress: {
       findMany: jest.fn(),
     },
+    // updateCourse counts LIVE_CLASS items before letting a course leave LIVE
+    // delivery mode. Defaults to 0 so the guard passes unless a test says so.
+    moduleItem: {
+      count: jest.fn().mockResolvedValue(0),
+    },
     $transaction: jest.fn(),
   };
 
@@ -437,6 +442,163 @@ describe('CatalogService', () => {
         readingContent: 'the paid body',
         assessmentId: 'assessment-1',
       });
+    });
+  });
+
+  // ─── Course write path ──────────────────────────────────────────────────────
+  // Finding U13, stage S1. Both handlers were explicit field lists rather than
+  // a spread, so every field added to the DTO after they were written was
+  // silently dropped — the API validated a price, returned 200, and discarded
+  // it. These started as characterisation tests pinning that behaviour and
+  // were flipped once the fields were wired through.
+  describe('createCourse / updateCourse — write path', () => {
+    const fullCourseDto = {
+      learningSubjectId: 'subject-1',
+      title: 'Percentages & Ratios',
+      slug: 'percentages-ratios',
+      description: 'Sound percentage reasoning.',
+      estimatedHours: 6,
+      durationWeeks: 4,
+      thumbnailUrl: 'https://cdn.example/thumb.png',
+      gradeBand: 'G3_4',
+      deliveryMode: 'SELF_PACED',
+      priceOneTimeCents: 4900,
+      priceMonthlyCents: 1700,
+      installmentCount: 3,
+      currency: 'USD',
+      status: 'PUBLISHED',
+      sortOrder: 2,
+    } as any;
+
+    const arrangeCreate = () => {
+      mockPrismaService.learningSubject.findUnique.mockResolvedValue({
+        id: 'subject-1',
+      });
+      mockPrismaService.course.findUnique.mockResolvedValue(null);
+      mockPrismaService.course.create.mockResolvedValue({ id: 'course-1' });
+    };
+
+    it('createCourse persists every field the DTO accepts', async () => {
+      arrangeCreate();
+
+      await service.createCourse(fullCourseDto);
+
+      const { data } = mockPrismaService.course.create.mock.calls[0][0];
+
+      expect(data).toMatchObject({
+        title: 'Percentages & Ratios',
+        status: 'PUBLISHED',
+        priceOneTimeCents: 4900,
+        priceMonthlyCents: 1700,
+        installmentCount: 3,
+        currency: 'USD',
+        gradeBand: 'G3_4',
+        thumbnailUrl: 'https://cdn.example/thumb.png',
+        durationWeeks: 4,
+        deliveryMode: 'SELF_PACED',
+      });
+    });
+
+    it('createCourse writes null for an omitted price rather than dropping it', async () => {
+      arrangeCreate();
+
+      await service.createCourse({
+        learningSubjectId: 'subject-1',
+        title: 'Free Sampler',
+        slug: 'free-sampler',
+      });
+
+      const { data } = mockPrismaService.course.create.mock.calls[0][0];
+
+      // Null is meaningful: "not sold a la carte", reachable only via a program.
+      expect(data.priceOneTimeCents).toBeNull();
+      expect(data.gradeBand).toBeNull();
+      // Column defaults must not be overridden by an absent field.
+      expect(data.deliveryMode).toBeUndefined();
+      expect(data.currency).toBeUndefined();
+    });
+
+    it('updateCourse persists every field the DTO accepts', async () => {
+      mockPrismaService.course.findUnique.mockResolvedValue({
+        id: 'course-1',
+        deletedAt: null,
+      });
+      mockPrismaService.course.update.mockResolvedValue({ id: 'course-1' });
+
+      await service.updateCourse('course-1', fullCourseDto);
+
+      const { data } = mockPrismaService.course.update.mock.calls[0][0];
+
+      expect(data).toMatchObject({
+        title: 'Percentages & Ratios',
+        deliveryMode: 'SELF_PACED',
+        priceOneTimeCents: 4900,
+        priceMonthlyCents: 1700,
+        installmentCount: 3,
+        currency: 'USD',
+        gradeBand: 'G3_4',
+        thumbnailUrl: 'https://cdn.example/thumb.png',
+        durationWeeks: 4,
+      });
+    });
+
+    it('updateCourse leaves untouched fields out of the write entirely', async () => {
+      mockPrismaService.course.findUnique.mockResolvedValue({
+        id: 'course-1',
+        deletedAt: null,
+      });
+      mockPrismaService.course.update.mockResolvedValue({ id: 'course-1' });
+
+      await service.updateCourse('course-1', { title: 'Renamed' });
+
+      const { data } = mockPrismaService.course.update.mock.calls[0][0];
+
+      expect(data).toEqual({ title: 'Renamed' });
+      // A partial update must never blank a price it was not asked to change.
+      expect('priceOneTimeCents' in data).toBe(false);
+    });
+
+    it('rejects a price below the sellable floor on create', async () => {
+      arrangeCreate();
+
+      // 100 cents is far below MIN_SELLABLE_PRICE_CENTS (900) — the same rule
+      // programs have enforced all along, now shared rather than duplicated.
+      await expect(
+        service.createCourse({ ...fullCourseDto, priceOneTimeCents: 100 }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects a price below the sellable floor on update', async () => {
+      mockPrismaService.course.findUnique.mockResolvedValue({
+        id: 'course-1',
+        deletedAt: null,
+      });
+
+      await expect(
+        service.updateCourse('course-1', {
+          priceOneTimeCents: 100,
+        } as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects a monthly price with no installment count', async () => {
+      arrangeCreate();
+
+      await expect(
+        service.createCourse({
+          ...fullCourseDto,
+          priceMonthlyCents: 1700,
+          installmentCount: undefined,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('allows a zero price, which means "not sold at this price point"', async () => {
+      arrangeCreate();
+
+      await expect(
+        service.createCourse({ ...fullCourseDto, priceOneTimeCents: 0 }),
+      ).resolves.toBeDefined();
     });
   });
 });

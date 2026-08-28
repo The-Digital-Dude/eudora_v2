@@ -17,6 +17,7 @@ import {
   AddCourseToPathDto,
   ReorderPathCoursesDto,
 } from './dto/catalog.dto';
+import { assertPriceFloor } from '../billing/pricing/price-rules';
 import { ProgressionService } from '../progression/progression.service';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 
@@ -94,6 +95,8 @@ export class CatalogService {
     if (existingSlug) {
       throw new BadRequestException('A course with this slug already exists');
     }
+    assertPriceFloor(dto);
+
     return this.prisma.course.create({
       data: {
         learningSubjectId: dto.learningSubjectId,
@@ -103,6 +106,21 @@ export class CatalogService {
         estimatedHours: dto.estimatedHours ?? null,
         status: dto.status ?? 'DRAFT',
         sortOrder: dto.sortOrder ?? 0,
+        // Everything below was accepted and validated by the DTO and then
+        // dropped here, so a course could never be given a price, artwork or
+        // grade band through the API — it returned 200 and discarded them.
+        // Nulls are meaningful: null price means "not sold a la carte".
+        durationWeeks: dto.durationWeeks ?? null,
+        thumbnailUrl: dto.thumbnailUrl ?? null,
+        gradeBand: dto.gradeBand ?? null,
+        priceOneTimeCents: dto.priceOneTimeCents ?? null,
+        priceMonthlyCents: dto.priceMonthlyCents ?? null,
+        installmentCount: dto.installmentCount ?? null,
+        // Both have column defaults, so only override when actually supplied.
+        ...(dto.deliveryMode !== undefined
+          ? { deliveryMode: dto.deliveryMode }
+          : {}),
+        ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
       },
     });
   }
@@ -632,6 +650,8 @@ export class CatalogService {
       }
     }
 
+    assertPriceFloor(dto);
+
     return this.prisma.course.update({
       where: { id },
       data: {
@@ -647,6 +667,26 @@ export class CatalogService {
         ...(dto.deliveryMode !== undefined
           ? { deliveryMode: dto.deliveryMode }
           : {}),
+        // Same omission as createCourse had, on the handler where deliveryMode
+        // was already fixed. Undefined means "not being changed"; null is an
+        // explicit clear, so both have to stay distinguishable here.
+        ...(dto.durationWeeks !== undefined
+          ? { durationWeeks: dto.durationWeeks }
+          : {}),
+        ...(dto.thumbnailUrl !== undefined
+          ? { thumbnailUrl: dto.thumbnailUrl }
+          : {}),
+        ...(dto.gradeBand !== undefined ? { gradeBand: dto.gradeBand } : {}),
+        ...(dto.priceOneTimeCents !== undefined
+          ? { priceOneTimeCents: dto.priceOneTimeCents }
+          : {}),
+        ...(dto.priceMonthlyCents !== undefined
+          ? { priceMonthlyCents: dto.priceMonthlyCents }
+          : {}),
+        ...(dto.installmentCount !== undefined
+          ? { installmentCount: dto.installmentCount }
+          : {}),
+        ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
       },
     });
   }

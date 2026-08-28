@@ -30,6 +30,12 @@ services:
       - ./services/api-service/.env.docker
     ports:
       - "3000:3000"
+    volumes:
+      # Under LOCAL storage every uploaded and generated file lives here. Without
+      # this volume a rebuild wiped them all while their database rows survived,
+      # leaving homework attachments, application CVs and generated narration as
+      # rows pointing at files that no longer exist.
+      - api_uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,4 +48,6 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  api_uploads:
     driver: local

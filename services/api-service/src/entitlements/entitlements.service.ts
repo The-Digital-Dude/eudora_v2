@@ -240,6 +240,21 @@ export class EntitlementsService {
       return { isStaff: false, courseIds: new Set() };
     }
 
+    return {
+      isStaff: false,
+      courseIds: await this.entitledCourseIdsForStudent(studentProfileId),
+    };
+  }
+
+  /**
+   * The same resolution keyed directly on a student profile, for callers that
+   * already have one and no viewer to derive it from — the guardian-facing
+   * parent and homework reads, which are authorised separately by
+   * `GuardianAccessService` before they get here.
+   */
+  async entitledCourseIdsForStudent(
+    studentProfileId: string,
+  ): Promise<Set<string>> {
     const now = new Date();
     const rows = await this.prisma.entitlement.findMany({
       where: {
@@ -263,7 +278,7 @@ export class EntitlementsService {
         courseIds.add(pc.courseId);
       }
     }
-    return { isStaff: false, courseIds };
+    return courseIds;
   }
 
   // --- Admin grant / revoke -------------------------------------------------

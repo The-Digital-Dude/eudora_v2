@@ -29,17 +29,17 @@ export default function CreateBroadcastPage() {
     }
 
     try {
+      // status and recipientCount are the server's to set. This used to post
+      // "SENT" plus a random count, which the log then showed as fact.
       await createBroadcast({
         type: broadcastType,
         title: broadcastTitle,
         content: broadcastContent,
         sender: broadcastSender,
-        status: "SENT", // Mocking default success status in pipeline
-        recipientCount: Math.floor(Math.random() * 50) + 12, // Mocking recipient distribution
       }).unwrap();
       router.push("/communication");
     } catch (err: any) {
-      setFormError(err?.data?.message || "Failed to dispatch broadcast alert.");
+      setFormError(err?.data?.message || "Failed to save the announcement.");
     }
   };
 
@@ -55,10 +55,10 @@ export default function CreateBroadcastPage() {
         </Link>
         <h1 className="font-display flex items-center gap-1.5 text-xl font-bold tracking-tight text-foreground">
           <Send className="h-5 w-5 text-foreground" />
-          Compose Communication Broadcast
+          Record an Announcement
         </h1>
         <p className="text-xs text-muted-foreground">
-          Draft a notification to dispatch across school communication channels.
+          Write an announcement down so there is a record of it. Nothing is delivered.
         </p>
       </div>
 
@@ -127,11 +127,12 @@ export default function CreateBroadcastPage() {
             />
           </div>
 
-          <div className="flex gap-2 rounded-xl border border-border bg-muted/50 p-3">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-            <p className="text-[9px] leading-normal text-muted-foreground">
-              Triggering this broadcast will store the record in the central databases and queue
-              dispatchers for SMTP email servers and SMS gateway systems.
+          <div className="flex gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            <p className="text-[10px] leading-normal text-foreground">
+              <span className="font-bold">This is not sent to anyone.</span> Saving records the
+              announcement so it is written down and searchable — no email, SMS or push is
+              dispatched. Delivery is not built yet.
             </p>
           </div>
 
@@ -150,7 +151,7 @@ export default function CreateBroadcastPage() {
               className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90"
             >
               <Send className="h-3.5 w-3.5" />
-              {sending ? "Dispatching..." : "Send Broadcast"}
+              {sending ? "Saving..." : "Save Announcement"}
             </Button>
           </div>
         </form>

@@ -1649,13 +1649,26 @@ enum LiveClassProvider {
 // off ClassSection, which cannot express "same course, different cohort,
 // different meeting time" — the shape a live course actually sells in.
 
+/// A composed announcement. Deliberately NOT a delivery record: nothing in
+/// this system dispatches a broadcast. `CommunicationService.createBroadcast`
+/// writes this row and returns; there is no SMS integration at all, and
+/// `EmailService` is a console mock.
+///
+/// The status default used to be "SENT", so every row asserted a delivery
+/// that never happened — and the composer paired it with a random recipient
+/// count. Both are server-owned now and tell the truth. When real dispatch
+/// exists, add SENT/FAILED and set them from the dispatcher, not the client.
 model Broadcast {
   id             String   @id @default(uuid())
   type           String // "Announcement", "SMS Alert", "Email Broadcast"
   title          String
   content        String?
   sender         String   @default("System")
-  status         String   @default("SENT") // "SENT", "FAILED", "PENDING"
+  /// "RECORDED" — composed and stored, not delivered. The only honest value
+  /// until a dispatcher exists.
+  status         String   @default("RECORDED")
+  /// Always 0 while nothing is delivered. There is no audience model to count
+  /// against: the composer collects no recipients.
   recipientCount Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

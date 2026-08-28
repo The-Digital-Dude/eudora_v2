@@ -649,11 +649,15 @@ async function main() {
   await prisma.broadcast.deleteMany();
   await prisma.broadcast.createMany({
     data: [
-      { type: 'Announcement', title: 'Fall Semester 2026 Registration Open', content: 'Registration is now open for all programs in the Fall 2026 term. Deadline: August 30.', sender: 'System', status: 'SENT', recipientCount: 120 },
-      { type: 'SMS Alert', title: 'Attendance Reminder Sent to Parent (Watson)', content: 'Watson was late for morning roll call on June 11.', sender: 'Main Campus Branch', status: 'SENT', recipientCount: 1 },
-      { type: 'Email Broadcast', title: 'Tuition Invoices Generated', content: 'Term invoices for Fall Semester 2026 have been issued. Please check the billing portal.', sender: 'Billing System', status: 'SENT', recipientCount: 95 },
-      { type: 'Announcement', title: 'Mid-Semester Progress Reports Available', content: 'Progress reports for the first half of Fall 2026 are now available in the parent portal.', sender: 'Academic Office', status: 'SENT', recipientCount: 200 },
-      { type: 'SMS Alert', title: 'School Closure — Weather Advisory', content: 'Classes are suspended tomorrow due to a weather advisory. Online sessions will be held.', sender: 'Main Campus', status: 'SENT', recipientCount: 350 },
+      // status/recipientCount deliberately omitted so the column defaults
+      // (RECORDED / 0) apply. These used to seed 'SENT' with invented counts
+      // — 350 recipients for a weather advisory that was never dispatched —
+      // which put five fabricated delivery records in the log as history.
+      { type: 'Announcement', title: 'Fall Semester 2026 Registration Open', content: 'Registration is now open for all programs in the Fall 2026 term. Deadline: August 30.', sender: 'System' },
+      { type: 'SMS Alert', title: 'Attendance Reminder Sent to Parent (Watson)', content: 'Watson was late for morning roll call on June 11.', sender: 'Main Campus Branch' },
+      { type: 'Email Broadcast', title: 'Tuition Invoices Generated', content: 'Term invoices for Fall Semester 2026 have been issued. Please check the billing portal.', sender: 'Billing System' },
+      { type: 'Announcement', title: 'Mid-Semester Progress Reports Available', content: 'Progress reports for the first half of Fall 2026 are now available in the parent portal.', sender: 'Academic Office' },
+      { type: 'SMS Alert', title: 'School Closure — Weather Advisory', content: 'Classes are suspended tomorrow due to a weather advisory. Online sessions will be held.', sender: 'Main Campus' },
     ],
   });
   console.log('✅ Seeded broadcasts');

@@ -38,7 +38,10 @@ const MOBILE_CATALOG_OUT = join(
 const WEB_AUDIO_DIR = join(ROOT, 'client/public/clio-voice');
 const MOBILE_AUDIO_DIR = join(ROOT, 'mobile/assets/voice');
 
-const MODEL = 'gemini-2.5-flash-preview-tts';
+// Not the 2.5 TTS preview: it rejects every request with "Model tried to
+// generate text, but it should only be used for TTS", so this script could
+// never have produced a single line.
+const MODEL = 'gemini-3.1-flash-tts-preview';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 const args = new Set(process.argv.slice(2));

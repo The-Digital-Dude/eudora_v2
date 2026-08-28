@@ -35,7 +35,6 @@ import {
   setWidgetState,
   showExplanation,
 } from "@/features/clio/lessonSlice";
-import { ClioVoicePicker } from "@/features/clio/sound/ClioVoicePicker";
 import { useClioVoice } from "@/features/clio/sound/useClioVoice";
 import { WidgetSelector } from "@/features/clio/widgets/WidgetSelector";
 import { useGetGamificationMeQuery } from "@/features/student/studentApi";
@@ -190,7 +189,7 @@ export default function LessonFlowPage() {
       if (result.isCorrect) {
         playPhrase("CORRECT");
       } else {
-        playPhrase("TRY_AGAIN");
+        playPhrase("INCORRECT");
       }
 
       if (result.isLessonComplete) {
@@ -452,10 +451,7 @@ export default function LessonFlowPage() {
                   </>
                 )}
               </button>
-            </div>
-
-            <ClioVoicePicker />
-
+            </div>
             <div
               className="flex items-start gap-2.5 cursor-pointer"
               onClick={() => speakText(getMascotSpeech())}

@@ -8,6 +8,24 @@ on:
   pull_request:
 
 jobs:
+  # Clio's phrase catalog is authored once in voice/clio-phrases.json and
+  # generated into both clients, because client/ and mobile/ are independent
+  # pnpm projects with no import path between them. This is what stops the
+  # generated copies being hand-edited and drifting apart again — which is
+  # exactly what happened to the two catalogs this replaced.
+  voice-catalog:
+    name: Voice catalog in sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check generated catalogs match voice/clio-phrases.json
+        run: node voice/generate-voice-lines.mjs --check
+
   frontend:
     name: Frontend CI
     runs-on: ubuntu-latest

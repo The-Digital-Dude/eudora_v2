@@ -4,6 +4,7 @@ import Link from "next/link";
 // "Metrics" used to sit here, pointing at a band of invented figures.
 const footerLinks = [
   { label: "How it works", href: "/about-eudora" },
+  { label: "Try a story", href: "/story-demo" },
   { label: "Courses", href: "/explore" },
   { label: "Pricing", href: "/#pricing" },
 ];

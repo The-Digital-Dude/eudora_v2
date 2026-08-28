@@ -1,4 +1,5 @@
 import { authApi } from "../auth/authApi";
+import type { DeliveryMode } from "../dashboard/dashboardApi";
 
 export interface MyLiveSession {
   id: string;
@@ -110,6 +111,8 @@ export interface DiscussionThread {
   posts: DiscussionPost[];
 }
 
+export type GradeBand = "PRE_K_K" | "G1_2" | "G3_4" | "G5_6";
+
 export interface CourseSummary {
   id: string;
   learningSubjectId: string;
@@ -119,6 +122,14 @@ export interface CourseSummary {
   estimatedHours: number | null;
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   sortOrder: number;
+  durationWeeks: number | null;
+  thumbnailUrl: string | null;
+  gradeBand: GradeBand | null;
+  deliveryMode: DeliveryMode;
+  priceOneTimeCents: number | null;
+  priceMonthlyCents: number | null;
+  installmentCount: number | null;
+  currency: string;
   learningSubject: { id: string; name: string; code: string };
   _count: { concepts: number };
 }
@@ -186,6 +197,17 @@ export interface CreateCoursePayload {
   estimatedHours?: number;
   status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   sortOrder?: number;
+  // The API validated all of these long before it persisted them; the client
+  // type stopped at the truncated subset the service used to write, which is
+  // why no form could ever price a course.
+  durationWeeks?: number;
+  thumbnailUrl?: string;
+  gradeBand?: GradeBand;
+  deliveryMode?: DeliveryMode;
+  /** Null/omitted = not sold a la carte; reachable only inside a program. */
+  priceOneTimeCents?: number | null;
+  priceMonthlyCents?: number | null;
+  installmentCount?: number | null;
 }
 
 export interface CreateLearningPathPayload {

@@ -20,6 +20,7 @@ import { useParams } from "next/navigation";
 import React, { useState } from "react";
 import { toast } from "sonner";
 
+import { CourseSettingsPanel } from "@/app/(dashboard)/courses/components/course-settings-panel";
 import { CourseTeachersPanel } from "@/app/(dashboard)/courses/components/course-teachers-panel";
 import { useGetAssessmentsQuery } from "@/features/assessments/assessmentsApi";
 import type { ModuleItemKind } from "@/features/catalog/catalogApi";
@@ -346,7 +347,9 @@ export default function CourseDetailPage() {
   const courseId = params?.id ?? "";
   const { data: course, isLoading } = useGetCourseDetailQuery(courseId, { skip: !courseId });
   const concepts = course?.concepts ?? [];
-  const [tab, setTab] = useState<"curriculum" | "progress">("curriculum");
+  const [tab, setTab] = useState<"curriculum" | "settings" | "progress">(
+    "curriculum",
+  );
 
   if (isLoading) {
     return (
@@ -403,6 +406,7 @@ export default function CourseDetailPage() {
         {(
           [
             ["curriculum", "Curriculum"],
+            ["settings", "Details & pricing"],
             ["progress", "Homework progress"],
           ] as const
         ).map(([value, label]) => (
@@ -421,6 +425,8 @@ export default function CourseDetailPage() {
           </button>
         ))}
       </div>
+
+      {tab === "settings" && <CourseSettingsPanel course={course} />}
 
       {tab === "progress" && <CourseHomeworkProgress courseId={course.id} />}
 

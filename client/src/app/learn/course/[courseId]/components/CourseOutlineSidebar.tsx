@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BookHeadphones,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -28,6 +29,7 @@ const kindIcon: Record<ModuleItemKind, React.ElementType> = {
   ASSESSMENT: ClipboardList,
   LIVE_CLASS: Radio,
   HOMEWORK: PencilLine,
+  STORY: BookHeadphones,
 };
 
 interface CourseOutlineSidebarProps {

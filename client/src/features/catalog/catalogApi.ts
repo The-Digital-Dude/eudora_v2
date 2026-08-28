@@ -43,7 +43,10 @@ export type ModuleItemKind =
   /** Curriculum slot for a live session; the meeting itself is a BatchSession. */
   | "LIVE_CLASS"
   /** Work handed in for a person to read; the brief is a Homework row. */
-  | "HOMEWORK";
+  | "HOMEWORK"
+  /** A narrated story the child listens to and can ask questions about; the
+   * chapters and audio hang off a Story row. */
+  | "STORY";
 
 export interface ModuleItem {
   id: string;

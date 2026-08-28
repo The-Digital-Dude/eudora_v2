@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BookHeadphones,
   CheckCircle2,
   ChevronRight,
   Circle,
@@ -36,6 +37,7 @@ const kindIcon: Record<ModuleItemKind, React.ElementType> = {
   ASSESSMENT: ClipboardList,
   LIVE_CLASS: Radio,
   HOMEWORK: PencilLine,
+  STORY: BookHeadphones,
 };
 
 const statusColors: Record<string, string> = {

@@ -51,6 +51,11 @@ describe('CatalogService', () => {
     moduleItem: {
       count: jest.fn().mockResolvedValue(0),
     },
+    // The publish guard asks whether a course is bundled by any program.
+    // Defaults to 0 — standalone — so tests opt in to the bundled case.
+    programCourse: {
+      count: jest.fn().mockResolvedValue(0),
+    },
     $transaction: jest.fn(),
   };
 
@@ -599,6 +604,108 @@ describe('CatalogService', () => {
       await expect(
         service.createCourse({ ...fullCourseDto, priceOneTimeCents: 0 }),
       ).resolves.toBeDefined();
+    });
+  });
+
+  // ─── Publish guard ──────────────────────────────────────────────────────────
+  // Finding U13, stage S2. "Published, unpriced, in no program" was reachable,
+  // and the public course page papered over it by claiming the course was
+  // available as part of a programme — untrue for three live courses. A course
+  // with no price of its own is legitimate only when a program it belongs to
+  // carries the pricing.
+  describe('publish guard', () => {
+    const publishedNoPrice = {
+      learningSubjectId: 'subject-1',
+      title: 'Stranded',
+      slug: 'stranded',
+      status: 'PUBLISHED',
+    } as any;
+
+    beforeEach(() => {
+      mockPrismaService.learningSubject.findUnique.mockResolvedValue({
+        id: 'subject-1',
+      });
+      mockPrismaService.course.findUnique.mockResolvedValue(null);
+      mockPrismaService.course.create.mockResolvedValue({ id: 'course-1' });
+      mockPrismaService.course.update.mockResolvedValue({ id: 'course-1' });
+      mockPrismaService.programCourse.count.mockResolvedValue(0);
+    });
+
+    it('refuses to create a published course with no price and no program', async () => {
+      await expect(service.createCourse(publishedNoPrice)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockPrismaService.course.create).not.toHaveBeenCalled();
+    });
+
+    it('allows a published course that carries its own price', async () => {
+      await expect(
+        service.createCourse({ ...publishedNoPrice, priceOneTimeCents: 4900 }),
+      ).resolves.toBeDefined();
+    });
+
+    it('allows a DRAFT course with no price — nothing is on sale yet', async () => {
+      await expect(
+        service.createCourse({ ...publishedNoPrice, status: 'DRAFT' }),
+      ).resolves.toBeDefined();
+    });
+
+    it('allows publishing an unpriced course once a program bundles it', async () => {
+      mockPrismaService.course.findUnique.mockResolvedValue({
+        id: 'course-1',
+        deletedAt: null,
+        status: 'DRAFT',
+        priceOneTimeCents: null,
+      });
+      mockPrismaService.programCourse.count.mockResolvedValue(1);
+
+      await expect(
+        service.updateCourse('course-1', { status: 'PUBLISHED' }),
+      ).resolves.toBeDefined();
+    });
+
+    it('refuses to publish an unpriced course that no program bundles', async () => {
+      mockPrismaService.course.findUnique.mockResolvedValue({
+        id: 'course-1',
+        deletedAt: null,
+        status: 'DRAFT',
+        priceOneTimeCents: null,
+      });
+
+      await expect(
+        service.updateCourse('course-1', { status: 'PUBLISHED' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockPrismaService.course.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses to strip the price off a published standalone course', async () => {
+      mockPrismaService.course.findUnique.mockResolvedValue({
+        id: 'course-1',
+        deletedAt: null,
+        status: 'PUBLISHED',
+        priceOneTimeCents: 4900,
+      });
+
+      await expect(
+        service.updateCourse('course-1', { priceOneTimeCents: null } as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('still allows unrelated edits to a course already in the bad state', async () => {
+      // The three courses that predate this guard must stay editable — the
+      // guard blocks entering the state, it does not brick the rows already
+      // in it. Renaming one touches neither status nor price.
+      mockPrismaService.course.findUnique.mockResolvedValue({
+        id: 'course-1',
+        deletedAt: null,
+        status: 'PUBLISHED',
+        priceOneTimeCents: null,
+      });
+
+      await expect(
+        service.updateCourse('course-1', { title: 'Renamed' }),
+      ).resolves.toBeDefined();
+      expect(mockPrismaService.programCourse.count).not.toHaveBeenCalled();
     });
   });
 });

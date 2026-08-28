@@ -4,7 +4,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { DeliveryMode, ModuleItemKind } from '@prisma/client';
+import { CatalogStatus, DeliveryMode, ModuleItemKind } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { resolveSort } from '../common/sort.util';
 import {
@@ -82,6 +82,40 @@ export class CatalogService {
 
   // ─── Courses ─────────────────────────────────────────────────────────────
 
+  /**
+   * A published course has to be reachable by some route to a purchase.
+   *
+   * Two legitimate ways to have no price of your own: the program that bundles
+   * you carries the pricing, or — once the product supports it — the course is
+   * explicitly free. Only the first is expressible today, so that is what this
+   * enforces; there is deliberately no `isFree` flag yet, because a course
+   * marked free with no way to enrol in it would just be a different false
+   * promise. Content is gated on an Entitlement row, and nothing but Stripe
+   * checkout and admin grant writes one.
+   *
+   * Without this, "published, unpriced, in no program" was reachable, and the
+   * public course page filled the silence by telling the visitor the course was
+   * available as part of a programme — which for three live courses was untrue.
+   */
+  private async assertPublishable(
+    courseId: string | null,
+    status: CatalogStatus | undefined,
+    priceOneTimeCents: number | null | undefined,
+  ) {
+    if (status !== CatalogStatus.PUBLISHED) return;
+    if (priceOneTimeCents !== null && priceOneTimeCents !== undefined) return;
+
+    const programCount = courseId
+      ? await this.prisma.programCourse.count({ where: { courseId } })
+      : 0;
+    if (programCount > 0) return;
+
+    throw new BadRequestException(
+      'A published course must either carry its own price or belong to at least one program. ' +
+        'Set priceOneTimeCents, attach it to a program, or leave it as DRAFT.',
+    );
+  }
+
   async createCourse(dto: CreateCourseDto) {
     const subject = await this.prisma.learningSubject.findUnique({
       where: { id: dto.learningSubjectId },
@@ -96,6 +130,9 @@ export class CatalogService {
       throw new BadRequestException('A course with this slug already exists');
     }
     assertPriceFloor(dto);
+    // A brand-new course cannot already be in a program, so publishing one
+    // without a price is always the stranded state described below.
+    await this.assertPublishable(null, dto.status, dto.priceOneTimeCents);
 
     return this.prisma.course.create({
       data: {
@@ -651,6 +688,23 @@ export class CatalogService {
     }
 
     assertPriceFloor(dto);
+
+    // Only checked when the write actually engages with sellability — an
+    // explicit publish, or a price change. Editing the title of a course that
+    // is already in the bad state stays possible on purpose: the guard exists
+    // to stop that state being entered or deepened, not to brick edits on the
+    // rows that predate it (those are cleaned up separately).
+    const engagesPublishState =
+      dto.status === 'PUBLISHED' || dto.priceOneTimeCents !== undefined;
+    if (engagesPublishState) {
+      await this.assertPublishable(
+        id,
+        dto.status ?? course.status,
+        dto.priceOneTimeCents !== undefined
+          ? dto.priceOneTimeCents
+          : course.priceOneTimeCents,
+      );
+    }
 
     return this.prisma.course.update({
       where: { id },

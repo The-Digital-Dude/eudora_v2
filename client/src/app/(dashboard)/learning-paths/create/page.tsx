@@ -77,7 +77,7 @@ export default function CreateLearningPathPage() {
         </p>
       </div>
 
-      <Card className="max-w-xl rounded-3xl border border-border bg-card p-6">
+      <Card className="w-full rounded-3xl border border-border bg-card p-6">
         {error && (
           <div className="mb-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
             {error}

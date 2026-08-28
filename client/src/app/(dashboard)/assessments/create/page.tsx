@@ -91,7 +91,7 @@ export default function CreateAssessmentPage() {
         </h1>
       </div>
 
-      <Card className="max-w-2xl rounded-3xl border border-border bg-card p-6 shadow-sm">
+      <Card className="w-full rounded-3xl border border-border bg-card p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">

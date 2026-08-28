@@ -260,7 +260,19 @@ export class LessonsService {
         responseText: submission.responseText,
         interactionState: submission.interactionState,
       });
-      isCorrect = graded.isCorrect ?? true;
+      // `graded.isCorrect` is undefined when the widget resolves to
+      // UNSUPPORTED (no generator branch for this widgetType yet, or a
+      // half-authored config the generator refuses to grade) — the
+      // assessment path (assessments.common.ts's autoMarkResponse) treats
+      // that as "leave ungraded, award nothing," which this used to
+      // silently contradict by coercing the missing verdict to `true`, so
+      // an unresolvable widget type auto-passed every student regardless of
+      // what they submitted. Coercing to `false` instead keeps this path
+      // honest with the same principle: never award a mark the grader
+      // couldn't actually verify. It also means a lesson containing such a
+      // card can never reach 100% completion until the widget is properly
+      // wired — a visible, debuggable failure instead of an invisible one.
+      isCorrect = graded.isCorrect ?? false;
       // Only ever reveal the correct-answer data once the student has
       // actually gotten it wrong — never leak it alongside a correct
       // submission, and never before one exists at all.

@@ -53,7 +53,7 @@ export function CourseSettingsPanel({
   };
 
   return (
-    <div className="max-w-2xl rounded-3xl border border-border bg-card p-6 shadow-sm">
+    <div className="w-full rounded-3xl border border-border bg-card p-6 shadow-sm">
       <CourseForm
         values={values}
         onChange={setValues}

@@ -49,7 +49,7 @@ export function ProgramCoursesPanel({ program }: { program: Program }) {
   };
 
   return (
-    <Card className="max-w-xl space-y-4 rounded-3xl border border-border bg-card p-6">
+    <Card className="w-full space-y-4 rounded-3xl border border-border bg-card p-6">
       <div className="space-y-1">
         <h2 className="font-display text-sm font-bold text-foreground">Courses</h2>
         <p className="text-[11px] text-muted-foreground">

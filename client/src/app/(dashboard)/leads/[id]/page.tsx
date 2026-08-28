@@ -123,7 +123,7 @@ export default function LeadDetailPage() {
         </Button>
       </div>
 
-      <Card className="max-w-2xl rounded-3xl border border-border bg-card p-6">
+      <Card className="w-full rounded-3xl border border-border bg-card p-6">
         <LeadForm
           values={values}
           onChange={setValues}

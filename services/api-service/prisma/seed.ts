@@ -2236,7 +2236,11 @@ async function main() {
       slug: 'reading-and-grammar',
       description: 'Find the main idea, make inferences, and learn the building blocks of grammar.',
       estimatedHours: 4,
-      status: 'PUBLISHED',
+      // DRAFT, not PUBLISHED: this course has no price and belongs to no
+      // program, so publishing it puts a page in the catalog that nobody can
+      // buy from — see the publish guard in CatalogService. Give it a price
+      // or attach it to a program before publishing.
+      status: 'DRAFT',
       sortOrder: 3,
       gradeBand: 'G3_4',
     },
@@ -2378,7 +2382,9 @@ async function main() {
       slug: 'analytical-reading-and-writing',
       description: "Dig into an author's purpose and theme, and structure multi-paragraph writing.",
       estimatedHours: 4,
-      status: 'PUBLISHED',
+      // DRAFT for the same reason as reading-and-grammar above: unpriced and
+      // in no program, so it cannot be bought by any route.
+      status: 'DRAFT',
       sortOrder: 5,
       gradeBand: 'G5_6',
     },
@@ -2492,11 +2498,19 @@ async function main() {
       slug: 'coordinate-and-shape-practice',
       description: 'Plot points on a grid and shade shapes to represent fractions.',
       estimatedHours: 1,
-      status: 'PUBLISHED',
-      // Negative, same reasoning as alphabet-and-phonics-basics above: this
-      // is the course under active testing right now, so it wins
-      // `courses?.[0]` (the mobile home screen's only "Keep learning" pick)
-      // ahead of everything else, including the K-6 pilot course.
+      // DRAFT for the same reason as the two Language Arts courses above:
+      // unpriced and in no program, so nobody can buy it.
+      //
+      // NOTE this has a side effect worth knowing about: `listCourses` hides
+      // DRAFT from every non-staff caller, so this course no longer appears
+      // in the mobile "Keep learning" slot it was deliberately positioned to
+      // win (see sortOrder below). Give it a price to put it back in the
+      // student catalog — flipping it to PUBLISHED alone is now refused.
+      status: 'DRAFT',
+      // Negative so that, when this course is published, it wins
+      // `courses?.[0]` — the mobile home screen's only "Keep learning" pick —
+      // ahead of everything else, including the K-6 pilot course. Same
+      // reasoning as alphabet-and-phonics-basics above.
       sortOrder: -2,
       gradeBand: 'G3_4',
     },

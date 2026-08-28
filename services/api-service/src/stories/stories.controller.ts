@@ -8,11 +8,19 @@ import {
   Param,
   Patch,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { StoriesService } from './stories.service';
+import { NarrationService } from './narration.service';
+import { StoryAgentService } from './story-agent.service';
+import { AskStoryDto, NarrateStoryDto } from './dto/agent.dto';
 import { EntitlementsService } from '../entitlements/entitlements.service';
-import { ACTING_STUDENT_HEADER } from '../entitlements/acting-student.service';
+import {
+  ACTING_STUDENT_HEADER,
+  ActingStudentService,
+} from '../entitlements/acting-student.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -41,8 +49,45 @@ import {
 export class StoriesController {
   constructor(
     private readonly stories: StoriesService,
+    private readonly narration: NarrationService,
+    private readonly agent: StoryAgentService,
     private readonly entitlements: EntitlementsService,
+    private readonly actingStudent: ActingStudentService,
   ) {}
+
+  /** The read gate, in one place — every media and agent route goes through it. */
+  private async assertCanRead(
+    user: CurrentUserDto,
+    moduleItemId: string,
+    actingStudentId?: string,
+  ) {
+    const allowed = await this.entitlements.canAccessModuleItem(
+      user.id,
+      user.roles,
+      moduleItemId,
+      actingStudentId,
+    );
+    if (!allowed) {
+      throw new ForbiddenException('This story is not part of your courses');
+    }
+  }
+
+  /** Streams local bytes or redirects to a signed URL, per storage backend. */
+  private sendMedia(
+    file:
+      | { kind: 'redirect'; url: string; mimetype: string }
+      | { kind: 'stream'; body: Buffer; mimetype: string },
+    res: Response,
+  ) {
+    if (file.kind === 'redirect') {
+      return res.redirect(file.url);
+    }
+    res.setHeader('Content-Type', file.mimetype);
+    // Lets the browser seek within narration instead of refetching it whole,
+    // which is what an <audio> scrubber does on every drag.
+    res.setHeader('Accept-Ranges', 'bytes');
+    return res.send(file.body);
+  }
 
   // ─── Read ─────────────────────────────────────────────────────────────────
 
@@ -73,6 +118,100 @@ export class StoriesController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   findOne(@Param('id') id: string) {
     return this.stories.findOne(id);
+  }
+
+  // ─── Media ────────────────────────────────────────────────────────────────
+
+  /**
+   * Narration audio. Served through the API rather than handed out as a storage
+   * URL: the only working storage backend is local disk, which cannot sign, and
+   * a signed URL would expire mid-chapter anyway.
+   *
+   * Entitlement is checked against the owning module item on every request —
+   * the audio is the content, so an unguarded media route would be a way to
+   * read a paid story without paying for it.
+   */
+  @Get('segments/:segmentId/narration')
+  async narrationAudio(
+    @Param('segmentId') segmentId: string,
+    @CurrentUser() user: CurrentUserDto,
+    @Res() res: Response,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
+  ) {
+    const moduleItemId = await this.stories.moduleItemForSegment(segmentId);
+    await this.assertCanRead(user, moduleItemId, actingStudentId);
+    return this.sendMedia(await this.narration.readNarration(segmentId), res);
+  }
+
+  /** Artwork and other story assets, gated the same way. */
+  @Get('assets/:assetId/file')
+  async assetFile(
+    @Param('assetId') assetId: string,
+    @CurrentUser() user: CurrentUserDto,
+    @Res() res: Response,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
+  ) {
+    const moduleItemId = await this.stories.moduleItemForAsset(assetId);
+    await this.assertCanRead(user, moduleItemId, actingStudentId);
+    return this.sendMedia(await this.narration.readAsset(assetId), res);
+  }
+
+  // ─── Narration ────────────────────────────────────────────────────────────
+
+  /**
+   * Generates the missing narration for a story. Staff-only and deliberately
+   * synchronous: it is an authoring action someone triggers and waits on, and a
+   * job queue for something run a handful of times a week would be machinery
+   * without a reason.
+   */
+  @Post(':id/narrate')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  narrate(@Param('id') id: string, @Body() dto: NarrateStoryDto) {
+    return this.narration.narrateStory(id, { force: dto.force });
+  }
+
+  @Post('segments/:segmentId/narrate')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  narrateSegment(@Param('segmentId') segmentId: string) {
+    return this.narration.narrateSegment(segmentId);
+  }
+
+  // ─── Voice agent ──────────────────────────────────────────────────────────
+
+  /**
+   * A question about the story, asked by a child who is entitled to read it.
+   * Uncapped for signed-in users: they are inside a paid course, and the cost
+   * is already covered by the thing they bought. The public demo is where the
+   * caps live.
+   */
+  @Post(':id/ask')
+  async ask(
+    @Param('id') id: string,
+    @Body() dto: AskStoryDto,
+    @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
+  ) {
+    const moduleItemId = await this.stories.moduleItemForStory(id);
+    await this.assertCanRead(user, moduleItemId, actingStudentId);
+
+    return this.agent.ask({
+      storyId: id,
+      studentProfileId: await this.actingStudent.resolve(
+        user.id,
+        actingStudentId,
+      ),
+      demoSessionId: null,
+      conversationId: dto.conversationId,
+      segmentId: dto.segmentId,
+      text: dto.text,
+      audio: dto.audio
+        ? {
+            buffer: Buffer.from(dto.audio, 'base64'),
+            mimeType: dto.audioMimeType ?? 'audio/webm',
+          }
+        : undefined,
+      speak: dto.speak,
+    });
   }
 
   // ─── Authoring ────────────────────────────────────────────────────────────

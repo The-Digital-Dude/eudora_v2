@@ -127,6 +127,38 @@ export class UploadsService {
   }
 
   /**
+   * The same two shapes as readPrivateFile, for callers that hold a storage key
+   * rather than a FileUpload id. Story media is generated rather than uploaded
+   * — narration comes back from a speech provider, not a request — so there is
+   * no FileUpload row to look it up by.
+   *
+   * Performs no access check: the owning module authorises the caller first,
+   * exactly as with readPrivateFile.
+   */
+  async readPrivateByKey(
+    key: string,
+    mimetype: string,
+    expiresInSeconds = 300,
+  ): Promise<
+    | { kind: 'redirect'; url: string; mimetype: string }
+    | { kind: 'stream'; body: Buffer; mimetype: string }
+  > {
+    if (this.isLocal) {
+      const body = await (
+        this.storageProvider as LocalStorageService
+      ).readPrivateFile(key);
+      return { kind: 'stream', body, mimetype };
+    }
+
+    const url = await this.storageProvider.getSignedUrl(
+      key,
+      undefined,
+      expiresInSeconds,
+    );
+    return { kind: 'redirect', url, mimetype };
+  }
+
+  /**
    * Only meaningful under LOCAL storage; R2 serves objects from its own public
    * URL and never routes through this service.
    *

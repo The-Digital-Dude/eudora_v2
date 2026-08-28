@@ -1,15 +1,9 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ACTIVE_STORAGE_PROVIDER } from '../uploads/storage.provider';
-// `import type` because it is an interface referenced in a decorated
-// constructor: with emitDecoratorMetadata a value import would emit a runtime
-// reference to something that does not exist after compilation.
-import type { StorageProvider } from '../uploads/storage.provider';
 import {
   CreateAssetDto,
   CreateChapterDto,
@@ -23,24 +17,15 @@ import {
   UpdateStoryDto,
 } from './dto/story.dto';
 
-/** Long enough to read a story through without a refetch mid-chapter. */
-const ASSET_URL_TTL_SECONDS = 60 * 60;
-
 /**
  * Authoring and reading for interactive stories.
  *
- * Deliberately no narration and no voice agent yet — a story is fully
- * authorable, readable and illustrated without either, and having the content
- * model settled first is what keeps the audio work from also being a schema
- * negotiation.
+ * The voice agent lives in StoryAgentService and narration in NarrationService;
+ * this file stays responsible for the content itself.
  */
 @Injectable()
 export class StoriesService {
-  constructor(
-    private readonly prisma: PrismaService,
-    @Inject(ACTIVE_STORAGE_PROVIDER)
-    private readonly storage: StorageProvider,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   private readonly detailInclude = {
     characters: { orderBy: { sortOrder: 'asc' as const } },
@@ -130,13 +115,19 @@ export class StoriesService {
     return this.findOne(created.id);
   }
 
-  async findOne(id: string) {
+  /**
+   * `mediaBase` decides which route family the returned media URLs point at.
+   * The public demo serves the same story through its own unauthenticated
+   * endpoints, and handing a visitor the authenticated URLs means every play
+   * button 401s.
+   */
+  async findOne(id: string, mediaBase?: string) {
     const story = await this.prisma.story.findUnique({
       where: { id },
       include: this.detailInclude,
     });
     if (!story) throw new NotFoundException('Story not found');
-    return this.withSignedAssetUrls(story);
+    return this.withMediaUrls(story, mediaBase);
   }
 
   async findByModuleItem(moduleItemId: string) {
@@ -145,7 +136,7 @@ export class StoriesService {
       include: this.detailInclude,
     });
     if (!story) throw new NotFoundException('Story not found');
-    return this.withSignedAssetUrls(story);
+    return this.withMediaUrls(story);
   }
 
   async update(id: string, dto: UpdateStoryDto) {
@@ -470,42 +461,71 @@ export class StoriesService {
     }
   }
 
-  /**
-   * Storage keys become signed URLs at read time. They are not stored as URLs
-   * because a signed URL expires, so persisting one would rot in the database.
-   */
-  private async withSignedAssetUrls(story: any) {
-    const cache = new Map<string, string>();
-    const sign = async (key: string) => {
-      const hit = cache.get(key);
-      if (hit) return hit;
-      const url = await this.storage.getSignedUrl(
-        key,
-        undefined,
-        ASSET_URL_TTL_SECONDS,
-      );
-      cache.set(key, url);
-      return url;
-    };
+  // ─── Ownership lookups ────────────────────────────────────────────────────
+  //
+  // Media and agent routes are reached by segment, asset or story id, but the
+  // entitlement check is expressed in terms of the module item that owns them.
+  // These walk back up to it so the gate has something to check.
 
-    const decorate = async (asset: any) =>
-      asset ? { ...asset, url: await sign(asset.storageKey) } : asset;
+  async moduleItemForStory(storyId: string): Promise<string> {
+    const story = await this.prisma.story.findUnique({
+      where: { id: storyId },
+      select: { moduleItemId: true },
+    });
+    if (!story) throw new NotFoundException('Story not found');
+    return story.moduleItemId;
+  }
+
+  async moduleItemForSegment(segmentId: string): Promise<string> {
+    const segment = await this.prisma.storySegment.findUnique({
+      where: { id: segmentId },
+      select: { chapter: { select: { story: { select: { moduleItemId: true } } } } },
+    });
+    if (!segment) throw new NotFoundException('Segment not found');
+    return segment.chapter.story.moduleItemId;
+  }
+
+  async moduleItemForAsset(assetId: string): Promise<string> {
+    const asset = await this.prisma.storyAsset.findUnique({
+      where: { id: assetId },
+      select: { story: { select: { moduleItemId: true } } },
+    });
+    if (!asset) throw new NotFoundException('Asset not found');
+    return asset.story.moduleItemId;
+  }
+
+  /**
+   * Storage keys become URLs pointing back at this API rather than at the
+   * storage backend, and the endpoints behind them either stream the bytes or
+   * redirect to a signed URL depending on which backend is active.
+   *
+   * This used to sign the keys here instead. That was wrong in the one way that
+   * mattered: LocalStorageService.getSignedUrl throws on purpose — signing is
+   * meaningless on a local disk — so reading any story that had so much as a
+   * cover image raised a 500 under the only storage backend that currently
+   * works. Routing through our own endpoints also means the client has a single
+   * shape to handle, and no URL that expires while a child is mid-chapter.
+   */
+  private withMediaUrls(story: any, base = '/api/stories') {
+    const decorate = (asset: any) =>
+      asset ? { ...asset, url: `${base}/assets/${asset.id}/file` } : asset;
 
     return {
       ...story,
-      cover: await decorate(story.cover),
-      assets: await Promise.all((story.assets ?? []).map(decorate)),
-      chapters: await Promise.all(
-        (story.chapters ?? []).map(async (chapter: any) => ({
-          ...chapter,
-          segments: await Promise.all(
-            (chapter.segments ?? []).map(async (segment: any) => ({
-              ...segment,
-              assets: await Promise.all((segment.assets ?? []).map(decorate)),
-            })),
-          ),
+      cover: decorate(story.cover),
+      assets: (story.assets ?? []).map(decorate),
+      chapters: (story.chapters ?? []).map((chapter: any) => ({
+        ...chapter,
+        segments: (chapter.segments ?? []).map((segment: any) => ({
+          ...segment,
+          assets: (segment.assets ?? []).map(decorate),
+          // Null rather than a dead link when narration has not been generated
+          // — the reader uses this to decide whether to offer a play button.
+          narrationUrl: segment.narrationAudioKey
+            ? `${base}/segments/${segment.id}/narration`
+            : null,
         })),
-      ),
+      })),
     };
   }
 }

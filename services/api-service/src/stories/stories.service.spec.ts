@@ -234,30 +234,65 @@ describe('StoriesService', () => {
   });
 
   describe('findOne', () => {
-    it('signs asset keys at read time rather than returning raw keys', async () => {
-      mockPrisma.story.findUnique.mockResolvedValue({
-        ...emptyStory,
-        cover: { id: 'a1', storageKey: 'covers/one.png' },
-        assets: [{ id: 'a1', storageKey: 'covers/one.png' }],
-        chapters: [
-          {
-            id: 'ch-1',
-            segments: [
-              { id: 's1', assets: [{ id: 'a2', storageKey: 'art/two.png' }] },
-            ],
-          },
-        ],
-      });
+    const illustrated = {
+      ...emptyStory,
+      cover: { id: 'a1', storageKey: 'covers/one.png' },
+      assets: [{ id: 'a1', storageKey: 'covers/one.png' }],
+      chapters: [
+        {
+          id: 'ch-1',
+          segments: [
+            {
+              id: 's1',
+              narrationAudioKey: 'story-narration/s1.mp3',
+              assets: [{ id: 'a2', storageKey: 'art/two.png' }],
+            },
+            { id: 's2', narrationAudioKey: null, assets: [] },
+          ],
+        },
+      ],
+    };
+
+    it('points media at this API rather than at the storage backend', async () => {
+      mockPrisma.story.findUnique.mockResolvedValue(illustrated);
 
       const story: any = await service.findOne('story-1');
 
-      expect(story.cover.url).toBe('https://signed.example/asset');
+      expect(story.cover.url).toBe('/api/stories/assets/a1/file');
       expect(story.chapters[0].segments[0].assets[0].url).toBe(
-        'https://signed.example/asset',
+        '/api/stories/assets/a2/file',
       );
-      // The cover and the story-level asset are the same object; it is signed
-      // once, not twice.
-      expect(mockStorage.getSignedUrl).toHaveBeenCalledTimes(2);
+      // The regression this guards: signing here raised a 500 for every story
+      // with artwork, because local disk — the only working backend — throws
+      // from getSignedUrl by design rather than returning a URL.
+      expect(mockStorage.getSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it('points media at the demo routes when asked to', async () => {
+      mockPrisma.story.findUnique.mockResolvedValue(illustrated);
+
+      const story: any = await service.findOne('story-1', '/api/stories/demo');
+
+      // The public demo serves the same story through unauthenticated routes.
+      // Handing a visitor the authenticated URLs makes every play button 401.
+      expect(story.cover.url).toBe('/api/stories/demo/assets/a1/file');
+      expect(story.chapters[0].segments[0].narrationUrl).toBe(
+        '/api/stories/demo/segments/s1/narration',
+      );
+    });
+
+    it('offers a narration URL only where narration exists', async () => {
+      mockPrisma.story.findUnique.mockResolvedValue(illustrated);
+
+      const story: any = await service.findOne('story-1');
+      const [narrated, silent] = story.chapters[0].segments;
+
+      expect(narrated.narrationUrl).toBe(
+        '/api/stories/segments/s1/narration',
+      );
+      // Null, not a URL that would 404 — the reader uses this to decide
+      // whether to show a play button at all.
+      expect(silent.narrationUrl).toBeNull();
     });
 
     it('throws when the story does not exist', async () => {

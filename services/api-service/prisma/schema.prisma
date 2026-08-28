@@ -673,6 +673,7 @@ model StudentProfile {
   courseAssignments        StudentCourseAssignment[]
   entitlements             Entitlement[]
   orderItems               OrderItem[]
+  storyConversations       StoryConversation[]
 
   @@index([classId])
   @@map("student_profiles")
@@ -1308,6 +1309,21 @@ model Story {
   /// so a story can sit in the same browse experience as everything else.
   gradeBand GradeBand?
 
+  /// Marks this story as readable by anyone, signed in or not, through the
+  /// public demo routes.
+  ///
+  /// Deliberately a property of the story rather than a route that trusts its
+  /// caller: the demo endpoints serve only stories carrying this flag, so paid
+  /// course content cannot be reached through them even if someone guesses an
+  /// id. Turning the demo off is one field, and it is visible in the data
+  /// rather than buried in an environment variable.
+  isPublicDemo Boolean @default(false)
+
+  /// Overrides the server default narrator for this one story, so a story with
+  /// a distinct character can keep its own voice. Null means "use the
+  /// configured default". Holds a provider voice id, not a display name.
+  narratorVoiceId String?
+
   /// Freeform notes the author writes for the voice agent — what this story is
   /// about, what it is teaching, what to do with an off-topic question. These
   /// become part of the agent's grounding once it exists; until then they are
@@ -1319,9 +1335,10 @@ model Story {
 
   moduleItem ModuleItem       @relation(fields: [moduleItemId], references: [id], onDelete: Cascade)
   cover      StoryAsset?      @relation("StoryCover", fields: [coverAssetId], references: [id], onDelete: SetNull)
-  chapters   StoryChapter[]
-  characters StoryCharacter[]
-  assets     StoryAsset[]     @relation("StoryAssets")
+  chapters      StoryChapter[]
+  characters    StoryCharacter[]
+  assets        StoryAsset[]        @relation("StoryAssets")
+  conversations StoryConversation[]
 
   @@map("stories")
 }
@@ -1364,6 +1381,16 @@ model StorySegment {
   narrationAudioKey    String?
   narrationDurationMs  Int?
 
+  /// Character-level timing from the speech provider: `{ characters,
+  /// character_start_times_seconds, character_end_times_seconds }`.
+  ///
+  /// Persisted rather than recomputed because it cannot be recovered from the
+  /// audio afterwards — regenerating the narration to find out when a word is
+  /// spoken would cost the synthesis again and return slightly different audio.
+  /// This is what word highlighting, and later scene changes and camera moves,
+  /// key off. Null when the provider gave no alignment.
+  narrationTimings Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1384,8 +1411,9 @@ model StoryAsset {
   segmentId String?
 
   kind StoryAssetKind @default(ILLUSTRATION)
-  /// Storage key, resolved to a signed URL at read time rather than stored as
-  /// one — signed URLs expire, so persisting them would rot.
+  /// Storage key. Never stored as a URL, and never handed out as one: reads go
+  /// through this API's own media endpoint, which streams from local disk or
+  /// redirects to a signed URL depending on the active backend.
   storageKey String
   /// Required for anything a child sees; stories are read by children who may
   /// use a screen reader.
@@ -1423,6 +1451,64 @@ model StoryCharacter {
   @@unique([storyId, name])
   @@index([storyId])
   @@map("story_characters")
+}
+
+/// One child's back-and-forth with the narrator about one story. Kept rather
+/// than held in memory for two reasons: a guardian is entitled to see what
+/// their child said to us, and the agent needs the last few turns to follow a
+/// thread ("why did she do that?" refers to the previous answer).
+model StoryConversation {
+  id      String @id @default(uuid())
+  storyId String
+
+  /// Null on the public demo, where there is no account behind the visitor.
+  studentProfileId String?
+
+  /// Opaque id minted for an anonymous visitor so their demo conversation
+  /// survives across requests. Null for a signed-in child, who is identified by
+  /// studentProfileId instead. Exactly one of the two is set.
+  demoSessionId String?
+
+  /// Denormalised from `demoSessionId != null` so the daily demo ceiling can be
+  /// counted straight off an index instead of joining to find out.
+  isDemo Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  story   Story           @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  student StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  turns   StoryTurn[]
+
+  @@index([storyId])
+  @@index([studentProfileId])
+  @@index([demoSessionId])
+  @@index([isDemo, createdAt])
+  @@map("story_conversations")
+}
+
+/// A single question and the narrator's answer.
+model StoryTurn {
+  id             String @id @default(uuid())
+  conversationId String
+  sortOrder      Int
+
+  /// What the child asked, as transcribed. Stored as text even when it arrived
+  /// as speech — the recording is not kept, only what it said.
+  childText String
+  replyText String
+
+  /// Where in the story the question was asked. Grounds the answer, and lets a
+  /// guardian see which page prompted it.
+  segmentId String?
+
+  createdAt DateTime @default(now())
+
+  conversation StoryConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, sortOrder])
+  @@index([createdAt])
+  @@map("story_turns")
 }
 
 model DiscussionThread {

@@ -38,6 +38,7 @@ model User {
   notifications           Notification[]
   deviceTokens            DeviceToken[]
   devicePairingCodes      DevicePairingCode[]
+  passwordResetTokens     PasswordResetToken[]
   fileUploads             FileUpload[]
   hostedLiveClassSessions BatchSession[]         @relation("HostedLiveClassSessions")
   assignedCourses         StudentCourseAssignment[] @relation("AssignedCourses")
@@ -1836,6 +1837,33 @@ enum DevicePairingStatus {
 /// Play Services, no usable on-screen keyboard) by having the user approve
 /// it from an already-authenticated phone session instead of typing a
 /// password. See auth/device-pairing.service.ts.
+/// A single-use, short-lived permission to set a new password without knowing
+/// the old one.
+///
+/// Only the SHA-256 hash is stored, for the same reason as
+/// `AuthSession.refreshTokenHash` and `DevicePairingCode.deviceCodeHash`:
+/// possession of the raw token is equivalent to the account's password, so a
+/// database leak must not hand over live reset links. The raw value exists
+/// only in the email that was sent.
+model PasswordResetToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  /// Set the moment it is redeemed. A token is never valid twice — replaying
+  /// an intercepted link after the owner has used it must fail.
+  consumedAt DateTime?
+  /// Recorded for abuse investigation only; never used to authorise.
+  requestedIp String?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
 model DevicePairingCode {
   id             String              @id @default(uuid())
   /// Short, human-typeable code shown on the TV and entered on the phone.

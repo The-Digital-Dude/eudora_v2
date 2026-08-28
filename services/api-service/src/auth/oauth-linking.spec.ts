@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NormalizedOAuthProfile } from './oauth/types';
 import { GoogleOAuthProvider } from './oauth/providers/google.provider';
 import { AppleOAuthProvider } from './oauth/providers/apple.provider';
+import { EmailService } from '../notifications/email.service';
 
 describe('AuthService OAuth linking', () => {
   let service: AuthService;
@@ -65,6 +66,10 @@ describe('AuthService OAuth linking', () => {
         {
           provide: AppleOAuthProvider,
           useValue: { verifyCallback: jest.fn() },
+        },
+        {
+          provide: EmailService,
+          useValue: { sendMail: jest.fn().mockResolvedValue(true) },
         },
       ],
     }).compile();

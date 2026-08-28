@@ -4,10 +4,12 @@ import {
   UnauthorizedException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../notifications/email.service';
 import { NormalizedOAuthProfile, resolveSelfSignupRole } from './oauth/types';
 import { GoogleOAuthProvider } from './oauth/providers/google.provider';
 import { AppleOAuthProvider } from './oauth/providers/apple.provider';
@@ -23,6 +25,12 @@ import * as crypto from 'crypto';
  * token is not meaningfully more useful for having this window.
  */
 const REFRESH_ROTATION_GRACE_MS = 60 * 1000;
+
+/**
+ * Long enough to survive a slow inbox, short enough that a link sitting in a
+ * mailbox someone else later reads is usually already dead.
+ */
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
 
 /**
  * Nested-create fragment that gives a guardian their profile in the same write
@@ -68,12 +76,15 @@ export class AuthService {
     studentProfile: true,
   } as const;
 
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly googleProvider: GoogleOAuthProvider,
     private readonly appleProvider: AppleOAuthProvider,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -873,6 +884,174 @@ export class AuthService {
 
     const { password: _, ...result } = updatedUser;
     return result;
+  }
+
+  // ─── Password reset ─────────────────────────────────────────────────────────
+  // A forgotten password used to mean a manual database edit by the operator.
+
+  /**
+   * Issues a reset link, if there is an account to issue one for.
+   *
+   * Deliberately returns the same result whether or not the address is
+   * registered. A forgot-password form that answers "no such account" is a
+   * free membership oracle: anyone can walk a list of addresses and learn
+   * which belong to customers. The caller is told only that *if* the address
+   * exists, mail is on its way.
+   */
+  async requestPasswordReset(email: string, ipAddress?: string | null) {
+    const normalized = email.trim().toLowerCase();
+    const user = await this.prisma.user.findUnique({
+      where: { email: normalized },
+    });
+
+    // Nothing to do — but say nothing different about it.
+    if (!user || user.deletedAt || !user.isActive) {
+      this.logger.log(
+        `Password reset requested for an address with no active account`,
+      );
+      return;
+    }
+
+    if (!user.password) {
+      // An account created through Google has no local password to reset.
+      // Still emailed, because the owner asked and a dead end is worse than
+      // an explanation — and only the inbox owner ever sees it, so this
+      // reveals nothing to a prober.
+      await this.emailService.sendMail(
+        user.email,
+        'Signing in to Eudora',
+        `You asked to reset your Eudora password, but this account signs in with Google — there is no password to reset.\n\nUse "Continue with Google" on the sign-in page.\n\nIf you did not request this, you can ignore this email.`,
+      );
+      await this.audit(
+        user.id,
+        'auth.password.reset_requested_oauth_account',
+        'user',
+        user.id,
+        ipAddress,
+      );
+      return;
+    }
+
+    // One live link at a time: issuing a new one retires any outstanding
+    // request, so an older email cannot still open the account later.
+    await this.prisma.passwordResetToken.updateMany({
+      where: { userId: user.id, consumedAt: null },
+      data: { consumedAt: new Date() },
+    });
+
+    const token = crypto.randomBytes(32).toString('base64url');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    await this.prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash,
+        expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+        requestedIp: ipAddress ?? null,
+      },
+    });
+
+    const appUrl = (
+      this.configService.get<string>('APP_URL') ?? 'http://localhost:3001'
+    ).replace(/\/$/, '');
+    const link = `${appUrl}/reset-password?token=${token}`;
+
+    const sent = await this.emailService.sendMail(
+      user.email,
+      'Reset your Eudora password',
+      `Someone asked to reset the password for your Eudora account.\n\nOpen this link to choose a new one:\n${link}\n\nThe link works once and expires in ${PASSWORD_RESET_TTL_MS / 60_000} minutes.\n\nIf this wasn't you, ignore this email — your password has not changed.`,
+    );
+
+    // The raw token is never logged. When mail is unconfigured this is the
+    // only signal the operator gets, and it deliberately stops short of
+    // printing a working credential to the server log.
+    if (!sent) {
+      this.logger.error(
+        `Password reset email could not be delivered to ${user.email} — ` +
+          `the account is now holding an unusable reset token. Configure ` +
+          `RESEND_API_KEY.`,
+      );
+    }
+
+    await this.audit(
+      user.id,
+      'auth.password.reset_requested',
+      'user',
+      user.id,
+      ipAddress,
+      undefined,
+      { delivered: sent },
+    );
+  }
+
+  /**
+   * Redeems a reset link and sets the new password.
+   *
+   * Every failure — unknown, expired, already used — returns the same message.
+   * Distinguishing them tells an attacker holding a guessed token whether they
+   * are close, and tells them which accounts have resets in flight.
+   */
+  async resetPassword(token: string, newPassword: string) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const record = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+
+    const invalid = new BadRequestException(
+      'This reset link is invalid or has expired. Request a new one.',
+    );
+
+    if (
+      !record ||
+      record.consumedAt ||
+      record.expiresAt < new Date() ||
+      !record.user ||
+      record.user.deletedAt ||
+      !record.user.isActive
+    ) {
+      throw invalid;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.$transaction(async (tx) => {
+      // Consume first, and only where it is still unconsumed: two requests
+      // racing the same link cannot both set a password.
+      const claimed = await tx.passwordResetToken.updateMany({
+        where: { id: record.id, consumedAt: null },
+        data: { consumedAt: new Date() },
+      });
+      if (claimed.count === 0) {
+        throw invalid;
+      }
+
+      await tx.user.update({
+        where: { id: record.userId },
+        data: {
+          password: hashedPassword,
+          mustChangePassword: false,
+          // A reset is also the way back in from a lockout.
+          failedLoginCount: 0,
+          lockedUntil: null,
+        },
+      });
+
+      // Same reasoning as changePassword: whoever prompted the reset may
+      // already hold a session, and it must not survive the new password.
+      await tx.authSession.updateMany({
+        where: { userId: record.userId, revokedAt: null },
+        data: { revokedAt: new Date(), revokedReason: 'password_reset' },
+      });
+    });
+
+    await this.audit(
+      record.userId,
+      'auth.password.reset_completed',
+      'user',
+      record.userId,
+    );
   }
 
   async audit(

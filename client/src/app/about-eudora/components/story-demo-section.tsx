@@ -1,65 +1,119 @@
-import { ArrowRight, BookHeadphones, Ear, MessageCircleQuestion } from "lucide-react";
-import Link from "next/link";
-import * as React from "react";
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+
+import { StoryReader } from "@/components/story/story-reader";
+import type { AgentReply, AskPayload, Story } from "@/features/stories/types";
 
 import { SectionShell } from "./section-shell";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 /**
- * The one place on the marketing site that hands the visitor a live product
- * rather than a description of one.
+ * The one section on this page that is not scripted.
  *
- * Every other demo on this page is scripted client-side so it keeps working
- * when the API is down. This section deliberately links out instead of
- * embedding: /story-demo makes real calls to real speech and language
- * providers, and inlining it here would make the whole marketing page depend on
- * them being up and on a metered budget being unspent.
+ * Everything else here is client-side theatre so the page keeps working when
+ * the API is down. This one makes real calls to real speech and language
+ * providers, which is the point — a narrator that answers a made-up question
+ * proves nothing. The cost is that this section, alone, depends on the API
+ * being up and on a metered budget being unspent, so it fails quietly and
+ * leaves the rest of the page intact rather than taking it down.
+ *
+ * Plain fetch rather than the app's RTK client: a visitor here has no session,
+ * and the shared base query attaches credentials and runs a token-refresh
+ * interceptor on 401, neither of which means anything to them.
  */
-const POINTS = [
-  {
-    icon: Ear,
-    title: "She reads it aloud",
-    body: "A narrated story with the words lighting up as they are spoken, so a child who is still learning to read can follow along.",
-  },
-  {
-    icon: MessageCircleQuestion,
-    title: "Your child can interrupt",
-    body: "They can ask why something happened, out loud, and get an answer — the way they would with a person reading to them.",
-  },
-  {
-    icon: BookHeadphones,
-    title: "She only knows the story",
-    body: "Answers come from the story itself, and only from the part your child has actually reached. She will not invent, and she will not wander off the page.",
-  },
-];
+
+/**
+ * A demo session id, minted per browser. A continuity token so the conversation
+ * holds together across requests, not a credential — the server grants nothing
+ * on the strength of it beyond the demo's own caps.
+ */
+function useDemoSessionId() {
+  const [id] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const KEY = "eudora.storyDemoSession";
+    try {
+      const existing = window.localStorage.getItem(KEY);
+      if (existing) return existing;
+      const minted = crypto.randomUUID();
+      window.localStorage.setItem(KEY, minted);
+      return minted;
+    } catch {
+      // Private browsing denies storage; a per-load id still works, it just
+      // starts a fresh conversation on reload.
+      return crypto.randomUUID();
+    }
+  });
+  return id;
+}
 
 export function StoryDemoSection() {
+  const [story, setStory] = useState<Story | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  const demoSessionId = useDemoSessionId();
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_URL}/api/stories/demo`)
+      .then((r) => r.json())
+      .then((body) => {
+        if (cancelled) return;
+        if (!body.success) throw new Error(body.message ?? "No demo story");
+        setStory(body.data);
+      })
+      .catch(() => !cancelled && setUnavailable(true));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const ask = useCallback(
+    async (payload: AskPayload): Promise<AgentReply> => {
+      const response = await fetch(`${API_URL}/api/stories/demo/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, demoSessionId }),
+      });
+      const body = await response.json();
+      if (!body.success) {
+        throw new Error(
+          body.errors?.[0]?.message ?? body.message ?? "Something went wrong",
+        );
+      }
+      return body.data;
+    },
+    [demoSessionId],
+  );
+
+  // Nothing at all rather than an apology: a visitor who never knew this
+  // section existed is better served than one told a feature is broken.
+  if (unavailable) return null;
+
   return (
     <SectionShell
       tinted
       eyebrow="Read together"
       title="A story that answers back"
-      lede="No account, no card. Open it and ask it something."
+      lede="Press play to hear it, then ask her anything about what is happening. She answers only from the story — and only as far as you have read."
     >
-      <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-3">
-        {POINTS.map(({ icon: Icon, title, body }) => (
-          <div key={title} className="flex flex-col gap-2">
-            <Icon className="h-6 w-6 text-primary" aria-hidden />
-            <h3 className="text-sm font-bold text-foreground">{title}</h3>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {body}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-10 flex justify-center">
-        <Link
-          href="/story-demo"
-          className="flex h-12 items-center justify-center gap-2 rounded-xl bg-foreground px-7 text-sm font-bold text-background shadow-sm transition-all hover:bg-foreground/90 active:scale-97"
-        >
-          Read a story with Eudora <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
+      {story ? (
+        <div className="mx-auto max-w-5xl">
+          <StoryReader
+            story={story}
+            onAsk={ask}
+            capNotice={(left) =>
+              left > 0
+                ? `${left} more question${left === 1 ? "" : "s"} in this demo`
+                : "That is all the demo can answer — sign up to keep reading together."
+            }
+          />
+        </div>
+      ) : (
+        <p className="mx-auto max-w-md animate-pulse rounded-xl border p-8 text-center text-sm text-muted-foreground">
+          Opening the book…
+        </p>
+      )}
     </SectionShell>
   );
 }

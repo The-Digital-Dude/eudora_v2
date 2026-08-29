@@ -52,12 +52,6 @@ export default function Navbar() {
             How it works
           </Link>
           <Link
-            href="/story-demo"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Try a story
-          </Link>
-          <Link
             href="/explore"
             className="text-muted-foreground transition-colors hover:text-foreground"
           >

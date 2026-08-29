@@ -36,15 +36,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.8,
     },
-    {
-      // The one page where the product can be experienced rather than
-      // described: a narrated story anyone can listen to and talk to without
-      // signing up. Ranked with /about-eudora as a primary entry point.
-      url: `${SITE_URL}/story-demo`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
   ];
 
   // The catalog helpers swallow failures and return null. Emitting just the

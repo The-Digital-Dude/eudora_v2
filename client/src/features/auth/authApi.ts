@@ -139,6 +139,7 @@ export const authApi = createApi({
     "Gamification",
     "Leaderboard",
     "StoryContent",
+    "StoryList",
     "TeacherPortal",
     "LiveClasses",
     "PlacementRecommendations",

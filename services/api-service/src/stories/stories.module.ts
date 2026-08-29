@@ -9,6 +9,7 @@ import { StoriesService } from './stories.service';
 import { NarrationService } from './narration.service';
 import { StoryAgentService } from './story-agent.service';
 import { StoryDemoService } from './story-demo.service';
+import { StoryDraftService } from './story-draft.service';
 
 @Module({
   // EntitlementsModule gates the read path — a story is paid course content,
@@ -27,6 +28,7 @@ import { StoryDemoService } from './story-demo.service';
     NarrationService,
     StoryAgentService,
     StoryDemoService,
+    StoryDraftService,
   ],
   exports: [StoriesService],
 })

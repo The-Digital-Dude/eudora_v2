@@ -130,6 +130,7 @@ function AddModuleItemForm({ conceptId }: { conceptId: string }) {
           <option value="ASSESSMENT">Assessment</option>
           <option value="LIVE_CLASS">Live Class</option>
           <option value="HOMEWORK">Homework</option>
+          <option value="STORY">Story</option>
         </select>
         <input
           value={title}

@@ -15,6 +15,8 @@ export interface StoryAsset {
 export interface StorySegment {
   id: string;
   text: string;
+  /** The same words with emotion markup, or null for plain delivery. */
+  narrationText: string | null;
   narrationUrl: string | null;
   narrationDurationMs: number | null;
   narrationTimings: Timings | null;
@@ -31,6 +33,8 @@ export interface Story {
   id: string;
   title: string;
   synopsis: string | null;
+  /** True when this is the story the public demo serves. */
+  isPublicDemo?: boolean;
   cover: StoryAsset | null;
   chapters: StoryChapter[];
   characters: { id: string; name: string; description: string | null }[];
@@ -57,4 +61,33 @@ export interface AskPayload {
   conversationId?: string;
   segmentId?: string;
   speak?: boolean;
+}
+
+/** Row shape for the authoring list. Counts, not content. */
+export interface StorySummary {
+  id: string;
+  title: string;
+  synopsis: string | null;
+  gradeBand: string | null;
+  isPublicDemo: boolean;
+  updatedAt: string;
+  moduleItem: { id: string; title: string; status: string } | null;
+  chapterCount: number;
+  segmentCount: number;
+  narratedCount: number;
+}
+
+/** What the model proposes from pasted prose. Nothing is saved until accepted. */
+export interface DraftSegment {
+  text: string;
+  narrationText: string | null;
+}
+
+export interface StoryDraft {
+  title: string;
+  synopsis: string;
+  characters: { name: string; description: string }[];
+  chapters: { title: string; segments: DraftSegment[] }[];
+  /** Tagged lines discarded for not matching their own words. */
+  droppedNarrationCount: number;
 }

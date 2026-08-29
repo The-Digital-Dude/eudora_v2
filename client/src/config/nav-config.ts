@@ -1,4 +1,5 @@
 import {
+  BookHeadphones,
   BookOpen,
   CalendarCheck,
   ClipboardCheck,
@@ -174,6 +175,16 @@ export const navGroups: NavGroup[] = [
         title: "Lesson Builder",
         url: "/lessons",
         icon: PencilRuler,
+        requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
+      },
+      {
+        // Sits under Content rather than beside Courses because a story is a
+        // thing you write, not a thing you timetable — and, unlike every other
+        // entry here, one can be published on its own without belonging to a
+        // course at all.
+        title: "Stories",
+        url: "/stories",
+        icon: BookHeadphones,
         requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
       },
       {

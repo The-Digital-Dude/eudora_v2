@@ -13,6 +13,11 @@ import { ACTIVE_STORAGE_PROVIDER } from '../uploads/storage.provider';
 // constructor: with emitDecoratorMetadata a value import would emit a runtime
 // reference to something that does not exist after compilation.
 import type { StorageProvider } from '../uploads/storage.provider';
+import {
+  narrationMatchesText,
+  remapTimings,
+  stripNarrationTags,
+} from './narration-text';
 
 /**
  * Turns written segments into narrated audio, once, ahead of time.
@@ -119,10 +124,41 @@ export class NarrationService {
       throw new BadRequestException('An empty segment has nothing to narrate');
     }
 
+    /**
+     * When the author has written a performed version, that is what gets
+     * spoken — but only after proving it is the same words.
+     *
+     * Refusing here rather than narrating anyway is the whole guarantee: a
+     * tagged line that has quietly drifted from the displayed text would give
+     * a child audio saying one thing while the page shows another, and the
+     * highlight would march along words that were never spoken.
+     */
+    const tagged = segment.narrationText?.trim() || null;
+    if (tagged && !narrationMatchesText(tagged, text)) {
+      throw new BadRequestException(
+        'The performed narration does not match this segment’s words. ' +
+          'Emotion tags may be added, but nothing else may change.',
+      );
+    }
+
     const voiceId =
       voiceIdOverride ?? segment.chapter.story.narratorVoiceId ?? undefined;
 
-    const spoken = await this.speech.synthesize({ text, voiceId });
+    const spoken = await this.speech.synthesize({
+      text: tagged ?? text,
+      voiceId,
+      // Only worth the slower model when there is something to perform.
+      expressive: Boolean(tagged),
+    });
+
+    // The provider aligned its timings against the tagged string, so they are
+    // re-indexed onto the words actually on the page before being stored.
+    const timings = (() => {
+      if (!spoken.timings) return null;
+      if (!tagged) return spoken.timings;
+      const { display, indexMap } = stripNarrationTags(tagged);
+      return remapTimings(spoken.timings, indexMap, display.length);
+    })();
 
     const stored = await this.storage.uploadPrivateFile(
       {
@@ -145,7 +181,7 @@ export class NarrationService {
       data: {
         narrationAudioKey: stored.key,
         narrationDurationMs: spoken.durationMs,
-        narrationTimings: (spoken.timings ?? undefined) as any,
+        narrationTimings: (timings ?? undefined) as any,
       },
     });
 

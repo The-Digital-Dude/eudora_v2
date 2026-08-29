@@ -24,7 +24,8 @@ const CHAT_MODEL = process.env.GEMINI_CHAT_MODEL ?? 'gemini-3.6-flash';
  * generate text, but it should only be used for TTS", and 3.6 has no audio
  * output modality at all.
  */
-const TTS_MODEL = process.env.GEMINI_TTS_MODEL ?? 'gemini-3.1-flash-tts-preview';
+const TTS_MODEL =
+  process.env.GEMINI_TTS_MODEL ?? 'gemini-3.1-flash-tts-preview';
 
 const API_ROOT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -92,6 +93,13 @@ export class GeminiService {
     systemInstruction: string;
     history?: ConversationTurn[];
     userText: string;
+    /**
+     * Raise for replies that are structured rather than conversational. A story
+     * draft returns the whole text twice — once plain, once with performance
+     * markup — so the default, sized for two sentences to a child, truncates it
+     * mid-JSON and the parse fails with no obvious cause.
+     */
+    maxOutputTokens?: number;
   }): Promise<string> {
     const contents = [
       ...(params.history ?? []).map((turn) => ({
@@ -104,7 +112,9 @@ export class GeminiService {
     const body = await this.post(CHAT_MODEL, {
       systemInstruction: { parts: [{ text: params.systemInstruction }] },
       contents,
-      generationConfig: { maxOutputTokens: CHAT_OUTPUT_TOKENS },
+      generationConfig: {
+        maxOutputTokens: params.maxOutputTokens ?? CHAT_OUTPUT_TOKENS,
+      },
     });
 
     const candidate = body?.candidates?.[0];
@@ -119,8 +129,12 @@ export class GeminiService {
       this.logger.warn(
         `Chat returned no text (finishReason=${candidate?.finishReason ?? 'none'})`,
       );
+      // A truncated reply is a budget problem, not an outage, and the two want
+      // different fixes — raising maxOutputTokens versus waiting and retrying.
       throw new ServiceUnavailableException(
-        'The story assistant could not answer just now',
+        candidate?.finishReason === 'MAX_TOKENS'
+          ? 'That reply was longer than the space allowed for it'
+          : 'The story assistant could not answer just now',
       );
     }
     return text;

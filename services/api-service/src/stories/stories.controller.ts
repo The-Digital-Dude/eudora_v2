@@ -11,11 +11,13 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { StoriesService } from './stories.service';
 import { NarrationService } from './narration.service';
 import { StoryAgentService } from './story-agent.service';
-import { AskStoryDto, NarrateStoryDto } from './dto/agent.dto';
+import { StoryDraftService } from './story-draft.service';
+import { AskStoryDto, DraftStoryDto, NarrateStoryDto } from './dto/agent.dto';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import {
   ACTING_STUDENT_HEADER,
@@ -51,6 +53,7 @@ export class StoriesController {
     private readonly stories: StoriesService,
     private readonly narration: NarrationService,
     private readonly agent: StoryAgentService,
+    private readonly drafts: StoryDraftService,
     private readonly entitlements: EntitlementsService,
     private readonly actingStudent: ActingStudentService,
   ) {}
@@ -111,6 +114,17 @@ export class StoriesController {
       throw new ForbiddenException('This story is not part of your courses');
     }
     return this.stories.findByModuleItem(moduleItemId);
+  }
+
+  /**
+   * The authoring list. Declared before ':id' so the literal path wins — Nest
+   * matches in declaration order, and 'stories/all' would otherwise be read as
+   * a story whose id is "all".
+   */
+  @Get('all')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  findAll() {
+    return this.stories.findAll();
   }
 
   /** Staff-only by id, for the authoring screens. */
@@ -215,6 +229,23 @@ export class StoriesController {
   }
 
   // ─── Authoring ────────────────────────────────────────────────────────────
+
+  /**
+   * Splits pasted prose into chapters, pages and emotion markup, and returns it
+   * without writing anything.
+   *
+   * Nothing is persisted on purpose: a model splitting someone's writing at the
+   * wrong beat is a normal outcome, and the fix is an author looking at it
+   * before it becomes rows. The editor posts the reviewed result to /import.
+   */
+  @Post('draft')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  // Each call is a model request against a small daily allowance, and drafting
+  // is a deliberate action — nobody needs to do it twenty times a minute.
+  @Throttle({ default: { ttl: 60_000, limit: 6 } })
+  draft(@Body() dto: DraftStoryDto) {
+    return this.drafts.draftFromProse({ source: dto.source, title: dto.title });
+  }
 
   @Post()
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')

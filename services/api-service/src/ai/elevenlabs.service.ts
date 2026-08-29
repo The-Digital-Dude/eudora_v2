@@ -25,10 +25,25 @@ const API_ROOT = 'https://api.elevenlabs.io/v1';
  * closest premade equivalent and needs no plan. Once the account is upgraded
  * this becomes a one-line change: set ELEVENLABS_VOICE_ID to Sophia's id.
  */
-const DEFAULT_VOICE_ID = process.env.ELEVENLABS_VOICE_ID ?? 'Xb7hH8MSUJpSbSDYk0k2';
+const DEFAULT_VOICE_ID =
+  process.env.ELEVENLABS_VOICE_ID ?? 'Xb7hH8MSUJpSbSDYk0k2';
 
-/** Turbo is the low-latency model; the quality difference on narration is slight. */
+/**
+ * The low-latency model, used when someone is waiting for a reply.
+ *
+ * It cannot perform emotion markup: given "[excited] She ran" it says the word
+ * "excited" out loud. Measured, that tagged line ran 2.1s longer than the same
+ * line untagged — the tags being read, not performed.
+ */
 const MODEL_ID = process.env.ELEVENLABS_MODEL_ID ?? 'eleven_turbo_v2_5';
+
+/**
+ * The expressive model, used for narration. It consumes inline tags as
+ * direction rather than speaking them, at roughly 3.8s a line against turbo's
+ * 0.4s — which does not matter for audio generated once, ahead of time.
+ */
+const EXPRESSIVE_MODEL_ID =
+  process.env.ELEVENLABS_EXPRESSIVE_MODEL_ID ?? 'eleven_v3';
 
 /**
  * Constant-bitrate 128kbps MP3. The bitrate is load-bearing: it is what makes
@@ -92,6 +107,8 @@ export class ElevenLabsService {
   async synthesize(params: {
     text: string;
     voiceId?: string;
+    /** Selects the model that performs emotion markup instead of reading it. */
+    expressive?: boolean;
   }): Promise<SpeechResult> {
     const key = this.requireKey();
     const voiceId = params.voiceId || DEFAULT_VOICE_ID;
@@ -110,7 +127,10 @@ export class ElevenLabsService {
           // JSON.stringify produces a UTF-8 string; the fetch body encodes it
           // as UTF-8. Building this payload by hand in a shell is what makes
           // the API reject curly quotes and dashes as invalid_unicode.
-          body: JSON.stringify({ text: params.text, model_id: MODEL_ID }),
+          body: JSON.stringify({
+            text: params.text,
+            model_id: params.expressive ? EXPRESSIVE_MODEL_ID : MODEL_ID,
+          }),
           signal: controller.signal,
         },
       );

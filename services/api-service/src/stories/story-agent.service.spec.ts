@@ -26,7 +26,9 @@ describe('StoryAgentService', () => {
       },
       {
         id: 'ch-2',
-        segments: [{ id: 'seg-3', text: 'At the end, Bramble found a bridge.' }],
+        segments: [
+          { id: 'seg-3', text: 'At the end, Bramble found a bridge.' },
+        ],
       },
     ],
   };

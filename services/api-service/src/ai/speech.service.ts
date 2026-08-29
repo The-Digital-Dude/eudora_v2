@@ -56,6 +56,11 @@ export class SpeechService {
   async synthesize(params: {
     text: string;
     voiceId?: string;
+    /**
+     * Narration is expressive; a live reply is not. The fallback provider has
+     * no equivalent, so a downgraded narration simply loses its performance.
+     */
+    expressive?: boolean;
   }): Promise<SpeechResult> {
     if (this.elevenLabs.isConfigured) {
       try {

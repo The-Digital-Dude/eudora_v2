@@ -62,6 +62,20 @@ export class AskDemoStoryDto extends AskStoryDto {
   demoSessionId: string;
 }
 
+export class DraftStoryDto {
+  /** The story as written, pasted whole. Split and tagged, never rewritten. */
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(20_000)
+  source: string;
+
+  /** Used when the prose does not carry its own title. */
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  title?: string;
+}
+
 export class NarrateStoryDto {
   /** Re-narrates segments that already have audio, for a voice change. */
   @IsBoolean()

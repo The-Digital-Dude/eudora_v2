@@ -1375,6 +1375,16 @@ model StorySegment {
 
   text String
 
+  /// The same words with emotion markup for the speech provider, e.g.
+  /// "[nervously] She looked at the puddle.". Null narrates `text` flat.
+  ///
+  /// Held separately because the provider aligns its timings against whatever
+  /// string it was given: narrating the tagged text and highlighting from its
+  /// alignment would print the tags on the page. Stripping this must reproduce
+  /// `text` exactly, and narration is refused when it does not — so the audio
+  /// can never say something the page does not show.
+  narrationText String?
+
   /// Storage key for this segment's generated narration, and how long it runs.
   /// Both null until narration is generated — the story is fully authorable and
   /// readable without audio.

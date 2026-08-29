@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateAssetDto,
@@ -94,9 +95,14 @@ export class StoriesService {
             sortOrder: ci + 1,
           },
         });
-        for (const [si, text] of chapter.segments.entries()) {
+        for (const [si, segment] of chapter.segments.entries()) {
           await tx.storySegment.create({
-            data: { chapterId: row.id, text, sortOrder: si + 1 },
+            data: {
+              chapterId: row.id,
+              text: segment.text,
+              narrationText: segment.narrationText ?? null,
+              sortOrder: si + 1,
+            },
           });
         }
       }
@@ -113,6 +119,43 @@ export class StoriesService {
     });
 
     return this.findOne(created.id);
+  }
+
+  /**
+   * Every story, for the authoring list.
+   *
+   * Returns counts rather than the chapters themselves: the list needs to say
+   * how much is written and how much is narrated, and pulling every segment of
+   * every story to count them in memory would grow with the library.
+   */
+  async findAll() {
+    const stories = await this.prisma.story.findMany({
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        moduleItem: { select: { id: true, title: true, status: true } },
+        chapters: {
+          select: {
+            segments: { select: { narrationAudioKey: true } },
+          },
+        },
+      },
+    });
+
+    return stories.map((story) => {
+      const segments = story.chapters.flatMap((chapter) => chapter.segments);
+      return {
+        id: story.id,
+        title: story.title,
+        synopsis: story.synopsis,
+        gradeBand: story.gradeBand,
+        isPublicDemo: story.isPublicDemo,
+        updatedAt: story.updatedAt,
+        moduleItem: story.moduleItem,
+        chapterCount: story.chapters.length,
+        segmentCount: segments.length,
+        narratedCount: segments.filter((s) => s.narrationAudioKey).length,
+      };
+    });
   }
 
   /**
@@ -286,14 +329,34 @@ export class StoriesService {
     // it is the honest move: stale audio saying something the page no longer
     // says is worse than no audio at all.
     const textChanged = dto.text !== undefined && dto.text !== segment.text;
+    const narrationTextChanged =
+      dto.narrationText !== undefined &&
+      (dto.narrationText || null) !== segment.narrationText;
 
     await this.prisma.storySegment.update({
       where: { id: segmentId },
       data: {
         ...(dto.text !== undefined ? { text: dto.text } : {}),
         ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
-        ...(textChanged
-          ? { narrationAudioKey: null, narrationDurationMs: null }
+        ...(dto.narrationText !== undefined
+          ? { narrationText: dto.narrationText || null }
+          : {}),
+        // Rewriting the words also discards the performed version, which was
+        // markup over the old words and would now be refused at narration time
+        // for not matching. Better to drop it than to leave the author holding
+        // a line that cannot be narrated until they notice why.
+        ...(textChanged && dto.narrationText === undefined
+          ? { narrationText: null }
+          : {}),
+        // Changing either the words or their delivery makes existing audio
+        // stale, and stale audio saying something the page does not is worse
+        // than no audio at all.
+        ...(textChanged || narrationTextChanged
+          ? {
+              narrationAudioKey: null,
+              narrationDurationMs: null,
+              narrationTimings: Prisma.DbNull,
+            }
           : {}),
       },
     });
@@ -479,7 +542,9 @@ export class StoriesService {
   async moduleItemForSegment(segmentId: string): Promise<string> {
     const segment = await this.prisma.storySegment.findUnique({
       where: { id: segmentId },
-      select: { chapter: { select: { story: { select: { moduleItemId: true } } } } },
+      select: {
+        chapter: { select: { story: { select: { moduleItemId: true } } } },
+      },
     });
     if (!segment) throw new NotFoundException('Segment not found');
     return segment.chapter.story.moduleItemId;

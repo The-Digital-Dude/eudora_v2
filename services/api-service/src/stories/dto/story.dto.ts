@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { plainToInstance, Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsEnum,
@@ -112,6 +112,14 @@ export class UpdateSegmentDto {
   @MaxLength(5000)
   text?: string;
 
+  /**
+   * The performed version. Send null to clear it and have the line read plain.
+   */
+  @IsString()
+  @IsOptional()
+  @MaxLength(6000)
+  narrationText?: string | null;
+
   @IsInt()
   @Min(1)
   @IsOptional()
@@ -170,14 +178,48 @@ export class CreateCharacterDto {
 }
 
 /** Bulk-authoring shape, so a whole story arrives in one call. */
+export class ImportSegmentDto {
+  @IsString()
+  @IsNotEmpty()
+  text: string;
+
+  /**
+   * The same words carrying emotion markup for the narrator. Optional, and
+   * validated at narration time rather than here: stripping the tags must
+   * reproduce `text` exactly, which is a rule about the pair, not the field.
+   */
+  @IsString()
+  @IsOptional()
+  narrationText?: string;
+}
+
 export class ImportChapterDto {
   @IsString()
   @IsNotEmpty()
   title: string;
 
+  /**
+   * Accepts either a bare string per segment or the fuller shape above, so the
+   * plain-text import that predates emotion markup keeps working unchanged.
+   *
+   * The transform builds the instances itself instead of leaving that to
+   * `@Type`: when both decorators are present the transform replaces the value
+   * and `@Type` never runs, so nested validation would be handed plain objects
+   * with no class metadata and would reject every one of them.
+   */
   @IsArray()
-  @IsString({ each: true })
-  segments: string[];
+  @ValidateNested({ each: true })
+  @Transform(({ value }) =>
+    Array.isArray(value)
+      ? value.map((segment: unknown) =>
+          plainToInstance(
+            ImportSegmentDto,
+            typeof segment === 'string' ? { text: segment } : segment,
+          ),
+        )
+      : value,
+  )
+  segments: ImportSegmentDto[];
 }
 
 export class ImportStoryDto {

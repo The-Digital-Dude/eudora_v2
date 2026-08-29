@@ -122,8 +122,14 @@ describe('StoriesService', () => {
         moduleItemId: 'mi-1',
         title: 'Bramble and the Bridge',
         chapters: [
-          { title: 'One', segments: ['First beat.', 'Second beat.'] },
-          { title: 'Two', segments: ['Third beat.'] },
+          {
+            title: 'One',
+            segments: [
+              { text: 'First beat.' },
+              { text: 'Second beat.', narrationText: '[excited] Second beat.' },
+            ],
+          },
+          { title: 'Two', segments: [{ text: 'Third beat.' }] },
         ],
       });
 
@@ -141,6 +147,41 @@ describe('StoriesService', () => {
         ['ch-1', 1],
         ['ch-1', 2],
         ['ch-2', 1],
+      ]);
+    });
+
+    it('stores the performed narration alongside the words', async () => {
+      mockPrisma.moduleItem.findUnique.mockResolvedValue({
+        id: 'mi-1',
+        kind: 'STORY',
+        deletedAt: null,
+        story: null,
+      });
+      mockPrisma.story.create.mockResolvedValue({ id: 'story-1' });
+      mockPrisma.storyChapter.create.mockResolvedValue({ id: 'ch-1' });
+
+      await service.import({
+        moduleItemId: 'mi-1',
+        title: 'A Story',
+        chapters: [
+          {
+            title: 'One',
+            segments: [
+              { text: 'She jumped.', narrationText: '[excited] She jumped.' },
+              { text: 'She landed.' },
+            ],
+          },
+        ],
+      });
+
+      const written = mockPrisma.storySegment.create.mock.calls.map(
+        (c: any) => [c[0].data.text, c[0].data.narrationText],
+      );
+      // Null rather than a copy of the text: the narrator only pays for the
+      // slower expressive model where there is something to perform.
+      expect(written).toEqual([
+        ['She jumped.', '[excited] She jumped.'],
+        ['She landed.', null],
       ]);
     });
   });
@@ -287,9 +328,7 @@ describe('StoriesService', () => {
       const story: any = await service.findOne('story-1');
       const [narrated, silent] = story.chapters[0].segments;
 
-      expect(narrated.narrationUrl).toBe(
-        '/api/stories/segments/s1/narration',
-      );
+      expect(narrated.narrationUrl).toBe('/api/stories/segments/s1/narration');
       // Null, not a URL that would 404 — the reader uses this to decide
       // whether to show a play button at all.
       expect(silent.narrationUrl).toBeNull();

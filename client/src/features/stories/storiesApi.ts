@@ -1,5 +1,11 @@
 import { authApi } from "../auth/authApi";
-import type { AgentReply, AskPayload, Story } from "./types";
+import type {
+  AgentReply,
+  AskPayload,
+  Story,
+  StoryDraft,
+  StorySummary,
+} from "./types";
 
 /**
  * The authenticated half of the story module. The public demo deliberately does
@@ -32,7 +38,86 @@ export const storiesApi = authApi.injectEndpoints({
       // and the transcript is held in component state for the length of the
       // sitting rather than refetched.
     } as any),
+
+    // ─── Authoring ──────────────────────────────────────────────────────────
+
+    getStories: builder.query<StorySummary[], void>({
+      query: () => "/stories/all",
+      providesTags: ["StoryList" as any],
+    } as any),
+
+    getStory: builder.query<Story, string>({
+      query: (id: string) => `/stories/${id}`,
+      // Tagged per story, not as one global "StoryContent": narrating one
+      // story should not discard every other story cached in the editor, and
+      // an untagged pair here silently failed to refetch at all.
+      providesTags: (_r: any, _e: any, id: string) => [
+        { type: "StoryContent", id },
+      ],
+    } as any),
+
+    /**
+     * Splits pasted prose into pages and proposes emotion markup. Writes
+     * nothing — the editor holds the result until an author accepts it.
+     */
+    draftStory: builder.mutation<StoryDraft, { source: string; title?: string }>(
+      {
+        query: (body: { source: string; title?: string }) => ({
+          url: "/stories/draft",
+          method: "POST",
+          body,
+        }),
+      } as any,
+    ),
+
+    importStory: builder.mutation<Story, Record<string, unknown>>({
+      query: (body: Record<string, unknown>) => ({
+        url: "/stories/import",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["StoryList" as any],
+    } as any),
+
+    updateSegment: builder.mutation<
+      Story,
+      { segmentId: string; text?: string; narrationText?: string | null }
+    >({
+      query: ({ segmentId, ...body }: { segmentId: string }) => ({
+        url: `/stories/segments/${segmentId}`,
+        method: "PATCH",
+        body,
+      }),
+      // Only the segment id is known here, not the story it belongs to, so
+      // this invalidates every cached story. Acceptable: an author edits one
+      // story at a time, and a stale page in the editor is worse than a refetch.
+      invalidatesTags: [{ type: "StoryContent" } as any, "StoryList" as any],
+    } as any),
+
+    narrateStory: builder.mutation<
+      { generated: number; skipped: number; failed: number },
+      { storyId: string; force?: boolean }
+    >({
+      query: ({ storyId, force }: { storyId: string; force?: boolean }) => ({
+        url: `/stories/${storyId}/narrate`,
+        method: "POST",
+        body: { force },
+      }),
+      invalidatesTags: (_r: any, _e: any, arg: { storyId: string }) => [
+        { type: "StoryContent", id: arg.storyId },
+        "StoryList",
+      ],
+    } as any),
   }),
 });
 
-export const { useGetStoryByModuleItemQuery, useAskStoryMutation } = storiesApi;
+export const {
+  useGetStoryByModuleItemQuery,
+  useAskStoryMutation,
+  useGetStoriesQuery,
+  useGetStoryQuery,
+  useDraftStoryMutation,
+  useImportStoryMutation,
+  useUpdateSegmentMutation,
+  useNarrateStoryMutation,
+} = storiesApi;

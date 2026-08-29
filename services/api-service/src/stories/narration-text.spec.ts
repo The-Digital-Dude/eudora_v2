@@ -15,6 +15,27 @@ describe('stripNarrationTags', () => {
     );
   });
 
+  it('leaves a space where a tag joined two words', () => {
+    // The author wrote the tag flush against the sentence before it. Removing
+    // it and its trailing space would give "gasped.As" and be refused, over a
+    // whitespace convention nobody was told about.
+    expect(stripNarrationTags('gasped.[amazed] As Earth').display).toBe(
+      'gasped. As Earth',
+    );
+  });
+
+  it('inserts nothing when the author already left a space', () => {
+    // The widening must not double a space that was already there, or every
+    // pair that used to validate would start failing.
+    expect(stripNarrationTags('them. [excited] One day').display).toBe(
+      'them. One day',
+    );
+  });
+
+  it('inserts nothing at the very start', () => {
+    expect(stripNarrationTags('[curious] Luna').display).toBe('Luna');
+  });
+
   it('leaves an unclosed bracket alone', () => {
     // Otherwise a stray "[" would swallow the rest of the story silently.
     expect(stripNarrationTags('a [ b').display).toBe('a [ b');
@@ -78,6 +99,34 @@ describe('remapTimings', () => {
     // The reader slices the text by this count; a mismatch would highlight the
     // wrong words for the whole segment.
     expect(mapped.character_end_times_seconds).toHaveLength(display.length);
+  });
+
+  it('carries a time across a space the stripper inserted', () => {
+    // "a.[x]b" -> "a. b": the inserted space has no character behind it in the
+    // tagged string, so it gets no timing of its own and must inherit one.
+    const tagged = 'a.[x]b';
+    const { display, indexMap } = stripNarrationTags(tagged);
+    expect(display).toBe('a. b');
+
+    const times = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
+    const mapped = remapTimings(
+      {
+        characters: tagged.split(''),
+        character_start_times_seconds: times,
+        character_end_times_seconds: times,
+      },
+      indexMap,
+      display.length,
+    );
+
+    expect(mapped.character_end_times_seconds).toHaveLength(4);
+    const ends = mapped.character_end_times_seconds;
+    for (let i = 1; i < ends.length; i++) {
+      expect(ends[i]).toBeGreaterThanOrEqual(ends[i - 1]);
+    }
+    // The space inherits the moment before it rather than reading as zero,
+    // which would send the highlight back to the start of the line.
+    expect(ends[2]).toBe(ends[1]);
   });
 
   it('never lets end times move backwards', () => {

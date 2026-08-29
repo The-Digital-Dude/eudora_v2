@@ -29,6 +29,17 @@ export interface StrippedNarration {
  * Removes `[tag]` markup, along with a single run of whitespace immediately
  * following it. Without swallowing that space, "[excited] She ran" would strip
  * to " She ran" and never match the author's "She ran".
+ *
+ * A tag written flush against the words on both sides leaves a space behind in
+ * its place. `gasped.[amazed] As` plainly means `gasped. As`, but removing the
+ * tag and its trailing space would give `gasped.As` and be refused — over a
+ * whitespace convention nobody was told about. This only ever accepts pairs
+ * that used to be rejected: where the author already put a space before the
+ * tag, the character before the tag is whitespace and nothing is inserted.
+ *
+ * The inserted space has no character behind it in the tagged string, so it
+ * gets no `indexMap` entry. `remapTimings` carries the previous end time across
+ * such gaps, which is right — a space is not spoken.
  */
 export function stripNarrationTags(tagged: string): StrippedNarration {
   const indexMap: number[] = new Array(tagged.length).fill(-1);
@@ -48,6 +59,13 @@ export function stripNarrationTags(tagged: string): StrippedNarration {
       }
       i = close + 1;
       while (i < tagged.length && /\s/.test(tagged[i])) i++;
+
+      const joinsTwoWords =
+        display.length > 0 &&
+        !/\s/.test(display[display.length - 1]) &&
+        i < tagged.length &&
+        !/\s/.test(tagged[i]);
+      if (joinsTwoWords) display += ' ';
       continue;
     }
     indexMap[i] = display.length;

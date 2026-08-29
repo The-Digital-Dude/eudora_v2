@@ -329,6 +329,7 @@ function SegmentRow({
     segment.narrationText ?? "",
   );
   const [error, setError] = React.useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = React.useState(false);
 
   React.useEffect(() => {
     setText(segment.text);
@@ -433,13 +434,29 @@ function SegmentRow({
             >
               <SplitIcon className="h-3 w-3" /> Split at cursor
             </button>
+            {/* Two steps, because deleting a section destroys the only copy
+                of its words — there is no soft-delete behind this and nothing
+                to undo it with. An empty section goes on one click; one with
+                writing in it asks first. */}
             <button
               type="button"
-              onClick={() => run(() => removeSegment(segment.id).unwrap())}
+              onClick={() => {
+                if (!segment.text.trim() || confirmingDelete) {
+                  void run(() => removeSegment(segment.id).unwrap());
+                  return;
+                }
+                setConfirmingDelete(true);
+              }}
+              onBlur={() => setConfirmingDelete(false)}
               disabled={busy}
-              className="ml-auto flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+              className={`ml-auto flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] transition-colors disabled:opacity-40 ${
+                confirmingDelete
+                  ? "border-destructive bg-destructive/10 font-bold text-destructive"
+                  : "border-border text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              }`}
             >
-              <Trash2 className="h-3 w-3" /> Delete
+              <Trash2 className="h-3 w-3" />
+              {confirmingDelete ? "Delete for good?" : "Delete"}
             </button>
           </div>
 
@@ -467,10 +484,30 @@ function SegmentRow({
           />
 
           {mismatch ? (
-            <p className="text-[10px] text-destructive">
-              Tags may be added, but the words must stay the same — this will be
-              refused.
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[10px] text-destructive">
+                Tags may be added, but the words must stay the same — this will
+                be refused.
+              </p>
+              {/* The usual way to reach this state is editing the words and
+                  leaving the performance describing the old ones. Rewriting
+                  the tags by hand to match is work; reading the line plainly
+                  is a fine answer, and re-tagging it afterwards is easy. */}
+              <button
+                type="button"
+                onClick={() => setNarrationText("")}
+                className="rounded-md border border-border px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted"
+              >
+                Clear the performance
+              </button>
+              <button
+                type="button"
+                onClick={() => setNarrationText(text)}
+                className="rounded-md border border-border px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted"
+              >
+                Start again from the words
+              </button>
+            </div>
           ) : null}
           {error ? (
             <p className="text-[10px] text-destructive">{error}</p>

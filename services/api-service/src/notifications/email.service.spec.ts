@@ -19,9 +19,9 @@ describe('EmailService', () => {
       // The previous mock returned true unconditionally, which is what let the
       // product believe mail was working when nothing was ever delivered.
       const service = new EmailService();
-      await expect(service.sendMail('a@b.com', 'Subject', 'Body')).resolves.toBe(
-        false,
-      );
+      await expect(
+        service.sendMail('a@b.com', 'Subject', 'Body'),
+      ).resolves.toBe(false);
       expect(service.isConfigured).toBe(false);
     });
 

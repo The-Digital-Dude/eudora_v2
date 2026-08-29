@@ -239,6 +239,26 @@ describe('generateWidgetInstance — legacy passthrough (v1 / unversioned config
       });
     });
 
+    it('is graded correctly even when questionType is "mcq" — the question-editor form defaults Question Type to mcq independently of widget binding, so a real authored DRAG_AND_DROP_LABELS question can carry questionType: "mcq" with empty options; the MCQ branch must not shadow it', () => {
+      const question = baseQuestion({
+        questionType: 'mcq',
+        widgetType: 'DRAG_AND_DROP_LABELS',
+        options: [],
+        widgetConfig: {
+          labels: ['A', 'B'],
+          targets: [
+            { id: 't1', placeholder: '', correctLabel: 'A' },
+            { id: 't2', placeholder: '', correctLabel: 'B' },
+          ],
+        },
+      });
+      const result = generateWidgetInstance(question, 1);
+      expect(result.resolvedAnswer).toEqual({
+        widgetType: 'DRAG_AND_DROP_LABELS',
+        correctPlacements: { t1: 'A', t2: 'B' },
+      });
+    });
+
     it('skips targets with no correctLabel — they are decorative, not part of the answer key', () => {
       const question = baseQuestion({
         widgetType: 'DRAG_AND_DROP_LABELS',

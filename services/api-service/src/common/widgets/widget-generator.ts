@@ -226,7 +226,20 @@ function resolveLegacyInstance(question: QuestionLike): GeneratedInstance {
   const widgetType = question.widgetType ?? null;
   const rawConfig = question.widgetConfig ?? null;
 
-  if (widgetType === 'STANDARD_MCQ' || question.questionType === 'mcq') {
+  // `questionType === 'mcq'` is only a valid MCQ signal when no widget is
+  // bound at all — it's the fallback for legacy questions authored before
+  // widgetType existed. Once a widgetType is set, it is authoritative: the
+  // question-editor form's "Question Type" field defaults to 'mcq' and is
+  // independent of "Bind Interactive Widget", so an author binding e.g.
+  // DRAG_AND_DROP_LABELS while leaving Question Type unchanged used to fall
+  // into this branch anyway (`question.options` is empty for a widget-bound
+  // question, so `correct` was always undefined) — resolving to UNSUPPORTED
+  // and silently misgrading every real submission, not just previews (the
+  // same root cause `previewWidgetInstance`'s hardcoded 'mcq' had).
+  if (
+    widgetType === 'STANDARD_MCQ' ||
+    (!widgetType && question.questionType === 'mcq')
+  ) {
     const correct = question.options.find((o) => o.isCorrect);
     return {
       displayConfig: rawConfig,

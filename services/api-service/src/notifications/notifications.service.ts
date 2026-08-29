@@ -48,7 +48,10 @@ export class NotificationsService {
         this.expoPushService.sendToTokens(tokens, {
           title: dto.title,
           body: dto.body,
-          data: { notificationId: notification.id, ...(dto.metadata as object) },
+          data: {
+            notificationId: notification.id,
+            ...(dto.metadata as object),
+          },
         }),
       )
       .catch((err) => {

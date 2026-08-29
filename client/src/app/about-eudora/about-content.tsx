@@ -9,6 +9,7 @@ import { ClosingCta } from "./components/closing-cta";
 import { HeroCover } from "./components/hero-cover";
 import { LiveTeachersSection } from "./components/live-teachers-section";
 import { ProgressSection } from "./components/progress-section";
+import { StoryDemoSection } from "./components/story-demo-section";
 import { WidgetPlaygroundSection } from "./components/widget-playground-section";
 
 /**
@@ -34,6 +35,7 @@ export function AboutEudoraContent() {
       <main id="main-content" className="flex-1">
         <HeroCover />
         <ClioDemoSection onXpChange={handleXpChange} onComplete={handleComplete} />
+        <StoryDemoSection />
         <WidgetPlaygroundSection />
         <ProgressSection earnedXp={earnedXp} demoComplete={demoComplete} />
         <LiveTeachersSection />

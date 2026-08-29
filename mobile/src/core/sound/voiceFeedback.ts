@@ -1,6 +1,7 @@
+import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import * as Speech from 'expo-speech';
 
-import { PHRASES, type PhraseKey } from './phrases';
+import { PHRASES, VOICE_LINES, type PhraseKey } from './phrases';
 
 /**
  * Clio Voice Engine for Mobile
@@ -74,7 +75,18 @@ export function normalizeMathForMobileSpeech(text: string): string {
     .trim();
 }
 
+/** The pre-generated line currently playing, so `stopVoice` can halt it. */
+let activePlayer: AudioPlayer | null = null;
+
 export async function stopVoice() {
+  if (activePlayer) {
+    try {
+      activePlayer.pause();
+    } catch {
+      // ignore
+    }
+    activePlayer = null;
+  }
   try {
     await Speech.stop();
   } catch {
@@ -92,14 +104,33 @@ export async function isSpeakingAsync(): Promise<boolean> {
 
 export async function playVoiceLine(key: PhraseKey, opts: { interrupt?: boolean } = {}) {
   const { interrupt = true } = opts;
-  const entry = PHRASES[key];
-  const phrase = Array.isArray(entry) ? entry[Math.floor(Math.random() * entry.length)] : entry;
-  const voice = await resolveFemaleVoiceId();
+  const variants = PHRASES[key];
+  // One index for both paths, so the audio and the spoken text agree.
+  const index = Math.floor(Math.random() * variants.length);
+
   if (interrupt) await stopVoice();
-  Speech.speak(phrase, {
+
+  // Clio's own recorded voice, bundled by voice/generate-voice-lines.mjs, so
+  // she sounds like one character rather than whatever voice each device
+  // happens to ship. Empty until that script has been run with a key.
+  const source = VOICE_LINES[key]?.[index];
+  if (source !== undefined) {
+    try {
+      const player = createAudioPlayer(source);
+      activePlayer = player;
+      player.play();
+      return;
+    } catch {
+      // Fall through to the synthesiser rather than going silent.
+      activePlayer = null;
+    }
+  }
+
+  const voice = await resolveFemaleVoiceId();
+  Speech.speak(variants[index], {
     language: 'en-US',
     voice,
-    rate: 0.68,
+    rate: 1.0,
     pitch: 1.35,
   });
 }
@@ -118,7 +149,7 @@ export async function playText(text: string, opts: { interrupt?: boolean; onDone
   Speech.speak(clean, {
     language: 'en-US',
     voice,
-    rate: 0.66,
+    rate: 1.0,
     pitch: 1.32,
     onDone,
     onError: () => onDone?.(),

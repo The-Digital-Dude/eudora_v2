@@ -31,7 +31,6 @@ describe('Education OS Administrative Modules (e2e)', () => {
   let studentProfileId: string;
   let guardianUserId: string;
   let guardianProfileId: string;
-  let familyId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -106,9 +105,6 @@ describe('Education OS Administrative Modules (e2e)', () => {
   afterAll(async () => {
     // Cascade onDelete in prisma schema will clean up related records when we delete parent rows.
     // Clean up created entities to leave DB clean
-    if (familyId) {
-      await prisma.family.delete({ where: { id: familyId } }).catch(() => {});
-    }
     if (studentProfileId) {
       await prisma.studentProfile
         .delete({ where: { id: studentProfileId } })
@@ -402,57 +398,6 @@ describe('Education OS Administrative Modules (e2e)', () => {
       };
       expect(body.data.relationshipType).toBe('FATHER');
       expect(body.data.guardianProfileId).toBe(guardianProfileId);
-    });
-
-    it('should allow creating a family household', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/api/families')
-        .set('Authorization', `Bearer ${superAdminToken}`)
-        .send({
-          householdName: 'The Doe Family Household',
-        })
-        .expect(201);
-
-      const body = res.body as { data: { id: string } };
-      familyId = body.data.id;
-      expect(familyId).toBeDefined();
-    });
-
-    it('should allow adding the student and guardian to the family', async () => {
-      // Add student
-      await request(app.getHttpServer())
-        .post(`/api/families/${familyId}/members`)
-        .set('Authorization', `Bearer ${superAdminToken}`)
-        .send({
-          studentProfileId,
-        })
-        .expect(201);
-
-      // Add guardian
-      await request(app.getHttpServer())
-        .post(`/api/families/${familyId}/members`)
-        .set('Authorization', `Bearer ${superAdminToken}`)
-        .send({
-          guardianProfileId,
-        })
-        .expect(201);
-
-      // Fetch family to verify membership
-      const res = await request(app.getHttpServer())
-        .get(`/api/families/${familyId}`)
-        .set('Authorization', `Bearer ${superAdminToken}`)
-        .expect(200);
-
-      const body = res.body as {
-        data: {
-          students: { studentProfileId: string }[];
-          guardians: { guardianProfileId: string }[];
-        };
-      };
-      expect(body.data.students.length).toBe(1);
-      expect(body.data.guardians.length).toBe(1);
-      expect(body.data.students[0].studentProfileId).toBe(studentProfileId);
-      expect(body.data.guardians[0].guardianProfileId).toBe(guardianProfileId);
     });
   });
 });

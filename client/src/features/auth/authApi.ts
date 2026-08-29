@@ -111,7 +111,6 @@ export const authApi = createApi({
     "Batches",
     "BatchSessions",
     "ClassSections",
-    "MakeupRequests",
     "Attempts",
     "Broadcasts",
     "Students",
@@ -130,8 +129,6 @@ export const authApi = createApi({
     "GamificationToday",
     "Teachers",
     "Notifications",
-    "Timetables",
-    "TimetableSlots",
     "Attendance",
     "Homework",
     "Gradebook",
@@ -141,6 +138,8 @@ export const authApi = createApi({
     "ParentPortal",
     "Gamification",
     "Leaderboard",
+    "StoryContent",
+    "StoryList",
     "TeacherPortal",
     "LiveClasses",
     "PlacementRecommendations",
@@ -164,6 +163,35 @@ export const authApi = createApi({
         body: userData,
       }),
       invalidatesTags: ["Users"],
+    }),
+    // Always resolves the same way whether or not the address has an account —
+    // the API refuses to confirm which, and the UI must not either.
+    forgotPassword: builder.mutation<{ message: string }, { email: string }>({
+      query: (body) => ({
+        url: "/auth/forgot-password",
+        method: "POST",
+        body,
+      }),
+    }),
+    resetPassword: builder.mutation<
+      { message: string },
+      { token: string; newPassword: string }
+    >({
+      query: (body) => ({
+        url: "/auth/reset-password",
+        method: "POST",
+        body,
+      }),
+    }),
+    changePassword: builder.mutation<
+      unknown,
+      { currentPassword: string; newPassword: string }
+    >({
+      query: (body) => ({
+        url: "/auth/change-password",
+        method: "POST",
+        body,
+      }),
     }),
     getMe: builder.query<any, void>({
       query: () => "/auth/me",
@@ -193,4 +221,7 @@ export const {
   useGetMeQuery,
   useLogoutMutation,
   useGoogleLoginMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+  useChangePasswordMutation,
 } = authApi;

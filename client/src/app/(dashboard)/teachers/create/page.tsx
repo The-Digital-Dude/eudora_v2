@@ -61,7 +61,7 @@ export default function CreateTeacherPage() {
         </p>
       </div>
 
-      <Card className="max-w-xl rounded-3xl border border-border bg-card p-6">
+      <Card className="w-full rounded-3xl border border-border bg-card p-6">
         <TeacherProfileForm
           values={values}
           onChange={setValues}

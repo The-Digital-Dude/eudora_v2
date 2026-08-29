@@ -28,6 +28,9 @@ import {
       },
     },
   ],
-  exports: [UploadsService],
+  // The provider token is exported too, so a module that stores or serves its
+  // own files (stories, and their narration later) can inject the selected
+  // backend rather than reaching for S3 directly and breaking LOCAL setups.
+  exports: [UploadsService, ACTIVE_STORAGE_PROVIDER],
 })
 export class UploadsModule {}

@@ -6,52 +6,46 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useCreateCourseMutation, useGetLearningSubjectsQuery } from "@/features/catalog/catalogApi";
+import {
+  useCreateCourseMutation,
+  useGetLearningSubjectsQuery,
+} from "@/features/catalog/catalogApi";
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
+import {
+  CourseForm,
+  type CourseFormValues,
+  EMPTY_COURSE,
+  toCoursePayload,
+} from "../components/course-form";
 
 export default function CreateCoursePage() {
   const router = useRouter();
   const { data: subjects } = useGetLearningSubjectsQuery();
   const [createCourse, { isLoading: creatingCourse }] = useCreateCourseMutation();
 
-  const [subjectId, setSubjectId] = React.useState("");
-  const [title, setTitle] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [estimatedHours, setEstimatedHours] = React.useState("");
+  const [values, setValues] = React.useState<CourseFormValues>(EMPTY_COURSE);
   const [error, setError] = React.useState("");
 
   React.useEffect(() => {
-    setSubjectId((prev) => prev || subjects?.[0]?.id || "");
+    setValues((prev) =>
+      prev.learningSubjectId
+        ? prev
+        : { ...prev, learningSubjectId: subjects?.[0]?.id ?? "" },
+    );
   }, [subjects]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !subjectId) {
+    if (!values.title || !values.learningSubjectId) {
       setError("Subject and title are required.");
       return;
     }
     setError("");
 
     try {
-      const course = await createCourse({
-        learningSubjectId: subjectId,
-        title,
-        slug: slugify(title),
-        description: description || undefined,
-        estimatedHours: estimatedHours ? Number(estimatedHours) : undefined,
-      }).unwrap();
-      toast.success("Course created!");
+      const course = await createCourse(toCoursePayload(values)).unwrap();
+      toast.success("Course created.");
       router.push(`/courses/${course.id}`);
     } catch (err: any) {
       setError(err?.data?.message || "Failed to create course.");
@@ -76,93 +70,16 @@ export default function CreateCoursePage() {
         </p>
       </div>
 
-      <Card className="max-w-xl rounded-3xl border border-border bg-card p-6">
-        {error && (
-          <div className="mb-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-              Subject
-            </Label>
-            <select
-              value={subjectId}
-              onChange={(e) => setSubjectId(e.target.value)}
-              className="h-10 w-full rounded-xl border border-border bg-card px-3 text-xs text-foreground focus:outline-none"
-              required
-            >
-              <option value="" disabled>
-                Select subject
-              </option>
-              {(subjects ?? []).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-              Course Title
-            </Label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Algebra Fundamentals"
-              className="h-10 border-border text-xs"
-              required
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-              Description (optional)
-            </Label>
-            <Input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="A short description of this course"
-              className="h-10 border-border text-xs"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-              Estimated Hours (optional)
-            </Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.5"
-              value={estimatedHours}
-              onChange={(e) => setEstimatedHours(e.target.value)}
-              placeholder="10"
-              className="h-10 border-border text-xs"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => router.push("/courses")}
-              className="h-10 rounded-xl text-xs font-semibold"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={creatingCourse}
-              className="h-10 cursor-pointer rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-            >
-              {creatingCourse ? "Creating..." : "Create Course"}
-            </Button>
-          </div>
-        </form>
+      <Card className="w-full rounded-3xl border border-border bg-card p-6">
+        <CourseForm
+          values={values}
+          onChange={setValues}
+          onSubmit={handleSubmit}
+          onCancel={() => router.push("/courses")}
+          isSaving={creatingCourse}
+          submitLabel="Create Course"
+          error={error}
+        />
       </Card>
     </div>
   );

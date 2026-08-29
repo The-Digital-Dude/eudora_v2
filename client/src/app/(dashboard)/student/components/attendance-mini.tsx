@@ -4,7 +4,8 @@ import {UserCheck } from "lucide-react";
 import React from "react";
 
 interface AttendanceSummary {
-  attendanceRate: number;
+  /** Null when nothing has been recorded — never invent 100%. */
+  attendanceRate: number | null;
   total: number;
   breakdown: {
     PRESENT: number;
@@ -30,8 +31,29 @@ export function AttendanceMini({ summary, isLoading }: AttendanceMiniProps) {
     );
   }
 
-  const rate = summary?.attendanceRate ?? 100;
+  const rate = summary?.attendanceRate ?? null;
   const breakdown = summary?.breakdown ?? { PRESENT: 0, ABSENT: 0, LATE: 0, EXCUSED: 0 };
+
+  // Nothing recorded yet is not a full green ring reading 100%. A student
+  // with no register entries has an unknown rate, not a perfect one — so the
+  // whole chart is replaced rather than drawn against an invented number.
+  if (rate === null) {
+    return (
+      <div className="rounded-3xl border border-border/50 bg-card/40 p-6 shadow-xl backdrop-blur-md flex flex-col h-full">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
+          <UserCheck className="h-4 w-4 text-primary" />
+          Attendance Rate
+        </h3>
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
+          <span className="text-2xl font-black text-muted-foreground">—</span>
+          <p className="text-xs font-bold text-foreground mt-2">Not tracked yet</p>
+          <p className="text-[10px] text-muted-foreground mt-1 max-w-[22ch]">
+            Attendance appears here once a session or class register records it.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // SVG Circle configuration
   const radius = 35;

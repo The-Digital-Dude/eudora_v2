@@ -771,7 +771,8 @@ export interface ChildSummary {
   birthDate: string;
   gender: string;
   classSection: ChildClassSection | null;
-  attendanceRate: number;
+  /** Null when nothing has been recorded — render "not tracked", never a number. */
+  attendanceRate: number | null;
   pendingHomeworkCount: number;
   latestGrade: ChildLatestGrade | null;
 }
@@ -783,7 +784,6 @@ export interface ChildLearningSummary {
   longestStreak: number;
   totalXp: number;
   level: number;
-  mastery: { competencyName: string; masteryScore: number; status: string }[];
 }
 
 /** `GET /parent/children/:id/teachers` */
@@ -818,29 +818,6 @@ export interface ChildHomeworkItem {
     submissionDate: string | null;
     feedback: string | null;
   } | null;
-}
-
-/** `GET /parent/billing/invoices` — `amount` is a Prisma Decimal, serialized as a string. */
-export interface FamilyInvoice {
-  id: string;
-  amount: string;
-  currency: string;
-  description: string | null;
-  issueDate: string;
-  dueDate: string;
-  status: 'PENDING' | 'PAID' | 'OVERDUE' | string;
-}
-
-/** `GET /parent/billing/payments` */
-export interface FamilyPayment {
-  id: string;
-  invoiceId: string | null;
-  amount: string;
-  currency: string;
-  paymentDate: string;
-  method: string;
-  reference: string | null;
-  notes: string | null;
 }
 
 export interface CreateGuardianProfilePayload {

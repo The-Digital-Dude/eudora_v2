@@ -355,8 +355,11 @@ export class AttendanceService {
     });
 
     const attended = breakdown.PRESENT + breakdown.LATE + breakdown.EXCUSED;
+    // Null, not 100, on an empty range — an unmarked section is not a
+    // perfectly-attended one. Matches `getStudentSummary` above, which
+    // already declined to invent a rate for zero records.
     const attendanceRate =
-      total > 0 ? Math.round((attended / total) * 100) : 100;
+      total > 0 ? Math.round((attended / total) * 100) : null;
 
     return {
       total,
@@ -395,8 +398,10 @@ export class AttendanceService {
     });
 
     const attended = breakdown.PRESENT + breakdown.LATE + breakdown.EXCUSED;
+    // Null, not 100, on an unmarked month — same reasoning as the range
+    // summary above.
     const attendanceRate =
-      total > 0 ? Math.round((attended / total) * 100) : 100;
+      total > 0 ? Math.round((attended / total) * 100) : null;
 
     return {
       month: monthStr,

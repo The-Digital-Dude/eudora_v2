@@ -26,12 +26,13 @@ import { BatchSessionsModule } from './batch-sessions/batch-sessions.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { CatalogModule } from './catalog/catalog.module';
+import { StoriesModule } from './stories/stories.module';
+import { AiModule } from './ai/ai.module';
 import { ClassesModule } from './classes/classes.module';
 import { EntitlementsModule } from './entitlements/entitlements.module';
 import { BillingModule } from './billing/billing.module';
 import { LeadsModule } from './leads/leads.module';
 import { CommunicationModule } from './communication/communication.module';
-import { MakeupModule } from './makeup/makeup.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { TeacherApplicationsModule } from './teacher-applications/teacher-applications.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -83,12 +84,13 @@ import { AuditModule } from './common/audit/audit.module';
     AssessmentsModule,
     LessonsModule,
     CatalogModule,
+    AiModule,
+    StoriesModule,
     ClassesModule,
     EntitlementsModule,
     BillingModule,
     LeadsModule,
     CommunicationModule,
-    MakeupModule,
     TeacherModule,
     TeacherApplicationsModule,
     NotificationsModule,

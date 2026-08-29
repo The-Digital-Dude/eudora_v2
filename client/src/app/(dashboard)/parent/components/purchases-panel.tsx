@@ -23,11 +23,6 @@ import {
 
 /**
  * What the guardian has bought, and where each payment plan stands.
- *
- * Deliberately separate from `BillingHistoryPanel`, which shows the
- * staff-entered offline invoice ledger (`FamilyInvoice`/`FamilyPayment`).
- * These are Stripe purchases; the two systems are unrelated and merging them
- * would misrepresent both.
  */
 export function PurchasesPanel() {
   const { data: byChild, isLoading } = useGetMyEntitlementsQuery();

@@ -6,7 +6,12 @@ import { App } from 'supertest/types';
 
 import { AppModule } from './../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { cleanupWorld, unwrap, type TestContext, type TestUser } from './helpers/fixtures';
+import {
+  cleanupWorld,
+  unwrap,
+  type TestContext,
+  type TestUser,
+} from './helpers/fixtures';
 
 /**
  * `POST /api/auth/token/register` — native signup for bearer-token clients.
@@ -63,7 +68,9 @@ describe('Native token auth (e2e)', () => {
 
     const app: INestApplication<App> = builder.createNestApplication();
     app.setGlobalPrefix('api');
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
     return { app, prisma: app.get(PrismaService) };
   }
@@ -77,11 +84,19 @@ describe('Native token auth (e2e)', () => {
   }
 
   function track(email: string, payload: any) {
-    created.push({ id: payload.user.id, email, token: payload.accessToken, csrf: '' });
+    created.push({
+      id: payload.user.id,
+      email,
+      token: payload.accessToken,
+      csrf: '',
+    });
   }
 
   /** Registers against the un-throttled app and records the user for teardown. */
-  async function registerAndTrack(email: string, extra: Record<string, unknown> = {}) {
+  async function registerAndTrack(
+    email: string,
+    extra: Record<string, unknown> = {},
+  ) {
     const res = await registerNative(ctx, {
       email,
       password,
@@ -161,7 +176,9 @@ describe('Native token auth (e2e)', () => {
   });
 
   it('ignores a privileged role hint rather than honouring it', async () => {
-    const { payload } = await registerAndTrack(newEmail(), { role: 'SUPER_ADMIN' });
+    const { payload } = await registerAndTrack(newEmail(), {
+      role: 'SUPER_ADMIN',
+    });
 
     // resolveSelfSignupRole allowlists USER/GUARDIAN and falls back to
     // GUARDIAN, so a body naming a privileged role yields an ordinary account

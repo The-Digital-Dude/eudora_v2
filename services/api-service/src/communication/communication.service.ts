@@ -6,9 +6,22 @@ import { CreateBroadcastDto } from './dto/broadcast.dto';
 export class CommunicationService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Records an announcement. Does not send one — see the Broadcast model.
+   *
+   * `status` and `recipientCount` are set here rather than accepted from the
+   * caller, and take the column defaults (RECORDED / 0). Spreading the DTO
+   * straight into `create` is what let the client assert a delivery that
+   * never happened.
+   */
   async createBroadcast(dto: CreateBroadcastDto) {
     return this.prisma.broadcast.create({
-      data: dto,
+      data: {
+        type: dto.type,
+        title: dto.title,
+        content: dto.content ?? null,
+        ...(dto.sender ? { sender: dto.sender } : {}),
+      },
     });
   }
 

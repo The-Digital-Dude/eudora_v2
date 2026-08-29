@@ -37,7 +37,14 @@ export class UsersController {
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.usersService.findAll(pageNum, limitNum, search, role, sortBy, sortOrder);
+    return this.usersService.findAll(
+      pageNum,
+      limitNum,
+      search,
+      role,
+      sortBy,
+      sortOrder,
+    );
   }
 
   @Get(':id')

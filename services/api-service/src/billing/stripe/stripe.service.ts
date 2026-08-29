@@ -4,7 +4,12 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import Stripe from 'stripe';
-import type { StripeCheckoutSession, StripeEvent } from './stripe-types';
+import type {
+  StripeCharge,
+  StripeCheckoutSession,
+  StripeEvent,
+  StripeInvoice,
+} from './stripe-types';
 import { PrismaService } from '../../prisma/prisma.service';
 
 /**
@@ -216,6 +221,23 @@ export class StripeService {
       customer: customerId,
       return_url: returnUrl,
     });
+  }
+
+  /**
+   * Looked up when a refund or dispute needs tracing back to its instalment
+   * plan: a charge only carries the invoice id, and the invoice is what
+   * carries the subscription id `InstallmentPlan.stripeSubscriptionId` keys
+   * on.
+   */
+  async retrieveInvoice(invoiceId: string): Promise<StripeInvoice> {
+    const stripe = this.require();
+    return stripe.invoices.retrieve(invoiceId);
+  }
+
+  /** Looked up when a dispute needs tracing back to the charge it targets. */
+  async retrieveCharge(chargeId: string): Promise<StripeCharge> {
+    const stripe = this.require();
+    return stripe.charges.retrieve(chargeId);
   }
 
   /**

@@ -7,7 +7,10 @@ import { parseWidgetConfig } from './widget-config.schema';
 
 function tryParse(widgetType: unknown, value: unknown): string | null {
   try {
-    parseWidgetConfig(typeof widgetType === 'string' ? widgetType : null, value);
+    parseWidgetConfig(
+      typeof widgetType === 'string' ? widgetType : null,
+      value,
+    );
     return null;
   } catch (err) {
     return err instanceof Error ? err.message : 'invalid widgetConfig';
@@ -36,11 +39,13 @@ export function IsValidWidgetConfig(validationOptions?: ValidationOptions) {
           ) {
             return true;
           }
-          const widgetType = (args.object as Record<string, unknown>).widgetType;
+          const widgetType = (args.object as Record<string, unknown>)
+            .widgetType;
           return tryParse(widgetType, value) === null;
         },
         defaultMessage(args: ValidationArguments) {
-          const widgetType = (args.object as Record<string, unknown>).widgetType;
+          const widgetType = (args.object as Record<string, unknown>)
+            .widgetType;
           const message = tryParse(widgetType, args.value);
           return `widgetConfig is invalid for widgetType "${String(widgetType)}": ${message}`;
         },

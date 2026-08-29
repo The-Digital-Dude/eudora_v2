@@ -32,13 +32,13 @@ model User {
   studentProfile          StudentProfile?
   guardianProfile         GuardianProfile?
   teacherProfile          TeacherProfile?
-  rubricAssessments       RubricAssessment[]
   authSessions            AuthSession[]
   assignedAssignments     AssessmentAssignment[] @relation("AssignedAssignments")
   markedAttempts          AssessmentAttempt[]    @relation("MarkedAttempts")
   notifications           Notification[]
   deviceTokens            DeviceToken[]
   devicePairingCodes      DevicePairingCode[]
+  passwordResetTokens     PasswordResetToken[]
   fileUploads             FileUpload[]
   hostedLiveClassSessions BatchSession[]         @relation("HostedLiveClassSessions")
   assignedCourses         StudentCourseAssignment[] @relation("AssignedCourses")
@@ -189,11 +189,6 @@ enum RelationshipType {
   GUARDIAN
   SPONSOR
   OTHER
-}
-
-enum FamilyStatus {
-  ACTIVE
-  INACTIVE
 }
 
 enum Gender {
@@ -608,7 +603,6 @@ model Batch {
   entitlements     Entitlement[]
   sessions         BatchSession[]
   homeworks        Homework[]
-  makeupRequests   MakeupRequest[]
   gradeBookEntries GradeBookEntry[]
 
   @@index([courseId, status])
@@ -664,26 +658,22 @@ model StudentProfile {
   placements               StudentClassPlacement[]
   enrollments              StudentCourseEnrollment[]
   guardians                GuardianStudentRelationship[]
-  families                 FamilyStudent[]
   dailyAttendance          DailyAttendance[]
   courseAttendance         BatchAttendance[]
   homeworkSubmissions      HomeworkSubmission[]
-  assessmentEvidences      AssessmentEvidence[]
-  competencyMasteries      CompetencyMastery[]
   assessmentAttempts       AssessmentAttempt[]
   assessmentAssignments    AssessmentAssignment[]
   gradeBookEntries         GradeBookEntry[]
-  makeupRequests           MakeupRequest[]
   lessonAttempts           LessonAttempt[]
   streak                   StudentStreak?
   experience               StudentExperience?
-  masteryStatusChanges     MasteryStatusChange[]
   placementRecommendations PlacementRecommendation[]
   moduleItemProgress       ModuleItemProgress[]
   discussionPosts          DiscussionPost[]
   courseAssignments        StudentCourseAssignment[]
   entitlements             Entitlement[]
   orderItems               OrderItem[]
+  storyConversations       StoryConversation[]
 
   @@index([classId])
   @@map("student_profiles")
@@ -736,7 +726,6 @@ model GuardianProfile {
 
   user     User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
   students GuardianStudentRelationship[]
-  families FamilyGuardian[]
 
   @@map("guardian_profiles")
 }
@@ -758,47 +747,6 @@ model GuardianStudentRelationship {
 
   @@unique([guardianProfileId, studentProfileId])
   @@map("guardian_student_relationships")
-}
-
-model Family {
-  id            String       @id @default(uuid())
-  householdName String
-  status        FamilyStatus @default(ACTIVE)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  deletedAt     DateTime?
-  deletedById   String?
-
-  students  FamilyStudent[]
-  guardians FamilyGuardian[]
-  invoices  FamilyInvoice[]
-  payments  FamilyPayment[]
-
-  @@map("families")
-}
-
-model FamilyStudent {
-  familyId         String
-  studentProfileId String
-  createdAt        DateTime @default(now())
-
-  family         Family         @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-
-  @@id([familyId, studentProfileId])
-  @@map("family_students")
-}
-
-model FamilyGuardian {
-  familyId          String
-  guardianProfileId String
-  createdAt         DateTime @default(now())
-
-  family          Family          @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  guardianProfile GuardianProfile @relation(fields: [guardianProfileId], references: [id], onDelete: Cascade)
-
-  @@id([familyId, guardianProfileId])
-  @@map("family_guardians")
 }
 
 // ─── Teacher ────────────────────────────────────────────────────────────────
@@ -1044,9 +992,14 @@ model HomeworkSubmission {
   studentProfile     StudentProfile      @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
   submittedBy        User?               @relation("HomeworkSubmittedBy", fields: [submittedByUserId], references: [id], onDelete: SetNull)
   attachments        HomeworkSubmissionAttachment[]
-  assessmentEvidence AssessmentEvidence?
 
   @@unique([homeworkId, studentProfileId])
+  // Declared to match what `20260821080000_homework_submitted_by` already
+  // created. The migration indexed this FK deliberately; the model just never
+  // said so, which left the migration chain and this schema permanently out of
+  // step — invisible while CI built its database with `db push` (which works
+  // from this file and never runs the migrations at all).
+  @@index([submittedByUserId])
   @@map("homework_submissions")
 }
 
@@ -1074,18 +1027,6 @@ model HomeworkSubmissionAttachment {
   @@unique([submissionId, fileUploadId])
   @@index([submissionId])
   @@map("homework_submission_attachments")
-}
-
-// ─── Evaluation & Mastery ───────────────────────────────────────────────────
-
-enum EvidenceSourceType {
-  HOMEWORK
-  QUIZ
-  PROJECT
-  OBSERVATION
-  INTERVIEW
-  AI_CONVERSATION
-  CLASSROOM_ACTIVITY
 }
 
 // ─── Learning Catalog ───────────────────────────────────────────────────────
@@ -1261,7 +1202,6 @@ model Concept {
   updatedAt            DateTime    @updatedAt
 
   course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  competencies Competency[]
   lessons      Lesson[]
   items        ModuleItem[]
 
@@ -1289,6 +1229,9 @@ enum ModuleItemKind {
   /// that buys the course, so the date and join link live there, not here.
   /// A course containing one of these is LIVE-only — see `assertDeliveryMode`.
   LIVE_CLASS
+  /// A narrated, illustrated story the child listens to. The slot; the `Story`
+  /// row hanging off it carries the chapters, segments and artwork.
+  STORY
 }
 
 model ModuleItem {
@@ -1318,6 +1261,8 @@ model ModuleItem {
   sessions   BatchSession[]
   /// Populated only for HOMEWORK items — the brief for this checkpoint.
   homework   Homework?
+  /// Populated only for STORY items — the narrated story this slot contains.
+  story      Story?
 
   @@map("module_items")
 }
@@ -1337,6 +1282,261 @@ model ModuleItemProgress {
 
   @@unique([moduleItemId, studentProfileId])
   @@map("module_item_progress")
+}
+
+// ─── Interactive stories ────────────────────────────────────────────────────
+// A narrated, illustrated story a child listens to and can later ask questions
+// about out loud. Hangs off `ModuleItem` the same way `Homework` does, so
+// entitlement checks, the catalog and progress tracking all keep working with
+// no new plumbing — a story is course content a family paid for, not a
+// separate world beside one.
+//
+// Deliberately absent at this stage: anything about the voice agent. The
+// conversation and turn records land with the agent itself, because their shape
+// depends on decisions (moderation verdict format, cost fields) that have not
+// been made yet, and guessing them now would bake the guess into a migration.
+
+model Story {
+  id String @id @default(uuid())
+
+  /// The course slot this story fills, when it sits inside a course at all.
+  ///
+  /// Optional, because a story is a thing in its own right: it is written,
+  /// narrated and read without belonging to anything, and attaching it to a
+  /// chapter is one thing you may later choose to do with it. Requiring this
+  /// meant no story could exist until someone had picked a course for it,
+  /// which put a curriculum decision in front of writing.
+  ///
+  /// Still unique: one slot holds at most one story.
+  moduleItemId String? @unique
+
+  /// Whether students can find this story on its own, outside any course.
+  ///
+  /// Independent of the course binding — a story can be published to the
+  /// library, sat in a course chapter, both, or neither. Reading it through a
+  /// course still goes through the course's entitlement check; published here
+  /// means free to read, which is what the library is for.
+  status CatalogStatus @default(DRAFT)
+
+  title       String
+  /// One or two lines, used on the card and in search results.
+  synopsis    String?
+  coverAssetId String? @unique
+
+  /// Who the story is written for. Same banding the public catalog filters on,
+  /// so a story can sit in the same browse experience as everything else.
+  gradeBand GradeBand?
+
+  /// Marks this story as readable by anyone, signed in or not, through the
+  /// public demo routes.
+  ///
+  /// Deliberately a property of the story rather than a route that trusts its
+  /// caller: the demo endpoints serve only stories carrying this flag, so paid
+  /// course content cannot be reached through them even if someone guesses an
+  /// id. Turning the demo off is one field, and it is visible in the data
+  /// rather than buried in an environment variable.
+  isPublicDemo Boolean @default(false)
+
+  /// Overrides the server default narrator for this one story, so a story with
+  /// a distinct character can keep its own voice. Null means "use the
+  /// configured default". Holds a provider voice id, not a display name.
+  narratorVoiceId String?
+
+  /// Freeform notes the author writes for the voice agent — what this story is
+  /// about, what it is teaching, what to do with an off-topic question. These
+  /// become part of the agent's grounding once it exists; until then they are
+  /// simply the author's intent, written down while it is fresh.
+  agentGuidance String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  moduleItem ModuleItem?       @relation(fields: [moduleItemId], references: [id], onDelete: Cascade)
+  cover      StoryAsset?      @relation("StoryCover", fields: [coverAssetId], references: [id], onDelete: SetNull)
+  chapters      StoryChapter[]
+  characters    StoryCharacter[]
+  assets        StoryAsset[]        @relation("StoryAssets")
+  conversations StoryConversation[]
+
+  @@map("stories")
+}
+
+model StoryChapter {
+  id        String @id @default(uuid())
+  storyId   String
+  title     String
+  sortOrder Int    @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  story    Story          @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  segments StorySegment[]
+
+  @@unique([storyId, sortOrder])
+  @@index([storyId])
+  @@map("story_chapters")
+}
+
+/// One paragraph or beat of the story — the unit narration is generated per,
+/// and the unit playback position maps to.
+///
+/// This is the keystone for everything visual later. Because playback knows
+/// which segment is sounding, changing an illustration mid-narration, moving a
+/// camera or triggering a scene transition becomes "attach something to a
+/// segment" rather than a rebuild. That is the entire reason segments exist as
+/// rows rather than the chapter being one blob of text.
+model StorySegment {
+  id        String @id @default(uuid())
+  chapterId String
+  sortOrder Int    @default(1)
+
+  text String
+
+  /// The same words with emotion markup for the speech provider, e.g.
+  /// "[nervously] She looked at the puddle.". Null narrates `text` flat.
+  ///
+  /// Held separately because the provider aligns its timings against whatever
+  /// string it was given: narrating the tagged text and highlighting from its
+  /// alignment would print the tags on the page. Stripping this must reproduce
+  /// `text` exactly, and narration is refused when it does not — so the audio
+  /// can never say something the page does not show.
+  narrationText String?
+
+  /// Storage key for this segment's generated narration, and how long it runs.
+  /// Both null until narration is generated — the story is fully authorable and
+  /// readable without audio.
+  narrationAudioKey    String?
+  narrationDurationMs  Int?
+
+  /// Character-level timing from the speech provider: `{ characters,
+  /// character_start_times_seconds, character_end_times_seconds }`.
+  ///
+  /// Persisted rather than recomputed because it cannot be recovered from the
+  /// audio afterwards — regenerating the narration to find out when a word is
+  /// spoken would cost the synthesis again and return slightly different audio.
+  /// This is what word highlighting, and later scene changes and camera moves,
+  /// key off. Null when the provider gave no alignment.
+  narrationTimings Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chapter StoryChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  assets  StoryAsset[] @relation("SegmentAssets")
+
+  @@unique([chapterId, sortOrder])
+  @@index([chapterId])
+  @@map("story_segments")
+}
+
+/// Artwork and other media. An asset bound to a segment is what changes while
+/// that segment is being narrated; an unbound one is story-level art.
+model StoryAsset {
+  id      String @id @default(uuid())
+  storyId String
+  /// Null for story-level artwork such as the cover.
+  segmentId String?
+
+  kind StoryAssetKind @default(ILLUSTRATION)
+  /// Storage key. Never stored as a URL, and never handed out as one: reads go
+  /// through this API's own media endpoint, which streams from local disk or
+  /// redirects to a signed URL depending on the active backend.
+  storageKey String
+  /// Required for anything a child sees; stories are read by children who may
+  /// use a screen reader.
+  altText    String
+  sortOrder  Int @default(1)
+
+  createdAt DateTime @default(now())
+
+  story    Story         @relation("StoryAssets", fields: [storyId], references: [id], onDelete: Cascade)
+  segment  StorySegment? @relation("SegmentAssets", fields: [segmentId], references: [id], onDelete: Cascade)
+  coverOf  Story?        @relation("StoryCover")
+
+  @@index([storyId])
+  @@index([segmentId])
+  @@map("story_assets")
+}
+
+enum StoryAssetKind {
+  ILLUSTRATION
+  BACKGROUND
+  AUDIO
+}
+
+/// Named characters, so the agent can answer "who is Bramble?" from the story
+/// rather than from whatever a general model imagines.
+model StoryCharacter {
+  id          String  @id @default(uuid())
+  storyId     String
+  name        String
+  description String?
+  sortOrder   Int     @default(1)
+
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, name])
+  @@index([storyId])
+  @@map("story_characters")
+}
+
+/// One child's back-and-forth with the narrator about one story. Kept rather
+/// than held in memory for two reasons: a guardian is entitled to see what
+/// their child said to us, and the agent needs the last few turns to follow a
+/// thread ("why did she do that?" refers to the previous answer).
+model StoryConversation {
+  id      String @id @default(uuid())
+  storyId String
+
+  /// Null on the public demo, where there is no account behind the visitor.
+  studentProfileId String?
+
+  /// Opaque id minted for an anonymous visitor so their demo conversation
+  /// survives across requests. Null for a signed-in child, who is identified by
+  /// studentProfileId instead. Exactly one of the two is set.
+  demoSessionId String?
+
+  /// Denormalised from `demoSessionId != null` so the daily demo ceiling can be
+  /// counted straight off an index instead of joining to find out.
+  isDemo Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  story   Story           @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  student StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  turns   StoryTurn[]
+
+  @@index([storyId])
+  @@index([studentProfileId])
+  @@index([demoSessionId])
+  @@index([isDemo, createdAt])
+  @@map("story_conversations")
+}
+
+/// A single question and the narrator's answer.
+model StoryTurn {
+  id             String @id @default(uuid())
+  conversationId String
+  sortOrder      Int
+
+  /// What the child asked, as transcribed. Stored as text even when it arrived
+  /// as speech — the recording is not kept, only what it said.
+  childText String
+  replyText String
+
+  /// Where in the story the question was asked. Grounds the answer, and lets a
+  /// guardian see which page prompted it.
+  segmentId String?
+
+  createdAt DateTime @default(now())
+
+  conversation StoryConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, sortOrder])
+  @@index([createdAt])
+  @@map("story_turns")
 }
 
 model DiscussionThread {
@@ -1365,166 +1565,6 @@ model DiscussionPost {
   replies        DiscussionPost[] @relation("Replies")
 
   @@map("discussion_posts")
-}
-
-model Competency {
-  id          String   @id @default(uuid())
-  conceptId   String
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  concept              Concept               @relation(fields: [conceptId], references: [id], onDelete: Cascade)
-  rubrics              Rubric[]
-  evidences            AssessmentEvidence[]
-  masteries            CompetencyMastery[]
-  masteryStatusChanges MasteryStatusChange[]
-
-  @@map("competencies")
-}
-
-model Rubric {
-  id           String   @id @default(uuid())
-  competencyId String
-  name         String
-  description  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  competency  Competency         @relation(fields: [competencyId], references: [id], onDelete: Cascade)
-  criteria    RubricCriterion[]
-  assessments RubricAssessment[]
-
-  @@map("rubrics")
-}
-
-model RubricCriterion {
-  id          String   @id @default(uuid())
-  rubricId    String
-  title       String
-  description String?
-  weight      Float    @default(1.0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  rubric  Rubric                  @relation(fields: [rubricId], references: [id], onDelete: Cascade)
-  levels  RubricLevel[]
-  ratings RubricCriterionRating[]
-
-  @@map("rubric_criteria")
-}
-
-model RubricLevel {
-  id          String   @id @default(uuid())
-  criterionId String
-  level       Int // 0, 1, 2, 3, 4
-  title       String // e.g. "Proficient"
-  description String // e.g. "Can compare independently"
-  score       Float // e.g. 3.0
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  criterion RubricCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
-
-  @@unique([criterionId, level])
-  @@map("rubric_levels")
-}
-
-model AssessmentEvidence {
-  id                   String             @id @default(uuid())
-  studentProfileId     String
-  competencyId         String
-  homeworkSubmissionId String?            @unique
-  sourceType           EvidenceSourceType
-  submittedAt          DateTime           @default(now())
-  metadata             Json?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-
-  studentProfile     StudentProfile      @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  competency         Competency          @relation(fields: [competencyId], references: [id], onDelete: Cascade)
-  homeworkSubmission HomeworkSubmission? @relation(fields: [homeworkSubmissionId], references: [id], onDelete: SetNull)
-  assessments        RubricAssessment[]
-
-  @@map("assessment_evidences")
-}
-
-model RubricAssessment {
-  id           String   @id @default(uuid())
-  rubricId     String
-  evidenceId   String
-  evaluatorId  String // User ID of evaluator
-  overallScore Float?
-  feedback     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  rubric    Rubric                  @relation(fields: [rubricId], references: [id], onDelete: Cascade)
-  evidence  AssessmentEvidence      @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
-  evaluator User                    @relation(fields: [evaluatorId], references: [id])
-  ratings   RubricCriterionRating[]
-
-  @@map("rubric_assessments")
-}
-
-model RubricCriterionRating {
-  id            String   @id @default(uuid())
-  assessmentId  String
-  criterionId   String
-  selectedLevel Int
-  comments      String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  assessment RubricAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  criterion  RubricCriterion  @relation(fields: [criterionId], references: [id], onDelete: Cascade)
-
-  @@unique([assessmentId, criterionId])
-  @@map("rubric_criterion_ratings")
-}
-
-model CompetencyMastery {
-  studentProfileId String
-  competencyId     String
-  masteryScore     Float
-  confidence       Float
-  status           MasteryStatus @default(NOT_STARTED)
-  updatedAt        DateTime      @updatedAt
-
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
-  competency     Competency     @relation(fields: [competencyId], references: [id], onDelete: Cascade)
-
-  @@id([studentProfileId, competencyId])
-  @@map("competency_masteries")
-}
-
-enum MasteryStatus {
-  NOT_STARTED
-  INTRODUCED
-  DEVELOPING
-  NEAR_MASTERY
-  MASTERED
-}
-
-model MasteryStatusChange {
-  id               String        @id @default(uuid())
-  studentProfileId String
-  competencyId     String
-  fromStatus       MasteryStatus
-  toStatus         MasteryStatus
-  masteryScore     Float
-  confidence       Float
-  reason           String?
-  evidenceId       String? // AssessmentEvidence.id (scalar ref)
-  changedById      String? // User.id (scalar ref — avoids User churn)
-  createdAt        DateTime      @default(now())
-
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  competency     Competency     @relation(fields: [competencyId], references: [id], onDelete: Cascade)
-
-  @@index([studentProfileId, competencyId, createdAt])
-  @@map("mastery_status_changes")
 }
 
 model AuthSession {
@@ -1871,35 +1911,31 @@ enum LiveClassProvider {
 // off ClassSection, which cannot express "same course, different cohort,
 // different meeting time" — the shape a live course actually sells in.
 
+/// A composed announcement. Deliberately NOT a delivery record: nothing in
+/// this system dispatches a broadcast. `CommunicationService.createBroadcast`
+/// writes this row and returns; there is no SMS integration at all, and
+/// `EmailService` is a console mock.
+///
+/// The status default used to be "SENT", so every row asserted a delivery
+/// that never happened — and the composer paired it with a random recipient
+/// count. Both are server-owned now and tell the truth. When real dispatch
+/// exists, add SENT/FAILED and set them from the dispatcher, not the client.
 model Broadcast {
   id             String   @id @default(uuid())
   type           String // "Announcement", "SMS Alert", "Email Broadcast"
   title          String
   content        String?
   sender         String   @default("System")
-  status         String   @default("SENT") // "SENT", "FAILED", "PENDING"
+  /// "RECORDED" — composed and stored, not delivered. The only honest value
+  /// until a dispatcher exists.
+  status         String   @default("RECORDED")
+  /// Always 0 while nothing is delivered. There is no audience model to count
+  /// against: the composer collects no recipients.
   recipientCount Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@map("broadcasts")
-}
-
-model MakeupRequest {
-  id               String    @id @default(uuid())
-  studentProfileId String
-  batchId    String
-  originalDate     DateTime  @db.Date
-  reason           String?
-  status           String    @default("Awaiting Action") // "Awaiting Action", "Scheduled", "Declined"
-  scheduledDate    DateTime? @db.Date
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  batch    Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
-
-  @@map("makeup_requests")
 }
 
 enum WidgetType {
@@ -2062,6 +2098,33 @@ enum DevicePairingStatus {
 /// Play Services, no usable on-screen keyboard) by having the user approve
 /// it from an already-authenticated phone session instead of typing a
 /// password. See auth/device-pairing.service.ts.
+/// A single-use, short-lived permission to set a new password without knowing
+/// the old one.
+///
+/// Only the SHA-256 hash is stored, for the same reason as
+/// `AuthSession.refreshTokenHash` and `DevicePairingCode.deviceCodeHash`:
+/// possession of the raw token is equivalent to the account's password, so a
+/// database leak must not hand over live reset links. The raw value exists
+/// only in the email that was sent.
+model PasswordResetToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  /// Set the moment it is redeemed. A token is never valid twice — replaying
+  /// an intercepted link after the owner has used it must fail.
+  consumedAt DateTime?
+  /// Recorded for abuse investigation only; never used to authorise.
+  requestedIp String?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
 model DevicePairingCode {
   id             String              @id @default(uuid())
   /// Short, human-typeable code shown on the TV and entered on the phone.
@@ -2164,44 +2227,4 @@ model GradeBookEntry {
   @@index([batchId, termId])
   @@index([studentProfileId, termId])
   @@map("gradebook_entries")
-}
-
-model FamilyInvoice {
-  id          String    @id @default(uuid())
-  familyId    String
-  amount      Decimal   @db.Decimal(10, 2)
-  currency    String    @default("USD")
-  description String? // "Term 1 Tuition", "Uniform Fee", etc.
-  issueDate   DateTime
-  dueDate     DateTime
-  status      String    @default("PENDING") // PENDING, PAID, OVERDUE
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  deletedById String?
-
-  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
-
-  @@index([familyId, dueDate])
-  @@map("family_invoices")
-}
-
-model FamilyPayment {
-  id          String    @id @default(uuid())
-  familyId    String
-  invoiceId   String? // optional: which invoice this paid off
-  amount      Decimal   @db.Decimal(10, 2)
-  currency    String    @default("USD")
-  paymentDate DateTime
-  method      String // "BANK_TRANSFER", "CASH", "CHECK", "MANUAL"
-  reference   String? // receipt/transaction id
-  notes       String?
-  createdAt   DateTime  @default(now())
-  deletedAt   DateTime?
-  deletedById String?
-
-  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
-
-  @@index([familyId, paymentDate])
-  @@map("family_payments")
 }

@@ -97,13 +97,26 @@ export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEdit
         distractors: [{ expr: "x + 1" }, { expr: "x - 1" }],
       });
     } else if (type === "SLIDER_MANIPULATIVE") {
-      setWidgetConfig({ min: 0, max: 100, step: 1, unit: "", correctValue: 50 });
+      // configVersion: 2 routes this to widget-generator.ts's v2 fixed-mode
+      // branch, which grades against this correctValue directly. Without it,
+      // the config falls through to the legacy v1 path, which grades against
+      // a separate `correctAnswer` field this form never sets — an
+      // unwinnable question that looks fine in the editor.
+      setWidgetConfig({ configVersion: 2, mode: "fixed", min: 0, max: 100, step: 1, unit: "", correctValue: 50 });
     } else if (type === "DRAG_AND_DROP_LABELS") {
       setWidgetConfig({ labels: ["A", "B", "C"], targets: [] });
     } else if (type === "COORDINATE_PLOTTER") {
       setWidgetConfig({ xRange: [-10, 10], yRange: [-10, 10], gridStep: 1, correctPoints: [], tolerance: 0.1 });
     } else if (type === "GRID_MATCHING") {
       setWidgetConfig({ left: [], right: [], correctPairs: [] });
+    } else if (type === "SHAPE_SHADING") {
+      setWidgetConfig({
+        configVersion: 2,
+        mode: "fixed",
+        shape: { kind: "bar", regions: 4 },
+        targetNumerator: 1,
+        requireContiguous: false,
+      });
     } else if (type === "CODE_PLAYGROUND") {
       setWidgetConfig({ language: "javascript", starterCode: "", tests: [] });
     } else {
@@ -337,7 +350,7 @@ export function QuestionEditorForm({ questionId, initialQuestion }: QuestionEdit
                 <SelectItem value="DRAG_AND_DROP_LABELS">Drag and Drop Labels</SelectItem>
                 <SelectItem value="COORDINATE_PLOTTER">Coordinate Plotter</SelectItem>
                 <SelectItem value="GRID_MATCHING">Grid Matching</SelectItem>
-                <SelectItem value="CODE_PLAYGROUND">Code Playground</SelectItem>
+                <SelectItem value="CODE_PLAYGROUND">Code Playground (practice · not marked)</SelectItem>
                 <SelectItem value="SHAPE_SHADING">Shape Shading</SelectItem>
               </SelectContent>
             </Select>

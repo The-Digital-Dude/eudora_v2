@@ -61,7 +61,11 @@ describe('Acting-student resolution (e2e)', () => {
     childUser = child.user;
     childProfileId = child.studentProfileId;
 
-    const sibling = await createStudent(ctx, adminToken, `Acting Sibling ${tag}`);
+    const sibling = await createStudent(
+      ctx,
+      adminToken,
+      `Acting Sibling ${tag}`,
+    );
     siblingUser = sibling.user;
     siblingProfileId = sibling.studentProfileId;
 
@@ -236,7 +240,9 @@ describe('Acting-student resolution (e2e)', () => {
       await ctx.prisma.entitlement
         .deleteMany({ where: { courseId } })
         .catch(() => undefined);
-      await ctx.prisma.course.delete({ where: { id: courseId } }).catch(() => undefined);
+      await ctx.prisma.course
+        .delete({ where: { id: courseId } })
+        .catch(() => undefined);
       await ctx.prisma.learningSubject
         .delete({ where: { id: subjectId } })
         .catch(() => undefined);

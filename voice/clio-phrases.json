@@ -1,0 +1,99 @@
+{
+  "$comment": [
+    "Clio's spoken phrase catalog — the single authored source.",
+    "",
+    "Edit this file, then run `node voice/generate-voice-lines.mjs` to",
+    "regenerate the per-project copies and the audio. Do not edit the",
+    "generated files in client/ or mobile/ directly; CI checks them against",
+    "this one and fails on drift, because the two hand-maintained catalogs",
+    "this replaced had already diverged (mobile carried two duplicate keys",
+    "that web did not).",
+    "",
+    "Keys are the contract both clients call by name. Each is a list of",
+    "variants; one is chosen at random so repetition doesn't grate on a child",
+    "hearing it twenty times an afternoon."
+  ],
+  "voice": {
+    "$comment": [
+      "The ElevenLabs voice Clio speaks with. Changing it means regenerating",
+      "all audio. This is a brand asset, not a config value — audition before",
+      "settling.",
+      "`voiceId` is Alice (Clear, Engaging Educator), British, premade. The",
+      "voice we actually want is Sophia jB2lPb5DhAX6l1TLkKXy, but she is a",
+      "library voice and the API refuses those on a free plan with 402.",
+      "`modelId` is eleven_v3 because it performs [tags] as direction; the",
+      "turbo models read them out loud instead."
+    ],
+    "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
+    "modelId": "eleven_v3"
+  },
+  "phrases": {
+    "CORRECT": [
+      "Excellent!",
+      "Nice work!",
+      "Great job!",
+      "You got it!",
+      "Spot on!",
+      "Brilliant thinking!"
+    ],
+    "INCORRECT": [
+      "Let's try again.",
+      "Not quite, give it another go.",
+      "Close! Check your numbers and try again.",
+      "Don't worry, you've got this. Try once more."
+    ],
+    "TAKE_A_HINT": [
+      "Maybe, take a hint.",
+      "Here's a little clue to help.",
+      "Listen carefully, let's look at this hint.",
+      "Let's break it down together."
+    ],
+    "ANSWER_REVEALED": [
+      "Here's how we solve it.",
+      "Let's look at the answer together.",
+      "Here's the full explanation."
+    ],
+    "GREETING": [
+      "Hi, I'm Clio! Let's explore some maths together.",
+      "Welcome back! Ready for today's challenge?"
+    ],
+    "LESSON_COMPLETE": [
+      "Great job, lesson complete!",
+      "Awesome work today! Look at all that XP!",
+      "You finished the lesson! Fantastic effort!"
+    ]
+  },
+  "spokenLines": {
+    "$comment": [
+      "Whole lines spoken verbatim somewhere in the product, pre-generated so",
+      "they use Clio’s real voice instead of the browser synthesiser.",
+      "These are the scripted lesson on /about-eudora. That demo is the first",
+      "time most visitors hear her, and mixing a recorded voice for the praise",
+      "with a robotic one for the explanation is worse than either alone.",
+      "Matched on the exact string at playback time, so editing a line here",
+      "without regenerating simply falls back — it never plays the wrong audio."
+    ],
+    "lines": [
+      "Let's show a fraction by colouring in part of a shape.",
+      "Hi, I'm Clio. Percent just means 'out of a hundred', so let's look at one.",
+      "Grids are just directions. Across first, then up.",
+      "Same idea as the shaded shape, written a different way.",
+      "Last one, and this time there's nothing to pick from.",
+      "Shade two of the six slices, so two sixths of the circle is coloured in.",
+      "Move the slider to show what percentage of this shape is shaded.",
+      "Clio buried her treasure 2 steps across and 4 steps up. Click that spot on the grid.",
+      "Maya cuts a pizza into 4 equal slices and eats 1 slice. Which fraction shows how much she ate?",
+      "Slide to show how many legs 3 dogs have altogether.",
+      "There are six equal slices in the circle. You only need to colour two of them in.",
+      "The shape has 10 equal squares, so one square is one tenth, and one tenth is 10%.",
+      "Walk along the bottom line first and stop at 2. Only then start climbing.",
+      "Start with the bottom number. It's how many equal slices the whole pizza was cut into.",
+      "One dog has 4 legs. Try counting up by 4, three times.",
+      "Two of the six equal slices are shaded, so the shape shows two sixths — that's 2/6 of the circle.",
+      "10 equal squares means each one is worth 10%. Three of them are shaded, so 3 × 10% = 30%.",
+      "Across before up, every time. 2 along the bottom and 4 up from there is the point (2, 4).",
+      "The bottom number counts the equal pieces in the whole (4 slices). The top counts how many were taken (1 slice). So Maya ate 1/4 of the pizza.",
+      "3 groups of 4 legs is 4 + 4 + 4, which is 12. That's what 3 × 4 means."
+    ]
+  }
+}

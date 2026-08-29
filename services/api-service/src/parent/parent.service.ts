@@ -8,9 +8,9 @@ import {
 import { randomUUID } from 'crypto';
 import type { Gender, GradeBand } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { GuardianAccessService } from '../family/guardian-access.service';
 import { CatalogService } from '../catalog/catalog.service';
 import { StudentService } from '../student/student.service';
+import { EntitlementsService } from '../entitlements/entitlements.service';
 
 /**
  * Rough age-to-grade-band mapping, used only when a child has no class set.
@@ -45,9 +45,9 @@ const ASSIGNED_COURSE_INCLUDE = {
 export class ParentService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly guardianAccessService: GuardianAccessService,
     private readonly catalogService: CatalogService,
     private readonly studentService: StudentService,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   async getChildren(userId: string) {
@@ -98,10 +98,15 @@ export class ParentService {
           status: { in: ['PRESENT', 'LATE'] },
         },
       });
+      // Null, not 100, when nothing has ever been recorded. A child with no
+      // attendance history is not a child with perfect attendance — and a
+      // guardian-created child never gets a ClassSection placement, so this
+      // is the normal case for a self-service customer, not an edge case.
+      // Callers render "not tracked" rather than a number.
       const attendanceRate =
         totalAttendance > 0
           ? Math.round((presentAttendance / totalAttendance) * 100)
-          : 100;
+          : null;
 
       // 2. Calculate Pending Homework Count
       let pendingHomeworkCount = 0;
@@ -157,48 +162,97 @@ export class ParentService {
     return childrenData;
   }
 
+  /**
+   * Everyone who actually teaches this child, by every route they can have one.
+   *
+   * This used to resolve only through `StudentClassPlacement` -> `ClassTeacher`.
+   * A child created through the guardian portal never receives a placement —
+   * `createChild` does not make one — so a guardian who had bought a course was
+   * told their child has no teachers at all. The purchase routes are the other
+   * two: a course they are entitled to has `CourseTeacher`s, and a cohort seat
+   * has the batch's lead teacher.
+   */
   async getChildTeachers(studentProfileId: string) {
-    const placements = await this.prisma.studentClassPlacement.findMany({
-      where: { studentProfileId, isActive: true },
-      select: { classSectionId: true },
-    });
+    const [placements, enrollments, entitledCourseIds] = await Promise.all([
+      this.prisma.studentClassPlacement.findMany({
+        where: { studentProfileId, isActive: true },
+        select: { classSectionId: true },
+      }),
+      this.prisma.studentCourseEnrollment.findMany({
+        where: { studentProfileId },
+        select: { batchId: true },
+      }),
+      this.entitlements.entitledCourseIdsForStudent(studentProfileId),
+    ]);
 
-    const classSectionIds = placements.map((p) => p.classSectionId);
-    if (classSectionIds.length === 0) {
-      return [];
-    }
-
-    const classTeachers = await this.prisma.classTeacher.findMany({
-      where: { classSectionId: { in: classSectionIds } },
+    const teacherProfileSelect = {
       include: {
-        teacherProfile: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                avatarUrl: true,
-              },
-            },
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
           },
         },
       },
-    });
+    } as const;
 
-    const teachersMap = new Map();
-    for (const ct of classTeachers) {
-      const u = ct.teacherProfile?.user;
-      if (u) {
-        teachersMap.set(u.id, {
-          id: u.id,
-          firstName: u.firstName,
-          lastName: u.lastName,
-          avatarUrl: u.avatarUrl,
-          specialization: ct.teacherProfile.specialization,
-        });
-      }
-    }
+    const classSectionIds = placements.map((p) => p.classSectionId);
+    const batchIds = enrollments.map((e) => e.batchId);
+    const courseIds = Array.from(entitledCourseIds);
+
+    const [classTeachers, courseTeachers, batches] = await Promise.all([
+      classSectionIds.length
+        ? this.prisma.classTeacher.findMany({
+            where: { classSectionId: { in: classSectionIds } },
+            include: { teacherProfile: teacherProfileSelect },
+          })
+        : [],
+      courseIds.length
+        ? this.prisma.courseTeacher.findMany({
+            where: { courseId: { in: courseIds } },
+            include: { teacherProfile: teacherProfileSelect },
+          })
+        : [],
+      batchIds.length
+        ? this.prisma.batch.findMany({
+            where: {
+              id: { in: batchIds },
+              leadTeacherProfileId: { not: null },
+            },
+            select: { leadTeacher: teacherProfileSelect },
+          })
+        : [],
+    ]);
+
+    // Deduped by user: one teacher reached by two routes is still one teacher.
+    const teachersMap = new Map<string, unknown>();
+    const add = (
+      profile: {
+        specialization: string | null;
+        user: {
+          id: string;
+          firstName: string;
+          lastName: string;
+          avatarUrl: string | null;
+        } | null;
+      } | null,
+    ) => {
+      const u = profile?.user;
+      if (!u || teachersMap.has(u.id)) return;
+      teachersMap.set(u.id, {
+        id: u.id,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        avatarUrl: u.avatarUrl,
+        specialization: profile.specialization,
+      });
+    };
+
+    for (const ct of classTeachers) add(ct.teacherProfile);
+    for (const ct of courseTeachers) add(ct.teacherProfile);
+    for (const b of batches) add(b.leadTeacher);
 
     return Array.from(teachersMap.values());
   }
@@ -284,18 +338,12 @@ export class ParentService {
 
   /** Read-only active-learning summary for the parent portal. */
   async getChildLearning(studentProfileId: string) {
-    const [lessonsCompleted, streak, experience, mastery] = await Promise.all([
+    const [lessonsCompleted, streak, experience] = await Promise.all([
       this.prisma.lessonAttempt.count({
         where: { studentProfileId, status: 'COMPLETED' },
       }),
       this.prisma.studentStreak.findUnique({ where: { studentProfileId } }),
       this.prisma.studentExperience.findUnique({ where: { studentProfileId } }),
-      this.prisma.competencyMastery.findMany({
-        where: { studentProfileId },
-        include: { competency: { select: { name: true } } },
-        orderBy: { updatedAt: 'desc' },
-        take: 6,
-      }),
     ]);
 
     return {
@@ -304,42 +352,7 @@ export class ParentService {
       longestStreak: streak?.longestStreak ?? 0,
       totalXp: experience?.totalXp ?? 0,
       level: experience?.level ?? 1,
-      mastery: mastery.map((m) => ({
-        competencyName: m.competency.name,
-        masteryScore: m.masteryScore,
-        status: m.status,
-      })),
     };
-  }
-
-  async getInvoices(userId: string) {
-    const familyId =
-      await this.guardianAccessService.getGuardianFamilyId(userId);
-    if (!familyId) {
-      return [];
-    }
-
-    const invoices = await this.prisma.familyInvoice.findMany({
-      where: { familyId },
-      orderBy: { dueDate: 'desc' },
-    });
-
-    return invoices;
-  }
-
-  async getPayments(userId: string) {
-    const familyId =
-      await this.guardianAccessService.getGuardianFamilyId(userId);
-    if (!familyId) {
-      return [];
-    }
-
-    const payments = await this.prisma.familyPayment.findMany({
-      where: { familyId },
-      orderBy: { paymentDate: 'desc' },
-    });
-
-    return payments;
   }
 
   // --- Learning plan (catalog course assignment) ---------------------------

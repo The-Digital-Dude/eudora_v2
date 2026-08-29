@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateHomeworkDto, UpdateHomeworkDto } from './dto/homework.dto';
 import { SubmitHomeworkDto, GradeSubmissionDto } from './dto/submission.dto';
-import { SubmissionStatus } from '@prisma/client';
+import { Prisma, SubmissionStatus } from '@prisma/client';
 import { GradebookService } from '../gradebook/gradebook.service';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { MAX_ATTACHMENTS_PER_SUBMISSION } from '../common/files/student-work.validator';
@@ -350,13 +350,20 @@ export class HomeworkService {
       // A resubmission replaces the previous files rather than adding to them:
       // what is marked should be what was last handed in.
       await tx.homeworkSubmissionAttachment.deleteMany({
-        where: { submissionId: submission.id, fileUploadId: { notIn: fileIds } },
+        where: {
+          submissionId: submission.id,
+          fileUploadId: { notIn: fileIds },
+        },
       });
       for (const [index, fileUploadId] of fileIds.entries()) {
         await tx.homeworkSubmissionAttachment.upsert({
           where: { fileUploadId },
           update: { submissionId: submission.id, sortOrder: index },
-          create: { submissionId: submission.id, fileUploadId, sortOrder: index },
+          create: {
+            submissionId: submission.id,
+            fileUploadId,
+            sortOrder: index,
+          },
         });
       }
 
@@ -387,7 +394,9 @@ export class HomeworkService {
             select: {
               fileUploadId: true,
               sortOrder: true,
-              file: { select: { originalName: true, size: true, mimetype: true } },
+              file: {
+                select: { originalName: true, size: true, mimetype: true },
+              },
             },
           },
         },
@@ -454,7 +463,9 @@ export class HomeworkService {
           select: {
             fileUploadId: true,
             sortOrder: true,
-            file: { select: { originalName: true, size: true, mimetype: true } },
+            file: {
+              select: { originalName: true, size: true, mimetype: true },
+            },
           },
         },
         // Whose hands typed it, when that is not the learner.
@@ -500,24 +511,48 @@ export class HomeworkService {
       throw new NotFoundException('Student profile not found');
     }
 
-    const enrolledBatchIds = student.enrollments.map(
-      (e) => e.batchId,
-    );
-    if (enrolledBatchIds.length === 0) {
+    // Homework reaches a student by one of two routes, and this used to know
+    // about only the first.
+    //
+    // A cohort learner gets it through their batch. A self-paced buyer has no
+    // batch at all — `Homework.batchId` is nullable precisely so they can be
+    // set homework — and reaches it through the course they are entitled to,
+    // via the module item the checkpoint hangs off. Filtering on
+    // `batchId IN (enrolledBatchIds)`, behind an early return when that list
+    // was empty, meant a self-paced buyer saw an empty homework list
+    // permanently, and that even a cohort learner never saw the self-paced
+    // checkpoints in courses they had bought.
+    const enrolledBatchIds = student.enrollments.map((e) => e.batchId);
+    const entitledCourseIds =
+      await this.entitlements.entitledCourseIdsForStudent(studentProfileId);
+
+    const scopes: Prisma.HomeworkWhereInput[] = [];
+    if (enrolledBatchIds.length > 0) {
+      scopes.push({ batchId: { in: enrolledBatchIds } });
+    }
+    if (entitledCourseIds.size > 0) {
+      scopes.push({
+        batchId: null,
+        moduleItem: {
+          concept: { courseId: { in: Array.from(entitledCourseIds) } },
+        },
+      });
+    }
+    if (scopes.length === 0) {
       return [];
     }
 
     const allHomework = await this.prisma.homework.findMany({
-      where: {
-        batchId: { in: enrolledBatchIds },
-      },
+      where: { OR: scopes },
       include: {
         batch: true,
         submissions: {
           where: { studentProfileId },
         },
       },
-      orderBy: { dueDate: 'asc' },
+      // Self-paced checkpoints carry no due date, so they sort after the dated
+      // cohort work rather than ahead of it — deadlines first.
+      orderBy: { dueDate: { sort: 'asc', nulls: 'last' } },
     });
 
     return allHomework.filter((h) => h.submissions.length === 0);

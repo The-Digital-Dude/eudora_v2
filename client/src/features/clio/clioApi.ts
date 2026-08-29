@@ -66,9 +66,16 @@ export interface SubmitCardResult {
   explanation: string;
   xpEarned: number;
   isLessonComplete: boolean;
-  // Only present once the student has answered incorrectly — never sent
-  // alongside a correct submission, and never before one exists.
-  correctReveal?: { correctValue?: number };
+  // Sent by gradeWidgetSubmission for the widget types with a post-answer
+  // reveal (slider, coordinate plotter, grid matching) — present whether the
+  // submission was right or wrong, but never before one exists. Absent
+  // entirely for widget types with no reveal UI.
+  correctReveal?: {
+    correctValue?: number;
+    correctPoints?: { x: number; y: number }[];
+    tolerance?: number;
+    correctPairs?: [string, string][];
+  };
 }
 
 export interface ConceptSummary {
@@ -146,7 +153,11 @@ export const clioApi = authApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["LessonFlow" as any],
+      // Gamification too: completing a lesson updates the learner's streak and
+      // XP server-side (LessonsService), so without this the streak shown in
+      // the HUD and completion modal would be the value from page load — real,
+      // but one behind the lesson they just finished.
+      invalidatesTags: ["LessonFlow" as any, "Gamification" as any],
     } as any),
 
     // Fetch curriculum concepts for dropdown selection

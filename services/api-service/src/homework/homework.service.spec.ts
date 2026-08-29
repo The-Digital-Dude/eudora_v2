@@ -56,6 +56,8 @@ describe('HomeworkService', () => {
   /** Defaults to allowing access; individual tests override it. */
   const mockEntitlementsService = {
     canAccessModuleItem: jest.fn().mockResolvedValue(true),
+    // Defaults to "owns nothing", so tests opt in to the self-paced case.
+    entitledCourseIdsForStudent: jest.fn().mockResolvedValue(new Set<string>()),
   };
 
   /** Who is doing the submitting — a student acting for themselves, here. */
@@ -143,19 +145,27 @@ describe('HomeworkService', () => {
   describe('submitHomework', () => {
     it('should throw BadRequestException if submit text content and attachments are both missing', async () => {
       await expect(
-        service.submitHomework('student-1', {
-          homeworkId: 'hw-1',
-        }, ACTOR),
+        service.submitHomework(
+          'student-1',
+          {
+            homeworkId: 'hw-1',
+          },
+          ACTOR,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException if homework does not exist', async () => {
       mockPrismaService.homework.findUnique.mockResolvedValue(null);
       await expect(
-        service.submitHomework('student-1', {
-          homeworkId: 'non-existent',
-          content: 'my solution',
-        }, ACTOR),
+        service.submitHomework(
+          'student-1',
+          {
+            homeworkId: 'non-existent',
+            content: 'my solution',
+          },
+          ACTOR,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -169,10 +179,14 @@ describe('HomeworkService', () => {
       );
 
       await expect(
-        service.submitHomework('student-1', {
-          homeworkId: 'hw-1',
-          content: 'my solution',
-        }, ACTOR),
+        service.submitHomework(
+          'student-1',
+          {
+            homeworkId: 'hw-1',
+            content: 'my solution',
+          },
+          ACTOR,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -198,10 +212,14 @@ describe('HomeworkService', () => {
         attachments: [],
       });
 
-      const result = await service.submitHomework('student-1', {
-        homeworkId: 'hw-1',
-        content: 'my solution',
-      }, ACTOR);
+      const result = await service.submitHomework(
+        'student-1',
+        {
+          homeworkId: 'hw-1',
+          content: 'my solution',
+        },
+        ACTOR,
+      );
 
       expect(result.status).toEqual(SubmissionStatus.SUBMITTED);
       expect(mockPrismaService.homeworkSubmission.upsert).toHaveBeenCalled();
@@ -229,10 +247,14 @@ describe('HomeworkService', () => {
         attachments: [],
       });
 
-      const result = await service.submitHomework('student-1', {
-        homeworkId: 'hw-1',
-        content: 'my solution',
-      }, ACTOR);
+      const result = await service.submitHomework(
+        'student-1',
+        {
+          homeworkId: 'hw-1',
+          content: 'my solution',
+        },
+        ACTOR,
+      );
 
       expect(result.status).toEqual(SubmissionStatus.LATE);
     });
@@ -324,6 +346,67 @@ describe('HomeworkService', () => {
       const result = await service.getStudentPendingHomework('student-1');
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('hw-1');
+    });
+
+    // U3: a self-paced buyer has no batch at all. The query used to return
+    // early on an empty enrolment list and then filter on batchId, so this
+    // learner's homework could never appear — permanently, by construction.
+    it('finds self-paced homework for a buyer with no batch enrolments', async () => {
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue({
+        id: 'student-1',
+        enrollments: [],
+      });
+      mockEntitlementsService.entitledCourseIdsForStudent.mockResolvedValue(
+        new Set(['course-1']),
+      );
+      mockPrismaService.homework.findMany.mockResolvedValue([
+        { id: 'hw-selfpaced', batchId: null, submissions: [] },
+      ]);
+
+      const result = await service.getStudentPendingHomework('student-1');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('hw-selfpaced');
+      const { where } = mockPrismaService.homework.findMany.mock.calls[0][0];
+      expect(where.OR).toEqual([
+        {
+          batchId: null,
+          moduleItem: { concept: { courseId: { in: ['course-1'] } } },
+        },
+      ]);
+    });
+
+    it('covers both routes at once for a cohort learner who also bought a course', async () => {
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue({
+        id: 'student-1',
+        enrollments: [{ batchId: 'batch-1' }],
+      });
+      mockEntitlementsService.entitledCourseIdsForStudent.mockResolvedValue(
+        new Set(['course-1']),
+      );
+      mockPrismaService.homework.findMany.mockResolvedValue([]);
+
+      await service.getStudentPendingHomework('student-1');
+
+      const { where } = mockPrismaService.homework.findMany.mock.calls[0][0];
+      expect(where.OR).toHaveLength(2);
+      expect(where.OR[0]).toEqual({ batchId: { in: ['batch-1'] } });
+      expect(where.OR[1].batchId).toBeNull();
+    });
+
+    it('returns empty only when the student has neither a batch nor an entitlement', async () => {
+      mockPrismaService.studentProfile.findUnique.mockResolvedValue({
+        id: 'student-1',
+        enrollments: [],
+      });
+      mockEntitlementsService.entitledCourseIdsForStudent.mockResolvedValue(
+        new Set<string>(),
+      );
+
+      const result = await service.getStudentPendingHomework('student-1');
+
+      expect(result).toEqual([]);
+      expect(mockPrismaService.homework.findMany).not.toHaveBeenCalled();
     });
   });
 });

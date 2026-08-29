@@ -8,7 +8,8 @@ import { ClioMascot } from "./ClioMascot";
 interface LessonCompleteModalProps {
   isOpen: boolean;
   totalXp: number;
-  streakCount: number;
+  /** Undefined when the learner has no streak, or it has not loaded. */
+  streakCount?: number;
   lessonTitle: string;
   onBackToLessons: () => void;
   onNextLesson?: () => void;
@@ -23,6 +24,8 @@ export function LessonCompleteModal({
   onNextLesson,
 }: LessonCompleteModalProps) {
   if (!isOpen) return null;
+
+  const hasStreak = streakCount != null && streakCount > 0;
 
   return (
     <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center px-4 backdrop-blur-md transition-opacity duration-300">
@@ -56,8 +59,14 @@ export function LessonCompleteModal({
           {lessonTitle}
         </h2>
 
-        {/* XP and Streak rewards summary */}
-        <div className="mb-8 grid w-full grid-cols-2 gap-4">
+        {/* XP and Streak rewards summary. The streak tile is dropped when
+            there is no streak to report, so the grid collapses to the one
+            reward we can actually stand behind. */}
+        <div
+          className={`mb-8 grid w-full gap-4 ${
+            hasStreak ? "grid-cols-2" : "grid-cols-1"
+          }`}
+        >
           {/* XP Box */}
           <div className="border-border bg-muted/40 flex flex-col items-center justify-center rounded-2xl border p-4 transition-transform duration-200 hover:scale-105">
             <span className="text-muted-foreground text-[10px] font-bold tracking-wide uppercase">
@@ -81,15 +90,19 @@ export function LessonCompleteModal({
           </div>
 
           {/* Streak Box */}
-          <div className="border-border bg-muted/40 flex flex-col items-center justify-center rounded-2xl border p-4 transition-transform duration-200 hover:scale-105">
-            <span className="text-muted-foreground text-[10px] font-bold tracking-wide uppercase">
-              New Streak
-            </span>
-            <span className="mt-1 flex items-center gap-1 text-2xl font-black text-orange-500 dark:text-orange-400">
-              {streakCount}
-              <span className="text-sm font-semibold text-orange-400">Days</span>
-            </span>
-          </div>
+          {hasStreak && (
+            <div className="border-border bg-muted/40 flex flex-col items-center justify-center rounded-2xl border p-4 transition-transform duration-200 hover:scale-105">
+              <span className="text-muted-foreground text-[10px] font-bold tracking-wide uppercase">
+                Streak
+              </span>
+              <span className="mt-1 flex items-center gap-1 text-2xl font-black text-orange-500 dark:text-orange-400">
+                {streakCount}
+                <span className="text-sm font-semibold text-orange-400">
+                  {streakCount === 1 ? "Day" : "Days"}
+                </span>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Level up encouragement */}

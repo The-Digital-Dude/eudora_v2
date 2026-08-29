@@ -15,7 +15,10 @@ interface GamificationHUDProps {
 
 export function GamificationHUD({
   sessionXp,
-  streakCount = 3, // Default fallback streak
+  // No default. This used to fall back to 3, so a learner with no streak — or
+  // one whose streak had not loaded — was shown a number that was simply made
+  // up. Undefined now means "not known", and the chip is hidden entirely.
+  streakCount,
   lessonProgress,
   onClose,
   lessonTitle,
@@ -110,18 +113,23 @@ export function GamificationHUD({
 
       {/* Right: Gamification HUD Stats */}
       <div className="flex items-center gap-3">
-        {/* Streak Stats */}
-        <div className="bg-muted/30 border-border flex items-center gap-1 rounded-xl border py-1 pr-3 pl-2">
-          <div className="flex h-7 w-7 items-center justify-center">
-            <Flame className="h-5 w-5 animate-pulse text-orange-500 dark:text-orange-400" />
+        {/* Streak Stats — hidden rather than guessed when there is no streak
+            to show, or none loaded yet. */}
+        {streakCount != null && streakCount > 0 && (
+          <div className="bg-muted/30 border-border flex items-center gap-1 rounded-xl border py-1 pr-3 pl-2">
+            <div className="flex h-7 w-7 items-center justify-center">
+              <Flame className="h-5 w-5 animate-pulse text-orange-500 dark:text-orange-400" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-muted-foreground text-[9px] leading-none font-bold">
+                STREAK
+              </span>
+              <span className="text-xs leading-tight font-bold text-orange-500 dark:text-orange-400">
+                {streakCount} {streakCount === 1 ? "day" : "days"}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-muted-foreground text-[9px] leading-none font-bold">STREAK</span>
-            <span className="text-xs leading-tight font-bold text-orange-500 dark:text-orange-400">
-              {streakCount} days
-            </span>
-          </div>
-        </div>
+        )}
 
         {/* XP Stats */}
         <div

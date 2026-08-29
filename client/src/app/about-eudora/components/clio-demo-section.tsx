@@ -11,7 +11,6 @@ import {
 import * as React from "react";
 
 import { ClioMascot, type MascotState } from "@/features/clio/ClioMascot";
-import { ClioVoicePicker } from "@/features/clio/sound/ClioVoicePicker";
 import { useClioVoice } from "@/features/clio/sound/useClioVoice";
 import { CoordinatePlotterWidget } from "@/features/clio/widgets/CoordinatePlotterWidget";
 import { MCQWidget } from "@/features/clio/widgets/MCQWidget";
@@ -132,7 +131,7 @@ export function ClioDemoSection({
     } else {
       setAttempts((prev) => prev + 1);
       setPhase("wrong");
-      playPhrase("TRY_AGAIN");
+      playPhrase("INCORRECT");
     }
   };
 
@@ -229,7 +228,6 @@ export function ClioDemoSection({
         </div>
 
         <div className="border-b border-border/60 px-5 py-3">
-          <ClioVoicePicker />
         </div>
 
         <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:gap-6 sm:p-7">

@@ -1,5 +1,13 @@
-import { IsString, IsNotEmpty, IsOptional, IsInt, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
+/**
+ * Note what is absent: `status` and `recipientCount`.
+ *
+ * The client used to send both — a hardcoded "SENT" and
+ * `Math.floor(Math.random() * 50) + 12` — and the server stored them
+ * verbatim, so the broadcast log displayed an invented number as fact. They
+ * are server-owned now, and neither is something a caller gets to assert.
+ */
 export class CreateBroadcastDto {
   @IsString()
   @IsNotEmpty()
@@ -16,9 +24,4 @@ export class CreateBroadcastDto {
   @IsString()
   @IsOptional()
   sender?: string;
-
-  @IsInt()
-  @Min(0)
-  @IsOptional()
-  recipientCount?: number;
 }

@@ -87,26 +87,34 @@ export class StudentService {
     }
     // includeArchived is a scoping-extension arg, stripped before validation.
     const archivedArg = includeArchived ? { includeArchived: true } : {};
-    const orderBy = resolveSort(sortBy, sortOrder, STUDENT_SORTABLE_FIELDS, 'fullName');
+    const orderBy = resolveSort(
+      sortBy,
+      sortOrder,
+      STUDENT_SORTABLE_FIELDS,
+      'fullName',
+    );
 
-    const [profiles, total, placedStudents, enrollmentTotal] = await Promise.all([
-      this.prisma.studentProfile.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          user: { select: { email: true, firstName: true, lastName: true } },
-        },
-        orderBy,
-        ...archivedArg,
-      } as any),
-      this.prisma.studentProfile.count({ where, ...archivedArg } as any),
-      // Roster-wide stats for the summary cards. Deliberately unfiltered and unpaginated: the
-      // cards describe the whole roster, so deriving them from the current page (as the client
-      // used to) undercounted as soon as the roster outgrew a single page.
-      this.prisma.studentProfile.count({ where: { placements: { some: {} } } }),
-      this.prisma.studentCourseEnrollment.count(),
-    ]);
+    const [profiles, total, placedStudents, enrollmentTotal] =
+      await Promise.all([
+        this.prisma.studentProfile.findMany({
+          where,
+          skip,
+          take: limit,
+          include: {
+            user: { select: { email: true, firstName: true, lastName: true } },
+          },
+          orderBy,
+          ...archivedArg,
+        } as any),
+        this.prisma.studentProfile.count({ where, ...archivedArg } as any),
+        // Roster-wide stats for the summary cards. Deliberately unfiltered and unpaginated: the
+        // cards describe the whole roster, so deriving them from the current page (as the client
+        // used to) undercounted as soon as the roster outgrew a single page.
+        this.prisma.studentProfile.count({
+          where: { placements: { some: {} } },
+        }),
+        this.prisma.studentCourseEnrollment.count(),
+      ]);
 
     return {
       data: profiles,
@@ -128,7 +136,6 @@ export class StudentService {
         placements: { include: { classSection: true, academicYear: true } },
         enrollments: { include: { batch: true } },
         guardians: { include: { guardianProfile: true } },
-        families: { include: { family: true } },
       },
     });
     if (!profile) {

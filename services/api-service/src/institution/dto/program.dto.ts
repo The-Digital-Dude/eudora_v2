@@ -11,15 +11,6 @@ import {
 } from 'class-validator';
 import { CatalogStatus, DeliveryMode } from '@prisma/client';
 
-/**
- * Minimum price for anything sellable, in minor units (cents).
- *
- * At Stripe's international rate (4.4% + $0.30) a $5 sale loses 10.4% to fees;
- * below roughly $9 the fee drag plus a single support interaction erases the
- * margin entirely. Standalone micro-courses are expected to sit at $19+.
- */
-export const MIN_SELLABLE_PRICE_CENTS = 900;
-
 export class CreateProgramDto {
   @IsString()
   @IsNotEmpty()

@@ -18,6 +18,7 @@ import { LoginDto } from './dto/login.dto';
 import { GoogleLoginDto } from './dto/google.dto';
 import { AppleAuthorizeDto, AppleCallbackDto } from './dto/apple.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { Public } from './decorators/public.decorator';
@@ -211,5 +212,41 @@ export class AuthController {
       dto.currentPassword,
       dto.newPassword,
     );
+  }
+
+  // ─── Password reset ─────────────────────────────────────────────────────────
+
+  /**
+   * Always 202, whether or not the address belongs to an account — see
+   * `requestPasswordReset`. Rate-limited hard: this endpoint sends mail on an
+   * unauthenticated caller's say-so, so it is both an enumeration surface and
+   * a way to use the product as a spam relay against a third party's inbox.
+   */
+  @Public()
+  @Throttle({ default: { ttl: 3_600_000, limit: 5 } })
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+    @Req() req: any,
+  ): Promise<{ message: string }> {
+    await this.authService.requestPasswordReset(dto.email, req.ip ?? null);
+    return {
+      message:
+        'If that email address has an account, a reset link is on its way.',
+    };
+  }
+
+  @Public()
+  @Throttle({ default: { ttl: 3_600_000, limit: 10 } })
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+    return {
+      message: 'Your password has been reset. Sign in with your new password.',
+    };
   }
 }

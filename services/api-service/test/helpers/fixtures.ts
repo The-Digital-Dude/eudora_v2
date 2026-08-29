@@ -340,9 +340,6 @@ export async function cleanupWorld(
       await prisma.batchAttendance
         .deleteMany({ where: byProfile })
         .catch(() => undefined);
-      await prisma.competencyMastery
-        .deleteMany({ where: byProfile })
-        .catch(() => undefined);
       await (prisma.studentProfile.deleteMany as any)({
         where: { id: { in: profileIds } },
         forceDelete: true,

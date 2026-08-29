@@ -9,8 +9,6 @@ import type {
   CreatedChild,
   CreateChildPayload,
   CreateGuardianProfilePayload,
-  FamilyInvoice,
-  FamilyPayment,
   GradebookSummary,
   SelfLinkStudentPayload,
   UpdateGuardianProfilePayload,
@@ -138,16 +136,6 @@ export const guardianApi = api.injectEndpoints({
         { type: 'Children', id: studentProfileId },
       ],
     }),
-
-    getInvoices: builder.query<FamilyInvoice[], void>({
-      query: () => '/parent/billing/invoices',
-      providesTags: ['Billing'],
-    }),
-
-    getPayments: builder.query<FamilyPayment[], void>({
-      query: () => '/parent/billing/payments',
-      providesTags: ['Billing'],
-    }),
   }),
 });
 
@@ -163,6 +151,4 @@ export const {
   useUpdateGuardianProfileMutation,
   useSelfLinkStudentMutation,
   useCreateChildMutation,
-  useGetInvoicesQuery,
-  useGetPaymentsQuery,
 } = guardianApi;

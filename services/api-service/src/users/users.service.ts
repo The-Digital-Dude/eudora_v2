@@ -8,7 +8,12 @@ import { resolveSort } from '../common/sort.util';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuditService } from '../common/audit/audit.service';
 
-const USER_SORTABLE_FIELDS = ['email', 'firstName', 'lastName', 'createdAt'] as const;
+const USER_SORTABLE_FIELDS = [
+  'email',
+  'firstName',
+  'lastName',
+  'createdAt',
+] as const;
 
 @Injectable()
 export class UsersService {
@@ -41,7 +46,13 @@ export class UsersService {
 
     // No orderBy existed here before sort support — createdAt desc (newest first) is a deliberate
     // new default, not a preserved one, since Prisma's result order was previously unspecified.
-    const orderBy = resolveSort(sortBy, sortOrder, USER_SORTABLE_FIELDS, 'createdAt', 'desc');
+    const orderBy = resolveSort(
+      sortBy,
+      sortOrder,
+      USER_SORTABLE_FIELDS,
+      'createdAt',
+      'desc',
+    );
 
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
@@ -127,7 +138,11 @@ export class UsersService {
     };
   }
 
-  async update(id: string, dto: UpdateUserDto, actorUserId: string | null = null) {
+  async update(
+    id: string,
+    dto: UpdateUserDto,
+    actorUserId: string | null = null,
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });

@@ -141,6 +141,21 @@ describe('AttendanceService', () => {
         EXCUSED: 1,
       });
     });
+
+    it('reports a null rate, not 100, when nothing was recorded in the range', async () => {
+      mockPrismaService.dailyAttendance.findMany.mockResolvedValue([]);
+
+      const result = await service.getClassAttendanceSummary(
+        'class-1',
+        '2026-06-01',
+        '2026-06-30',
+      );
+
+      // An unmarked section is not a perfectly-attended one. Callers render
+      // "not tracked" off the null rather than a green 100%.
+      expect(result.total).toBe(0);
+      expect(result.attendanceRate).toBeNull();
+    });
   });
 
   describe('getMonthlyAttendanceSummary', () => {
@@ -158,6 +173,18 @@ describe('AttendanceService', () => {
       expect(result.month).toBe('2026-06');
       expect(result.total).toBe(2);
       expect(result.attendanceRate).toBe(100);
+    });
+
+    it('reports a null rate, not 100, for a month with no records', async () => {
+      mockPrismaService.dailyAttendance.findMany.mockResolvedValue([]);
+
+      const result = await service.getMonthlyAttendanceSummary(
+        '2026-07',
+        'year-1',
+      );
+
+      expect(result.total).toBe(0);
+      expect(result.attendanceRate).toBeNull();
     });
   });
 

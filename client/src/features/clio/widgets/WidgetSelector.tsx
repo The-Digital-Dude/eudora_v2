@@ -9,6 +9,7 @@ import { CoordinatePlotterWidget } from "./CoordinatePlotterWidget";
 import { DragDropWidget } from "./DragDropWidget";
 import { GridMatchingWidget } from "./GridMatchingWidget";
 import { MCQWidget } from "./MCQWidget";
+import { ShapeShadingWidget } from "./ShapeShadingWidget";
 import { SliderWidget } from "./SliderWidget";
 
 export interface WidgetSelectorProps {
@@ -17,8 +18,16 @@ export interface WidgetSelectorProps {
   onStateChange: (newState: any) => void;
   locked: boolean;
   isCorrect?: boolean | null;
-  // Correct-answer reveal data, only present after an incorrect submission.
-  correctReveal?: { correctValue?: number };
+  // Correct-answer reveal data. Shape varies by widget type; each field is
+  // only present after a submission (see gradeWidgetSubmission), never
+  // before — that is the whole reason it travels as a separate prop instead
+  // of living in the widget's config.
+  correctReveal?: {
+    correctValue?: number;
+    correctPoints?: { x: number; y: number }[];
+    tolerance?: number;
+    correctPairs?: [string, string][];
+  };
 }
 
 export function WidgetSelector({
@@ -73,6 +82,11 @@ export function WidgetSelector({
           onChange={(newValue) => onStateChange(newValue)}
           locked={locked}
           isCorrect={isCorrect}
+          correctReveal={
+            correctReveal?.correctPoints
+              ? { correctPoints: correctReveal.correctPoints, tolerance: correctReveal.tolerance ?? 0.1 }
+              : undefined
+          }
         />
       );
 
@@ -84,6 +98,7 @@ export function WidgetSelector({
           onChange={(newValue) => onStateChange(newValue)}
           locked={locked}
           isCorrect={isCorrect}
+          correctReveal={correctReveal?.correctPairs ? { correctPairs: correctReveal.correctPairs } : undefined}
         />
       );
 
@@ -91,6 +106,17 @@ export function WidgetSelector({
       return (
         <CodePlaygroundWidget
           config={(question.widgetConfig as any) ?? { language: "javascript", starterCode: "", tests: [] }}
+          value={currentState}
+          onChange={(newValue) => onStateChange(newValue)}
+          locked={locked}
+          isCorrect={isCorrect}
+        />
+      );
+
+    case "SHAPE_SHADING":
+      return (
+        <ShapeShadingWidget
+          config={(question.widgetConfig as any) ?? { shape: { kind: "bar", regions: 4 }, targetNumerator: 1 }}
           value={currentState}
           onChange={(newValue) => onStateChange(newValue)}
           locked={locked}

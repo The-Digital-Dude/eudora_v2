@@ -1,4 +1,10 @@
-import { IsEnum, IsInt, IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+} from 'class-validator';
 import { ConceptKind } from '@prisma/client';
 
 export class CreateConceptDto {
@@ -51,18 +57,4 @@ export class UpdateConceptDto {
   @IsInt()
   @IsOptional()
   passThresholdPercent?: number;
-}
-
-export class CreateCompetencyDto {
-  @IsString()
-  @IsNotEmpty()
-  conceptId: string;
-
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @IsString()
-  @IsOptional()
-  description?: string;
 }

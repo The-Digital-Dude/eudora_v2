@@ -5,54 +5,32 @@
  * All phrases are kid-friendly, encouraging, and pedagogically sound.
  */
 
-export const CLIO_PHRASES = {
-  CORRECT: [
-    "Excellent!",
-    "Nice work!",
-    "Great job!",
-    "You got it!",
-    "Spot on!",
-    "Brilliant thinking!",
-  ],
-  TRY_AGAIN: [
-    "Let's try again.",
-    "Not quite, give it another go.",
-    "Close! Check your numbers and try again.",
-    "Don't worry, you've got this. Try once more.",
-  ],
-  TAKE_A_HINT: [
-    "Maybe, take a hint.",
-    "Here's a little clue to help.",
-    "Listen carefully, let's look at this hint.",
-    "Let's break it down together.",
-  ],
-  ANSWER_REVEALED: [
-    "Here's how we solve it.",
-    "Let's look at the answer together.",
-    "Here's the full explanation.",
-  ],
-  GREETING: [
-    "Hi, I'm Clio! Let's explore some maths together.",
-    "Welcome back! Ready for today's challenge?",
-  ],
-  LESSON_COMPLETE: [
-    "Great job, lesson complete!",
-    "Awesome work today! Look at all that XP!",
-    "You finished the lesson! Fantastic effort!",
-  ],
-} as const;
+import {
+  CLIO_PHRASES,
+  type ClioPhraseKey,
+} from "./clioPhrases.generated";
 
-export type ClioPhraseKey = keyof typeof CLIO_PHRASES;
+// The catalog itself is generated from voice/clio-phrases.json, the single
+// source both clients are built from. This module keeps the web-only speech
+// config and helpers around it.
+export {
+  CLIO_PHRASES,
+  CLIO_SPOKEN_LINES,
+  CLIO_VOICE_LINES,
+  type ClioPhraseKey,
+} from "./clioPhrases.generated";
 
 export interface ClioVoiceConfig {
-  rate: number; // Speed of speech: 0.88 for children's clarity
-  pitch: number; // Tone pitch: 1.12 - 1.18 for cheerful mascot tone
+  rate: number; // Normal speaking speed; 1.0 is the platform default.
+  pitch: number; // Tone pitch — matches mobile's tuned playVoiceLine() value
   preferredVoiceHints: string[];
 }
 
+// Kept in step with mobile's playVoiceLine() tuning so Clio sounds like the
+// same character on both platforms, not two different voices.
 export const CLIO_VOICE_CONFIG: ClioVoiceConfig = {
-  rate: 0.88,
-  pitch: 1.15,
+  rate: 1.0,
+  pitch: 1.35,
   preferredVoiceHints: [
     "google us english",
     "journey-f",

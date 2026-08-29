@@ -126,7 +126,7 @@ export default function LearningPathDetailPage() {
         </p>
       </div>
 
-      <Card className="max-w-2xl space-y-5 rounded-3xl border border-border bg-card p-6">
+      <Card className="w-full space-y-5 rounded-3xl border border-border bg-card p-6">
         {/* Add course row */}
         <div className="flex gap-2 rounded-2xl border border-dashed border-border p-3">
           <select

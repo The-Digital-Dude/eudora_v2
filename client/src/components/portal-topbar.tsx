@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Check, LogOut, Menu, Trash } from "lucide-react";
+import { Bell, Check, KeyRound, LogOut, Menu, Trash } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -264,6 +264,14 @@ export function PortalTopbar({ user, onLogout }: PortalTopbarProps) {
                   })}
                 </>
               )}
+
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="rounded-xl p-2 text-xs font-semibold">
+                <Link href="/account/security" className="flex items-center gap-2">
+                  <KeyRound className="h-3.5 w-3.5" />
+                  Security
+                </Link>
+              </DropdownMenuItem>
 
               <DropdownMenuSeparator />
               <DropdownMenuItem

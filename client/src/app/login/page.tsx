@@ -250,15 +250,12 @@ export default function LoginPage() {
                       <FormLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                         Password
                       </FormLabel>
-                      <button
-                        type="button"
+                      <Link
+                        href="/forgot-password"
                         className="text-muted-foreground hover:text-foreground cursor-pointer text-[11px] font-semibold transition-colors hover:underline"
-                        onClick={() => {
-                          /* TODO: forgot password flow */
-                        }}
                       >
                         Forgot?
-                      </button>
+                      </Link>
                     </div>
                     <div className="relative">
                       <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">

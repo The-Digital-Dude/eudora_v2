@@ -9,6 +9,7 @@ import {
   UpdateAssessmentQuestionDto,
   UpdateQuestionDto,
 } from './dto/assessments.dto';
+import { WidgetType } from '../lessons/dto/lessons.dto';
 import { generateWidgetInstance } from '../common/widgets/widget-generator';
 import { isParameterizedWidgetConfig } from '../common/widgets/widget-config.schema';
 import {
@@ -47,7 +48,17 @@ export class QuestionsService {
     const seed = input.seed ?? Math.floor(Math.random() * 0xffffffff);
     const instance = generateWidgetInstance(
       {
-        questionType: 'mcq',
+        // resolveLegacyInstance's first branch matches on
+        // `widgetType === 'STANDARD_MCQ' || questionType === 'mcq'` — a
+        // hardcoded 'mcq' here used to satisfy that OR-clause for every
+        // widget type, not just STANDARD_MCQ, so every non-MCQ preview took
+        // the MCQ path (with no options to find a correct one among) and
+        // resolved to UNSUPPORTED regardless of the actual config. Only
+        // claim 'mcq' when the widget being previewed actually is one;
+        // 'interactive' is what every other widget-backed question is
+        // stored as (see prisma/seed.ts).
+        questionType:
+          input.widgetType === WidgetType.STANDARD_MCQ ? 'mcq' : 'interactive',
         correctAnswer: null,
         widgetType: input.widgetType,
         widgetConfig: input.widgetConfig,

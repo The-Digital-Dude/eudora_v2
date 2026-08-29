@@ -6,10 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import {
-  createScopingExtension,
-  SCOPED_DELEGATES,
-} from './scoping.extension';
+import { createScopingExtension, SCOPED_DELEGATES } from './scoping.extension';
 
 @Injectable()
 export class PrismaService
@@ -42,7 +39,7 @@ export class PrismaService
         }
         return Reflect.get(target, prop, receiver);
       },
-    }) as PrismaService;
+    });
   }
 
   async onModuleInit(): Promise<void> {

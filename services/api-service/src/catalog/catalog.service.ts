@@ -4,7 +4,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { DeliveryMode, ModuleItemKind } from '@prisma/client';
+import { CatalogStatus, DeliveryMode, ModuleItemKind } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { resolveSort } from '../common/sort.util';
 import {
@@ -17,6 +17,7 @@ import {
   AddCourseToPathDto,
   ReorderPathCoursesDto,
 } from './dto/catalog.dto';
+import { assertPriceFloor } from '../billing/pricing/price-rules';
 import { ProgressionService } from '../progression/progression.service';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 
@@ -81,6 +82,40 @@ export class CatalogService {
 
   // ─── Courses ─────────────────────────────────────────────────────────────
 
+  /**
+   * A published course has to be reachable by some route to a purchase.
+   *
+   * Two legitimate ways to have no price of your own: the program that bundles
+   * you carries the pricing, or — once the product supports it — the course is
+   * explicitly free. Only the first is expressible today, so that is what this
+   * enforces; there is deliberately no `isFree` flag yet, because a course
+   * marked free with no way to enrol in it would just be a different false
+   * promise. Content is gated on an Entitlement row, and nothing but Stripe
+   * checkout and admin grant writes one.
+   *
+   * Without this, "published, unpriced, in no program" was reachable, and the
+   * public course page filled the silence by telling the visitor the course was
+   * available as part of a programme — which for three live courses was untrue.
+   */
+  private async assertPublishable(
+    courseId: string | null,
+    status: CatalogStatus | undefined,
+    priceOneTimeCents: number | null | undefined,
+  ) {
+    if (status !== CatalogStatus.PUBLISHED) return;
+    if (priceOneTimeCents !== null && priceOneTimeCents !== undefined) return;
+
+    const programCount = courseId
+      ? await this.prisma.programCourse.count({ where: { courseId } })
+      : 0;
+    if (programCount > 0) return;
+
+    throw new BadRequestException(
+      'A published course must either carry its own price or belong to at least one program. ' +
+        'Set priceOneTimeCents, attach it to a program, or leave it as DRAFT.',
+    );
+  }
+
   async createCourse(dto: CreateCourseDto) {
     const subject = await this.prisma.learningSubject.findUnique({
       where: { id: dto.learningSubjectId },
@@ -94,6 +129,11 @@ export class CatalogService {
     if (existingSlug) {
       throw new BadRequestException('A course with this slug already exists');
     }
+    assertPriceFloor(dto);
+    // A brand-new course cannot already be in a program, so publishing one
+    // without a price is always the stranded state described below.
+    await this.assertPublishable(null, dto.status, dto.priceOneTimeCents);
+
     return this.prisma.course.create({
       data: {
         learningSubjectId: dto.learningSubjectId,
@@ -103,6 +143,21 @@ export class CatalogService {
         estimatedHours: dto.estimatedHours ?? null,
         status: dto.status ?? 'DRAFT',
         sortOrder: dto.sortOrder ?? 0,
+        // Everything below was accepted and validated by the DTO and then
+        // dropped here, so a course could never be given a price, artwork or
+        // grade band through the API — it returned 200 and discarded them.
+        // Nulls are meaningful: null price means "not sold a la carte".
+        durationWeeks: dto.durationWeeks ?? null,
+        thumbnailUrl: dto.thumbnailUrl ?? null,
+        gradeBand: dto.gradeBand ?? null,
+        priceOneTimeCents: dto.priceOneTimeCents ?? null,
+        priceMonthlyCents: dto.priceMonthlyCents ?? null,
+        installmentCount: dto.installmentCount ?? null,
+        // Both have column defaults, so only override when actually supplied.
+        ...(dto.deliveryMode !== undefined
+          ? { deliveryMode: dto.deliveryMode }
+          : {}),
+        ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
       },
     });
   }
@@ -632,6 +687,25 @@ export class CatalogService {
       }
     }
 
+    assertPriceFloor(dto);
+
+    // Only checked when the write actually engages with sellability — an
+    // explicit publish, or a price change. Editing the title of a course that
+    // is already in the bad state stays possible on purpose: the guard exists
+    // to stop that state being entered or deepened, not to brick edits on the
+    // rows that predate it (those are cleaned up separately).
+    const engagesPublishState =
+      dto.status === 'PUBLISHED' || dto.priceOneTimeCents !== undefined;
+    if (engagesPublishState) {
+      await this.assertPublishable(
+        id,
+        dto.status ?? course.status,
+        dto.priceOneTimeCents !== undefined
+          ? dto.priceOneTimeCents
+          : course.priceOneTimeCents,
+      );
+    }
+
     return this.prisma.course.update({
       where: { id },
       data: {
@@ -647,6 +721,26 @@ export class CatalogService {
         ...(dto.deliveryMode !== undefined
           ? { deliveryMode: dto.deliveryMode }
           : {}),
+        // Same omission as createCourse had, on the handler where deliveryMode
+        // was already fixed. Undefined means "not being changed"; null is an
+        // explicit clear, so both have to stay distinguishable here.
+        ...(dto.durationWeeks !== undefined
+          ? { durationWeeks: dto.durationWeeks }
+          : {}),
+        ...(dto.thumbnailUrl !== undefined
+          ? { thumbnailUrl: dto.thumbnailUrl }
+          : {}),
+        ...(dto.gradeBand !== undefined ? { gradeBand: dto.gradeBand } : {}),
+        ...(dto.priceOneTimeCents !== undefined
+          ? { priceOneTimeCents: dto.priceOneTimeCents }
+          : {}),
+        ...(dto.priceMonthlyCents !== undefined
+          ? { priceMonthlyCents: dto.priceMonthlyCents }
+          : {}),
+        ...(dto.installmentCount !== undefined
+          ? { installmentCount: dto.installmentCount }
+          : {}),
+        ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
       },
     });
   }

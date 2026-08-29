@@ -12,10 +12,11 @@ import {
 } from './helpers/fixtures';
 
 /**
- * Covers the household model and the guardian-scope guard: a guardian may
- * only read the children they are linked to — the denial case is the point.
+ * Covers guardian-student linking and the guardian-scope guard: a guardian
+ * may only read the children they are linked to — the denial case is the
+ * point.
  */
-describe('Family & parent portal scoping (e2e)', () => {
+describe('Guardian & parent portal scoping (e2e)', () => {
   let ctx: TestContext;
   let adminToken: string;
   let plainUser: TestUser;
@@ -24,7 +25,6 @@ describe('Family & parent portal scoping (e2e)', () => {
   let linkedGuardian: TestUser;
   let linkedGuardianProfileId: string;
   let unlinkedGuardian: TestUser;
-  let familyId: string;
   const tag = `FP${Date.now()}`;
 
   const http = () => request(ctx.app.getHttpServer());
@@ -48,12 +48,6 @@ describe('Family & parent portal scoping (e2e)', () => {
   });
 
   afterAll(async () => {
-    if (familyId) {
-      await (ctx.prisma.family.deleteMany as any)({
-        where: { id: familyId },
-        forceDelete: true,
-      }).catch(() => undefined);
-    }
     await cleanupWorld(ctx, null, [
       plainUser,
       studentUser,
@@ -102,40 +96,6 @@ describe('Family & parent portal scoping (e2e)', () => {
     );
   });
 
-  it('builds the household: family with student and guardian members', async () => {
-    const familyRes = await http()
-      .post('/api/families')
-      .set(asAdmin())
-      .send({ householdName: `E2E Household ${tag}` })
-      .expect(201);
-    familyId = unwrap<{ id: string }>(familyRes).id;
-
-    await http()
-      .post(`/api/families/${familyId}/members`)
-      .set(asAdmin())
-      .send({ studentProfileId })
-      .expect(201);
-    await http()
-      .post(`/api/families/${familyId}/members`)
-      .set(asAdmin())
-      .send({ guardianProfileId: linkedGuardianProfileId })
-      .expect(201);
-
-    const res = await http()
-      .get(`/api/families/${familyId}`)
-      .set(asAdmin())
-      .expect(200);
-    const family = unwrap<{
-      students: unknown[];
-      guardians: unknown[];
-      householdName: string;
-    }>(res);
-    expect(family.householdName).toBe(`E2E Household ${tag}`);
-    expect(
-      family.students.length + family.guardians.length,
-    ).toBeGreaterThanOrEqual(2);
-  });
-
   it("shows the linked child in guardian A's parent portal", async () => {
     const res = await http()
       .get('/api/parent/children')
@@ -173,14 +133,6 @@ describe('Family & parent portal scoping (e2e)', () => {
     await http()
       .get('/api/parent/children')
       .set('Authorization', `Bearer ${plainUser.token}`)
-      .expect(403);
-  });
-
-  it('denies family creation to a guardian (admin-only)', async () => {
-    await http()
-      .post('/api/families')
-      .set('Authorization', `Bearer ${linkedGuardian.token}`)
-      .send({ householdName: `E2E Forbidden Household ${tag}` })
       .expect(403);
   });
 });

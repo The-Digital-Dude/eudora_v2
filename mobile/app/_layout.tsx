@@ -9,9 +9,15 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { setSessionExpiredHandler } from '@/core/api/baseQuery';
 import { getAccessToken, hydrateTokens } from '@/core/api/tokenStore';
 import { persistor, store } from '@/store/store';
+import { LoadingScreen } from '@/features/boot/LoadingScreen';
+import { SplashScreen } from '@/features/boot/SplashScreen';
 import { UpdateRequiredScreen } from '@/features/version/UpdateRequiredScreen';
 import { useMinVersionGate } from '@/features/version/useMinVersionGate';
 import { ThemeProvider } from '@/ui/theme/ThemeProvider';
+
+/** How long the branded splash holds before handing off, win or lose the race
+ * against token hydration underneath it. */
+const SPLASH_DURATION_MS = 1400;
 
 // Module-level, once per process — without this, a notification that
 // arrives while the app is foregrounded is silently swallowed instead of
@@ -44,6 +50,7 @@ export default function RootLayout() {
 function RootNavigator() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   const versionGate = useMinVersionGate();
 
   // Tokens live in the keychain, so the first render cannot know whether there
@@ -67,13 +74,23 @@ function RootNavigator() {
     return () => setSessionExpiredHandler(null);
   }, [router]);
 
+  // Independent of `ready` on purpose: this is a fixed brand beat, not a
+  // wait-for-something gate, so it holds its length whether hydration
+  // finishes before or after the timer.
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), SPLASH_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) return <SplashScreen />;
+
   // Takes priority over the auth-ready gate below — an unsupported build
   // should never reach the login screen, let alone anything behind it.
   if (versionGate.checked && versionGate.blocked) {
     return <UpdateRequiredScreen latestVersion={versionGate.latestVersion} />;
   }
 
-  if (!ready) return null;
+  if (!ready) return <LoadingScreen />;
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }

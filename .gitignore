@@ -5,3 +5,14 @@
 .env
 .env.*
 !.env.example
+
+# Package manager store — local cache, never a source artefact
+/.pnpm-store
+
+# Lint run output — regenerate with `pnpm run lint`, never commit
+lint_output.txt
+
+# Generated OpenAPI client types — regenerate with `pnpm run openapi:generate`
+# once the API's DTOs carry @nestjs/swagger decorators (see mobile's
+# equivalent deletion in the mobile-rewire scope, 2026-08-23)
+**/generated/openapi.d.ts

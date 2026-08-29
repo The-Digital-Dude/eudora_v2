@@ -158,10 +158,7 @@ export class ParentController {
     @Param('studentProfileId') studentProfileId: string,
     @Body() dto: CreateClassEnrollmentDto,
   ) {
-    return this.parentService.enrollInClass(
-      studentProfileId,
-      dto.batchId,
-    );
+    return this.parentService.enrollInClass(studentProfileId, dto.batchId);
   }
 
   @Delete('children/:studentProfileId/class-enrollments/:enrollmentId')
@@ -187,15 +184,5 @@ export class ParentController {
     @CurrentUser() user: CurrentUserDto,
   ) {
     return this.parentService.createChild(user.id, dto);
-  }
-
-  @Get('billing/invoices')
-  async getInvoices(@CurrentUser() user: CurrentUserDto) {
-    return this.parentService.getInvoices(user.id);
-  }
-
-  @Get('billing/payments')
-  async getPayments(@CurrentUser() user: CurrentUserDto) {
-    return this.parentService.getPayments(user.id);
   }
 }

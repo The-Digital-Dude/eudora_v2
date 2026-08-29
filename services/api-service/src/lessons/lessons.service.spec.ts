@@ -188,5 +188,43 @@ describe('LessonsService', () => {
 
       expect(result.isCorrect).toBe(false);
     });
+
+    it('never auto-passes a widget the grader could not resolve', async () => {
+      // CODE_PLAYGROUND (and any newly-added widgetType with no generator
+      // branch yet) resolves to UNSUPPORTED, so gradeWidgetSubmission
+      // returns `{}` — isCorrect must land as false, not silently true,
+      // regardless of what the student submitted.
+      const ungradeableCard = {
+        ...mockCard,
+        question: {
+          ...mockCard.question,
+          questionType: 'interactive',
+          widgetType: 'CODE_PLAYGROUND',
+          widgetConfig: null,
+        },
+      };
+      mockPrismaService.card.findUnique.mockResolvedValue(ungradeableCard);
+      mockPrismaService.card.findMany.mockResolvedValue([ungradeableCard]);
+      // The shared beforeEach stubs this to always return card-1 regardless
+      // of the query's `isCorrect: true` filter; override it here so the
+      // mock actually reflects "no correct responses exist yet" — matching
+      // what a real Prisma query would return once this card grades false.
+      mockPrismaService.studentCardResponse.findMany.mockResolvedValue([]);
+
+      const result = await service.submitCardResponse('user-1', 'card-1', {
+        timeSpentSeconds: 10,
+        responseText: 'anything the student typed',
+      });
+
+      expect(result.isCorrect).toBe(false);
+      expect(mockPrismaService.studentCardResponse.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({ isCorrect: false }),
+          create: expect.objectContaining({ isCorrect: false }),
+        }),
+      );
+      // No XP for a mark the system never actually verified.
+      expect(mockPrismaService.studentExperience.update).not.toHaveBeenCalled();
+    });
   });
 });

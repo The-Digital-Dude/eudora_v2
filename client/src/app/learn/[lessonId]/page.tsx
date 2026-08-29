@@ -21,7 +21,6 @@ import { GamificationHUD } from "@/features/clio/GamificationHUD";
 import { LessonCompleteModal } from "@/features/clio/LessonCompleteModal";
 import {
   jumpToCard,
-  markCardStart,
   nextCard,
   prevCard,
   resetLesson,
@@ -36,9 +35,9 @@ import {
   setWidgetState,
   showExplanation,
 } from "@/features/clio/lessonSlice";
-import { ClioVoicePicker } from "@/features/clio/sound/ClioVoicePicker";
 import { useClioVoice } from "@/features/clio/sound/useClioVoice";
 import { WidgetSelector } from "@/features/clio/widgets/WidgetSelector";
+import { useGetGamificationMeQuery } from "@/features/student/studentApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 export default function LessonFlowPage() {
@@ -52,6 +51,12 @@ export default function LessonFlowPage() {
   const { data, isLoading, error, refetch } = useGetLessonFlowQuery(lessonId, {
     skip: !lessonId,
   });
+
+  // The learner's real streak. Both the HUD and the completion modal used to
+  // show `data.attempt?.id ? 4 : 3` — a number invented on the spot, to a
+  // child, as a motivational promise. `/gamification/me` has always returned
+  // the true value and is what /student and the mobile app already read.
+  const { data: gamification } = useGetGamificationMeQuery();
 
   const [submitCard, { isLoading: isSubmitting }] = useSubmitCardMutation();
 
@@ -184,7 +189,7 @@ export default function LessonFlowPage() {
       if (result.isCorrect) {
         playPhrase("CORRECT");
       } else {
-        playPhrase("TRY_AGAIN");
+        playPhrase("INCORRECT");
       }
 
       if (result.isLessonComplete) {
@@ -239,7 +244,7 @@ export default function LessonFlowPage() {
       <GamificationHUD
         lessonTitle={data.lesson.title}
         sessionXp={sessionXp}
-        streakCount={data.attempt?.id ? 4 : 3} // Mock increment or placeholder
+        streakCount={gamification?.streak.currentStreak}
         lessonProgress={
           cards.length > 0 ? (currentCardIndex + (showExpPanel ? 1 : 0)) / cards.length : 0
         }
@@ -446,10 +451,7 @@ export default function LessonFlowPage() {
                   </>
                 )}
               </button>
-            </div>
-
-            <ClioVoicePicker />
-
+            </div>
             <div
               className="flex items-start gap-2.5 cursor-pointer"
               onClick={() => speakText(getMascotSpeech())}
@@ -527,7 +529,7 @@ export default function LessonFlowPage() {
       <LessonCompleteModal
         isOpen={isCompleteModalOpen}
         totalXp={sessionXp}
-        streakCount={data.attempt?.id ? 4 : 3} // Mock increment or placeholder
+        streakCount={gamification?.streak.currentStreak}
         lessonTitle={data.lesson.title}
         onBackToLessons={handleExitToHub}
       />

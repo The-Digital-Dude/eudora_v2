@@ -10,10 +10,14 @@ import { GoogleOAuthProvider } from './oauth/providers/google.provider';
 import { AppleOAuthProvider } from './oauth/providers/apple.provider';
 import { PrismaModule } from '../prisma/prisma.module';
 import { getJwtSecret } from './utils/jwt-config';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     PrismaModule,
+    // For the password-reset email. NotificationsModule exports EmailService,
+    // and imports nothing that leads back here, so this adds no cycle.
+    NotificationsModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

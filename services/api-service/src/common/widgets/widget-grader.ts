@@ -8,6 +8,7 @@ export interface WidgetSubmission {
     points?: { x: number; y: number }[];
     pairs?: [string, string][];
     shadedRegionIds?: string[];
+    placements?: Record<string, string>;
     [key: string]: unknown;
   } | null;
 }
@@ -31,7 +32,8 @@ export function gradeWidgetSubmission(
   switch (resolvedAnswer.widgetType) {
     case 'STANDARD_MCQ':
       return {
-        isCorrect: submission.selectedOptionId === resolvedAnswer.correctOptionId,
+        isCorrect:
+          submission.selectedOptionId === resolvedAnswer.correctOptionId,
       };
 
     case 'SLIDER_MANIPULATIVE': {
@@ -42,7 +44,8 @@ export function gradeWidgetSubmission(
       }
       return {
         isCorrect:
-          Math.abs(inputVal - resolvedAnswer.correctValue) <= resolvedAnswer.tolerance,
+          Math.abs(inputVal - resolvedAnswer.correctValue) <=
+          resolvedAnswer.tolerance,
         correctReveal: { correctValue: resolvedAnswer.correctValue },
       };
     }
@@ -50,32 +53,56 @@ export function gradeWidgetSubmission(
     case 'COORDINATE_PLOTTER': {
       const studentPoints = submission.interactionState?.points ?? [];
       const { correctPoints, tolerance } = resolvedAnswer;
+      // Narrowing displayConfig (widget-generator.ts) took the answer out of
+      // the pre-submission payload; CoordinatePlotterWidget's post-submission
+      // reveal marker now reads it from here instead of from config.
+      const correctReveal = { correctPoints, tolerance };
       if (correctPoints.length !== studentPoints.length) {
-        return { isCorrect: false };
+        return { isCorrect: false, correctReveal };
       }
       const allMatched = correctPoints.every((cp) =>
-        studentPoints.some((sp) => Math.hypot(cp.x - sp.x, cp.y - sp.y) <= tolerance),
+        studentPoints.some(
+          (sp) => Math.hypot(cp.x - sp.x, cp.y - sp.y) <= tolerance,
+        ),
       );
-      return { isCorrect: allMatched };
+      return { isCorrect: allMatched, correctReveal };
     }
 
     case 'GRID_MATCHING': {
       const studentPairs = submission.interactionState?.pairs ?? [];
       const { correctPairs } = resolvedAnswer;
+      // Same reason as COORDINATE_PLOTTER above — GridMatchingWidget's
+      // per-slot correctness styling reads this post-submission now.
+      const correctReveal = { correctPairs };
       if (correctPairs.length !== studentPairs.length) {
-        return { isCorrect: false };
+        return { isCorrect: false, correctReveal };
       }
       const allMatched = correctPairs.every(([left, right]) =>
         studentPairs.some(
-          ([sl, sr]) => (sl === left && sr === right) || (sl === right && sr === left),
+          ([sl, sr]) =>
+            (sl === left && sr === right) || (sl === right && sr === left),
         ),
+      );
+      return { isCorrect: allMatched, correctReveal };
+    }
+
+    case 'DRAG_AND_DROP_LABELS': {
+      const studentPlacements = submission.interactionState?.placements ?? {};
+      const { correctPlacements } = resolvedAnswer;
+      // Only the targets that carry an authored answer are graded — a
+      // target with no correctLabel is decorative (see widget-generator.ts)
+      // and a student placing something on it is neither rewarded nor
+      // penalised.
+      const allMatched = Object.entries(correctPlacements).every(
+        ([targetId, label]) => studentPlacements[targetId] === label,
       );
       return { isCorrect: allMatched };
     }
 
     case 'SHAPE_SHADING': {
       const shadedIds = submission.interactionState?.shadedRegionIds ?? [];
-      const { targetNumerator, totalRegions, shapeKind, requireContiguous } = resolvedAnswer;
+      const { targetNumerator, totalRegions, shapeKind, requireContiguous } =
+        resolvedAnswer;
 
       if (shadedIds.length !== targetNumerator) {
         return { isCorrect: false };

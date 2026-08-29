@@ -62,7 +62,10 @@ export class ProgressionService {
    * without this check an admin exercising content would be gated by their own
    * incidental lesson history.
    */
-  async assertConceptUnlocked(userId: string, conceptId: string): Promise<void> {
+  async assertConceptUnlocked(
+    userId: string,
+    conceptId: string,
+  ): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {

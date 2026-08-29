@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGetClassesQuery } from "@/features/assessments/questionsApi";
 import type { CatalogStatus, DeliveryMode } from "@/features/dashboard/dashboardApi";
+import { centsToDollars, dollarsToCents } from "@/lib/money";
 
 export interface ProgramFormValues {
   name: string;
@@ -41,23 +42,10 @@ export const EMPTY_PROGRAM: ProgramFormValues = {
   status: "DRAFT",
 };
 
-/**
- * Prices are stored as integer cents. The form takes dollars because that is
- * what an admin thinks in, and rounds at the boundary so no float ever reaches
- * the API.
- */
-export function dollarsToCents(value: string): number | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  const parsed = Number(trimmed);
-  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
-  return Math.round(parsed * 100);
-}
-
-export function centsToDollars(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "";
-  return (value / 100).toFixed(2);
-}
+// Moved to @/lib/money when courses gained their own pricing form — both price
+// themselves, and the conversion must not drift between them. Re-exported so
+// the pages already importing them from here keep working.
+export { centsToDollars, dollarsToCents };
 
 /**
  * Form values -> API payload. Shared by create and edit so the money conversion

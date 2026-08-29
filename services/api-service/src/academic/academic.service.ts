@@ -682,18 +682,6 @@ export class AcademicService {
                     lastName: true,
                   },
                 },
-                families: {
-                  take: 1,
-                  select: {
-                    family: {
-                      select: {
-                        id: true,
-                        householdName: true,
-                        status: true,
-                      },
-                    },
-                  },
-                },
                 guardians: {
                   select: {
                     id: true,
@@ -737,7 +725,6 @@ export class AcademicService {
           email: student.user.email,
           status: student.status,
           createdAt: p.createdAt,
-          family: student.families[0]?.family ?? null,
           guardians: student.guardians.map((g) => ({
             id: g.guardianProfile.id,
             relationshipId: g.id,

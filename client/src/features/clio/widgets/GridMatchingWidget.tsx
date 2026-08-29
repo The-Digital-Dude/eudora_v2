@@ -10,6 +10,10 @@ interface GridMatchingWidgetProps {
   onChange: (newValue: { pairs: [string, string][] }) => void;
   locked: boolean;
   isCorrect?: boolean | null;
+  // The answer key, sent by the server only after submission (see
+  // gradeWidgetSubmission's GRID_MATCHING case) — never present in `config`
+  // pre-submission, so there is nothing to leak before the student answers.
+  correctReveal?: { correctPairs: [string, string][] };
 }
 
 export function GridMatchingWidget({
@@ -18,10 +22,11 @@ export function GridMatchingWidget({
   onChange,
   locked,
   isCorrect,
+  correctReveal,
 }: GridMatchingWidgetProps) {
   const leftItems = config.left ?? [];
   const rightItems = config.right ?? [];
-  const correctPairs = config.correctPairs ?? [];
+  const correctPairs = correctReveal?.correctPairs ?? config.correctPairs ?? [];
 
   const pairs = React.useMemo(() => value?.pairs ?? [], [value]);
 

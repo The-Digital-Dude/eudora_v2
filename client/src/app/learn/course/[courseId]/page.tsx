@@ -4,7 +4,7 @@ import { ArrowRight, Loader2, Lock } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 
-import type { ModuleItem } from "@/features/catalog/catalogApi";
+import type { ModuleItem, ModuleItemKind } from "@/features/catalog/catalogApi";
 import { useGetCourseDetailQuery } from "@/features/catalog/catalogApi";
 
 import { AssessmentItemView } from "./components/AssessmentItemView";
@@ -13,6 +13,44 @@ import { DiscussionView } from "./components/DiscussionView";
 import { HomeworkItemView } from "./components/HomeworkItemView";
 import { LiveClassView } from "./components/LiveClassView";
 import { ReadingView } from "./components/ReadingView";
+import { StoryView } from "./components/StoryView";
+
+/**
+ * One renderer per kind, as a Record over the union rather than a chain of
+ * &&s. The chain had no else: a kind nobody had written a view for rendered
+ * silently nothing, so a child opening it saw an empty pane and no error. This
+ * shape makes the compiler refuse to build until every kind is handled.
+ */
+const itemRenderers: Record<
+  ModuleItemKind,
+  (item: ModuleItem) => React.ReactNode
+> = {
+  VIDEO: (item) => <VideoLectureView item={item} onCompleted={() => {}} />,
+  READING: (item) => <ReadingView item={item} onCompleted={() => {}} />,
+  DISCUSSION: (item) => <DiscussionView item={item} onCompleted={() => {}} />,
+  ASSESSMENT: (item) => <AssessmentItemView item={item} />,
+  HOMEWORK: (item) => <HomeworkItemView item={item} />,
+  LIVE_CLASS: (item) => <LiveClassView item={item} />,
+  STORY: (item) => <StoryView item={item} onCompleted={() => {}} />,
+};
+
+function renderItem(item: ModuleItem) {
+  const render = itemRenderers[item.kind];
+  // Reachable only if the API sends a kind this build does not know about,
+  // which happens when the client is older than the API. Saying so beats a
+  // blank pane.
+  if (!render) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+        <p className="text-sm font-bold text-foreground">{item.title}</p>
+        <p className="max-w-sm text-xs text-muted-foreground">
+          This kind of lesson needs a newer version of the app. Try refreshing.
+        </p>
+      </div>
+    );
+  }
+  return render(item);
+}
 import { VideoLectureView } from "./components/VideoLectureView";
 
 export default function CourseOutlinePage() {
@@ -108,24 +146,7 @@ export default function CourseOutlinePage() {
           </div>
         ) : (
           <>
-            {selectedItem.kind === "VIDEO" && (
-              <VideoLectureView item={selectedItem} onCompleted={() => {}} />
-            )}
-            {selectedItem.kind === "READING" && (
-              <ReadingView item={selectedItem} onCompleted={() => {}} />
-            )}
-            {selectedItem.kind === "DISCUSSION" && (
-              <DiscussionView item={selectedItem} onCompleted={() => {}} />
-            )}
-            {selectedItem.kind === "ASSESSMENT" && (
-              <AssessmentItemView item={selectedItem} />
-            )}
-            {selectedItem.kind === "HOMEWORK" && (
-              <HomeworkItemView item={selectedItem} />
-            )}
-            {selectedItem.kind === "LIVE_CLASS" && (
-              <LiveClassView item={selectedItem} />
-            )}
+            {renderItem(selectedItem)}
 
             <button
               onClick={handleGoToNext}

@@ -26,7 +26,6 @@ import { Prisma, PrismaClient } from '@prisma/client';
  */
 export const SOFT_DELETE_MODELS: ReadonlySet<string> = new Set([
   'User',
-  'Campus',
   'Program',
   'AcademicYear',
   'ClassSection',
@@ -34,16 +33,11 @@ export const SOFT_DELETE_MODELS: ReadonlySet<string> = new Set([
   'Batch',
   'StudentProfile',
   'GuardianProfile',
-  'Family',
   'TeacherProfile',
-  'Invoice',
-  'Payment',
   'Assessment',
   'Question',
   'Lesson',
   'GradeBookEntry',
-  'FamilyInvoice',
-  'FamilyPayment',
 ]);
 
 /** Model delegate property names (camelCase) that must route through the extension. */
@@ -85,10 +79,7 @@ export function createScopingExtension(base: PrismaClient) {
             return query(a);
           }
 
-          if (
-            operation === 'findUnique' ||
-            operation === 'findUniqueOrThrow'
-          ) {
+          if (operation === 'findUnique' || operation === 'findUniqueOrThrow') {
             const includeArchived = a.includeArchived === true;
             delete a.includeArchived;
             if (includeArchived) {

@@ -76,6 +76,35 @@ export default function StudentAssessmentPlayerPage() {
   const questions = assessment?.questions || [];
   const currentQuestion = questions[currentIndex];
 
+  // Real time-on-task, replacing a hardcoded `timeSpentSeconds: 10` sent on
+  // every save. Seconds accumulate per question so revisiting one adds to its
+  // total rather than restarting it; the server overwrites the field on each
+  // save, so the cumulative figure is what it wants.
+  const timePerQuestionRef = React.useRef<Record<string, number>>({});
+  const questionEnteredAtRef = React.useRef<number>(Date.now());
+  const previousQuestionIdRef = React.useRef<string | undefined>(undefined);
+
+  React.useEffect(() => {
+    const previousId = previousQuestionIdRef.current;
+    const now = Date.now();
+    if (previousId && previousId !== currentQuestion?.id) {
+      const elapsed = Math.round((now - questionEnteredAtRef.current) / 1000);
+      timePerQuestionRef.current[previousId] =
+        (timePerQuestionRef.current[previousId] ?? 0) + elapsed;
+    }
+    if (previousId !== currentQuestion?.id) {
+      questionEnteredAtRef.current = now;
+      previousQuestionIdRef.current = currentQuestion?.id;
+    }
+  }, [currentQuestion?.id]);
+
+  /** Total seconds on a question, including the dwell still in progress. */
+  const secondsSpentOn = (questionId: string) => {
+    const banked = timePerQuestionRef.current[questionId] ?? 0;
+    if (questionId !== currentQuestion?.id) return banked;
+    return banked + Math.round((Date.now() - questionEnteredAtRef.current) / 1000);
+  };
+
   // Initialize responses state when attempt details load
   useEffect(() => {
     if (attemptDetails?.responses) {
@@ -180,7 +209,7 @@ export default function StudentAssessmentPlayerPage() {
         selectedOptionId: updated.selectedOptionId || null,
         responseText: updated.responseText || null,
         interactionState: updated.interactionState || null,
-        timeSpentSeconds: 10, // dummy tracked seconds
+        timeSpentSeconds: secondsSpentOn(qId),
       }).unwrap();
 
       setSavingState((prev) => ({ ...prev, [qId]: "saved" }));

@@ -12,7 +12,6 @@ import { useActingChild } from "@/features/parent/useActingChild";
 import { useAppSelector } from "@/store/hooks";
 
 import { AttendanceCalendar } from "./components/attendance-calendar";
-import { BillingHistoryPanel } from "./components/billing-history-panel";
 import { ChildSummary } from "./components/child-summary";
 import { ChildTabs } from "./components/child-tabs";
 import { ClassEnrollmentPanel } from "./components/class-enrollment-panel";
@@ -197,17 +196,7 @@ export default function ParentPage() {
         </div>
       )}
 
-      {activeSection === "billing" && (
-        <div className="space-y-8">
-          {/* Purchases first — that is what a guardian actually bought. The
-              invoice ledger below is staff-entered offline billing, a separate
-              system that predates checkout. */}
-          <PurchasesPanel />
-          <div className="border-border border-t pt-8">
-            <BillingHistoryPanel />
-          </div>
-        </div>
-      )}
+      {activeSection === "billing" && <PurchasesPanel />}
     </div>
   );
 }

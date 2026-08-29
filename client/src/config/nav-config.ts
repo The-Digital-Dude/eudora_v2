@@ -1,4 +1,5 @@
 import {
+  BookHeadphones,
   BookOpen,
   CalendarCheck,
   ClipboardCheck,
@@ -41,7 +42,12 @@ export interface NavLeaf {
    * a parent.
    */
   titleByRole?: Partial<Record<PrimaryRole, string>>;
-  /** Feature has no backing page/API yet — shown greyed out with a "Soon" badge, not linked. */
+  /**
+   * Feature has no backing page/API yet — shown greyed out with a "Soon" badge, not linked. No leaf
+   * currently sets this (both no-backing-page cases so far — Diagnostics, Placement — used `hidden`
+   * instead, since they had a route worth guarding, just not one worth advertising); kept as the
+   * documented mechanism for the next feature that ships UI before its API.
+   */
   disabled?: boolean;
   /**
    * Descoped pending redesign: kept in this config (so the route guard still matches the URL and
@@ -172,6 +178,16 @@ export const navGroups: NavGroup[] = [
         requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
       },
       {
+        // Sits under Content rather than beside Courses because a story is a
+        // thing you write, not a thing you timetable — and, unlike every other
+        // entry here, one can be published on its own without belonging to a
+        // course at all.
+        title: "Stories",
+        url: "/stories",
+        icon: BookHeadphones,
+        requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
+      },
+      {
         title: "Question Bank",
         url: "/questions",
         icon: Library,
@@ -236,8 +252,9 @@ export const navGroups: NavGroup[] = [
       },
       {
         // Learning Gaps and Next Actions were removed entirely — nothing ever created a LearningGap
-        // row, the detection engine was never built. Placement is kept as a route (still reachable
-        // directly) but stays out of the nav: it depends on Diagnostics, which is also unbuilt.
+        // row, the detection engine was never built. Placement depends on Diagnostics, which is also
+        // unbuilt, so it's descoped the same way: kept here only so the route guard keeps matching
+        // its URL and denies it (see the `hidden` doc above) — typing /placement does not reach it.
         title: "Placement",
         url: "/placement",
         icon: Layers,

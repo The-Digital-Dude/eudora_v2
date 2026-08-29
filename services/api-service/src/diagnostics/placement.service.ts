@@ -29,7 +29,9 @@ export class PlacementService {
       ...(query.leadId ? { leadId: query.leadId } : {}),
       ...(query.status ? { status: query.status } : {}),
       ...(query.search
-        ? { rationale: { contains: query.search, mode: 'insensitive' as const } }
+        ? {
+            rationale: { contains: query.search, mode: 'insensitive' as const },
+          }
         : {}),
     };
     const orderBy = resolveSort(

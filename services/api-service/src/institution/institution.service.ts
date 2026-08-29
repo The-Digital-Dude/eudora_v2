@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Injectable,
   Logger,
   NotFoundException,
@@ -10,10 +9,10 @@ import { slugify } from '../common/slug.util';
 import {
   AttachProgramCourseDto,
   CreateProgramDto,
-  MIN_SELLABLE_PRICE_CENTS,
   ReorderProgramCoursesDto,
   UpdateProgramDto,
 } from './dto/program.dto';
+import { assertPriceFloor } from '../billing/pricing/price-rules';
 
 /// Programs are the primary sellable SKU, so reads carry the Class they sit
 /// under (null for standalone bundles) and the Courses they bundle.
@@ -47,33 +46,6 @@ export class InstitutionService {
 
   // --- Program Operations ---
 
-  /**
-   * Rejects prices below the floor rather than silently accepting them: a
-   * sub-$9 SKU loses ~10% to Stripe's fixed fee and cannot carry its own
-   * support cost.
-   */
-  private assertPriceFloor(dto: CreateProgramDto | UpdateProgramDto) {
-    for (const [field, value] of [
-      ['priceOneTimeCents', dto.priceOneTimeCents],
-      ['priceMonthlyCents', dto.priceMonthlyCents],
-    ] as const) {
-      if (
-        value !== undefined &&
-        value > 0 &&
-        value < MIN_SELLABLE_PRICE_CENTS
-      ) {
-        throw new BadRequestException(
-          `${field} must be at least ${MIN_SELLABLE_PRICE_CENTS} cents (or 0 / omitted for "not sold")`,
-        );
-      }
-    }
-    if (dto.priceMonthlyCents && !dto.installmentCount) {
-      throw new BadRequestException(
-        'installmentCount is required when priceMonthlyCents is set',
-      );
-    }
-  }
-
   private async assertSlugAvailable(slug: string, excludeId?: string) {
     const existing = await this.prisma.program.findUnique({ where: { slug } });
     if (existing && existing.id !== excludeId) {
@@ -89,7 +61,7 @@ export class InstitutionService {
       throw new ConflictException('Program code already exists');
     }
 
-    this.assertPriceFloor(dto);
+    assertPriceFloor(dto);
 
     const slug = dto.slug ? slugify(dto.slug) : slugify(dto.name);
     await this.assertSlugAvailable(slug);
@@ -161,7 +133,7 @@ export class InstitutionService {
       }
     }
 
-    this.assertPriceFloor(dto);
+    assertPriceFloor(dto);
 
     // Only re-slug on an explicit slug change. Renaming a published program
     // must not silently break its public URL and any inbound links to it.

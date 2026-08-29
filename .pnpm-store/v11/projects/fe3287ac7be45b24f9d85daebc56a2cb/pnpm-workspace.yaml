@@ -1,8 +1,0 @@
-onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
-  - prisma
-  - unrs-resolver
-
-auditConfig:
-  minimumReleaseAge: 0

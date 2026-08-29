@@ -111,9 +111,14 @@ export default function CommunicationPage() {
                     >
                       {log.type}
                     </span>
-                    <span className="font-mono text-[9px] text-muted-foreground">
-                      ({log.recipientCount} recipients)
-                    </span>
+                    {/* Only shown once something is actually delivered. This
+                        used to print a recipient count the composer invented
+                        at random. */}
+                    {log.recipientCount > 0 && (
+                      <span className="font-mono text-[9px] text-muted-foreground">
+                        ({log.recipientCount} recipients)
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-xs font-semibold text-foreground">{log.title}</h3>
                   {log.content && (
@@ -122,20 +127,25 @@ export default function CommunicationPage() {
                     </p>
                   )}
                   <p className="pt-1 text-[9px] font-medium text-muted-foreground">
-                    Dispatched by:{" "}
-                    <span className="font-semibold text-foreground">{log.sender}</span> | Sent:{" "}
+                    Recorded by:{" "}
+                    <span className="font-semibold text-foreground">{log.sender}</span> |{" "}
                     {new Date(log.createdAt).toLocaleString()}
                   </p>
                 </div>
 
+                {/* RECORDED is the honest state while no dispatcher exists, so
+                    it reads as neutral rather than as a green success. Only a
+                    real delivery earns the success colour. */}
                 <span
                   className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
                     log.status === "SENT"
                       ? "border border-success/20 bg-success/10 text-success"
-                      : "border border-warning/20 bg-warning/10 text-warning"
+                      : log.status === "FAILED"
+                        ? "border border-destructive/20 bg-destructive/10 text-destructive"
+                        : "border border-border bg-muted text-muted-foreground"
                   }`}
                 >
-                  {log.status}
+                  {log.status === "RECORDED" ? "NOT SENT" : log.status}
                 </span>
               </div>
             ))

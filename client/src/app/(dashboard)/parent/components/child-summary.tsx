@@ -17,7 +17,13 @@ import { initialsOf } from "./child-tabs";
  * need to do something today.
  */
 export function ChildSummary({ child }: { child: ChildRollup }) {
-  const attendance = attendanceStanding(child.attendanceRate);
+  // Null means nothing has ever been recorded, which is the normal state for
+  // a child added through the family portal — they hold no class placement,
+  // so there is no register to mark them on. Say that, the way "Latest mark"
+  // below says "Nothing graded yet", rather than reporting a perfect score
+  // nobody earned.
+  const attendance =
+    child.attendanceRate === null ? null : attendanceStanding(child.attendanceRate);
 
   return (
     <div className="space-y-4">
@@ -41,14 +47,18 @@ export function ChildSummary({ child }: { child: ChildRollup }) {
       <div className="grid gap-3 sm:grid-cols-3">
         <StatTile
           label="Attendance"
-          value={`${child.attendanceRate}%`}
+          value={attendance ? `${child.attendanceRate}%` : "—"}
           // Status never rides on colour alone — the icon and the word carry it
           // for anyone who cannot separate the hues.
           footer={
-            <span className={`inline-flex items-center gap-1 ${attendance.tone}`}>
-              <attendance.Icon className="h-3 w-3" />
-              {attendance.label}
-            </span>
+            attendance ? (
+              <span className={`inline-flex items-center gap-1 ${attendance.tone}`}>
+                <attendance.Icon className="h-3 w-3" />
+                {attendance.label}
+              </span>
+            ) : (
+              <span>Not tracked yet</span>
+            )
           }
         />
         <StatTile

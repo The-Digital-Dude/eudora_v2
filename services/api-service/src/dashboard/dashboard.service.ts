@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { DayOfWeek } from '@prisma/client';
 
 @Injectable()
 export class DashboardService {
@@ -16,17 +15,6 @@ export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAdminSnapshot(targetDate: Date) {
-    const days = [
-      'SUNDAY',
-      'MONDAY',
-      'TUESDAY',
-      'WEDNESDAY',
-      'THURSDAY',
-      'FRIDAY',
-      'SATURDAY',
-    ];
-    const dayOfWeek = days[targetDate.getDay()] as DayOfWeek;
-
     // Sessions happening today. Was a count of Timetable slots for this
     // weekday; Timetable is gone, and a real session is a better signal than
     // a recurrence rule anyway.
@@ -102,17 +90,6 @@ export class DashboardService {
   }
 
   async getTeacherSnapshot(userId: string, targetDate: Date) {
-    const days = [
-      'SUNDAY',
-      'MONDAY',
-      'TUESDAY',
-      'WEDNESDAY',
-      'THURSDAY',
-      'FRIDAY',
-      'SATURDAY',
-    ];
-    const dayOfWeek = days[targetDate.getDay()] as DayOfWeek;
-
     const teacherProfile = await this.prisma.teacherProfile.findUnique({
       where: { userId },
       include: { classAssignments: true },
@@ -229,17 +206,6 @@ export class DashboardService {
   }
 
   async getStudentSnapshot(userId: string, targetDate: Date) {
-    const days = [
-      'SUNDAY',
-      'MONDAY',
-      'TUESDAY',
-      'WEDNESDAY',
-      'THURSDAY',
-      'FRIDAY',
-      'SATURDAY',
-    ];
-    const dayOfWeek = days[targetDate.getDay()] as DayOfWeek;
-
     const studentProfile = await this.prisma.studentProfile.findUnique({
       where: { userId },
       include: {
@@ -252,9 +218,6 @@ export class DashboardService {
       throw new NotFoundException('Student profile not found');
     }
 
-    const classSectionIds = studentProfile.placements.map(
-      (p) => p.classSectionId,
-    );
     const batchIds = studentProfile.enrollments.map((e) => e.batchId);
 
     // 1. todaySchedule
@@ -356,10 +319,12 @@ export class DashboardService {
       where: { studentProfileId: studentProfile.id, status: 'EXCUSED' },
     });
 
+    // Null, not 100, when nothing has been recorded — see the same reasoning
+    // in ParentService.getChildren. No history is not perfect attendance.
     const attendanceRate =
       totalAttendance > 0
         ? Math.round(((presentCount + lateCount) / totalAttendance) * 100)
-        : 100;
+        : null;
 
     const attendanceSummary = {
       attendanceRate,
@@ -382,17 +347,6 @@ export class DashboardService {
   }
 
   async getGuardianSnapshot(userId: string, targetDate: Date) {
-    const days = [
-      'SUNDAY',
-      'MONDAY',
-      'TUESDAY',
-      'WEDNESDAY',
-      'THURSDAY',
-      'FRIDAY',
-      'SATURDAY',
-    ];
-    const dayOfWeek = days[targetDate.getDay()] as DayOfWeek;
-
     const guardianProfile = await this.prisma.guardianProfile.findUnique({
       where: { userId },
       include: {
@@ -419,7 +373,6 @@ export class DashboardService {
 
     const childrenSnapshots = [];
     for (const child of childrenProfiles) {
-      const classSectionIds = child.placements.map((p) => p.classSectionId);
       const batchIds = child.enrollments.map((e) => e.batchId);
 
       // 1. todaySchedule

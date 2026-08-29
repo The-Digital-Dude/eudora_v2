@@ -8,12 +8,6 @@ import { clioVoice, type ClioVoiceState } from "./clioVoiceService";
 export function useClioVoice() {
   const [isMuted, setIsMuted] = useState<boolean>(() => clioVoice.getMuted());
   const [voiceState, setVoiceState] = useState<ClioVoiceState>(() => clioVoice.getState());
-  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>(() =>
-    clioVoice.getAvailableVoices()
-  );
-  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string | null>(() =>
-    clioVoice.getSelectedVoiceURI()
-  );
 
   useEffect(() => {
     const unsubState = clioVoice.subscribeState((state) => {
@@ -22,18 +16,10 @@ export function useClioVoice() {
     const unsubMute = clioVoice.subscribeMute((muted) => {
       setIsMuted(muted);
     });
-    const unsubVoices = clioVoice.subscribeVoices((voices) => {
-      setAvailableVoices(voices);
-    });
-    const unsubSelected = clioVoice.subscribeSelectedVoice((uri) => {
-      setSelectedVoiceURI(uri);
-    });
 
     return () => {
       unsubState();
       unsubMute();
-      unsubVoices();
-      unsubSelected();
     };
   }, []);
 
@@ -79,17 +65,10 @@ export function useClioVoice() {
     clioVoice.stop();
   }, []);
 
-  const selectVoice = useCallback((uri: string | null) => {
-    clioVoice.setSelectedVoiceURI(uri);
-  }, []);
-
   return {
     isMuted,
     isSpeaking: voiceState === "speaking",
     voiceState,
-    availableVoices,
-    selectedVoiceURI,
-    selectVoice,
     toggleMute,
     setMuted,
     playPhrase,

@@ -261,22 +261,12 @@ async function main() {
   }
   console.log('✅ Seeded teachers');
 
-  // ─── Concepts, Competencies, Lessons ─────────────────────────────────────────
+  // ─── Concepts, Lessons ────────────────────────────────────────────────────────
   console.log('🌱 Seeding curriculum...');
 
   const fractionsConc = await prisma.concept.upsert({ where: { name: 'Fractions' }, update: {}, create: { name: 'Fractions', description: 'Understanding fraction concepts, operations, and applications' } });
   const algebraConc = await prisma.concept.upsert({ where: { name: 'Algebra Fundamentals' }, update: {}, create: { name: 'Algebra Fundamentals', description: 'Basic algebraic thinking and expressions' } });
   const sortingConc = await prisma.concept.upsert({ where: { name: 'Sorting & Patterns' }, update: {}, create: { name: 'Sorting & Patterns', description: 'Putting things in order by size or number, and spotting what comes next' } });
-
-  // Competencies
-  let compFractions = await prisma.competency.findFirst({ where: { name: 'Compare Fractions', conceptId: fractionsConc.id } });
-  if (!compFractions) compFractions = await prisma.competency.create({ data: { conceptId: fractionsConc.id, name: 'Compare Fractions', description: 'Ability to compare and order fractions with like and unlike denominators' } });
-
-  let compAlgebra = await prisma.competency.findFirst({ where: { name: 'Solve Linear Equations', conceptId: algebraConc.id } });
-  if (!compAlgebra) compAlgebra = await prisma.competency.create({ data: { conceptId: algebraConc.id, name: 'Solve Linear Equations', description: 'Solve one-variable linear equations' } });
-
-  let compSorting = await prisma.competency.findFirst({ where: { name: 'Order Numbers and Objects', conceptId: sortingConc.id } });
-  if (!compSorting) compSorting = await prisma.competency.create({ data: { conceptId: sortingConc.id, name: 'Order Numbers and Objects', description: 'Put numbers and objects in order from smallest to largest' } });
 
   // Lessons
   let lesson1 = await prisma.lesson.findFirst({ where: { title: 'Intro to Comparing Fractions' } });
@@ -321,19 +311,6 @@ async function main() {
     await prisma.card.create({ data: { lessonId: lesson4.id, title: 'Your Turn', sortOrder: 2, cardType: 'INTERACTIVE', content: 'Look at each row and pick the one that goes from smallest to largest.', questionId: q5.id } });
   }
 
-  // Rubric for fractions competency
-  let rubric = await prisma.rubric.findFirst({ where: { competencyId: compFractions.id } });
-  if (!rubric) {
-    rubric = await prisma.rubric.create({ data: { competencyId: compFractions.id, name: 'Comparing Fractions Rubric', description: 'Evaluates correctness and mathematical reasoning when comparing fractions' } });
-    const crit1 = await prisma.rubricCriterion.create({ data: { rubricId: rubric.id, title: 'Correctness', description: 'Accuracy of the comparison results', weight: 2.0 } });
-    for (const lvl of [{ level: 0, title: 'Not Demonstrated', score: 0 }, { level: 1, title: 'Emerging', score: 1 }, { level: 2, title: 'Developing', score: 2 }, { level: 3, title: 'Proficient', score: 3 }, { level: 4, title: 'Advanced', score: 4 }]) {
-      await prisma.rubricLevel.create({ data: { criterionId: crit1.id, level: lvl.level, title: lvl.title, description: `Level ${lvl.level} performance`, score: lvl.score } });
-    }
-    const crit2 = await prisma.rubricCriterion.create({ data: { rubricId: rubric.id, title: 'Reasoning', description: 'Justification of the comparison steps', weight: 1.0 } });
-    for (const lvl of [{ level: 0, title: 'Not Demonstrated', score: 0 }, { level: 1, title: 'Emerging', score: 1 }, { level: 2, title: 'Developing', score: 2 }, { level: 3, title: 'Proficient', score: 3 }, { level: 4, title: 'Advanced', score: 4 }]) {
-      await prisma.rubricLevel.create({ data: { criterionId: crit2.id, level: lvl.level, title: lvl.title, description: `Level ${lvl.level} reasoning`, score: lvl.score } });
-    }
-  }
   console.log('✅ Seeded curriculum');
 
   // ─── Assessment Types ─────────────────────────────────────────────────────────
@@ -453,18 +430,6 @@ async function main() {
       where: { studentProfileId: profile.id },
       update: {},
       create: { studentProfileId: profile.id, totalXp: Math.floor(Math.random() * 800) + 100, level: Math.floor(Math.random() * 5) + 1, nextLevelXp: 500 },
-    });
-
-    // CompetencyMastery
-    await prisma.competencyMastery.upsert({
-      where: { studentProfileId_competencyId: { studentProfileId: profile.id, competencyId: compFractions.id } },
-      update: {},
-      create: { studentProfileId: profile.id, competencyId: compFractions.id, masteryScore: Math.random() * 0.4 + 0.5, confidence: Math.random() * 0.3 + 0.6 },
-    });
-    await prisma.competencyMastery.upsert({
-      where: { studentProfileId_competencyId: { studentProfileId: profile.id, competencyId: compSorting.id } },
-      update: {},
-      create: { studentProfileId: profile.id, competencyId: compSorting.id, masteryScore: Math.random() * 0.5 + 0.3, confidence: Math.random() * 0.4 + 0.4 },
     });
   }
   console.log('✅ Seeded students');
@@ -657,20 +622,6 @@ async function main() {
     if (!existingRel) {
       await prisma.guardianStudentRelationship.create({ data: { guardianProfileId: guardian1Profile.id, studentProfileId: charlotteProfile.id, relationshipType: 'FATHER', isPrimary: true, hasFinancialResponsibility: true, hasAcademicAccess: true, hasEmergencyContact: true } });
     }
-
-    const existingFamily = await prisma.family.findFirst({ where: { householdName: 'Harris Family' } });
-    const family = existingFamily ?? await prisma.family.create({ data: { householdName: 'Harris Family', status: 'ACTIVE' } });
-
-    const existingFS = await prisma.familyStudent.findFirst({ where: { familyId: family.id, studentProfileId: charlotteProfile.id } });
-    if (!existingFS) await prisma.familyStudent.create({ data: { familyId: family.id, studentProfileId: charlotteProfile.id } });
-
-    const existingFG = await prisma.familyGuardian.findFirst({ where: { familyId: family.id, guardianProfileId: guardian1Profile.id } });
-    if (!existingFG) await prisma.familyGuardian.create({ data: { familyId: family.id, guardianProfileId: guardian1Profile.id } });
-
-    const existingInv = await prisma.familyInvoice.findFirst({ where: { familyId: family.id } });
-    if (!existingInv) {
-      await prisma.familyInvoice.create({ data: { familyId: family.id, amount: 1500, currency: 'USD', description: 'Fall Semester 2026 Tuition', issueDate: new Date('2026-08-01'), dueDate: new Date('2026-09-01'), status: 'PAID' } });
-    }
   }
   console.log('✅ Seeded guardians & families');
 
@@ -698,27 +649,18 @@ async function main() {
   await prisma.broadcast.deleteMany();
   await prisma.broadcast.createMany({
     data: [
-      { type: 'Announcement', title: 'Fall Semester 2026 Registration Open', content: 'Registration is now open for all programs in the Fall 2026 term. Deadline: August 30.', sender: 'System', status: 'SENT', recipientCount: 120 },
-      { type: 'SMS Alert', title: 'Attendance Reminder Sent to Parent (Watson)', content: 'Watson was late for morning roll call on June 11.', sender: 'Main Campus Branch', status: 'SENT', recipientCount: 1 },
-      { type: 'Email Broadcast', title: 'Tuition Invoices Generated', content: 'Term invoices for Fall Semester 2026 have been issued. Please check the billing portal.', sender: 'Billing System', status: 'SENT', recipientCount: 95 },
-      { type: 'Announcement', title: 'Mid-Semester Progress Reports Available', content: 'Progress reports for the first half of Fall 2026 are now available in the parent portal.', sender: 'Academic Office', status: 'SENT', recipientCount: 200 },
-      { type: 'SMS Alert', title: 'School Closure — Weather Advisory', content: 'Classes are suspended tomorrow due to a weather advisory. Online sessions will be held.', sender: 'Main Campus', status: 'SENT', recipientCount: 350 },
+      // status/recipientCount deliberately omitted so the column defaults
+      // (RECORDED / 0) apply. These used to seed 'SENT' with invented counts
+      // — 350 recipients for a weather advisory that was never dispatched —
+      // which put five fabricated delivery records in the log as history.
+      { type: 'Announcement', title: 'Fall Semester 2026 Registration Open', content: 'Registration is now open for all programs in the Fall 2026 term. Deadline: August 30.', sender: 'System' },
+      { type: 'SMS Alert', title: 'Attendance Reminder Sent to Parent (Watson)', content: 'Watson was late for morning roll call on June 11.', sender: 'Main Campus Branch' },
+      { type: 'Email Broadcast', title: 'Tuition Invoices Generated', content: 'Term invoices for Fall Semester 2026 have been issued. Please check the billing portal.', sender: 'Billing System' },
+      { type: 'Announcement', title: 'Mid-Semester Progress Reports Available', content: 'Progress reports for the first half of Fall 2026 are now available in the parent portal.', sender: 'Academic Office' },
+      { type: 'SMS Alert', title: 'School Closure — Weather Advisory', content: 'Classes are suspended tomorrow due to a weather advisory. Online sessions will be held.', sender: 'Main Campus' },
     ],
   });
   console.log('✅ Seeded broadcasts');
-
-  // ─── Makeup Requests ──────────────────────────────────────────────────────────
-  console.log('🌱 Seeding makeup requests...');
-  await prisma.makeupRequest.deleteMany();
-  const charlotteP = studentProfiles.find(p => p.firstName === 'Charlotte');
-  const elijahP = studentProfiles.find(p => p.firstName === 'Elijah');
-  const noahP = studentProfiles.find(p => p.firstName === 'Noah');
-
-  if (charlotteP) await prisma.makeupRequest.create({ data: { studentProfileId: charlotteP.id, batchId: dsaClass.id, originalDate: new Date('2026-06-12'), reason: 'Medical Leave', status: 'Awaiting Action' } });
-  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, batchId: dsaClass.id, originalDate: new Date('2026-06-16'), reason: 'Family Event', status: 'Scheduled', scheduledDate: new Date('2026-06-25') } });
-  if (elijahP) await prisma.makeupRequest.create({ data: { studentProfileId: elijahP.id, batchId: algClass.id, originalDate: new Date('2026-06-17'), reason: 'Family Event', status: 'Awaiting Action' } });
-  if (noahP) await prisma.makeupRequest.create({ data: { studentProfileId: noahP.id, batchId: webClass.id, originalDate: new Date('2026-06-10'), reason: 'Doctor appointment', status: 'Declined' } });
-  console.log('✅ Seeded makeup requests');
 
   // ─── Notifications ────────────────────────────────────────────────────────────
   console.log('🌱 Seeding notifications...');
@@ -891,49 +833,6 @@ async function main() {
   }
   console.log('✅ Seeded student card responses');
 
-  // ─── Assessment Evidence & Rubric Assessments ────────────────────────────────
-  console.log('🌱 Seeding assessment evidence & rubric assessments...');
-  const rubricCriteria = await prisma.rubricCriterion.findMany({ where: { rubricId: rubric.id } });
-
-  const evidenceStudents = sectionAPlacedStudents.slice(0, 4);
-  const rubricScores: Record<string, number> = { Charlotte: 3, Aria: 4, Lucas: 2, Noah: 3, Emma: 3 };
-
-  for (const profile of evidenceStudents) {
-    const submission = await prisma.homeworkSubmission.findFirst({ where: { homeworkId: hw1.id, studentProfileId: profile.id } });
-    if (!submission) continue;
-    const existing = await prisma.assessmentEvidence.findFirst({ where: { studentProfileId: profile.id, competencyId: compFractions.id } });
-    if (!existing) {
-      const evidence = await prisma.assessmentEvidence.create({
-        data: {
-          studentProfileId: profile.id,
-          competencyId: compFractions.id,
-          homeworkSubmissionId: submission.id,
-          sourceType: 'HOMEWORK',
-          metadata: { submissionId: submission.id, homeworkTitle: 'Times Tables Practice 1' },
-        },
-      });
-      const score = rubricScores[profile.firstName] ?? 3;
-      const ra = await prisma.rubricAssessment.create({
-        data: {
-          rubricId: rubric.id,
-          evidenceId: evidence.id,
-          evaluatorId: superAdminUser.id,
-          overallScore: score + 0.5,
-          feedback: score >= 4 ? 'Excellent demonstration of fraction mastery.' : score >= 3 ? 'Proficient. Minor gaps in reasoning.' : 'Developing — needs more practice with unlike denominators.',
-        },
-      });
-      for (const criterion of rubricCriteria) {
-        const exist = await prisma.rubricCriterionRating.findFirst({ where: { assessmentId: ra.id, criterionId: criterion.id } });
-        if (!exist) {
-          await prisma.rubricCriterionRating.create({
-            data: { assessmentId: ra.id, criterionId: criterion.id, selectedLevel: score, comments: `Level ${score} — ${criterion.title}` },
-          });
-        }
-      }
-    }
-  }
-  console.log('✅ Seeded assessment evidence');
-
   // ─── More Guardians ──────────────────────────────────────────────────────────
   console.log('🌱 Seeding additional guardians...');
   const ariaProfile = studentProfiles.find(p => p.firstName === 'Aria');
@@ -988,77 +887,6 @@ async function main() {
     if (!existRel) await prisma.guardianStudentRelationship.create({ data: { guardianProfileId: guardian4Profile.id, studentProfileId: lucasProfile.id, relationshipType: 'MOTHER', isPrimary: true, hasFinancialResponsibility: true, hasAcademicAccess: true, hasEmergencyContact: false } });
   }
   console.log('✅ Seeded additional guardians');
-
-  // ─── Families ────────────────────────────────────────────────────────────────
-  console.log('🌱 Seeding families...');
-  // Watson family
-  const watsonFamily = await prisma.family.findFirst({ where: { householdName: 'Watson Family' } });
-  const watsonFam = watsonFamily ?? await prisma.family.create({ data: { householdName: 'Watson Family', status: 'ACTIVE' } });
-  if (ariaProfile) {
-    const existFS = await prisma.familyStudent.findFirst({ where: { familyId: watsonFam.id, studentProfileId: ariaProfile.id } });
-    if (!existFS) await prisma.familyStudent.create({ data: { familyId: watsonFam.id, studentProfileId: ariaProfile.id } });
-  }
-  const existFG2 = await prisma.familyGuardian.findFirst({ where: { familyId: watsonFam.id, guardianProfileId: guardian2Profile.id } });
-  if (!existFG2) await prisma.familyGuardian.create({ data: { familyId: watsonFam.id, guardianProfileId: guardian2Profile.id } });
-
-  // Johnson family
-  const johnsonFamily = await prisma.family.findFirst({ where: { householdName: 'Johnson Family' } });
-  const johnsonFam = johnsonFamily ?? await prisma.family.create({ data: { householdName: 'Johnson Family', status: 'ACTIVE' } });
-  if (noahProfile) {
-    const existFS = await prisma.familyStudent.findFirst({ where: { familyId: johnsonFam.id, studentProfileId: noahProfile.id } });
-    if (!existFS) await prisma.familyStudent.create({ data: { familyId: johnsonFam.id, studentProfileId: noahProfile.id } });
-  }
-  const existFG3 = await prisma.familyGuardian.findFirst({ where: { familyId: johnsonFam.id, guardianProfileId: guardian3Profile.id } });
-  if (!existFG3) await prisma.familyGuardian.create({ data: { familyId: johnsonFam.id, guardianProfileId: guardian3Profile.id } });
-
-  // Brooks family
-  const brooksFamily = await prisma.family.findFirst({ where: { householdName: 'Brooks Family' } });
-  const brooksFam = brooksFamily ?? await prisma.family.create({ data: { householdName: 'Brooks Family', status: 'ACTIVE' } });
-  if (lucasProfile) {
-    const existFS = await prisma.familyStudent.findFirst({ where: { familyId: brooksFam.id, studentProfileId: lucasProfile.id } });
-    if (!existFS) await prisma.familyStudent.create({ data: { familyId: brooksFam.id, studentProfileId: lucasProfile.id } });
-  }
-  const existFG4 = await prisma.familyGuardian.findFirst({ where: { familyId: brooksFam.id, guardianProfileId: guardian4Profile.id } });
-  if (!existFG4) await prisma.familyGuardian.create({ data: { familyId: brooksFam.id, guardianProfileId: guardian4Profile.id } });
-  console.log('✅ Seeded families');
-
-  // ─── Family Invoices & Payments ──────────────────────────────────────────────
-  console.log('🌱 Seeding family invoices & payments...');
-  const familyInvoiceData = [
-    { fam: watsonFam, desc: 'Fall Semester 2026 Tuition', amount: 1500, issue: '2026-08-01', due: '2026-09-01', status: 'OVERDUE', paidAmt: null as number | null },
-    { fam: johnsonFam, desc: 'Fall Semester 2026 Tuition', amount: 1500, issue: '2026-08-01', due: '2026-09-01', status: 'PAID', paidAmt: 1500 },
-    { fam: brooksFam, desc: 'Fall Semester 2026 Tuition', amount: 1500, issue: '2026-08-01', due: '2026-09-01', status: 'PAID', paidAmt: 1500 },
-    { fam: brooksFam, desc: 'Uniform & Supply Fee', amount: 120, issue: '2026-08-15', due: '2026-09-15', status: 'PAID', paidAmt: 120 },
-    { fam: watsonFam, desc: 'Library & Lab Fee', amount: 80, issue: '2026-08-15', due: '2026-09-15', status: 'PENDING', paidAmt: null },
-  ];
-
-  // Harris family — add Q2 invoice (not yet paid)
-  const harrisFamily = await prisma.family.findFirst({ where: { householdName: 'Harris Family' } });
-  if (harrisFamily) {
-    const existH = await prisma.familyInvoice.findFirst({ where: { familyId: harrisFamily.id } });
-    if (existH) {
-      const existPayH = await prisma.familyPayment.findFirst({ where: { familyId: harrisFamily.id } });
-      if (!existPayH) {
-        await prisma.familyPayment.create({ data: { familyId: harrisFamily.id, invoiceId: existH.id, amount: 1500, currency: 'USD', paymentDate: new Date('2026-08-28'), method: 'BANK_TRANSFER', reference: 'TXN-2026-H-001', notes: 'Fall 2026 tuition.' } });
-      }
-    }
-    const existQ2 = await prisma.familyInvoice.findFirst({ where: { familyId: harrisFamily.id, description: 'Spring Semester 2027 Tuition' } });
-    if (!existQ2) {
-      await prisma.familyInvoice.create({ data: { familyId: harrisFamily.id, amount: 1500, currency: 'USD', description: 'Spring Semester 2027 Tuition', issueDate: new Date('2026-12-01'), dueDate: new Date('2027-01-10'), status: 'PENDING' } });
-    }
-  }
-
-  for (const { fam, desc, amount, issue, due, status, paidAmt } of familyInvoiceData) {
-    const existInv = await prisma.familyInvoice.findFirst({ where: { familyId: fam.id, description: desc } });
-    const inv = existInv ?? await prisma.familyInvoice.create({ data: { familyId: fam.id, amount, currency: 'USD', description: desc, issueDate: new Date(issue), dueDate: new Date(due), status } });
-    if (paidAmt && status === 'PAID') {
-      const existPay = await prisma.familyPayment.findFirst({ where: { familyId: fam.id, invoiceId: inv.id } });
-      if (!existPay) {
-        await prisma.familyPayment.create({ data: { familyId: fam.id, invoiceId: inv.id, amount: paidAmt, currency: 'USD', paymentDate: new Date('2026-08-28'), method: 'BANK_TRANSFER', reference: `TXN-${fam.id.slice(0, 8)}`, notes: 'Paid via bank transfer.' } });
-      }
-    }
-  }
-  console.log('✅ Seeded family invoices & payments');
 
   // Teacher shortcuts used below for audit-log and notification seeding.
   const mitchellU = teacherUsers['EMP-MITCHELL'];
@@ -1136,7 +964,6 @@ async function main() {
       { actorUserId: teacherUsers['EMP-OKAFOR'].id, event: 'HOMEWORK_GRADED', targetType: 'Homework', targetId: hw3.id, ipAddress: '10.0.0.2', metadata: { title: 'Fractions Worksheet 1' } },
       { actorUserId: teacherUsers['EMP-DASILVA'].id, event: 'SESSIONS_GENERATED', targetType: 'Batch', targetId: null, ipAddress: '10.0.0.3', metadata: { name: 'Grade 2 Afternoon Group' } },
       { actorUserId: superAdminUser.id, event: 'ATTENDANCE_RECORDED', targetType: 'DailyAttendance', targetId: null, ipAddress: '127.0.0.1', metadata: { date: '2026-06-23', sections: ['CS-2026-A', 'CS-2026-B'], totalRecords: 11 } },
-      { actorUserId: superAdminUser.id, event: 'RUBRIC_ASSESSMENT_CREATED', targetType: 'RubricAssessment', targetId: null, ipAddress: '127.0.0.1', metadata: { rubricName: 'Comparing Fractions Rubric', evaluatedCount: 4 } },
     ],
   });
   console.log('✅ Seeded audit logs');
@@ -2413,7 +2240,11 @@ async function main() {
       slug: 'reading-and-grammar',
       description: 'Find the main idea, make inferences, and learn the building blocks of grammar.',
       estimatedHours: 4,
-      status: 'PUBLISHED',
+      // DRAFT, not PUBLISHED: this course has no price and belongs to no
+      // program, so publishing it puts a page in the catalog that nobody can
+      // buy from — see the publish guard in CatalogService. Give it a price
+      // or attach it to a program before publishing.
+      status: 'DRAFT',
       sortOrder: 3,
       gradeBand: 'G3_4',
     },
@@ -2555,7 +2386,9 @@ async function main() {
       slug: 'analytical-reading-and-writing',
       description: "Dig into an author's purpose and theme, and structure multi-paragraph writing.",
       estimatedHours: 4,
-      status: 'PUBLISHED',
+      // DRAFT for the same reason as reading-and-grammar above: unpriced and
+      // in no program, so it cannot be bought by any route.
+      status: 'DRAFT',
       sortOrder: 5,
       gradeBand: 'G5_6',
     },
@@ -2669,11 +2502,19 @@ async function main() {
       slug: 'coordinate-and-shape-practice',
       description: 'Plot points on a grid and shade shapes to represent fractions.',
       estimatedHours: 1,
-      status: 'PUBLISHED',
-      // Negative, same reasoning as alphabet-and-phonics-basics above: this
-      // is the course under active testing right now, so it wins
-      // `courses?.[0]` (the mobile home screen's only "Keep learning" pick)
-      // ahead of everything else, including the K-6 pilot course.
+      // DRAFT for the same reason as the two Language Arts courses above:
+      // unpriced and in no program, so nobody can buy it.
+      //
+      // NOTE this has a side effect worth knowing about: `listCourses` hides
+      // DRAFT from every non-staff caller, so this course no longer appears
+      // in the mobile "Keep learning" slot it was deliberately positioned to
+      // win (see sortOrder below). Give it a price to put it back in the
+      // student catalog — flipping it to PUBLISHED alone is now refused.
+      status: 'DRAFT',
+      // Negative so that, when this course is published, it wins
+      // `courses?.[0]` — the mobile home screen's only "Keep learning" pick —
+      // ahead of everything else, including the K-6 pilot course. Same
+      // reasoning as alphabet-and-phonics-basics above.
       sortOrder: -2,
       gradeBand: 'G3_4',
     },
@@ -2867,22 +2708,6 @@ async function main() {
       if (!existingRel) {
         await prisma.guardianStudentRelationship.create({ data: { guardianProfileId: charlotteGuardianProfile.id, studentProfileId: ariaProfile.id, relationshipType: 'OTHER', isPrimary: false, hasFinancialResponsibility: false, hasAcademicAccess: true, hasEmergencyContact: false } });
       }
-    }
-
-    const existingCharlotteFamily = await prisma.family.findFirst({ where: { householdName: 'Harris Family (Test Guardian)' } });
-    const charlotteFamily = existingCharlotteFamily ?? await prisma.family.create({ data: { householdName: 'Harris Family (Test Guardian)', status: 'ACTIVE' } });
-    if (ariaProfile) {
-      const existingFS = await prisma.familyStudent.findFirst({ where: { familyId: charlotteFamily.id, studentProfileId: ariaProfile.id } });
-      if (!existingFS) await prisma.familyStudent.create({ data: { familyId: charlotteFamily.id, studentProfileId: ariaProfile.id } });
-    }
-    const existingFG = await prisma.familyGuardian.findFirst({ where: { familyId: charlotteFamily.id, guardianProfileId: charlotteGuardianProfile.id } });
-    if (!existingFG) await prisma.familyGuardian.create({ data: { familyId: charlotteFamily.id, guardianProfileId: charlotteGuardianProfile.id } });
-
-    const existingCharlotteInv = await prisma.familyInvoice.findFirst({ where: { familyId: charlotteFamily.id } });
-    const charlotteInvoice = existingCharlotteInv ?? await prisma.familyInvoice.create({ data: { familyId: charlotteFamily.id, amount: 800, currency: 'USD', description: 'Fall Semester 2026 Tuition (Test)', issueDate: new Date('2026-08-01'), dueDate: new Date('2026-09-01'), status: 'PAID' } });
-    const existingCharlottePay = await prisma.familyPayment.findFirst({ where: { familyId: charlotteFamily.id } });
-    if (!existingCharlottePay) {
-      await prisma.familyPayment.create({ data: { familyId: charlotteFamily.id, invoiceId: charlotteInvoice.id, amount: 800, currency: 'USD', paymentDate: new Date('2026-08-28'), method: 'BANK_TRANSFER', reference: 'TXN-TEST-CHARLOTTE-001', notes: 'Test guardian-view payment.' } });
     }
   }
 
@@ -3339,6 +3164,130 @@ async function main() {
         );
       }
     }
+  }
+
+  // ─── Interactive story ────────────────────────────────────────────────────
+  // One real story, so the content model is exercised by something an author
+  // would actually write rather than by fixtures. No narration audio and no
+  // voice agent yet — a story is meant to be fully readable without either,
+  // and this is the check on that claim.
+  console.log('🌱 Seeding an interactive story...');
+
+  const storyChapterConcept = await prisma.concept.upsert({
+    where: { name: 'Story Time' },
+    update: { courseId: alphabetCourse.id, sortOrder: 4, kind: 'CHAPTER' },
+    create: {
+      name: 'Story Time',
+      description: 'A story to listen to, with pictures.',
+      courseId: alphabetCourse.id,
+      sortOrder: 4,
+      kind: 'CHAPTER',
+    },
+  });
+
+  let storyItem = await prisma.moduleItem.findFirst({
+    where: { conceptId: storyChapterConcept.id, kind: 'STORY' },
+  });
+  if (!storyItem) {
+    storyItem = await prisma.moduleItem.create({
+      data: {
+        conceptId: storyChapterConcept.id,
+        kind: 'STORY',
+        title: 'Bramble and the Too-Big Puddle',
+        sortOrder: 1,
+        status: 'PUBLISHED',
+        // Deliberately given away: a story is the best possible advert for
+        // this product, and it costs nothing extra to let a visitor hear one.
+        isFreePreview: true,
+      },
+    });
+  }
+
+  const existingStory = await prisma.story.findUnique({
+    where: { moduleItemId: storyItem.id },
+  });
+  if (!existingStory) {
+    const story = await prisma.story.create({
+      data: {
+        moduleItemId: storyItem.id,
+        title: 'Bramble and the Too-Big Puddle',
+        synopsis:
+          'Bramble the hedgehog meets a puddle far too wide to jump, and has to think of another way across.',
+        gradeBand: 'PRE_K_K',
+        // Written for the voice agent that does not exist yet. Capturing the
+        // author's intent while the story is being written is much easier than
+        // reconstructing it later.
+        agentGuidance:
+          'This story is about trying a different approach when the first one does not work. ' +
+          'Answer only from what happens in the story and who is in it. If a child asks about ' +
+          'something the story does not cover, say so warmly and offer to keep reading. Never ' +
+          'invent extra events, characters or endings.',
+      },
+    });
+
+    await prisma.storyCharacter.createMany({
+      data: [
+        {
+          storyId: story.id,
+          name: 'Bramble',
+          description: 'A small hedgehog who is braver than she thinks.',
+          sortOrder: 1,
+        },
+        {
+          storyId: story.id,
+          name: 'Pip',
+          description: 'A wren who watches from the hedge and asks good questions.',
+          sortOrder: 2,
+        },
+      ],
+    });
+
+    const chapters: { title: string; segments: string[] }[] = [
+      {
+        title: 'The Puddle',
+        segments: [
+          'Bramble the hedgehog set off down the lane one wet morning, humming a small hum.',
+          'She had not gone far when she stopped. Right across the path lay a puddle. It was a very wide puddle.',
+          '"I shall jump it," said Bramble. She backed up. She ran. She jumped — and landed with a splash, right in the middle.',
+        ],
+      },
+      {
+        title: 'Pip Has an Idea',
+        segments: [
+          'From the hedge came a small voice. "That did not work," said Pip the wren, tilting her head.',
+          '"I noticed," said Bramble, dripping.',
+          '"You tried going over," said Pip. "What else is there?"',
+          'Bramble sat and thought. Over had not worked. Through had not worked either, really. That left one thing.',
+        ],
+      },
+      {
+        title: 'Around',
+        segments: [
+          'Bramble walked to the edge of the puddle, and then along it, and then around it.',
+          'It took a little longer. She did not mind.',
+          '"You went around," said Pip, flying alongside. "That was clever."',
+          '"It was not clever," said Bramble. "It was just the next thing I tried." And she carried on down the lane, still damp, still humming.',
+        ],
+      },
+    ];
+
+    for (const [ci, chapter] of chapters.entries()) {
+      const chapterRow = await prisma.storyChapter.create({
+        data: { storyId: story.id, title: chapter.title, sortOrder: ci + 1 },
+      });
+      for (const [si, text] of chapter.segments.entries()) {
+        await prisma.storySegment.create({
+          data: { chapterId: chapterRow.id, text, sortOrder: si + 1 },
+        });
+      }
+    }
+
+    const segmentCount = chapters.reduce((n, c) => n + c.segments.length, 0);
+    console.log(
+      `✅ Seeded 1 story — ${chapters.length} chapters, ${segmentCount} segments, 2 characters (no audio yet)`,
+    );
+  } else {
+    console.log('✅ Story already present');
   }
 
   console.log('🎉 Seeding completed successfully!');

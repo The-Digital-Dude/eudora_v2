@@ -1,23 +1,25 @@
 import {
+  CLIO_PHRASES,
+  CLIO_SPOKEN_LINES,
   CLIO_VOICE_CONFIG,
+  CLIO_VOICE_LINES,
   type ClioPhraseKey,
   getRandomClioPhrase,
   normalizeMathForSpeech,
 } from "./clioPhrases";
 
 const STORAGE_KEY_MUTED = "eudora_clio_voice_muted";
-const STORAGE_KEY_VOICE_URI = "eudora_clio_voice_uri";
 
 // Default voice preference used when the user has not made an explicit choice.
-// Prioritizes Google Hindi (hi-IN) so Clio defaults to that voice.
-const DEFAULT_VOICE_HINTS = ["google हिन्दी", "google hindi", "hi-in", "hindi"];
+// Every phrase in the catalog is English, so the default must be too — a
+// kid-friendly US English voice, matching the tone mobile's expo-speech
+// lookup targets (see FEMALE_VOICE_HINTS in mobile's voiceFeedback.ts).
+const DEFAULT_VOICE_HINTS = ["google us english", "samantha", "zira", "female"];
 
 export type ClioVoiceState = "idle" | "speaking" | "paused";
 
 type VoiceStateListener = (state: ClioVoiceState) => void;
 type MuteStateListener = (muted: boolean) => void;
-type VoiceListListener = (voices: SpeechSynthesisVoice[]) => void;
-type SelectedVoiceListener = (uri: string | null) => void;
 
 // Active utterance pool to prevent Chromium garbage collection from cancelling audio
 const activeUtterances = new Set<SpeechSynthesisUtterance>();
@@ -105,12 +107,11 @@ function playWebAudioChime(type: "correct" | "incorrect" | "hint" | "complete") 
 class ClioVoiceService {
   private isMuted: boolean = false;
   private currentState: ClioVoiceState = "idle";
-  private selectedVoiceURI: string | null = null;
   private voiceListeners = new Set<VoiceStateListener>();
   private muteListeners = new Set<MuteStateListener>();
-  private voiceListListeners = new Set<VoiceListListener>();
-  private selectedVoiceListeners = new Set<SelectedVoiceListener>();
   private resumeTimer: ReturnType<typeof setInterval> | null = null;
+  /** The pre-generated line currently playing, if any. */
+  private activeAudio: HTMLAudioElement | null = null;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -120,28 +121,6 @@ class ClioVoiceService {
       } catch {
         this.isMuted = false;
       }
-      try {
-        const savedVoice = localStorage.getItem(STORAGE_KEY_VOICE_URI);
-        this.selectedVoiceURI = savedVoice || null;
-      } catch {
-        this.selectedVoiceURI = null;
-      }
-      this.initVoiceLookup();
-    }
-  }
-
-  private initVoiceLookup() {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
-    const refreshVoices = () => {
-      const voices = window.speechSynthesis.getVoices();
-      this.voiceListListeners.forEach((listener) => listener(voices));
-      this.applyDefaultVoiceIfNeeded();
-    };
-
-    refreshVoices();
-    if (typeof window.speechSynthesis.onvoiceschanged !== "undefined") {
-      window.speechSynthesis.onvoiceschanged = refreshVoices;
     }
   }
 
@@ -158,64 +137,20 @@ class ClioVoiceService {
     return null;
   }
 
-  // Selects the default voice (Google Hindi hi-IN, then kid-friendly English)
-  // the first time voices are available, only if the user hasn't chosen one.
-  private applyDefaultVoiceIfNeeded() {
-    if (this.selectedVoiceURI !== null) return;
-    const voices = this.getAvailableVoices();
-    if (!voices.length) return;
-    const fallback =
-      this.findVoiceByHints(voices, CLIO_VOICE_CONFIG.preferredVoiceHints) ?? null;
-    const def = this.findVoiceByHints(voices, DEFAULT_VOICE_HINTS) ?? fallback;
-    if (def) this.setSelectedVoiceURI(def.voiceURI);
-  }
-
-  public getAvailableVoices(): SpeechSynthesisVoice[] {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return [];
-    return window.speechSynthesis.getVoices();
-  }
-
-  public getSelectedVoiceURI(): string | null {
-    return this.selectedVoiceURI;
-  }
-
-  public setSelectedVoiceURI(uri: string | null) {
-    this.selectedVoiceURI = uri;
-    if (typeof window !== "undefined") {
-      try {
-        if (uri) localStorage.setItem(STORAGE_KEY_VOICE_URI, uri);
-        else localStorage.removeItem(STORAGE_KEY_VOICE_URI);
-      } catch {
-        // ignore
-      }
-    }
-    this.selectedVoiceListeners.forEach((listener) => listener(uri));
-  }
-
-  public subscribeVoices(listener: VoiceListListener): () => void {
-    this.voiceListListeners.add(listener);
-    listener(this.getAvailableVoices());
-    return () => this.voiceListListeners.delete(listener);
-  }
-
-  public subscribeSelectedVoice(listener: SelectedVoiceListener): () => void {
-    this.selectedVoiceListeners.add(listener);
-    listener(this.selectedVoiceURI);
-    return () => this.selectedVoiceListeners.delete(listener);
-  }
-
+  /**
+   * The closest platform voice to Clio, used only for lines that have no
+   * pre-generated audio yet.
+   *
+   * There is deliberately no per-user override any more. Clio is a character
+   * with a mascot and a personality spec, and letting every viewer reassign
+   * her voice is the opposite of having one — the picker that did this was
+   * removed along with the move to pre-generated audio.
+   */
   private getBestVoice(): SpeechSynthesisVoice | null {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
     const voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) return null;
 
-    // 1. Honor the user's explicitly chosen voice (if still available)
-    if (this.selectedVoiceURI) {
-      const chosen = voices.find((v) => v.voiceURI === this.selectedVoiceURI);
-      if (chosen) return chosen;
-    }
-
-    // 2. Default (Auto): Google Hindi hi-IN, then kid-friendly English
     return (
       this.findVoiceByHints(voices, DEFAULT_VOICE_HINTS) ??
       this.findVoiceByHints(voices, CLIO_VOICE_CONFIG.preferredVoiceHints) ??
@@ -285,12 +220,25 @@ class ClioVoiceService {
         // ignore
       }
     }
+
+    // A pre-generated line has to be stopped too, or interrupting mid-phrase
+    // silences the synthesiser and leaves Clio's recorded voice still talking.
+    if (this.activeAudio) {
+      try {
+        this.activeAudio.pause();
+        this.activeAudio.currentTime = 0;
+      } catch {
+        // ignore
+      }
+      this.activeAudio = null;
+    }
+
     activeUtterances.clear();
     this.setState("idle");
   }
 
   /**
-   * Play a standard predefined Clio phrase (e.g. 'CORRECT', 'TRY_AGAIN', 'TAKE_A_HINT')
+   * Play a standard predefined Clio phrase (e.g. 'CORRECT', 'INCORRECT', 'TAKE_A_HINT')
    */
   public playPhrase(
     key: ClioPhraseKey,
@@ -304,12 +252,68 @@ class ClioVoiceService {
 
     // Trigger chime sound effect in parallel
     if (key === "CORRECT") playWebAudioChime("correct");
-    else if (key === "TRY_AGAIN") playWebAudioChime("incorrect");
+    else if (key === "INCORRECT") playWebAudioChime("incorrect");
     else if (key === "TAKE_A_HINT") playWebAudioChime("hint");
     else if (key === "LESSON_COMPLETE") playWebAudioChime("complete");
 
-    const text = getRandomClioPhrase(key);
+    // Prefer Clio's own recorded voice. Pre-generated per variant by
+    // voice/generate-voice-lines.mjs, so she sounds like one character on
+    // every device instead of whatever voice the browser happens to ship.
+    // Falls through to the synthesiser for any line not yet generated —
+    // which is every line until that script has been run with a key.
+    const variantIndex = this.pickVariantIndex(key);
+    const src = CLIO_VOICE_LINES[key]?.[variantIndex];
+    if (src && this.playAudioFile(src, opts)) {
+      return true;
+    }
+
+    const text = CLIO_PHRASES[key][variantIndex] ?? getRandomClioPhrase(key);
     return this.speakText(text, opts);
+  }
+
+  /** Chosen once per call so the spoken text and the audio file agree. */
+  private pickVariantIndex(key: ClioPhraseKey): number {
+    return Math.floor(Math.random() * CLIO_PHRASES[key].length);
+  }
+
+  /**
+   * Returns false rather than throwing when the file is missing, so the
+   * caller can fall back. A 404 surfaces asynchronously through `onerror`,
+   * so a missing file mid-rollout degrades to silence for that one line
+   * rather than to a broken lesson.
+   */
+  private playAudioFile(
+    src: string,
+    opts: { interrupt?: boolean; onStart?: () => void; onEnd?: () => void },
+  ): boolean {
+    if (typeof window === "undefined" || typeof Audio === "undefined") {
+      return false;
+    }
+
+    const { interrupt = true, onStart, onEnd } = opts;
+    if (interrupt) this.stop();
+
+    try {
+      const audio = new Audio(src);
+      this.activeAudio = audio;
+      this.setState("speaking");
+      onStart?.();
+
+      const finish = () => {
+        if (this.activeAudio === audio) {
+          this.activeAudio = null;
+          this.setState("idle");
+        }
+        onEnd?.();
+      };
+      audio.onended = finish;
+      audio.onerror = finish;
+
+      void audio.play().catch(finish);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -326,6 +330,16 @@ class ClioVoiceService {
     } = {}
   ): boolean {
     if (this.isMuted) return false;
+
+    // A line with its own recording is played rather than synthesised, so a
+    // scripted lesson keeps one voice throughout. Matched on the exact string:
+    // editing the copy without regenerating simply misses and falls back,
+    // which is right — it can never play audio of the previous wording.
+    const recorded = CLIO_SPOKEN_LINES[rawText];
+    if (recorded && this.playAudioFile(recorded, opts)) {
+      return true;
+    }
+
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
 
     const {

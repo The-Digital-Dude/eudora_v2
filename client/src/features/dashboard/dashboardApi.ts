@@ -187,26 +187,6 @@ export interface ClassSection {
   updatedAt: string;
 }
 
-export interface MakeupRequest {
-  id: string;
-  studentProfileId: string;
-  batchId: string;
-  originalDate: string;
-  reason?: string;
-  status: string;
-  scheduledDate?: string;
-  createdAt: string;
-  updatedAt: string;
-  studentProfile?: {
-    id: string;
-    fullName: string;
-  };
-  batch?: {
-    id: string;
-    name: string;
-  };
-}
-
 export interface AssessmentAttempt {
   id: string;
   assessmentAssignmentId: string;
@@ -243,11 +223,21 @@ export interface Broadcast {
   title: string;
   content?: string;
   sender: string;
+  /** "RECORDED" — stored, not delivered. Nothing dispatches broadcasts yet. */
   status: string;
+  /** Always 0 until real delivery exists. */
   recipientCount: number;
   createdAt: string;
   updatedAt: string;
 }
+
+/**
+ * What a caller may actually set. `status` and `recipientCount` are the
+ * server's, and are deliberately absent: the composer used to post a
+ * hardcoded "SENT" with a random count, which the log displayed as fact.
+ */
+export type CreateBroadcastPayload = Pick<Broadcast, "type" | "title"> &
+  Partial<Pick<Broadcast, "content" | "sender">>;
 
 export interface StudentProfile {
   id: string;
@@ -717,33 +707,6 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
     } as any),
 
-    getMakeupRequests: builder.query<
-      { items: MakeupRequest[]; total: number },
-      { page?: number; limit?: number } | void
-    >({
-      query: (params: any) => {
-        const page = params?.page ?? 1;
-        const limit = params?.limit ?? 100;
-        return `/makeup-requests?page=${page}&limit=${limit}`;
-      },
-      transformResponse: (response: any) => ({
-        items: response.data || [],
-        total: response.meta?.total ?? response.data?.length ?? 0,
-      }),
-      providesTags: ["MakeupRequests"],
-    } as any),
-    updateMakeupRequest: builder.mutation<
-      MakeupRequest,
-      { id: string; body: { status: string; scheduledDate?: string } }
-    >({
-      query: ({ id, body }: any) => ({
-        url: `/makeup-requests/${id}`,
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: ["MakeupRequests"],
-    } as any),
-
     getAssessmentAttempts: builder.query<
       { items: AssessmentAttempt[]; total: number },
       { page?: number; limit?: number } | void
@@ -775,7 +738,7 @@ export const dashboardApi = authApi.injectEndpoints({
       }),
       providesTags: ["Broadcasts"],
     } as any),
-    createBroadcast: builder.mutation<Broadcast, Partial<Broadcast>>({
+    createBroadcast: builder.mutation<Broadcast, CreateBroadcastPayload>({
       query: (body: any) => ({
         url: "/communication/broadcasts",
         method: "POST",
@@ -1079,8 +1042,6 @@ export const {
   useUpdateClassSectionMutation,
   useDeleteClassSectionMutation,
   useGetAcademicYearsQuery,
-  useGetMakeupRequestsQuery,
-  useUpdateMakeupRequestMutation,
   useGetAssessmentAttemptsQuery,
   useGetBroadcastsQuery,
   useCreateBroadcastMutation,

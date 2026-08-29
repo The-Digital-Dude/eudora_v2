@@ -5,6 +5,7 @@ import type { CardQuestion } from '@/core/contracts';
 import { Card } from '@/ui/primitives/Card';
 import { Text } from '@/ui/primitives/Text';
 import { CoordinatePlotterWidget, type CoordinatePlotterValue } from './CoordinatePlotterWidget';
+import { DragDropWidget, type DragDropValue } from './DragDropWidget';
 import { GridMatchingWidget, type GridMatchingValue } from './GridMatchingWidget';
 import { McqWidget } from './McqWidget';
 import { ShapeShadingWidget, type ShapeShadingValue } from './ShapeShadingWidget';
@@ -26,12 +27,14 @@ interface WidgetSelectorProps {
  * Only rendering differs per widget; state shapes are shared with the
  * server-side grader.
  *
- * `DRAG_AND_DROP_LABELS` and `CODE_PLAYGROUND` are deliberately unhandled —
- * both resolve to `UNSUPPORTED` server-side today
- * (`widget-generator.ts`'s `resolveLegacyInstance`), so any answer a widget
- * collected for them would always grade as incorrect regardless of what the
- * student did. Building interactive UI with no way to ever succeed would be
- * worse than the placeholder below.
+ * `CODE_PLAYGROUND` is the one widget type still deliberately unhandled —
+ * it stays retired server-side (`widget-generator.ts`'s
+ * `resolveLegacyInstance` always resolves it to `UNSUPPORTED`), so any
+ * answer a widget collected for it would never be gradeable regardless of
+ * what the student did. `DRAG_AND_DROP_LABELS` used to be in the same
+ * boat but has been gradeable since the widget-matrix repair
+ * (`widget-grader.ts`'s `DRAG_AND_DROP_LABELS` case) — this was just the
+ * last place still treating it as unsupported.
  */
 export function WidgetSelector({
   question,
@@ -70,6 +73,17 @@ export function WidgetSelector({
         <GridMatchingWidget
           config={question.widgetConfig as any}
           value={(currentState as GridMatchingValue) ?? null}
+          onChange={onStateChange}
+          locked={locked}
+          isCorrect={isCorrect}
+        />
+      );
+
+    case 'DRAG_AND_DROP_LABELS':
+      return (
+        <DragDropWidget
+          config={question.widgetConfig as any}
+          value={(currentState as DragDropValue) ?? null}
           onChange={onStateChange}
           locked={locked}
           isCorrect={isCorrect}

@@ -130,9 +130,21 @@ describe('ProgressionService', () => {
       withCompletedLessons(['cp-lesson']);
       // 1 of 3 correct on the first attempt = 33%, under the 70% bar.
       mockPrismaService.studentCardResponse.findMany.mockResolvedValue([
-        { attemptsCount: 1, isCorrect: true, attempt: { lessonId: 'cp-lesson' } },
-        { attemptsCount: 2, isCorrect: true, attempt: { lessonId: 'cp-lesson' } },
-        { attemptsCount: 3, isCorrect: true, attempt: { lessonId: 'cp-lesson' } },
+        {
+          attemptsCount: 1,
+          isCorrect: true,
+          attempt: { lessonId: 'cp-lesson' },
+        },
+        {
+          attemptsCount: 2,
+          isCorrect: true,
+          attempt: { lessonId: 'cp-lesson' },
+        },
+        {
+          attemptsCount: 3,
+          isCorrect: true,
+          attempt: { lessonId: 'cp-lesson' },
+        },
       ]);
 
       const doneMap = await service.computeConceptDoneMap(
@@ -147,9 +159,21 @@ describe('ProgressionService', () => {
       withCompletedLessons(['cp-lesson']);
       // 3 of 3 correct on the first attempt = 100%, at/above the 70% bar.
       mockPrismaService.studentCardResponse.findMany.mockResolvedValue([
-        { attemptsCount: 1, isCorrect: true, attempt: { lessonId: 'cp-lesson' } },
-        { attemptsCount: 1, isCorrect: true, attempt: { lessonId: 'cp-lesson' } },
-        { attemptsCount: 1, isCorrect: true, attempt: { lessonId: 'cp-lesson' } },
+        {
+          attemptsCount: 1,
+          isCorrect: true,
+          attempt: { lessonId: 'cp-lesson' },
+        },
+        {
+          attemptsCount: 1,
+          isCorrect: true,
+          attempt: { lessonId: 'cp-lesson' },
+        },
+        {
+          attemptsCount: 1,
+          isCorrect: true,
+          attempt: { lessonId: 'cp-lesson' },
+        },
       ]);
 
       const doneMap = await service.computeConceptDoneMap(

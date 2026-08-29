@@ -1,10 +1,17 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CatalogStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ACTIVE_STORAGE_PROVIDER } from '../uploads/storage.provider';
+// `import type` because it is an interface referenced in a decorated
+// constructor: with emitDecoratorMetadata a value import would emit a runtime
+// reference to something that does not exist after compilation.
+import type { StorageProvider } from '../uploads/storage.provider';
 import {
   CreateAssetDto,
   CreateChapterDto,
@@ -47,7 +54,15 @@ const STORY_ACCESS_SELECT = {
  */
 @Injectable()
 export class StoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(StoriesService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    // Held only to clean up recordings this service orphans when it deletes
+    // the rows that referenced them.
+    @Inject(ACTIVE_STORAGE_PROVIDER)
+    private readonly storage: StorageProvider,
+  ) {}
 
   private readonly detailInclude = {
     characters: { orderBy: { sortOrder: 'asc' as const } },
@@ -404,13 +419,48 @@ export class StoriesService {
     return this.findOne(chapter.storyId);
   }
 
+  /**
+   * Deletes a chapter and, by cascade, every section under it.
+   *
+   * The audio has to be collected before the rows go: `onDelete: Cascade` takes
+   * the segments with the chapter, and once they are gone nothing remembers
+   * which files they pointed at. Those files would otherwise sit on disk
+   * forever — paid for once and referenced by nothing.
+   */
   async removeChapter(chapterId: string) {
     const chapter = await this.prisma.storyChapter.findUnique({
       where: { id: chapterId },
+      include: { segments: { select: { narrationAudioKey: true } } },
     });
     if (!chapter) throw new NotFoundException('Chapter not found');
+
+    const keys = chapter.segments
+      .map((s) => s.narrationAudioKey)
+      .filter((k): k is string => Boolean(k));
+
     await this.prisma.storyChapter.delete({ where: { id: chapterId } });
+    await this.discardAudio(keys);
+
     return this.findOne(chapter.storyId);
+  }
+
+  /**
+   * Removes generated audio nothing points at any more.
+   *
+   * After the rows, never before: a failure here leaves a file behind, which
+   * costs disk. A failure the other way would leave a row pointing at nothing,
+   * which costs a broken story.
+   */
+  private async discardAudio(keys: string[]) {
+    for (const key of keys) {
+      await this.storage
+        .deleteFile(key)
+        .catch((error: Error) =>
+          this.logger.warn(
+            `Could not remove orphaned narration ${key}: ${error?.message}`,
+          ),
+        );
+    }
   }
 
   /**
@@ -677,6 +727,11 @@ export class StoriesService {
       // has to reason about gaps that mean nothing.
       await this.closeSegmentGaps(tx, segment.chapterId);
     });
+
+    // Its recording is now referenced by nothing.
+    if (segment.narrationAudioKey) {
+      await this.discardAudio([segment.narrationAudioKey]);
+    }
 
     return this.findOne(segment.chapter.storyId);
   }

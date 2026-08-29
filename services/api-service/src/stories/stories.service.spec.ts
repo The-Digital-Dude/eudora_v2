@@ -18,6 +18,7 @@ describe('StoriesService', () => {
     },
     storyChapter: {
       create: jest.fn(),
+      delete: jest.fn(),
       findFirst: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
@@ -37,6 +38,7 @@ describe('StoriesService', () => {
 
   const mockStorage: any = {
     getSignedUrl: jest.fn().mockResolvedValue('https://signed.example/asset'),
+    deleteFile: jest.fn().mockResolvedValue(undefined),
   };
 
   /** Minimal shape `findOne` needs so the read-back after a write resolves. */
@@ -491,6 +493,63 @@ describe('StoriesService', () => {
         BadRequestException,
       );
       expect(mockPrisma.storySegment.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('discarding orphaned audio', () => {
+    it('removes a deleted section’s recording', async () => {
+      mockPrisma.storySegment.findUnique.mockResolvedValue({
+        id: 'seg-1',
+        chapterId: 'ch-1',
+        narrationAudioKey: 'story-narration/one.mp3',
+        chapter: { storyId: 'story-1' },
+      });
+      mockPrisma.storySegment.findMany.mockResolvedValue([]);
+      mockPrisma.storySegment.delete.mockResolvedValue({});
+
+      await service.removeSegment('seg-1');
+
+      // Nothing points at the file once the row is gone, and it was paid for.
+      expect(mockStorage.deleteFile).toHaveBeenCalledWith(
+        'story-narration/one.mp3',
+      );
+    });
+
+    it('removes the recordings a deleted chapter takes with it', async () => {
+      mockPrisma.storyChapter.findUnique.mockResolvedValue({
+        id: 'ch-1',
+        storyId: 'story-1',
+        segments: [
+          { narrationAudioKey: 'story-narration/a.mp3' },
+          { narrationAudioKey: null },
+          { narrationAudioKey: 'story-narration/b.mp3' },
+        ],
+      });
+      mockPrisma.storyChapter.delete.mockResolvedValue({});
+
+      await service.removeChapter('ch-1');
+
+      // Collected before the delete: the cascade takes the segments with the
+      // chapter, and afterwards nothing remembers which files they used.
+      expect(mockStorage.deleteFile.mock.calls.map((c: any) => c[0])).toEqual([
+        'story-narration/a.mp3',
+        'story-narration/b.mp3',
+      ]);
+    });
+
+    it('still deletes the rows when the file cannot be removed', async () => {
+      mockPrisma.storyChapter.findUnique.mockResolvedValue({
+        id: 'ch-1',
+        storyId: 'story-1',
+        segments: [{ narrationAudioKey: 'story-narration/gone.mp3' }],
+      });
+      mockPrisma.storyChapter.delete.mockResolvedValue({});
+      mockStorage.deleteFile.mockRejectedValueOnce(new Error('ENOENT'));
+
+      // A leftover file costs disk; a failed delete would cost the author
+      // their edit.
+      await expect(service.removeChapter('ch-1')).resolves.toBeDefined();
+      expect(mockPrisma.storyChapter.delete).toHaveBeenCalled();
     });
   });
 

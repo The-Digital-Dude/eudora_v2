@@ -21,13 +21,15 @@ import {
   useGetStoryQuery,
   useMergeSegmentUpMutation,
   useNarrateStoryMutation,
+  useRemoveChapterMutation,
   useRemoveSegmentMutation,
   useSetPublicDemoMutation,
   useSetStoryStatusMutation,
   useSplitSegmentMutation,
+  useUpdateChapterMutation,
   useUpdateSegmentMutation,
 } from "@/features/stories/storiesApi";
-import type { Story, StorySegment } from "@/features/stories/types";
+import type { Story, StoryChapter, StorySegment } from "@/features/stories/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -144,9 +146,7 @@ export default function StoryEditorPage() {
       <div className="space-y-6">
         {story.chapters.map((chapter) => (
           <div key={chapter.id} className="space-y-3">
-            <h2 className="text-sm font-bold text-foreground">
-              {chapter.title}
-            </h2>
+            <ChapterHeading chapter={chapter} />
             {chapter.segments.map((segment, index) => (
               <SegmentRow
                 key={segment.id}
@@ -155,6 +155,11 @@ export default function StoryEditorPage() {
                 isFirst={index === 0}
               />
             ))}
+            {chapter.segments.length === 0 ? (
+              <p className="rounded-lg border border-dashed px-3 py-2 text-[10px] text-muted-foreground">
+                No sections in this chapter.
+              </p>
+            ) : null}
           </div>
         ))}
       </div>
@@ -294,6 +299,93 @@ function StoryPlacement({
       {(!published || !isDemo) && !fullyNarrated ? (
         <p className="text-[10px] text-muted-foreground">
           Narrate every section first — {narrated} of {pages} done.
+        </p>
+      ) : null}
+      {error ? <p className="text-[10px] text-destructive">{error}</p> : null}
+    </div>
+  );
+}
+
+/**
+ * A chapter heading, renameable in place and removable.
+ *
+ * Deleting one takes every section under it — the database cascades — so the
+ * confirmation says how many, and how many carry recordings. An empty chapter
+ * is the common case here and goes on one click; the leftovers from splitting
+ * a story up are exactly what an author wants to tidy away.
+ */
+function ChapterHeading({ chapter }: { chapter: StoryChapter }) {
+  const [updateChapter, { isLoading: saving }] = useUpdateChapterMutation();
+  const [removeChapter, { isLoading: removing }] = useRemoveChapterMutation();
+  const [title, setTitle] = React.useState(chapter.title ?? "");
+  const [confirming, setConfirming] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => setTitle(chapter.title ?? ""), [chapter.title]);
+
+  const count = chapter.segments.length;
+  const narrated = chapter.segments.filter((s) => s.narrationUrl).length;
+  const dirty = title !== (chapter.title ?? "");
+
+  const run = async (fn: () => Promise<unknown>) => {
+    setError(null);
+    try {
+      await fn();
+    } catch (e: any) {
+      setError(e?.data?.message ?? "That did not work.");
+    }
+  };
+
+  return (
+    <div className="space-y-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Chapter title"
+          className="flex-1 rounded-md border border-transparent bg-transparent px-1 py-0.5 text-sm font-bold text-foreground transition-colors hover:border-border focus:border-border focus:bg-background"
+        />
+        {dirty ? (
+          <button
+            type="button"
+            onClick={() =>
+              run(() =>
+                updateChapter({ chapterId: chapter.id, title }).unwrap(),
+              )
+            }
+            disabled={saving || !title.trim()}
+            className="rounded-md border border-border px-2 py-0.5 text-[10px] font-bold text-foreground transition-colors hover:bg-muted disabled:opacity-40"
+          >
+            {saving ? "Saving…" : "Rename"}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => {
+            if (count === 0 || confirming) {
+              void run(() => removeChapter(chapter.id).unwrap());
+              return;
+            }
+            setConfirming(true);
+          }}
+          onBlur={() => setConfirming(false)}
+          disabled={removing}
+          className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] transition-colors disabled:opacity-40 ${
+            confirming
+              ? "border-destructive bg-destructive/10 font-bold text-destructive"
+              : "border-border text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          }`}
+        >
+          <Trash2 className="h-3 w-3" />
+          {confirming
+            ? `Delete ${count} section${count === 1 ? "" : "s"} too?`
+            : "Delete chapter"}
+        </button>
+      </div>
+      {confirming && narrated > 0 ? (
+        <p className="text-[10px] text-destructive">
+          {narrated} of them {narrated === 1 ? "has" : "have"} narration that
+          will be discarded with the words.
         </p>
       ) : null}
       {error ? <p className="text-[10px] text-destructive">{error}</p> : null}

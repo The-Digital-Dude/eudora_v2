@@ -109,6 +109,23 @@ export const storiesApi = authApi.injectEndpoints({
       ],
     } as any),
 
+    updateChapter: builder.mutation<Story, { chapterId: string; title: string }>({
+      query: ({ chapterId, title }: { chapterId: string; title: string }) => ({
+        url: `/stories/chapters/${chapterId}`,
+        method: "PATCH",
+        body: { title },
+      }),
+      invalidatesTags: [{ type: "StoryContent" } as any, "StoryList" as any],
+    } as any),
+
+    removeChapter: builder.mutation<Story, string>({
+      query: (chapterId: string) => ({
+        url: `/stories/chapters/${chapterId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "StoryContent" } as any, "StoryList" as any],
+    } as any),
+
     mergeSegmentUp: builder.mutation<Story, string>({
       query: (segmentId: string) => ({
         url: `/stories/segments/${segmentId}/merge-up`,
@@ -191,4 +208,6 @@ export const {
   useMergeSegmentUpMutation,
   useSplitSegmentMutation,
   useRemoveSegmentMutation,
+  useUpdateChapterMutation,
+  useRemoveChapterMutation,
 } = storiesApi;

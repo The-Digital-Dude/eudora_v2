@@ -15,6 +15,7 @@ import {
 // config and helpers around it.
 export {
   CLIO_PHRASES,
+  CLIO_SPOKEN_LINES,
   CLIO_VOICE_LINES,
   type ClioPhraseKey,
 } from "./clioPhrases.generated";

@@ -1,5 +1,6 @@
 import {
   CLIO_PHRASES,
+  CLIO_SPOKEN_LINES,
   CLIO_VOICE_CONFIG,
   CLIO_VOICE_LINES,
   type ClioPhraseKey,
@@ -329,6 +330,16 @@ class ClioVoiceService {
     } = {}
   ): boolean {
     if (this.isMuted) return false;
+
+    // A line with its own recording is played rather than synthesised, so a
+    // scripted lesson keeps one voice throughout. Matched on the exact string:
+    // editing the copy without regenerating simply misses and falls back,
+    // which is right — it can never play audio of the previous wording.
+    const recorded = CLIO_SPOKEN_LINES[rawText];
+    if (recorded && this.playAudioFile(recorded, opts)) {
+      return true;
+    }
+
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
 
     const {

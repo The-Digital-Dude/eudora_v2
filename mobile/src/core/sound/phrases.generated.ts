@@ -51,10 +51,10 @@ export type PhraseKey = keyof typeof PHRASES;
  * list is empty falls back to expo-speech at playback time.
  */
 export const VOICE_LINES: Record<PhraseKey, readonly number[]> = {
-  CORRECT: [],
-  INCORRECT: [],
-  TAKE_A_HINT: [],
-  ANSWER_REVEALED: [],
-  GREETING: [],
-  LESSON_COMPLETE: [],
+  CORRECT: [require('../../../assets/voice/correct-1.mp3'), require('../../../assets/voice/correct-2.mp3'), require('../../../assets/voice/correct-3.mp3'), require('../../../assets/voice/correct-4.mp3'), require('../../../assets/voice/correct-5.mp3'), require('../../../assets/voice/correct-6.mp3')],
+  INCORRECT: [require('../../../assets/voice/incorrect-1.mp3'), require('../../../assets/voice/incorrect-2.mp3'), require('../../../assets/voice/incorrect-3.mp3'), require('../../../assets/voice/incorrect-4.mp3')],
+  TAKE_A_HINT: [require('../../../assets/voice/take-a-hint-1.mp3'), require('../../../assets/voice/take-a-hint-2.mp3'), require('../../../assets/voice/take-a-hint-3.mp3'), require('../../../assets/voice/take-a-hint-4.mp3')],
+  ANSWER_REVEALED: [require('../../../assets/voice/answer-revealed-1.mp3'), require('../../../assets/voice/answer-revealed-2.mp3'), require('../../../assets/voice/answer-revealed-3.mp3')],
+  GREETING: [require('../../../assets/voice/greeting-1.mp3'), require('../../../assets/voice/greeting-2.mp3')],
+  LESSON_COMPLETE: [require('../../../assets/voice/lesson-complete-1.mp3'), require('../../../assets/voice/lesson-complete-2.mp3'), require('../../../assets/voice/lesson-complete-3.mp3')],
 };

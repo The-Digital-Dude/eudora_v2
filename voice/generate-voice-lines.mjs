@@ -7,7 +7,7 @@
  * build: it costs money per run, needs a key no client may ever hold, and its
  * output changes only when someone edits the catalog or the voice.
  *
- *   GEMINI_API_KEY=... node voice/generate-voice-lines.mjs
+ *   ELEVEN_LABS_API_KEY=... node voice/generate-voice-lines.mjs
  *   node voice/generate-voice-lines.mjs --check     # drift check, no network
  *   node voice/generate-voice-lines.mjs --catalog-only
  *
@@ -38,11 +38,12 @@ const MOBILE_CATALOG_OUT = join(
 const WEB_AUDIO_DIR = join(ROOT, 'client/public/clio-voice');
 const MOBILE_AUDIO_DIR = join(ROOT, 'mobile/assets/voice');
 
-// Not the 2.5 TTS preview: it rejects every request with "Model tried to
-// generate text, but it should only be used for TTS", so this script could
-// never have produced a single line.
-const MODEL = 'gemini-3.1-flash-tts-preview';
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+const API_ROOT = 'https://api.elevenlabs.io/v1';
+
+// Constant-bitrate MP3 rather than WAV. These files ship to every visitor of
+// the marketing page, and a WAV of a one-second line is roughly ten times the
+// bytes for no audible gain.
+const OUTPUT_FORMAT = 'mp3_44100_128';
 
 const args = new Set(process.argv.slice(2));
 const CHECK_ONLY = args.has('--check');
@@ -51,6 +52,18 @@ const CATALOG_ONLY = args.has('--catalog-only');
 /** Stable, filesystem-safe id for one phrase variant. */
 function variantId(key, index) {
   return `${key.toLowerCase().replace(/_/g, '-')}-${index + 1}`;
+}
+
+/**
+ * Id for a whole spoken line, derived from the text itself.
+ *
+ * Content-addressed on purpose: editing a line in the catalog changes its id,
+ * so the old audio is simply never looked up again. The alternative — a
+ * positional id — would keep playing the previous recording of a line someone
+ * had rewritten, which is the failure nobody notices.
+ */
+function lineId(text) {
+  return `line-${createHash('sha1').update(text).digest('hex').slice(0, 12)}`;
 }
 
 const BANNER = `// GENERATED FILE — DO NOT EDIT.
@@ -63,7 +76,7 @@ const BANNER = `// GENERATED FILE — DO NOT EDIT.
 // did not have.
 `;
 
-function emitWebCatalog(phrases, ids) {
+function emitWebCatalog(phrases, ids, spokenLines) {
   const entries = Object.entries(phrases)
     .map(
       ([key, variants]) =>
@@ -74,8 +87,12 @@ function emitWebCatalog(phrases, ids) {
   const audio = Object.entries(ids)
     .map(
       ([key, list]) =>
-        `  ${key}: [${list.map((id) => `"/clio-voice/${id}.wav"`).join(', ')}],`,
+        `  ${key}: [${list.map((id) => `"/clio-voice/${id}.mp3"`).join(', ')}],`,
     )
+    .join('\n');
+
+  const spoken = spokenLines
+    .map((t) => `  ${JSON.stringify(t)}: "/clio-voice/${lineId(t)}.mp3",`)
     .join('\n');
 
   return `${BANNER}
@@ -94,6 +111,15 @@ export type ClioPhraseKey = keyof typeof CLIO_PHRASES;
 export const CLIO_VOICE_LINES: Record<ClioPhraseKey, readonly string[]> = {
 ${audio}
 };
+
+/**
+ * Whole lines with their own recording, keyed by the exact text spoken.
+ * Consulted before falling back to the browser synthesiser, so a scripted
+ * lesson sounds like Clio rather than like the device.
+ */
+export const CLIO_SPOKEN_LINES: Record<string, string> = {
+${spoken}
+};
 `;
 }
 
@@ -111,7 +137,7 @@ function emitMobileCatalog(phrases, ids) {
     .map(
       ([key, list]) =>
         `  ${key}: [${list
-          .map((id) => `require('../../../assets/voice/${id}.wav')`)
+          .map((id) => `require('../../../assets/voice/${id}.mp3')`)
           .join(', ')}],`,
     )
     .join('\n');
@@ -133,77 +159,62 @@ ${audio}
 `;
 }
 
-/** One Gemini TTS call. Returns raw PCM (24kHz, mono, s16le). */
-async function synthesize(text, voice, styleDirection, apiKey) {
-  const res = await fetch(`${ENDPOINT}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: `${styleDirection}\n\n${text}` }] }],
-      generationConfig: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } },
-        },
-      },
-    }),
-  });
+/**
+ * One ElevenLabs call. Returns a finished MP3.
+ *
+ * The delivery direction rides in the text as `[tags]`, which is why the model
+ * has to be eleven_v3 — the turbo models read the bracketed words out loud
+ * instead of performing them.
+ */
+async function synthesize(text, voiceId, modelId, apiKey) {
+  const res = await fetch(
+    `${API_ROOT}/text-to-speech/${voiceId}?output_format=${OUTPUT_FORMAT}`,
+    {
+      method: 'POST',
+      headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
+      // JSON.stringify encodes as UTF-8; hand-built payloads are what make the
+      // API reject curly quotes and dashes as invalid_unicode.
+      body: JSON.stringify({ text, model_id: modelId }),
+    },
+  );
 
   if (!res.ok) {
+    const detail = (await res.text()).slice(0, 300);
+    const hint =
+      res.status === 402
+        ? ' — that voice needs a paid plan; pick a premade one'
+        : '';
     throw new Error(
-      `Gemini rejected "${text}": ${res.status} ${(await res.text()).slice(0, 300)}`,
+      `ElevenLabs rejected "${text}": ${res.status}${hint} ${detail}`,
     );
   }
 
-  const json = await res.json();
-  const b64 = json?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-  if (!b64) throw new Error(`No audio returned for "${text}"`);
-  return Buffer.from(b64, 'base64');
-}
-
-/** Gemini returns headerless PCM; players need a RIFF wrapper. */
-function pcmToWav(pcm, sampleRate = 24000, channels = 1, bitsPerSample = 16) {
-  const byteRate = (sampleRate * channels * bitsPerSample) / 8;
-  const blockAlign = (channels * bitsPerSample) / 8;
-  const header = Buffer.alloc(44);
-  header.write('RIFF', 0);
-  header.writeUInt32LE(36 + pcm.length, 4);
-  header.write('WAVE', 8);
-  header.write('fmt ', 12);
-  header.writeUInt32LE(16, 16);
-  header.writeUInt16LE(1, 20);
-  header.writeUInt16LE(channels, 22);
-  header.writeUInt32LE(sampleRate, 24);
-  header.writeUInt32LE(byteRate, 28);
-  header.writeUInt16LE(blockAlign, 32);
-  header.writeUInt16LE(bitsPerSample, 34);
-  header.write('data', 36);
-  header.writeUInt32LE(pcm.length, 40);
-  return Buffer.concat([header, pcm]);
+  return Buffer.from(await res.arrayBuffer());
 }
 
 async function main() {
   const raw = JSON.parse(await readFile(CATALOG, 'utf8'));
   const phrases = raw.phrases;
-  const { name: voice, styleDirection } = raw.voice;
+  const { voiceId, modelId } = raw.voice;
+  const spokenLines = raw.spokenLines?.lines ?? [];
 
   // Which variants already have audio on disk. The manifests must describe
   // what exists, so a catalog-only run does not promise files nobody generated.
   const existing = new Set(
     existsSync(WEB_AUDIO_DIR)
       ? (await readdir(WEB_AUDIO_DIR))
-          .filter((f) => f.endsWith('.wav'))
-          .map((f) => f.replace(/\.wav$/, ''))
+          .filter((f) => f.endsWith('.mp3'))
+          .map((f) => f.replace(/\.mp3$/, ''))
       : [],
   );
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.ELEVEN_LABS_API_KEY;
   const willGenerate = !CHECK_ONLY && !CATALOG_ONLY && !!apiKey;
 
   if (!CHECK_ONLY && !CATALOG_ONLY && !apiKey) {
     console.error(
-      'GEMINI_API_KEY is not set. Emitting catalogs only — no audio will be\n' +
-        'generated, and both clients will keep falling back to platform TTS.\n' +
+      'ELEVEN_LABS_API_KEY is not set. Emitting catalogs only — no audio will\n' +
+        'be generated, and both clients will keep falling back to platform TTS.\n' +
         'Re-run with the key set to produce Clio’s actual voice.\n',
     );
   }
@@ -216,14 +227,25 @@ async function main() {
       for (const [i, text] of variants.entries()) {
         const id = variantId(key, i);
         process.stdout.write(`  ${id} … `);
-        const wav = pcmToWav(
-          await synthesize(text, voice, styleDirection, apiKey),
-        );
-        await writeFile(join(WEB_AUDIO_DIR, `${id}.wav`), wav);
-        await writeFile(join(MOBILE_AUDIO_DIR, `${id}.wav`), wav);
+        const mp3 = await synthesize(text, voiceId, modelId, apiKey);
+        await writeFile(join(WEB_AUDIO_DIR, `${id}.mp3`), mp3);
+        await writeFile(join(MOBILE_AUDIO_DIR, `${id}.mp3`), mp3);
         existing.add(id);
-        console.log(`${(wav.length / 1024).toFixed(0)} KB`);
+        console.log(`${(mp3.length / 1024).toFixed(0)} KB`);
       }
+    }
+
+    // Whole lines. Only web gets these: they are the scripted marketing demo,
+    // and bundling them into the mobile app would ship megabytes nobody there
+    // ever plays.
+    for (const text of spokenLines) {
+      const id = lineId(text);
+      if (existing.has(id)) continue;
+      process.stdout.write(`  ${id} … `);
+      const mp3 = await synthesize(text, voiceId, modelId, apiKey);
+      await writeFile(join(WEB_AUDIO_DIR, `${id}.mp3`), mp3);
+      existing.add(id);
+      console.log(`${(mp3.length / 1024).toFixed(0)} KB`);
     }
   }
 
@@ -238,7 +260,7 @@ async function main() {
   );
 
   const outputs = [
-    [WEB_CATALOG_OUT, emitWebCatalog(phrases, ids)],
+    [WEB_CATALOG_OUT, emitWebCatalog(phrases, ids, spokenLines)],
     [MOBILE_CATALOG_OUT, emitMobileCatalog(phrases, ids)],
   ];
 

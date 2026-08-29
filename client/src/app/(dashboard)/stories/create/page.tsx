@@ -100,7 +100,7 @@ export default function CreateStoryPage() {
     }
   };
 
-  const pageCount =
+  const sectionCount =
     draft?.chapters.reduce((n, c) => n + c.segments.length, 0) ?? 0;
 
   return (
@@ -116,7 +116,7 @@ export default function CreateStoryPage() {
             New Story
           </h1>
           <p className="text-xs text-muted-foreground">
-            Paste the story as you wrote it. It gets split into pages and given a
+            Paste the story as you wrote it. It gets split into sections and given a
             performance, which you can edit before anything is saved.
           </p>
         </div>
@@ -151,7 +151,7 @@ export default function CreateStoryPage() {
               size="sm"
             >
               <Wand2 className="mr-1.5 h-4 w-4" />
-              {drafting ? "Reading it…" : "Split into pages"}
+              {drafting ? "Reading it…" : "Split into sections"}
             </Button>
             <span className="text-[10px] tabular-nums text-muted-foreground">
               {source.trim().length} characters
@@ -165,7 +165,7 @@ export default function CreateStoryPage() {
             <div className="flex h-full min-h-64 flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-8 text-center">
               <Sparkles className="h-7 w-7 text-muted-foreground/40" />
               <p className="text-xs text-muted-foreground">
-                The pages will appear here for you to check.
+                The sections will appear here for you to check.
               </p>
             </div>
           ) : (
@@ -173,8 +173,8 @@ export default function CreateStoryPage() {
               <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
                 <span className="font-bold text-foreground">
                   {draft.chapters.length} chapter
-                  {draft.chapters.length === 1 ? "" : "s"} · {pageCount} page
-                  {pageCount === 1 ? "" : "s"}
+                  {draft.chapters.length === 1 ? "" : "s"} · {sectionCount} section
+                  {sectionCount === 1 ? "" : "s"}
                 </span>
                 {draft.droppedNarrationCount > 0 ? (
                   // Surfaced rather than hidden: those lines will be read flat,

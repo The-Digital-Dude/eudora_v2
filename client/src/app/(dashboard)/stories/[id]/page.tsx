@@ -86,7 +86,7 @@ export default function StoryEditorPage() {
               {story.title}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {segments.length} page{segments.length === 1 ? "" : "s"} ·{" "}
+              {segments.length} section{segments.length === 1 ? "" : "s"} ·{" "}
               <span className={narrated === segments.length ? "text-success" : ""}>
                 {narrated} narrated
               </span>
@@ -241,7 +241,7 @@ function StoryPlacement({
 
       {!published && !fullyNarrated ? (
         <p className="text-[10px] text-muted-foreground">
-          Narrate every page before publishing — {narrated} of {pages} done.
+          Narrate every section before publishing — {narrated} of {pages} done.
         </p>
       ) : null}
       {error ? <p className="text-[10px] text-destructive">{error}</p> : null}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { LandingLottie } from "@/app/landing/components/landing-lottie";
 import { StoryReader } from "@/components/story/story-reader";
 import type { AgentReply, AskPayload, Story } from "@/features/stories/types";
 
@@ -97,6 +98,13 @@ export function StoryDemoSection() {
       title="A story that answers back"
       lede="Press play to hear it, then ask her anything about what is happening. She answers only from the story — and only as far as you have read."
     >
+      {/* Decoration, not information: the section reads the same without it,
+          and it is hidden from screen readers accordingly. */}
+      <LandingLottie
+        src="/lottie/cute-astronaut-monkey-super-hero-flying.lottie"
+        className="mx-auto -mt-4 mb-2 h-32 w-32 md:h-40 md:w-40"
+      />
+
       {story ? (
         <div className="mx-auto max-w-5xl">
           <StoryReader

@@ -20,7 +20,7 @@ import { narrationMatchesText, stripNarrationTags } from './narration-text';
  * the fix is a person looking at it rather than a better prompt.
  */
 
-/** Kept small: a child's page is a sentence or two, not a paragraph. */
+/** A whole story, pasted. Long enough for a picture book, not a novel. */
 const MAX_SOURCE_CHARS = 20_000;
 
 export interface DraftSegment {
@@ -73,12 +73,17 @@ export class StoryDraftService {
         ? `TITLE: ${params.title}\n\nSTORY:\n${source}`
         : `STORY:\n${source}`,
       /**
-       * The reply restates the whole story twice — plain and performed — inside
-       * JSON, on top of the model's own reasoning. Budgeting from the source
-       * length rather than a fixed number keeps a long story from truncating
-       * mid-object, which surfaces only as a parse failure.
+       * Deliberately far larger than the reply needs.
+       *
+       * The visible output for a short story is ~450 tokens, but the model
+       * spent 2,578 on internal reasoning for the same request, and that spend
+       * counts against this budget. It also varies run to run: the identical
+       * prompt truncated once and succeeded a minute later. Truncation surfaces
+       * only as "not valid JSON", which reads like a model failure rather than
+       * a budget one, so the headroom is worth having. Nothing is billed for
+       * room that goes unused.
        */
-      maxOutputTokens: Math.min(60_000, 4_000 + source.length),
+      maxOutputTokens: Math.min(60_000, 16_000 + source.length),
     });
 
     return this.parse(raw, params.title);
@@ -98,11 +103,14 @@ export class StoryDraftService {
       '1. `text` must be taken VERBATIM from the story. Do not rewrite, shorten,',
       '   modernise, correct or improve a single word. Concatenating every `text`',
       '   in order must reproduce the original story exactly.',
-      '2. Split into segments at natural read-aloud beats — usually one or two',
-      '   sentences, the amount an adult reads before glancing up at the child.',
-      '   A segment is a page: it should be one image, one moment.',
-      '3. Group segments into chapters at real turns in the story, and give each',
-      '   chapter a short title. One chapter is fine for a short story.',
+      '2. Split into SECTIONS, not sentences. A section is a scene: a stretch',
+      '   the narrator reads straight through without stopping, normally a',
+      '   paragraph or two. Never split a section mid-scene, and never put a',
+      '   single sentence in its own section unless the whole story is that',
+      '   short. A short story may be ONE section — do not split one up just to',
+      '   produce more of them.',
+      '3. Group sections into chapters only when the story genuinely has parts.',
+      '   Most stories are a single chapter.',
       '4. `narrationText` is `text` with emotion markup added for the narrator,',
       '   e.g. "[nervously] She looked at the puddle." Use it where the delivery',
       '   should change; use null where plain reading is right. Do not overuse it.',
@@ -135,7 +143,13 @@ export class StoryDraftService {
     try {
       parsed = JSON.parse(raw.slice(start, end + 1));
     } catch {
-      this.logger.error(`Draft reply was not valid JSON: ${raw.slice(0, 200)}`);
+      // Both ends, not the first 200 characters. The usual cause is the reply
+      // being cut off mid-object, and a head-only log looks identical to a
+      // malformed one — the tail is what tells them apart.
+      this.logger.error(
+        `Draft reply was not valid JSON (${raw.length} chars). ` +
+          `Head: ${raw.slice(0, 120)} … Tail: ${raw.slice(-120)}`,
+      );
       throw new ServiceUnavailableException(
         'The story could not be prepared — try again.',
       );
@@ -175,7 +189,7 @@ export class StoryDraftService {
 
     if (chapters.length === 0) {
       throw new ServiceUnavailableException(
-        'The story could not be split into pages — try again.',
+        'The story could not be split into sections — try again.',
       );
     }
 

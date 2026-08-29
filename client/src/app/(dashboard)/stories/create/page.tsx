@@ -63,21 +63,24 @@ export default function CreateStoryPage() {
   };
 
   const handleSave = async () => {
-    if (!draft || !conceptId) return;
+    if (!draft) return;
     setError(null);
     try {
-      // A story needs a slot to live in. Created here rather than asking the
-      // author to go and make one first, which is the step that made this
-      // whole flow API-only until now.
-      const item: any = await createModuleItem({
-        conceptId,
-        title: title.trim() || draft.title,
-        kind: "STORY",
-        status: "DRAFT",
-      }).unwrap();
+      // Only when the author has actually chosen somewhere. A story with no
+      // course is the normal case, not an unfinished one.
+      let moduleItemId: string | undefined;
+      if (conceptId) {
+        const item: any = await createModuleItem({
+          conceptId,
+          title: title.trim() || draft.title,
+          kind: "STORY",
+          status: "DRAFT",
+        }).unwrap();
+        moduleItemId = item.id;
+      }
 
       const story: any = await importStory({
-        moduleItemId: item.id,
+        ...(moduleItemId ? { moduleItemId } : {}),
         title: title.trim() || draft.title,
         synopsis: draft.synopsis || undefined,
         characters: draft.characters.map((c) => ({
@@ -210,9 +213,16 @@ export default function CreateStoryPage() {
               </div>
 
               <div className="space-y-2 rounded-xl border border-border bg-card p-4">
-                <p className="text-xs font-bold text-foreground">
-                  Where does it live?
-                </p>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-foreground">
+                    Add it to a course? <span className="font-normal text-muted-foreground">Optional</span>
+                  </p>
+                  <p className="text-[10px] leading-relaxed text-muted-foreground">
+                    A story stands on its own. Leave this blank and it lives in
+                    the story library; you can drop it into a chapter later, or
+                    never.
+                  </p>
+                </div>
                 <select
                   value={courseId}
                   onChange={(e) => {
@@ -244,15 +254,15 @@ export default function CreateStoryPage() {
 
                 <Button
                   onClick={handleSave}
-                  disabled={!conceptId || importing}
+                  disabled={importing}
                   size="sm"
                   className="w-full"
                 >
                   {importing ? "Saving…" : "Save story"}
                 </Button>
                 <p className="text-[10px] text-muted-foreground">
-                  Saved as a draft item. Narration is generated on the next
-                  screen, once you are happy with the words.
+                  Saved as a draft. Narration is generated on the next screen,
+                  once you are happy with the words.
                 </p>
               </div>
             </>

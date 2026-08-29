@@ -35,6 +35,10 @@ export interface Story {
   synopsis: string | null;
   /** True when this is the story the public demo serves. */
   isPublicDemo?: boolean;
+  /** PUBLISHED means it is in the student-facing library. */
+  status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  /** The course slot it fills, or null when it stands on its own. */
+  moduleItem?: { id: string; title: string; status: string } | null;
   cover: StoryAsset | null;
   chapters: StoryChapter[];
   characters: { id: string; name: string; description: string | null }[];

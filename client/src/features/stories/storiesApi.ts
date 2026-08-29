@@ -94,6 +94,32 @@ export const storiesApi = authApi.injectEndpoints({
       invalidatesTags: [{ type: "StoryContent" } as any, "StoryList" as any],
     } as any),
 
+    setStoryStatus: builder.mutation<
+      Story,
+      { storyId: string; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" }
+    >({
+      query: ({ storyId, status }: { storyId: string; status: string }) => ({
+        url: `/stories/${storyId}/status`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: (_r: any, _e: any, arg: { storyId: string }) => [
+        { type: "StoryContent", id: arg.storyId },
+        "StoryList",
+      ],
+    } as any),
+
+    detachStory: builder.mutation<Story, string>({
+      query: (storyId: string) => ({
+        url: `/stories/${storyId}/detach`,
+        method: "POST",
+      }),
+      invalidatesTags: (_r: any, _e: any, storyId: string) => [
+        { type: "StoryContent", id: storyId },
+        "StoryList",
+      ],
+    } as any),
+
     narrateStory: builder.mutation<
       { generated: number; skipped: number; failed: number },
       { storyId: string; force?: boolean }
@@ -120,4 +146,6 @@ export const {
   useImportStoryMutation,
   useUpdateSegmentMutation,
   useNarrateStoryMutation,
+  useSetStoryStatusMutation,
+  useDetachStoryMutation,
 } = storiesApi;

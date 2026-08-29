@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { CatalogStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateAssetDto,
@@ -17,6 +17,27 @@ import {
   UpdateSegmentDto,
   UpdateStoryDto,
 } from './dto/story.dto';
+
+/**
+ * What a caller needs to know to decide whether someone may read a story.
+ *
+ * A story reached three ways needs three answers: published means anyone may
+ * read it, a course slot means the course's entitlement check decides, and
+ * neither means staff only. Returning both facts together keeps that decision
+ * in one place instead of scattering "what if it has no module item" through
+ * every media route.
+ */
+export interface StoryAccess {
+  id: string;
+  status: CatalogStatus;
+  moduleItemId: string | null;
+}
+
+const STORY_ACCESS_SELECT = {
+  id: true,
+  status: true,
+  moduleItemId: true,
+} as const;
 
 /**
  * Authoring and reading for interactive stories.
@@ -41,13 +62,84 @@ export class StoriesService {
     },
     assets: { orderBy: { sortOrder: 'asc' as const } },
     cover: true,
+    // Where the story sits, if anywhere. The editor shows this so an author
+    // can see at a glance whether a story is in a course, in the library, both
+    // or neither — which are four real states, not a single status.
+    moduleItem: { select: { id: true, title: true, status: true } },
   };
 
   // ─── Story ────────────────────────────────────────────────────────────────
 
+  /**
+   * A story can be created with nowhere to live. Attaching it to a course is a
+   * separate decision, made later or never — see `attach`.
+   */
   async create(dto: CreateStoryDto) {
+    if (dto.moduleItemId) {
+      await this.assertSlotIsFree(dto.moduleItemId);
+    }
+
+    const story = await this.prisma.story.create({
+      data: {
+        moduleItemId: dto.moduleItemId ?? null,
+        title: dto.title,
+        synopsis: dto.synopsis ?? null,
+        gradeBand: dto.gradeBand ?? null,
+        agentGuidance: dto.agentGuidance ?? null,
+      },
+    });
+    return this.findOne(story.id);
+  }
+
+  /** Puts an existing story into a course chapter. */
+  async attach(storyId: string, moduleItemId: string) {
+    await this.requireStory(storyId);
+    await this.assertSlotIsFree(moduleItemId, storyId);
+
+    await this.prisma.story.update({
+      where: { id: storyId },
+      data: { moduleItemId },
+    });
+    return this.findOne(storyId);
+  }
+
+  /**
+   * Takes the story back out of its course, leaving the story itself alone.
+   *
+   * The empty module item is removed with it: a STORY slot with no story is a
+   * lesson that renders nothing, and leaving one behind in a live course is a
+   * worse outcome than the detach failing.
+   */
+  async detach(storyId: string) {
+    const story = await this.requireStory(storyId);
+    if (!story.moduleItemId) {
+      throw new BadRequestException('That story is not in a course');
+    }
+
+    const moduleItemId = story.moduleItemId;
+    await this.prisma.$transaction(async (tx) => {
+      await tx.story.update({
+        where: { id: storyId },
+        data: { moduleItemId: null },
+      });
+      await tx.moduleItem.delete({ where: { id: moduleItemId } });
+    });
+    return this.findOne(storyId);
+  }
+
+  /** Whether students can find this story on its own. */
+  async setStatus(storyId: string, status: CatalogStatus) {
+    await this.requireStory(storyId);
+    await this.prisma.story.update({
+      where: { id: storyId },
+      data: { status },
+    });
+    return this.findOne(storyId);
+  }
+
+  private async assertSlotIsFree(moduleItemId: string, movingStoryId?: string) {
     const item = await this.prisma.moduleItem.findUnique({
-      where: { id: dto.moduleItemId },
+      where: { id: moduleItemId },
       include: { story: true },
     });
     if (!item || item.deletedAt) {
@@ -60,20 +152,9 @@ export class StoriesService {
         `Module item is a ${item.kind} item; a story can only fill a STORY item`,
       );
     }
-    if (item.story) {
+    if (item.story && item.story.id !== movingStoryId) {
       throw new BadRequestException('That module item already has a story');
     }
-
-    const story = await this.prisma.story.create({
-      data: {
-        moduleItemId: dto.moduleItemId,
-        title: dto.title,
-        synopsis: dto.synopsis ?? null,
-        gradeBand: dto.gradeBand ?? null,
-        agentGuidance: dto.agentGuidance ?? null,
-      },
-    });
-    return this.findOne(story.id);
   }
 
   /** Whole story in one call, for authoring from a document. */
@@ -149,6 +230,7 @@ export class StoriesService {
         synopsis: story.synopsis,
         gradeBand: story.gradeBand,
         isPublicDemo: story.isPublicDemo,
+        status: story.status,
         updatedAt: story.updatedAt,
         moduleItem: story.moduleItem,
         chapterCount: story.chapters.length,
@@ -156,6 +238,49 @@ export class StoriesService {
         narratedCount: segments.filter((s) => s.narrationAudioKey).length,
       };
     });
+  }
+
+  /**
+   * The story library: everything published, whether or not it also sits in a
+   * course. No entitlement check — published means free to read, which is the
+   * whole point of having a library separate from the catalogue.
+   *
+   * Only narrated stories appear. A published story with no audio is a page of
+   * text where a child expected a voice, and the fix is to narrate it rather
+   * than to show it half-finished.
+   */
+  async findPublished() {
+    const stories = await this.prisma.story.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        cover: true,
+        chapters: {
+          select: { segments: { select: { narrationAudioKey: true } } },
+        },
+      },
+    });
+
+    return stories
+      .map((story) => {
+        const segments = story.chapters.flatMap((c) => c.segments);
+        return {
+          id: story.id,
+          title: story.title,
+          synopsis: story.synopsis,
+          gradeBand: story.gradeBand,
+          // The same media route the reader uses; its gate lets published
+          // stories through without an entitlement, so a library card renders
+          // for a child who owns no courses at all.
+          coverUrl: story.cover
+            ? `/api/stories/assets/${story.cover.id}/file`
+            : null,
+          pageCount: segments.length,
+          narrated:
+            segments.length > 0 && segments.every((s) => s.narrationAudioKey),
+        };
+      })
+      .filter((story) => story.narrated);
   }
 
   /**
@@ -530,33 +655,33 @@ export class StoriesService {
   // entitlement check is expressed in terms of the module item that owns them.
   // These walk back up to it so the gate has something to check.
 
-  async moduleItemForStory(storyId: string): Promise<string> {
+  async accessForStory(storyId: string): Promise<StoryAccess> {
     const story = await this.prisma.story.findUnique({
       where: { id: storyId },
-      select: { moduleItemId: true },
+      select: STORY_ACCESS_SELECT,
     });
     if (!story) throw new NotFoundException('Story not found');
-    return story.moduleItemId;
+    return story;
   }
 
-  async moduleItemForSegment(segmentId: string): Promise<string> {
+  async accessForSegment(segmentId: string): Promise<StoryAccess> {
     const segment = await this.prisma.storySegment.findUnique({
       where: { id: segmentId },
       select: {
-        chapter: { select: { story: { select: { moduleItemId: true } } } },
+        chapter: { select: { story: { select: STORY_ACCESS_SELECT } } },
       },
     });
     if (!segment) throw new NotFoundException('Segment not found');
-    return segment.chapter.story.moduleItemId;
+    return segment.chapter.story;
   }
 
-  async moduleItemForAsset(assetId: string): Promise<string> {
+  async accessForAsset(assetId: string): Promise<StoryAccess> {
     const asset = await this.prisma.storyAsset.findUnique({
       where: { id: assetId },
-      select: { story: { select: { moduleItemId: true } } },
+      select: { story: { select: STORY_ACCESS_SELECT } },
     });
     if (!asset) throw new NotFoundException('Asset not found');
-    return asset.story.moduleItemId;
+    return asset.story;
   }
 
   /**

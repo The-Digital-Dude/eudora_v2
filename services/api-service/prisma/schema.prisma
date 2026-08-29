@@ -1297,8 +1297,26 @@ model ModuleItemProgress {
 // been made yet, and guessing them now would bake the guess into a migration.
 
 model Story {
-  id           String @id @default(uuid())
-  moduleItemId String @unique
+  id String @id @default(uuid())
+
+  /// The course slot this story fills, when it sits inside a course at all.
+  ///
+  /// Optional, because a story is a thing in its own right: it is written,
+  /// narrated and read without belonging to anything, and attaching it to a
+  /// chapter is one thing you may later choose to do with it. Requiring this
+  /// meant no story could exist until someone had picked a course for it,
+  /// which put a curriculum decision in front of writing.
+  ///
+  /// Still unique: one slot holds at most one story.
+  moduleItemId String? @unique
+
+  /// Whether students can find this story on its own, outside any course.
+  ///
+  /// Independent of the course binding — a story can be published to the
+  /// library, sat in a course chapter, both, or neither. Reading it through a
+  /// course still goes through the course's entitlement check; published here
+  /// means free to read, which is what the library is for.
+  status CatalogStatus @default(DRAFT)
 
   title       String
   /// One or two lines, used on the card and in search results.
@@ -1333,7 +1351,7 @@ model Story {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  moduleItem ModuleItem       @relation(fields: [moduleItemId], references: [id], onDelete: Cascade)
+  moduleItem ModuleItem?       @relation(fields: [moduleItemId], references: [id], onDelete: Cascade)
   cover      StoryAsset?      @relation("StoryCover", fields: [coverAssetId], references: [id], onDelete: SetNull)
   chapters      StoryChapter[]
   characters    StoryCharacter[]

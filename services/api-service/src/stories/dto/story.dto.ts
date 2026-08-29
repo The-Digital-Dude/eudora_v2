@@ -11,12 +11,28 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { GradeBand, StoryAssetKind } from '@prisma/client';
+import { CatalogStatus, GradeBand, StoryAssetKind } from '@prisma/client';
 
-export class CreateStoryDto {
-  /** The ModuleItem slot this story fills. Must be of kind STORY. */
+export class AttachStoryDto {
+  /** A STORY slot in a course chapter, not already filled. */
   @IsUUID()
   moduleItemId: string;
+}
+
+export class StoryStatusDto {
+  /** PUBLISHED puts the story in the library; DRAFT withdraws it. */
+  @IsEnum(CatalogStatus)
+  status: CatalogStatus;
+}
+
+export class CreateStoryDto {
+  /**
+   * The ModuleItem slot this story fills, if it is going into a course now.
+   * Optional — a story is written first and placed later, if ever.
+   */
+  @IsUUID()
+  @IsOptional()
+  moduleItemId?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -223,8 +239,10 @@ export class ImportChapterDto {
 }
 
 export class ImportStoryDto {
+  /** Optional, same as CreateStoryDto — a story need not go into a course. */
   @IsUUID()
-  moduleItemId: string;
+  @IsOptional()
+  moduleItemId?: string;
 
   @IsString()
   @IsNotEmpty()

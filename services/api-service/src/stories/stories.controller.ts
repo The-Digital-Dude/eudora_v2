@@ -14,6 +14,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { StoriesService } from './stories.service';
+import type { StoryAccess } from './stories.service';
 import { NarrationService } from './narration.service';
 import { StoryAgentService } from './story-agent.service';
 import { StoryDraftService } from './story-draft.service';
@@ -32,8 +33,10 @@ import {
   CreateChapterDto,
   CreateCharacterDto,
   CreateSegmentDto,
+  AttachStoryDto,
   CreateStoryDto,
   ImportStoryDto,
+  StoryStatusDto,
   ReorderDto,
   UpdateChapterDto,
   UpdateSegmentDto,
@@ -58,16 +61,31 @@ export class StoriesController {
     private readonly actingStudent: ActingStudentService,
   ) {}
 
-  /** The read gate, in one place — every media and agent route goes through it. */
+  /**
+   * The read gate, in one place — every media and agent route goes through it.
+   *
+   * Three cases, because a story can be reached three ways:
+   *   published        anyone signed in may read it; the library is free
+   *   in a course      the course's entitlement check decides, as before
+   *   neither          unfinished and unattached, so staff only
+   */
   private async assertCanRead(
     user: CurrentUserDto,
-    moduleItemId: string,
+    access: StoryAccess,
     actingStudentId?: string,
   ) {
+    if (access.status === 'PUBLISHED') return;
+
+    if (!access.moduleItemId) {
+      // A draft that belongs to no course has no audience yet. Staff reach it
+      // through the authoring routes, which carry their own role check.
+      throw new ForbiddenException('This story has not been published');
+    }
+
     const allowed = await this.entitlements.canAccessModuleItem(
       user.id,
       user.roles,
-      moduleItemId,
+      access.moduleItemId,
       actingStudentId,
     );
     if (!allowed) {
@@ -127,6 +145,15 @@ export class StoriesController {
     return this.stories.findAll();
   }
 
+  /**
+   * The story library: published stories, readable by any signed-in child
+   * whether or not they own a course. Also before ':id'.
+   */
+  @Get('library')
+  library() {
+    return this.stories.findPublished();
+  }
+
   /** Staff-only by id, for the authoring screens. */
   @Get(':id')
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
@@ -152,8 +179,8 @@ export class StoriesController {
     @Res() res: Response,
     @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
-    const moduleItemId = await this.stories.moduleItemForSegment(segmentId);
-    await this.assertCanRead(user, moduleItemId, actingStudentId);
+    const access = await this.stories.accessForSegment(segmentId);
+    await this.assertCanRead(user, access, actingStudentId);
     return this.sendMedia(await this.narration.readNarration(segmentId), res);
   }
 
@@ -165,8 +192,8 @@ export class StoriesController {
     @Res() res: Response,
     @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
-    const moduleItemId = await this.stories.moduleItemForAsset(assetId);
-    await this.assertCanRead(user, moduleItemId, actingStudentId);
+    const access = await this.stories.accessForAsset(assetId);
+    await this.assertCanRead(user, access, actingStudentId);
     return this.sendMedia(await this.narration.readAsset(assetId), res);
   }
 
@@ -205,8 +232,8 @@ export class StoriesController {
     @CurrentUser() user: CurrentUserDto,
     @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
   ) {
-    const moduleItemId = await this.stories.moduleItemForStory(id);
-    await this.assertCanRead(user, moduleItemId, actingStudentId);
+    const access = await this.stories.accessForStory(id);
+    await this.assertCanRead(user, access, actingStudentId);
 
     return this.agent.ask({
       storyId: id,
@@ -251,6 +278,30 @@ export class StoriesController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   create(@Body() dto: CreateStoryDto) {
     return this.stories.create(dto);
+  }
+
+  /**
+   * Puts a story into a course chapter, or takes it back out. Separate from
+   * creation because where a story is used is a decision that changes over its
+   * life, and the same story may be written long before anyone knows.
+   */
+  @Post(':id/attach')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  attach(@Param('id') id: string, @Body() dto: AttachStoryDto) {
+    return this.stories.attach(id, dto.moduleItemId);
+  }
+
+  @Post(':id/detach')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  detach(@Param('id') id: string) {
+    return this.stories.detach(id);
+  }
+
+  /** Publishes to the library, or withdraws from it. */
+  @Patch(':id/status')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  setStatus(@Param('id') id: string, @Body() dto: StoryStatusDto) {
+    return this.stories.setStatus(id, dto.status);
   }
 
   @Post('import')

@@ -1,17 +1,19 @@
 "use client";
 
-import { ArrowLeft, Check, Globe, Volume2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, Globe, Library, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import {
+  useDetachStoryMutation,
   useGetStoryQuery,
   useNarrateStoryMutation,
+  useSetStoryStatusMutation,
   useUpdateSegmentMutation,
 } from "@/features/stories/storiesApi";
-import type { StorySegment } from "@/features/stories/types";
+import type { Story, StorySegment } from "@/features/stories/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -123,6 +125,8 @@ export default function StoryEditorPage() {
         </p>
       ) : null}
 
+      <StoryPlacement story={story} narrated={narrated} pages={segments.length} />
+
       {story.isPublicDemo ? (
         <p className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
           <Globe className="h-3.5 w-3.5" />
@@ -142,6 +146,105 @@ export default function StoryEditorPage() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Where this story is used, and who can reach it.
+ *
+ * Two independent facts, shown as two rows rather than one status, because
+ * they genuinely are independent: a story can sit in a course, be published to
+ * the library, be both, or be neither and simply exist.
+ */
+function StoryPlacement({
+  story,
+  narrated,
+  pages,
+}: {
+  story: Story;
+  narrated: number;
+  pages: number;
+}) {
+  const [setStatus, { isLoading: saving }] = useSetStoryStatusMutation();
+  const [detach, { isLoading: detaching }] = useDetachStoryMutation();
+  const [error, setError] = React.useState<string | null>(null);
+
+  const published = story.status === "PUBLISHED";
+  const fullyNarrated = pages > 0 && narrated === pages;
+
+  const run = async (fn: () => Promise<unknown>) => {
+    setError(null);
+    try {
+      await fn();
+    } catch (e: any) {
+      setError(e?.data?.message ?? "That did not work.");
+    }
+  };
+
+  return (
+    <div className="space-y-2 rounded-xl border border-border bg-card p-4">
+      {/* In a course */}
+      <div className="flex flex-wrap items-center gap-3">
+        <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <span className="text-xs text-foreground">
+          {story.moduleItem ? (
+            <>
+              In a course as{" "}
+              <strong className="font-bold">{story.moduleItem.title}</strong>
+            </>
+          ) : (
+            "Not in any course"
+          )}
+        </span>
+        {story.moduleItem ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+            disabled={detaching}
+            onClick={() => run(() => detach(story.id).unwrap())}
+          >
+            {detaching ? "Removing…" : "Take out of course"}
+          </Button>
+        ) : null}
+      </div>
+
+      {/* In the library */}
+      <div className="flex flex-wrap items-center gap-3 border-t border-border/60 pt-2">
+        <Library className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <span className="text-xs text-foreground">
+          {published
+            ? "Published — any student can read it"
+            : "Not published to the story library"}
+        </span>
+        <Button
+          variant={published ? "outline" : "default"}
+          size="sm"
+          className="ml-auto"
+          // Publishing a half-narrated story gives a child a page of text
+          // where they expected a voice, and the library filters those out
+          // anyway — so it would publish to nowhere.
+          disabled={saving || (!published && !fullyNarrated)}
+          onClick={() =>
+            run(() =>
+              setStatus({
+                storyId: story.id,
+                status: published ? "DRAFT" : "PUBLISHED",
+              }).unwrap(),
+            )
+          }
+        >
+          {saving ? "Saving…" : published ? "Unpublish" : "Publish"}
+        </Button>
+      </div>
+
+      {!published && !fullyNarrated ? (
+        <p className="text-[10px] text-muted-foreground">
+          Narrate every page before publishing — {narrated} of {pages} done.
+        </p>
+      ) : null}
+      {error ? <p className="text-[10px] text-destructive">{error}</p> : null}
     </div>
   );
 }

@@ -8,8 +8,13 @@ describe('StoriesService', () => {
   let service: StoriesService;
 
   const mockPrisma: any = {
-    moduleItem: { findUnique: jest.fn() },
-    story: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+    moduleItem: { findUnique: jest.fn(), delete: jest.fn() },
+    story: {
+      create: jest.fn(),
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+    },
     storyChapter: {
       create: jest.fn(),
       findFirst: jest.fn(),
@@ -56,6 +61,21 @@ describe('StoriesService', () => {
   });
 
   describe('create', () => {
+    it('creates a story that belongs to no course', async () => {
+      mockPrisma.story.create.mockResolvedValue({ id: 'story-1' });
+
+      await service.create({ title: 'A Story' });
+
+      // The whole point of a story being its own thing: writing one must not
+      // require picking a course first.
+      expect(mockPrisma.moduleItem.findUnique).not.toHaveBeenCalled();
+      expect(mockPrisma.story.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ moduleItemId: null }),
+        }),
+      );
+    });
+
     it('refuses a module item that is not a STORY slot', async () => {
       mockPrisma.moduleItem.findUnique.mockResolvedValue({
         id: 'mi-1',
@@ -271,6 +291,128 @@ describe('StoriesService', () => {
           segmentId: 'seg-9',
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('placing a story in a course', () => {
+    beforeEach(() => {
+      mockPrisma.story.update.mockResolvedValue({});
+    });
+
+    it('attaches to a free STORY slot', async () => {
+      mockPrisma.story.findUnique.mockResolvedValue({ id: 'story-1' });
+      mockPrisma.moduleItem.findUnique.mockResolvedValue({
+        id: 'mi-1',
+        kind: 'STORY',
+        deletedAt: null,
+        story: null,
+      });
+
+      await service.attach('story-1', 'mi-1');
+
+      expect(mockPrisma.story.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { moduleItemId: 'mi-1' } }),
+      );
+    });
+
+    it('refuses a slot another story already fills', async () => {
+      mockPrisma.story.findUnique.mockResolvedValue({ id: 'story-1' });
+      mockPrisma.moduleItem.findUnique.mockResolvedValue({
+        id: 'mi-1',
+        kind: 'STORY',
+        deletedAt: null,
+        story: { id: 'someone-else' },
+      });
+
+      await expect(service.attach('story-1', 'mi-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('lets a story re-attach to the slot it already occupies', async () => {
+      mockPrisma.story.findUnique.mockResolvedValue({ id: 'story-1' });
+      mockPrisma.moduleItem.findUnique.mockResolvedValue({
+        id: 'mi-1',
+        kind: 'STORY',
+        deletedAt: null,
+        story: { id: 'story-1' },
+      });
+
+      await expect(service.attach('story-1', 'mi-1')).resolves.toBeDefined();
+    });
+
+    it('removes the emptied slot when detaching', async () => {
+      mockPrisma.story.findUnique.mockResolvedValue({
+        id: 'story-1',
+        moduleItemId: 'mi-1',
+      });
+
+      await service.detach('story-1');
+
+      // A STORY item with no story renders nothing; leaving one behind in a
+      // live course is worse than refusing the detach.
+      expect(mockPrisma.moduleItem.delete).toHaveBeenCalledWith({
+        where: { id: 'mi-1' },
+      });
+    });
+
+    it('refuses to detach a story that is not in a course', async () => {
+      mockPrisma.story.findUnique.mockResolvedValue({
+        id: 'story-1',
+        moduleItemId: null,
+      });
+
+      await expect(service.detach('story-1')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockPrisma.moduleItem.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findPublished', () => {
+    it('lists only published stories that are fully narrated', async () => {
+      mockPrisma.story.findMany.mockResolvedValue([
+        {
+          id: 'done',
+          title: 'Finished',
+          synopsis: null,
+          gradeBand: null,
+          cover: { id: 'cov-1' },
+          chapters: [
+            {
+              segments: [
+                { narrationAudioKey: 'a' },
+                { narrationAudioKey: 'b' },
+              ],
+            },
+          ],
+        },
+        {
+          id: 'half',
+          title: 'Half narrated',
+          synopsis: null,
+          gradeBand: null,
+          cover: null,
+          chapters: [
+            {
+              segments: [
+                { narrationAudioKey: 'a' },
+                { narrationAudioKey: null },
+              ],
+            },
+          ],
+        },
+      ]);
+
+      const library = await service.findPublished();
+
+      // A published story with missing audio is a page of text where a child
+      // expected a voice.
+      expect(library.map((s) => s.id)).toEqual(['done']);
+      expect(mockPrisma.story.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { status: 'PUBLISHED' } }),
+      );
+      expect(library[0].coverUrl).toBe('/api/stories/assets/cov-1/file');
     });
   });
 

@@ -14,6 +14,7 @@ describe('StoriesService', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     storyChapter: {
       create: jest.fn(),
@@ -366,6 +367,39 @@ describe('StoriesService', () => {
         BadRequestException,
       );
       expect(mockPrisma.moduleItem.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('setPublicDemo', () => {
+    beforeEach(() => {
+      mockPrisma.story.findUnique.mockResolvedValue({ id: 'story-1' });
+      mockPrisma.story.update.mockResolvedValue({});
+      mockPrisma.story.updateMany.mockResolvedValue({ count: 1 });
+    });
+
+    it('clears the flag on every other story when setting it', async () => {
+      await service.setPublicDemo('story-1', true);
+
+      // The demo picks its story with findFirst(orderBy updatedAt desc), so two
+      // flagged stories would mean the live one changes whenever someone edits
+      // the other — and a "Public" badge on a story nobody reaches.
+      expect(mockPrisma.story.updateMany).toHaveBeenCalledWith({
+        where: { isPublicDemo: true, id: { not: 'story-1' } },
+        data: { isPublicDemo: false },
+      });
+      expect(mockPrisma.story.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { isPublicDemo: true } }),
+      );
+    });
+
+    it('touches only this story when unsetting it', async () => {
+      await service.setPublicDemo('story-1', false);
+
+      // Removing the demo must not resurrect some previous one.
+      expect(mockPrisma.story.updateMany).not.toHaveBeenCalled();
+      expect(mockPrisma.story.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { isPublicDemo: false } }),
+      );
     });
   });
 

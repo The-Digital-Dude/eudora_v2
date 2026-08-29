@@ -1,6 +1,7 @@
 import { plainToInstance, Transform, Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -17,6 +18,12 @@ export class AttachStoryDto {
   /** A STORY slot in a course chapter, not already filled. */
   @IsUUID()
   moduleItemId: string;
+}
+
+export class PublicDemoDto {
+  /** True makes this the one story the public demo shows, clearing any other. */
+  @IsBoolean()
+  isPublicDemo: boolean;
 }
 
 export class StoryStatusDto {

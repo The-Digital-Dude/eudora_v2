@@ -127,6 +127,33 @@ export class StoriesService {
     return this.findOne(storyId);
   }
 
+  /**
+   * Makes this the story the public demo shows, or takes it off.
+   *
+   * Exclusive by construction: setting one clears every other. The demo picks
+   * its story with `findFirst(... orderBy: updatedAt desc)`, so with two
+   * flagged the live one would change whenever somebody edited the other —
+   * a badge reading "Public" on a story nobody can reach. One flag, one story.
+   */
+  async setPublicDemo(storyId: string, isPublicDemo: boolean) {
+    await this.requireStory(storyId);
+
+    await this.prisma.$transaction(async (tx) => {
+      if (isPublicDemo) {
+        await tx.story.updateMany({
+          where: { isPublicDemo: true, id: { not: storyId } },
+          data: { isPublicDemo: false },
+        });
+      }
+      await tx.story.update({
+        where: { id: storyId },
+        data: { isPublicDemo },
+      });
+    });
+
+    return this.findOne(storyId);
+  }
+
   /** Whether students can find this story on its own. */
   async setStatus(storyId: string, status: CatalogStatus) {
     await this.requireStory(storyId);

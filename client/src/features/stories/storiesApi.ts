@@ -109,6 +109,20 @@ export const storiesApi = authApi.injectEndpoints({
       ],
     } as any),
 
+    setPublicDemo: builder.mutation<
+      Story,
+      { storyId: string; isPublicDemo: boolean }
+    >({
+      query: ({ storyId, isPublicDemo }: { storyId: string; isPublicDemo: boolean }) => ({
+        url: `/stories/${storyId}/public-demo`,
+        method: "PATCH",
+        body: { isPublicDemo },
+      }),
+      // Clears the flag on every other story, so the whole list is stale —
+      // not just this one.
+      invalidatesTags: [{ type: "StoryContent" } as any, "StoryList" as any],
+    } as any),
+
     detachStory: builder.mutation<Story, string>({
       query: (storyId: string) => ({
         url: `/stories/${storyId}/detach`,
@@ -148,4 +162,5 @@ export const {
   useNarrateStoryMutation,
   useSetStoryStatusMutation,
   useDetachStoryMutation,
+  useSetPublicDemoMutation,
 } = storiesApi;

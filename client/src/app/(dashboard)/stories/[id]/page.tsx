@@ -10,6 +10,7 @@ import {
   useDetachStoryMutation,
   useGetStoryQuery,
   useNarrateStoryMutation,
+  useSetPublicDemoMutation,
   useSetStoryStatusMutation,
   useUpdateSegmentMutation,
 } from "@/features/stories/storiesApi";
@@ -127,13 +128,6 @@ export default function StoryEditorPage() {
 
       <StoryPlacement story={story} narrated={narrated} pages={segments.length} />
 
-      {story.isPublicDemo ? (
-        <p className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
-          <Globe className="h-3.5 w-3.5" />
-          This is the story shown on the public demo page.
-        </p>
-      ) : null}
-
       <div className="space-y-6">
         {story.chapters.map((chapter) => (
           <div key={chapter.id} className="space-y-3">
@@ -153,9 +147,11 @@ export default function StoryEditorPage() {
 /**
  * Where this story is used, and who can reach it.
  *
- * Two independent facts, shown as two rows rather than one status, because
- * they genuinely are independent: a story can sit in a course, be published to
- * the library, be both, or be neither and simply exist.
+ * Three independent facts, one row each rather than a single status, because
+ * they answer different questions: which course uses it, whether signed-in
+ * children can find it in the library, and whether it is the one story a
+ * stranger meets on the marketing page. Any combination is valid, including
+ * none of them while it is still being written.
  */
 function StoryPlacement({
   story,
@@ -168,9 +164,11 @@ function StoryPlacement({
 }) {
   const [setStatus, { isLoading: saving }] = useSetStoryStatusMutation();
   const [detach, { isLoading: detaching }] = useDetachStoryMutation();
+  const [setPublicDemo, { isLoading: demoSaving }] = useSetPublicDemoMutation();
   const [error, setError] = React.useState<string | null>(null);
 
   const published = story.status === "PUBLISHED";
+  const isDemo = story.isPublicDemo === true;
   const fullyNarrated = pages > 0 && narrated === pages;
 
   const run = async (fn: () => Promise<unknown>) => {
@@ -239,9 +237,45 @@ function StoryPlacement({
         </Button>
       </div>
 
-      {!published && !fullyNarrated ? (
+      {/* On the marketing page */}
+      <div className="flex flex-wrap items-center gap-3 border-t border-border/60 pt-2">
+        <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <span className="text-xs text-foreground">
+          {isDemo
+            ? "Shown on the public demo — no sign-in needed"
+            : "Not the public demo story"}
+        </span>
+        <Button
+          variant={isDemo ? "outline" : "default"}
+          size="sm"
+          className="ml-auto"
+          disabled={demoSaving || (!isDemo && !fullyNarrated)}
+          onClick={() =>
+            run(() =>
+              setPublicDemo({
+                storyId: story.id,
+                isPublicDemo: !isDemo,
+              }).unwrap(),
+            )
+          }
+        >
+          {demoSaving
+            ? "Saving…"
+            : isDemo
+              ? "Remove from demo"
+              : "Make it the demo"}
+        </Button>
+      </div>
+
+      {!isDemo ? (
         <p className="text-[10px] text-muted-foreground">
-          Narrate every section before publishing — {narrated} of {pages} done.
+          Only one story can be the demo — choosing this one replaces whichever
+          is there now.
+        </p>
+      ) : null}
+      {(!published || !isDemo) && !fullyNarrated ? (
+        <p className="text-[10px] text-muted-foreground">
+          Narrate every section first — {narrated} of {pages} done.
         </p>
       ) : null}
       {error ? <p className="text-[10px] text-destructive">{error}</p> : null}

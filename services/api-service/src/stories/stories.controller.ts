@@ -36,6 +36,7 @@ import {
   AttachStoryDto,
   CreateStoryDto,
   ImportStoryDto,
+  PublicDemoDto,
   StoryStatusDto,
   ReorderDto,
   UpdateChapterDto,
@@ -295,6 +296,16 @@ export class StoriesController {
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
   detach(@Param('id') id: string) {
     return this.stories.detach(id);
+  }
+
+  /**
+   * Chooses the story the public demo shows. Setting one clears any other, so
+   * the badge in the list always names the story a visitor actually reaches.
+   */
+  @Patch(':id/public-demo')
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  publicDemo(@Param('id') id: string, @Body() dto: PublicDemoDto) {
+    return this.stories.setPublicDemo(id, dto.isPublicDemo);
   }
 
   /** Publishes to the library, or withdraws from it. */

@@ -1,0 +1,25 @@
+# Netlify configuration, kept in the repo rather than the dashboard so the
+# build settings are versioned and can't drift.
+#
+# `publish` is set explicitly rather than left to the dashboard: a value set in
+# the UI wins whenever this file omits the key, and the UI had it pointing at
+# "client" — the same path as `base`, which the Next.js plugin rejects outright.
+# Relative to `base`, so this resolves to client/.next, the directory `next
+# build` actually writes.
+[build]
+  base = "client"
+  command = "npm run build"
+  publish = ".next"
+
+# Explicit rather than relying on auto-detection: this plugin is what serves
+# SSR routes and ISR revalidation. Without it Netlify treats the output as a
+# plain static directory, which cannot serve this app — the marketing pages
+# fetch the catalog at request time.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  # The repo has a package-lock.json at the root and pnpm-workspace.yaml under
+  # client/, so package-manager detection can pick the wrong one. Pin Node and
+  # let the npm lockfile in client/ decide.
+  NODE_VERSION = "22"

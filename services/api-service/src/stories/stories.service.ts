@@ -515,13 +515,169 @@ export class StoriesService {
     return this.findOne(segment.chapter.storyId);
   }
 
+  /**
+   * Joins a section into the one before it, and closes the gap.
+   *
+   * The primitive that fixes a story chunked too finely — the common case
+   * being one drafted before sections replaced sentences. Doing it from the
+   * client would be three round trips racing the unique index on
+   * (chapterId, sortOrder); here it is one transaction.
+   *
+   * Only within a chapter. Merging across a chapter boundary would silently
+   * decide which chapter the text now belongs to, and that is an editorial
+   * call, not a mechanical one.
+   */
+  async mergeSegmentUp(segmentId: string) {
+    const segment = await this.prisma.storySegment.findUnique({
+      where: { id: segmentId },
+      include: { chapter: true },
+    });
+    if (!segment) throw new NotFoundException('Segment not found');
+
+    const previous = await this.prisma.storySegment.findFirst({
+      where: {
+        chapterId: segment.chapterId,
+        sortOrder: { lt: segment.sortOrder },
+      },
+      orderBy: { sortOrder: 'desc' },
+    });
+    if (!previous) {
+      throw new BadRequestException(
+        'This is the first section in its chapter — there is nothing above it to join',
+      );
+    }
+
+    const joinedText = `${previous.text.trim()} ${segment.text.trim()}`.trim();
+    // The performed versions join only if both have one; otherwise the result
+    // would be half-tagged markup that no longer strips back to the text, and
+    // narration would refuse it. Dropping to plain is recoverable; a broken
+    // pair is a puzzle for whoever hits it.
+    const joinedNarration =
+      previous.narrationText && segment.narrationText
+        ? `${previous.narrationText.trim()} ${segment.narrationText.trim()}`.trim()
+        : null;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.storySegment.delete({ where: { id: segmentId } });
+      await tx.storySegment.update({
+        where: { id: previous.id },
+        data: {
+          text: joinedText,
+          narrationText: joinedNarration,
+          // Different words mean the recording no longer matches.
+          narrationAudioKey: null,
+          narrationDurationMs: null,
+          narrationTimings: Prisma.DbNull,
+        },
+      });
+      await this.closeSegmentGaps(tx, segment.chapterId);
+    });
+
+    return this.findOne(segment.chapter.storyId);
+  }
+
+  /**
+   * Breaks one section in two at `at`, a character offset into its text.
+   *
+   * The inverse of merge, for a section that turned out to hold two scenes.
+   * Everything below shifts down inside the transaction, so the unique index
+   * never sees two rows claiming a position.
+   */
+  async splitSegment(segmentId: string, at: number) {
+    const segment = await this.prisma.storySegment.findUnique({
+      where: { id: segmentId },
+      include: { chapter: true },
+    });
+    if (!segment) throw new NotFoundException('Segment not found');
+
+    const head = segment.text.slice(0, at).trim();
+    const tail = segment.text.slice(at).trim();
+    if (!head || !tail) {
+      throw new BadRequestException(
+        'Split somewhere inside the text — both halves need words',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      // Move everything after this section down one, working from the bottom
+      // up so no two rows ever share a position.
+      const below = await tx.storySegment.findMany({
+        where: {
+          chapterId: segment.chapterId,
+          sortOrder: { gt: segment.sortOrder },
+        },
+        orderBy: { sortOrder: 'desc' },
+        select: { id: true, sortOrder: true },
+      });
+      for (const row of below) {
+        await tx.storySegment.update({
+          where: { id: row.id },
+          data: { sortOrder: row.sortOrder + 1 },
+        });
+      }
+
+      await tx.storySegment.update({
+        where: { id: segmentId },
+        data: {
+          text: head,
+          // Splitting tagged narration would cut markup in half, so both
+          // halves start plain and are re-tagged by the author.
+          narrationText: null,
+          narrationAudioKey: null,
+          narrationDurationMs: null,
+          narrationTimings: Prisma.DbNull,
+        },
+      });
+      await tx.storySegment.create({
+        data: {
+          chapterId: segment.chapterId,
+          text: tail,
+          sortOrder: segment.sortOrder + 1,
+        },
+      });
+    });
+
+    return this.findOne(segment.chapter.storyId);
+  }
+
+  /** Renumbers a chapter's sections to 1..n, preserving their order. */
+  private async closeSegmentGaps(tx: any, chapterId: string) {
+    const rows = await tx.storySegment.findMany({
+      where: { chapterId },
+      orderBy: { sortOrder: 'asc' },
+      select: { id: true },
+    });
+    // Through a negative window first: a straight 1..n rewrite collides the
+    // moment two rows briefly share a position, which is the same reason
+    // reorderSegments does this.
+    for (const [i, row] of rows.entries()) {
+      await tx.storySegment.update({
+        where: { id: row.id },
+        data: { sortOrder: -(i + 1) },
+      });
+    }
+    for (const [i, row] of rows.entries()) {
+      await tx.storySegment.update({
+        where: { id: row.id },
+        data: { sortOrder: i + 1 },
+      });
+    }
+  }
+
   async removeSegment(segmentId: string) {
     const segment = await this.prisma.storySegment.findUnique({
       where: { id: segmentId },
       include: { chapter: true },
     });
     if (!segment) throw new NotFoundException('Segment not found');
-    await this.prisma.storySegment.delete({ where: { id: segmentId } });
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.storySegment.delete({ where: { id: segmentId } });
+      // Otherwise positions keep the hole, and the next insert-at-position
+      // has to reason about gaps that mean nothing.
+      await this.closeSegmentGaps(tx, segment.chapterId);
+    });
+
     return this.findOne(segment.chapter.storyId);
   }
 

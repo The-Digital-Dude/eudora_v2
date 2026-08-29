@@ -39,6 +39,7 @@ import {
   PublicDemoDto,
   StoryStatusDto,
   ReorderDto,
+  SplitSegmentDto,
   UpdateChapterDto,
   UpdateSegmentDto,
   UpdateStoryDto,
@@ -385,6 +386,26 @@ export class StoriesController {
     @Body() dto: UpdateSegmentDto,
   ) {
     return this.stories.updateSegment(segmentId, dto);
+  }
+
+  /**
+   * Joins a section into the one above it. The fix for a story chunked more
+   * finely than it should have been.
+   */
+  @Post('segments/:segmentId/merge-up')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  mergeSegmentUp(@Param('segmentId') segmentId: string) {
+    return this.stories.mergeSegmentUp(segmentId);
+  }
+
+  /** Breaks one section into two at a character offset. */
+  @Post('segments/:segmentId/split')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
+  splitSegment(
+    @Param('segmentId') segmentId: string,
+    @Body() dto: SplitSegmentDto,
+  ) {
+    return this.stories.splitSegment(segmentId, dto.at);
   }
 
   @Delete('segments/:segmentId')

@@ -149,6 +149,13 @@ export class UpdateSegmentDto {
   sortOrder?: number;
 }
 
+export class SplitSegmentDto {
+  /** Character offset into the section text where the break goes. */
+  @IsInt()
+  @Min(1)
+  at: number;
+}
+
 /** Reordering is a whole-list operation, so a partial list cannot leave gaps. */
 export class ReorderDto {
   @IsArray()

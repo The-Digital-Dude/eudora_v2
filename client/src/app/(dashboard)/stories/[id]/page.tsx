@@ -1,6 +1,16 @@
 "use client";
 
-import { ArrowLeft, BookOpen, Check, Globe, Library, Volume2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUpToLine,
+  BookOpen,
+  Check,
+  Globe,
+  Library,
+  SplitIcon,
+  Trash2,
+  Volume2,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
@@ -9,9 +19,12 @@ import { Button } from "@/components/ui/button";
 import {
   useDetachStoryMutation,
   useGetStoryQuery,
+  useMergeSegmentUpMutation,
   useNarrateStoryMutation,
+  useRemoveSegmentMutation,
   useSetPublicDemoMutation,
   useSetStoryStatusMutation,
+  useSplitSegmentMutation,
   useUpdateSegmentMutation,
 } from "@/features/stories/storiesApi";
 import type { Story, StorySegment } from "@/features/stories/types";
@@ -135,7 +148,12 @@ export default function StoryEditorPage() {
               {chapter.title}
             </h2>
             {chapter.segments.map((segment, index) => (
-              <SegmentRow key={segment.id} segment={segment} index={index + 1} />
+              <SegmentRow
+                key={segment.id}
+                segment={segment}
+                index={index + 1}
+                isFirst={index === 0}
+              />
             ))}
           </div>
         ))}
@@ -294,11 +312,18 @@ function StoryPlacement({
 function SegmentRow({
   segment,
   index,
+  isFirst,
 }: {
   segment: StorySegment;
   index: number;
+  /** First in its chapter: there is nothing above it to merge into. */
+  isFirst: boolean;
 }) {
   const [updateSegment, { isLoading: saving }] = useUpdateSegmentMutation();
+  const [mergeUp, { isLoading: merging }] = useMergeSegmentUpMutation();
+  const [splitSegment, { isLoading: splitting }] = useSplitSegmentMutation();
+  const [removeSegment, { isLoading: removing }] = useRemoveSegmentMutation();
+  const textRef = React.useRef<HTMLTextAreaElement | null>(null);
   const [text, setText] = React.useState(segment.text);
   const [narrationText, setNarrationText] = React.useState(
     segment.narrationText ?? "",
@@ -335,6 +360,32 @@ function SegmentRow({
     }
   };
 
+  const run = async (fn: () => Promise<unknown>) => {
+    setError(null);
+    try {
+      await fn();
+    } catch (e: any) {
+      setError(e?.data?.message ?? "That did not work.");
+    }
+  };
+
+  /**
+   * Splits where the caret is. Reading the textarea directly rather than
+   * tracking selection in state: the caret moves on every keystroke and click,
+   * and mirroring that into React would re-render the field the author is
+   * typing in.
+   */
+  const splitHere = () => {
+    const at = textRef.current?.selectionStart ?? 0;
+    if (at <= 0 || at >= text.length) {
+      setError("Put the cursor where the break should go first.");
+      return;
+    }
+    void run(() => splitSegment({ segmentId: segment.id, at }).unwrap());
+  };
+
+  const busy = merging || splitting || removing;
+
   return (
     <div className="space-y-2 rounded-xl border border-border bg-card p-4">
       <div className="flex items-start gap-3">
@@ -343,11 +394,54 @@ function SegmentRow({
         </span>
         <div className="flex-1 space-y-2">
           <textarea
+            ref={textRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={2}
             className="w-full rounded-lg border border-border bg-background p-2 text-xs leading-relaxed"
           />
+
+          {/* Reshaping the section itself, as opposed to its words. Changing
+              any of these discards the recording, so they sit apart from the
+              tag buttons rather than among them. */}
+          <div className="flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              onClick={() => run(() => mergeUp(segment.id).unwrap())}
+              disabled={isFirst || busy || dirty}
+              title={
+                isFirst
+                  ? "Nothing above this in the chapter"
+                  : dirty
+                    ? "Save your edits first"
+                    : "Join this section into the one above"
+              }
+              className="flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40"
+            >
+              <ArrowUpToLine className="h-3 w-3" /> Merge up
+            </button>
+            <button
+              type="button"
+              onClick={splitHere}
+              disabled={busy || dirty}
+              title={
+                dirty
+                  ? "Save your edits first"
+                  : "Break this section where the cursor is"
+              }
+              className="flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40"
+            >
+              <SplitIcon className="h-3 w-3" /> Split at cursor
+            </button>
+            <button
+              type="button"
+              onClick={() => run(() => removeSegment(segment.id).unwrap())}
+              disabled={busy}
+              className="ml-auto flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+            >
+              <Trash2 className="h-3 w-3" /> Delete
+            </button>
+          </div>
 
           <div className="flex flex-wrap items-center gap-1">
             {TAGS.map((tag) => (

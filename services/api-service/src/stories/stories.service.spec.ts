@@ -26,8 +26,10 @@ describe('StoriesService', () => {
     storySegment: {
       create: jest.fn(),
       findFirst: jest.fn(),
+      findMany: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
     },
     storyAsset: { create: jest.fn(), findUnique: jest.fn() },
     $transaction: jest.fn((fn: any) => fn(mockPrisma)),
@@ -367,6 +369,128 @@ describe('StoriesService', () => {
         BadRequestException,
       );
       expect(mockPrisma.moduleItem.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('mergeSegmentUp', () => {
+    const second = {
+      id: 'seg-2',
+      chapterId: 'ch-1',
+      sortOrder: 2,
+      text: 'She landed.',
+      narrationText: '[sadly] She landed.',
+      chapter: { storyId: 'story-1' },
+    };
+
+    beforeEach(() => {
+      mockPrisma.storySegment.findMany.mockResolvedValue([
+        { id: 'seg-1' },
+        { id: 'seg-3' },
+      ]);
+      mockPrisma.storySegment.delete.mockResolvedValue({});
+    });
+
+    it('joins the words into the section above and drops its audio', async () => {
+      mockPrisma.storySegment.findUnique.mockResolvedValue(second);
+      mockPrisma.storySegment.findFirst.mockResolvedValue({
+        id: 'seg-1',
+        sortOrder: 1,
+        text: 'She jumped.',
+        narrationText: '[excited] She jumped.',
+      });
+
+      await service.mergeSegmentUp('seg-2');
+
+      const merged = mockPrisma.storySegment.update.mock.calls.find(
+        (c: any) => c[0].where.id === 'seg-1',
+      )[0].data;
+      expect(merged.text).toBe('She jumped. She landed.');
+      expect(merged.narrationText).toBe(
+        '[excited] She jumped. [sadly] She landed.',
+      );
+      // Different words mean the recording no longer matches them.
+      expect(merged.narrationAudioKey).toBeNull();
+      expect(mockPrisma.storySegment.delete).toHaveBeenCalledWith({
+        where: { id: 'seg-2' },
+      });
+    });
+
+    it('drops to plain narration when only one half was performed', async () => {
+      mockPrisma.storySegment.findUnique.mockResolvedValue(second);
+      mockPrisma.storySegment.findFirst.mockResolvedValue({
+        id: 'seg-1',
+        sortOrder: 1,
+        text: 'She jumped.',
+        narrationText: null,
+      });
+
+      await service.mergeSegmentUp('seg-2');
+
+      const merged = mockPrisma.storySegment.update.mock.calls.find(
+        (c: any) => c[0].where.id === 'seg-1',
+      )[0].data;
+      // Half-tagged markup would no longer strip back to the text, and
+      // narration would refuse it — a puzzle for whoever hit it later.
+      expect(merged.narrationText).toBeNull();
+    });
+
+    it('refuses on the first section of a chapter', async () => {
+      mockPrisma.storySegment.findUnique.mockResolvedValue({
+        ...second,
+        sortOrder: 1,
+      });
+      mockPrisma.storySegment.findFirst.mockResolvedValue(null);
+
+      await expect(service.mergeSegmentUp('seg-2')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockPrisma.storySegment.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('splitSegment', () => {
+    const segment = {
+      id: 'seg-1',
+      chapterId: 'ch-1',
+      sortOrder: 1,
+      text: 'She jumped. She landed.',
+      chapter: { storyId: 'story-1' },
+    };
+
+    it('shifts the sections below down before inserting', async () => {
+      mockPrisma.storySegment.findUnique.mockResolvedValue(segment);
+      mockPrisma.storySegment.findMany.mockResolvedValue([
+        { id: 'seg-3', sortOrder: 3 },
+        { id: 'seg-2', sortOrder: 2 },
+      ]);
+      mockPrisma.storySegment.create.mockResolvedValue({});
+
+      await service.splitSegment('seg-1', 12);
+
+      // Bottom-up, so no two rows ever claim the same position under the
+      // unique index.
+      const moves = mockPrisma.storySegment.update.mock.calls
+        .filter((c: any) => c[0].data.sortOrder !== undefined)
+        .map((c: any) => [c[0].where.id, c[0].data.sortOrder]);
+      expect(moves).toEqual([
+        ['seg-3', 4],
+        ['seg-2', 3],
+      ]);
+
+      expect(mockPrisma.storySegment.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ text: 'She landed.', sortOrder: 2 }),
+        }),
+      );
+    });
+
+    it('refuses a split that would leave an empty half', async () => {
+      mockPrisma.storySegment.findUnique.mockResolvedValue(segment);
+
+      await expect(service.splitSegment('seg-1', 0)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockPrisma.storySegment.create).not.toHaveBeenCalled();
     });
   });
 

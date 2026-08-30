@@ -4,6 +4,7 @@ import type {
   AskPayload,
   Story,
   StoryDraft,
+  StoryLibraryItem,
   StorySummary,
 } from "./types";
 
@@ -26,6 +27,26 @@ export const storiesApi = authApi.injectEndpoints({
     getStoryByModuleItem: builder.query<Story, string>({
       query: (moduleItemId: string) => `/stories/by-module-item/${moduleItemId}`,
       providesTags: ["StoryContent" as any],
+    } as any),
+
+    /**
+     * Every published story, for the library. Free to any signed-in child —
+     * this is the one story surface that does not depend on owning a course.
+     */
+    getStoryLibrary: builder.query<StoryLibraryItem[], void>({
+      query: () => "/stories/library",
+      providesTags: ["StoryList" as any],
+    } as any),
+
+    /**
+     * A library story's content. Deliberately not `getStory`, which is the
+     * staff authoring route and 403s for a student.
+     */
+    getLibraryStory: builder.query<Story, string>({
+      query: (id: string) => `/stories/library/${id}`,
+      providesTags: (_r: any, _e: any, id: string) => [
+        { type: "StoryContent", id },
+      ],
     } as any),
 
     askStory: builder.mutation<AgentReply, { storyId: string } & AskPayload>({
@@ -195,6 +216,8 @@ export const storiesApi = authApi.injectEndpoints({
 
 export const {
   useGetStoryByModuleItemQuery,
+  useGetStoryLibraryQuery,
+  useGetLibraryStoryQuery,
   useAskStoryMutation,
   useGetStoriesQuery,
   useGetStoryQuery,

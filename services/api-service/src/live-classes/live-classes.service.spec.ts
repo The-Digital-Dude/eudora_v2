@@ -245,6 +245,46 @@ describe('LiveClassesService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('attaches a meeting link and marks the session EXTERNAL', async () => {
+      mockPrismaService.batchSession.findUnique.mockResolvedValue(baseSession);
+      mockPrismaService.batchSession.update.mockResolvedValue(baseSession);
+
+      await service.rescheduleLiveClass('session-1', {
+        joinUrl: 'https://zoom.us/j/123456789',
+      });
+
+      const { data } = mockPrismaService.batchSession.update.mock.calls[0][0];
+      expect(data.joinUrl).toBe('https://zoom.us/j/123456789');
+      // Not NONE: the learner view uses provider to decide between "no link
+      // yet" and a joinable session.
+      expect(data.provider).toBe('EXTERNAL');
+    });
+
+    it('removes the link and the provider together on an empty string', async () => {
+      mockPrismaService.batchSession.findUnique.mockResolvedValue(baseSession);
+      mockPrismaService.batchSession.update.mockResolvedValue(baseSession);
+
+      await service.rescheduleLiveClass('session-1', { joinUrl: '' });
+
+      const { data } = mockPrismaService.batchSession.update.mock.calls[0][0];
+      expect(data.joinUrl).toBeNull();
+      // Leaving provider set would tell the family the link opens when the
+      // teacher starts, which would never happen.
+      expect(data.provider).toBe('NONE');
+    });
+
+    it('leaves the meeting untouched when joinUrl is omitted', async () => {
+      mockPrismaService.batchSession.findUnique.mockResolvedValue(baseSession);
+      mockPrismaService.batchSession.update.mockResolvedValue(baseSession);
+
+      await service.rescheduleLiveClass('session-1', { topic: 'New topic' });
+
+      const { data } = mockPrismaService.batchSession.update.mock.calls[0][0];
+      // Moving a class must not silently drop the room it meets in.
+      expect('joinUrl' in data).toBe(false);
+      expect('provider' in data).toBe(false);
+    });
+
     it('throws BadRequestException if the new window is invalid', async () => {
       mockPrismaService.batchSession.findUnique.mockResolvedValue(baseSession);
 

@@ -15,7 +15,8 @@ export interface LiveClassSession {
   startTime: string | null;
   endTime: string | null;
   status: "SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED";
-  provider: "NONE" | "ZOOM";
+  /** EXTERNAL is a link a teacher pasted; ZOOM is a meeting this system made. */
+  provider: "NONE" | "EXTERNAL" | "ZOOM";
   externalMeetingId?: string | null;
   joinUrl?: string | null;
   startUrl?: string | null;
@@ -33,12 +34,16 @@ export interface ScheduleLiveClassBody {
   topic?: string;
   startTime: string;
   endTime: string;
+  /** A room the teacher already has. Omit when there is not one yet. */
+  joinUrl?: string;
 }
 
 export interface RescheduleLiveClassBody {
   topic?: string;
   startTime?: string;
   endTime?: string;
+  /** A URL attaches or replaces the room; "" removes it; omitted leaves it. */
+  joinUrl?: string;
 }
 
 export interface ListLiveClassesParams {

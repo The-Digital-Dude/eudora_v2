@@ -4,6 +4,9 @@ import {
   IsOptional,
   IsDateString,
   IsEnum,
+  IsUrl,
+  MaxLength,
+  ValidateIf,
 } from 'class-validator';
 import { LiveClassStatus } from '@prisma/client';
 
@@ -36,6 +39,19 @@ export class CreateLiveClassDto {
 
   @IsDateString()
   endTime: string;
+
+  /**
+   * Where the class actually meets — a Zoom, Meet or Teams link the teacher
+   * already has.
+   *
+   * Optional because a session can be scheduled before anyone has made the
+   * room. Until it is set the family sees the date and no way in, which is the
+   * state every live class shipped in before this field existed.
+   */
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
+  @IsOptional()
+  @MaxLength(2000)
+  joinUrl?: string;
 }
 
 export class RescheduleLiveClassDto {
@@ -50,6 +66,17 @@ export class RescheduleLiveClassDto {
   @IsDateString()
   @IsOptional()
   endTime?: string;
+
+  /**
+   * Send a URL to attach or replace the meeting link, or an empty string to
+   * remove it. Omit the field to leave it untouched — a reschedule should not
+   * silently drop the room.
+   */
+  @ValidateIf((_o, value) => value !== '')
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
+  @IsOptional()
+  @MaxLength(2000)
+  joinUrl?: string;
 }
 
 export class ListLiveClassesQueryDto {

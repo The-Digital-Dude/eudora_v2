@@ -61,6 +61,20 @@ export function useClioVoice() {
     []
   );
 
+  const speakLines = useCallback(
+    (
+      texts: string[],
+      opts?: {
+        interrupt?: boolean;
+        onStart?: () => void;
+        onEnd?: () => void;
+      }
+    ) => {
+      return clioVoice.speakLines(texts, opts);
+    },
+    []
+  );
+
   const stop = useCallback(() => {
     clioVoice.stop();
   }, []);
@@ -73,6 +87,7 @@ export function useClioVoice() {
     setMuted,
     playPhrase,
     speakText,
+    speakLines,
     stop,
   };
 }

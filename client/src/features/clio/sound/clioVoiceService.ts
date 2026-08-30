@@ -317,6 +317,49 @@ class ClioVoiceService {
   }
 
   /**
+   * Speaks several lines back to back, as one utterance would have.
+   *
+   * Exists because recordings are keyed on the exact line. Joining two lines
+   * into one string — "intro + prompt", say — produces a key no recording can
+   * have, so the joined version silently fell through to the device
+   * synthesiser while the same words played in Clio's own voice everywhere
+   * else. Passing the lines separately keeps each one matchable.
+   *
+   * Chained on completion rather than scheduled by duration: the audio knows
+   * how long it is and a timer does not.
+   */
+  public speakLines(
+    texts: string[],
+    opts: {
+      interrupt?: boolean;
+      onStart?: () => void;
+      onEnd?: () => void;
+    } = {},
+  ): boolean {
+    const lines = texts.filter((t) => t && t.trim().length > 0);
+    if (lines.length === 0) return false;
+
+    const { interrupt = true, onStart, onEnd } = opts;
+
+    const speakFrom = (index: number, isFirst: boolean): boolean =>
+      this.speakText(lines[index], {
+        // Only the first line clears what was playing; the rest must not
+        // interrupt the line they are continuing from.
+        interrupt: isFirst ? interrupt : false,
+        onStart: isFirst ? onStart : undefined,
+        onEnd: () => {
+          if (index + 1 < lines.length) {
+            speakFrom(index + 1, false);
+          } else {
+            onEnd?.();
+          }
+        },
+      });
+
+    return speakFrom(0, true);
+  }
+
+  /**
    * Speak arbitrary text (questions, hints, math explanations)
    */
   public speakText(
@@ -340,6 +383,21 @@ class ClioVoiceService {
       return true;
     }
 
+    // Everything below is the device's own synthesiser, not Clio. It is a
+    // different voice, and the difference is audible the moment both play in
+    // one sitting.
+    //
+    // Reachable from exactly one place: the real lesson player, whose
+    // questions and hints are authored per lesson in the database and so can
+    // never be pre-recorded by a generator run by hand. The scripted marketing
+    // demo must never land here, and no longer can — `--check` in
+    // voice/generate-voice-lines.mjs fails CI if any demo line lacks a
+    // recording.
+    //
+    // Replacing this with real speech means synthesising lesson text on
+    // demand, which is a server round trip per question against a metered
+    // quota. Until that is affordable, a child who needs the question read
+    // aloud gets the device voice rather than silence.
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
 
     const {

@@ -34,9 +34,18 @@ export class ProgressionService {
   /**
    * Enforcement is config-gated so the rule can be switched on in two steps.
    * It has never actually been enforced — the flags were computed for display
-   * only — so an unknown number of students may already hold out-of-order
-   * progress that would start throwing the moment this turns on. Run in 'log'
-   * until the warnings go quiet, then flip to 'enforce'.
+   * only — so students may already hold out-of-order progress that would start
+   * throwing the moment this turns on.
+   *
+   * How many is answerable rather than guessable:
+   *
+   *   npm run db:progression-audit -- --verbose
+   *
+   * reads this same rule off the data and names every student who would be
+   * locked out of a chapter they have already started. Waiting for the warnings
+   * below to go quiet only ever sees students active in the window; the audit
+   * sees all of them. Flip to 'enforce' when it reports nobody, or after
+   * deciding what to do about the ones it names.
    */
   private get enforcementMode(): 'log' | 'enforce' {
     return process.env.PROGRESSION_ENFORCEMENT === 'enforce'

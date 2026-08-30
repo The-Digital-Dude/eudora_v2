@@ -1904,6 +1904,15 @@ enum LiveClassStatus {
 
 enum LiveClassProvider {
   NONE
+
+  /// A link the teacher pasted in — Zoom, Meet, Teams, whatever they already
+  /// use. The meeting exists outside Eudora and we only carry the URL.
+  ///
+  /// Distinct from ZOOM because the two behave differently for a family: a
+  /// pasted link is valid from the moment it is saved, while a meeting this
+  /// system creates does not exist until the session starts.
+  EXTERNAL
+
   ZOOM
 }
 

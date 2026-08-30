@@ -33,6 +33,9 @@ export default function CreateLiveClassPage() {
         topic: values.title,
         startTime: new Date(values.startAt).toISOString(),
         endTime: new Date(values.endAt).toISOString(),
+        // Omitted rather than sent empty: on create there is no previous link
+        // to clear, and the API rejects an empty string as an invalid URL.
+        ...(values.joinUrl.trim() ? { joinUrl: values.joinUrl.trim() } : {}),
       }).unwrap();
       toast.success("Live class scheduled.");
       router.push("/live-classes");

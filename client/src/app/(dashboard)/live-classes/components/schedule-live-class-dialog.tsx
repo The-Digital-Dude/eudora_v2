@@ -44,6 +44,7 @@ export function RescheduleLiveClassDialog({
       title: session.topic ?? "",
       startAt: session.startTime ? toDatetimeLocalValue(session.startTime) : "",
       endAt: session.endTime ? toDatetimeLocalValue(session.endTime) : "",
+      joinUrl: session.joinUrl ?? "",
     });
     setError(null);
   }, [open, session]);
@@ -65,6 +66,10 @@ export function RescheduleLiveClassDialog({
           topic: values.title,
           startTime: new Date(values.startAt).toISOString(),
           endTime: new Date(values.endAt).toISOString(),
+          // Always sent, including empty: the field is on screen, so leaving
+          // it blank is the author asking for no link rather than asking for
+          // the previous one to be kept.
+          joinUrl: values.joinUrl.trim(),
         },
       }).unwrap();
       toast.success("Live class rescheduled.");

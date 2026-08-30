@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BatchSessionsService } from '../batch-sessions/batch-sessions.service';
-import { LiveClassStatus, ModuleItemKind } from '@prisma/client';
+import {
+  LiveClassProvider,
+  LiveClassStatus,
+  ModuleItemKind,
+} from '@prisma/client';
 import {
   CreateLiveClassDto,
   ListLiveClassesQueryDto,
@@ -101,9 +105,6 @@ export class LiveClassesService {
     const endTime = new Date(dto.endTime);
     this.assertValidWindow(startTime, endTime);
 
-    // Zoom hook (WS-E follow-on): call the Zoom Server-to-Server OAuth API
-    // here to create the meeting and populate provider/externalMeetingId/
-    // joinUrl/startUrl. Not implemented yet — provider stays NONE.
     // Creation goes through BatchSessionsService so this row is validated the
     // same way an attendance-created one is; re-read with INCLUDE afterwards
     // because the shared create returns the bare row.
@@ -116,6 +117,17 @@ export class LiveClassesService {
       startTime,
       endTime,
     });
+
+    // A link the teacher already has, rather than a meeting this system
+    // creates. The Zoom Server-to-Server OAuth hook would set provider ZOOM
+    // and fill externalMeetingId/startUrl too; it is not implemented, and a
+    // pasted link makes the class joinable without waiting for it.
+    if (dto.joinUrl) {
+      await this.prisma.batchSession.update({
+        where: { id: created.id },
+        data: { joinUrl: dto.joinUrl, provider: LiveClassProvider.EXTERNAL },
+      });
+    }
 
     return this.prisma.batchSession.findUniqueOrThrow({
       where: { id: created.id },
@@ -176,12 +188,32 @@ export class LiveClassesService {
       this.assertValidWindow(startTime, endTime);
     }
 
+    /**
+     * Three cases, not two: omitted leaves the room alone, a URL attaches or
+     * replaces it, and an empty string removes it.
+     *
+     * Clearing has to reset `provider` as well, or the session keeps claiming
+     * it has a meeting — and the family is told the link opens when the
+     * teacher starts, which would never happen.
+     *
+     * Once the Zoom hook exists this needs a guard: overwriting a ZOOM session
+     * this way would orphan the `externalMeetingId` needed to cancel the real
+     * meeting. It cannot happen yet, because nothing sets provider to ZOOM.
+     */
+    const meeting =
+      dto.joinUrl === undefined
+        ? {}
+        : dto.joinUrl === ''
+          ? { joinUrl: null, provider: LiveClassProvider.NONE }
+          : { joinUrl: dto.joinUrl, provider: LiveClassProvider.EXTERNAL };
+
     return this.prisma.batchSession.update({
       where: { id },
       data: {
         ...(dto.topic ? { topic: dto.topic } : {}),
         ...(startTime ? { startTime, date: this.dayOf(startTime) } : {}),
         ...(endTime ? { endTime } : {}),
+        ...meeting,
       },
       include: INCLUDE,
     });

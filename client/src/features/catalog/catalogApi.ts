@@ -10,7 +10,8 @@ export interface MyLiveSession {
   startTime: string | null;
   endTime: string | null;
   status: "SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED";
-  provider: "NONE" | "ZOOM";
+  /** EXTERNAL is a link a teacher pasted; ZOOM is a meeting this system made. */
+  provider: "NONE" | "EXTERNAL" | "ZOOM";
   joinUrl: string | null;
   cancelledAt: string | null;
   batch?: { id: string; name: string; code: string };

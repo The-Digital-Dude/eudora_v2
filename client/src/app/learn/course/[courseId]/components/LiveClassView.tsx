@@ -48,7 +48,19 @@ export function LiveClassView({ item }: LiveClassViewProps) {
   const isCancelled = session.status === "CANCELLED";
   const isLive = session.status === "LIVE";
   const isOver = session.status === "ENDED";
-  const canJoin = isLive && !!session.joinUrl;
+  /**
+   * A pasted link works from the moment it is saved, so it opens as soon as
+   * the session is scheduled. Gating it behind the teacher pressing "start"
+   * would mean a child cannot get into a class their family paid for because
+   * an adult forgot a button — and joining early just means waiting in an
+   * empty room, which is what happens with a real class too.
+   *
+   * A meeting this system creates is different: it does not exist until the
+   * session starts, so ZOOM stays gated on LIVE.
+   */
+  const isExternal = session.provider === "EXTERNAL";
+  const canJoin =
+    !!session.joinUrl && !isCancelled && !isOver && (isLive || isExternal);
 
   const when = session.startTime
     ? new Date(session.startTime).toLocaleString([], {

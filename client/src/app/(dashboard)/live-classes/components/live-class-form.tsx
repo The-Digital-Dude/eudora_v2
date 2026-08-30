@@ -20,6 +20,12 @@ export interface LiveClassFormValues {
   title: string;
   startAt: string;
   endAt: string;
+  /**
+   * Zoom, Meet, Teams — whatever room the teacher already uses. Empty means
+   * the session has a time but no way in yet, which is a normal state while a
+   * term is being planned.
+   */
+  joinUrl: string;
 }
 
 export const EMPTY_LIVE_CLASS: LiveClassFormValues = {
@@ -27,6 +33,7 @@ export const EMPTY_LIVE_CLASS: LiveClassFormValues = {
   title: "",
   startAt: "",
   endAt: "",
+  joinUrl: "",
 };
 
 interface LiveClassFormProps {
@@ -108,6 +115,22 @@ export function LiveClassForm({
             onChange={(e) => set("endAt", e.target.value)}
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="live-class-join-url">Meeting link</Label>
+        <Input
+          id="live-class-join-url"
+          type="url"
+          value={values.joinUrl}
+          onChange={(e) => set("joinUrl", e.target.value)}
+          placeholder="https://zoom.us/j/..."
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Paste the room you already use. Families see a Join button as soon as
+          this is saved; without it they see the time and no way in. Clear the
+          field to remove the link.
+        </p>
       </div>
 
       {error && <p className="text-xs font-medium text-destructive">{error}</p>}

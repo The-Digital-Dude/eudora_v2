@@ -156,6 +156,25 @@ export class StoriesController {
     return this.stories.findPublished();
   }
 
+  /**
+   * Opens a library story. Separate from ':id' below rather than relaxing that
+   * one, because they answer different questions: ':id' is the authoring view
+   * of any story in any state, this is the reading view of one a child is
+   * allowed to read. Both return the same shape, so the reader does not care
+   * which it came from — but only this one runs the read gate, and only this
+   * one lets a USER through.
+   */
+  @Get('library/:id')
+  async libraryStory(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+    @Headers(ACTING_STUDENT_HEADER) actingStudentId?: string,
+  ) {
+    const access = await this.stories.accessForStory(id);
+    await this.assertCanRead(user, access, actingStudentId);
+    return this.stories.findOne(id);
+  }
+
   /** Staff-only by id, for the authoring screens. */
   @Get(':id')
   @Roles('SUPER_ADMIN', 'ADMIN', 'TEACHER')
@@ -167,8 +186,9 @@ export class StoriesController {
 
   /**
    * Narration audio. Served through the API rather than handed out as a storage
-   * URL: the only working storage backend is local disk, which cannot sign, and
-   * a signed URL would expire mid-chapter anyway.
+   * URL so that entitlement is checked on every request, and so the same URL
+   * works whichever backend is configured — local disk cannot sign at all, and
+   * S3 can, which is why sendMedia handles both a stream and a redirect.
    *
    * Entitlement is checked against the owning module item on every request —
    * the audio is the content, so an unguarded media route would be a way to

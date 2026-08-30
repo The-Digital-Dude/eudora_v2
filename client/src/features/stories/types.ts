@@ -95,3 +95,18 @@ export interface StoryDraft {
   /** Tagged lines discarded for not matching their own words. */
   droppedNarrationCount: number;
 }
+
+/**
+ * A card in the student-facing library. Content-free on purpose — the list
+ * shows dozens of stories and none of their text, so the payload carries what
+ * a cover needs and nothing else.
+ */
+export interface StoryLibraryItem {
+  id: string;
+  title: string;
+  synopsis: string | null;
+  gradeBand: string | null;
+  coverUrl: string | null;
+  pageCount: number;
+  narrated: boolean;
+}

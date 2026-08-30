@@ -5,6 +5,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   Compass,
+  Feather,
   GraduationCap,
   HeartHandshake,
   Home,
@@ -178,13 +179,23 @@ export const navGroups: NavGroup[] = [
         requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
       },
       {
+        // Paired with "Stories" below the way Lesson Library is paired with
+        // Lesson Builder: this one reads, that one writes. It is the only entry
+        // in this group a family reaches without owning a course, since a
+        // published story is free.
+        title: "Story Library",
+        url: "/story-library",
+        icon: BookHeadphones,
+        requirement: { type: "roles", roles: ["TEACHER", "USER", "GUARDIAN", ...ADMIN_ROLES] },
+      },
+      {
         // Sits under Content rather than beside Courses because a story is a
         // thing you write, not a thing you timetable — and, unlike every other
         // entry here, one can be published on its own without belonging to a
         // course at all.
         title: "Stories",
         url: "/stories",
-        icon: BookHeadphones,
+        icon: Feather,
         requirement: { type: "roles", roles: ["TEACHER", ...ADMIN_ROLES] },
       },
       {

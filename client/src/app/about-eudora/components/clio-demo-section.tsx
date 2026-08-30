@@ -60,7 +60,8 @@ export function ClioDemoSection({
   const [attempts, setAttempts] = React.useState(0);
   const [xp, setXp] = React.useState(0);
 
-  const { isMuted, isSpeaking, toggleMute, playPhrase, speakText, stop } = useClioVoice();
+  const { isMuted, isSpeaking, toggleMute, playPhrase, speakText, speakLines, stop } =
+    useClioVoice();
 
   const card = DEMO_LESSON.cards[cardIndex];
   const isLastCard = cardIndex === DEMO_LESSON.cards.length - 1;
@@ -276,7 +277,7 @@ export function ClioDemoSection({
                   </p>
                   <button
                     type="button"
-                    onClick={() => speakText(`${card.clioIntro} ${card.prompt}`)}
+                    onClick={() => speakLines([card.clioIntro, card.prompt])}
                     title="Listen to Clio read this question"
                     className="mt-0.5 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/20 active:scale-95"
                   >
@@ -344,7 +345,7 @@ export function ClioDemoSection({
                     </div>
                     <button
                       type="button"
-                      onClick={() => speakText(`Not quite. Try again. ${card.hint}`)}
+                      onClick={() => speakText(card.hint)}
                       title="Listen to hint"
                       className="shrink-0 cursor-pointer p-1 text-warning hover:opacity-80 transition-opacity"
                     >
@@ -370,11 +371,7 @@ export function ClioDemoSection({
                       </p>
                       <button
                         type="button"
-                        onClick={() =>
-                          speakText(
-                            `${phase === "correct" ? "That's it." : "Here's the answer."} ${card.explanation}`
-                          )
-                        }
+                        onClick={() => speakText(card.explanation)}
                         title="Listen to explanation"
                         className="shrink-0 cursor-pointer p-1 text-muted-foreground hover:text-foreground transition-colors"
                       >

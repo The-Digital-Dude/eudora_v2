@@ -37,6 +37,10 @@ const MOBILE_CATALOG_OUT = join(
 );
 const WEB_AUDIO_DIR = join(ROOT, 'client/public/clio-voice');
 const MOBILE_AUDIO_DIR = join(ROOT, 'mobile/assets/voice');
+const DEMO_LESSON = join(
+  ROOT,
+  'client/src/app/about-eudora/components/demo-lesson.ts',
+);
 
 const API_ROOT = 'https://api.elevenlabs.io/v1';
 
@@ -273,6 +277,9 @@ async function main() {
         drifted = true;
       }
     }
+    if (await checkDemoCoverage(spokenLines, existing)) {
+      drifted = true;
+    }
     if (drifted) {
       console.error('\nRun `node voice/generate-voice-lines.mjs` and commit.');
       process.exit(1);
@@ -297,6 +304,62 @@ async function main() {
 /** Line-ending differences are not drift. */
 function normalize(s) {
   return s.replace(/\r\n/g, '\n');
+}
+
+/**
+ * Every word the marketing demo speaks must have a recording.
+ *
+ * The demo is fully scripted, so there is no excuse for any of it reaching the
+ * device synthesiser — and when it does, nothing breaks. It just quietly
+ * changes voice mid-lesson, which is how the "Listen" buttons spent their
+ * whole life reading in Chrome's voice while the feedback lines used Clio's.
+ *
+ * Compared as sets in both directions rather than as a coverage count: a
+ * one-way check passes when the scrape below matches nothing at all, which is
+ * the failure that would let this rot again.
+ */
+async function checkDemoCoverage(spokenLines, existing) {
+  if (!existsSync(DEMO_LESSON)) return false;
+  const src = await readFile(DEMO_LESSON, 'utf8');
+
+  const spoken = new Set();
+  for (const field of ['clioIntro', 'prompt', 'hint', 'explanation']) {
+    const re = new RegExp(`^\\s*${field}:\\s*("(?:[^"\\\\]|\\\\.)*")`, 'gm');
+    for (const m of src.matchAll(re)) spoken.add(JSON.parse(m[1]));
+  }
+
+  const catalog = new Set(spokenLines);
+  const uncatalogued = [...spoken].filter((t) => !catalog.has(t));
+  const unused = [...catalog].filter((t) => !spoken.has(t));
+  const silent = [...spoken].filter(
+    (t) => catalog.has(t) && !existing.has(lineId(t)),
+  );
+
+  let failed = false;
+  for (const t of uncatalogued) {
+    console.error(`NOT IN CATALOG: ${JSON.stringify(t.slice(0, 60))}`);
+    failed = true;
+  }
+  for (const t of silent) {
+    console.error(`NO AUDIO FILE:  ${JSON.stringify(t.slice(0, 60))}`);
+    failed = true;
+  }
+  for (const t of unused) {
+    console.error(`NOT IN DEMO:    ${JSON.stringify(t.slice(0, 60))}`);
+    failed = true;
+  }
+
+  if (failed) {
+    console.error(
+      '\nThe demo speaks lines with no recording, or the catalog carries lines\n' +
+        'the demo no longer says. Both mean somebody edited the copy without\n' +
+        'running this generator. Update voice/clio-phrases.json to match\n' +
+        'demo-lesson.ts and re-run with a key.',
+    );
+    return true;
+  }
+  console.log(`All ${spoken.size} demo lines have recordings.`);
+  return false;
 }
 
 /** Unused today, kept so a future run can skip unchanged lines. */
